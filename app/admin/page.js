@@ -8,15 +8,17 @@ export default function AdminDashboard() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [message, setMessage] = useState('');
 
-  // حقول بيانات المنتج
   const [productData, setProductData] = useState({
     product_name: '',
     product_price: '',
     original_price: '',
     shipping_fee: '',
     image_url: '',
+    video_url: '',
     description: '',
   });
 
@@ -35,7 +37,7 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchSettings = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('store_settings')
       .select('*')
       .eq('id', 1)
@@ -48,6 +50,7 @@ export default function AdminDashboard() {
         original_price: data.original_price || '',
         shipping_fee: data.shipping_fee || '',
         image_url: data.image_url || '',
+        video_url: data.video_url || '',
         description: data.description || '',
       });
     }
@@ -66,6 +69,56 @@ export default function AdminDashboard() {
     await supabase.auth.signOut();
   };
 
+  // دالة رفع الصور من الجهاز مباشرة إلى Supabase Storage
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setMessage('');
+    const fileExt = file.name.split('.').pop();
+    const fileName = `img_${Date.now()}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      setMessage('فشل رفع الصورة: ' + uploadError.message);
+    } else {
+      const { data } = supabase.storage.from('products').getPublicUrl(filePath);
+      setProductData((prev) => ({ ...prev, image_url: data.publicUrl }));
+      setMessage('✅ تم رفع الصورة بنجاح!');
+    }
+    setUploadingImage(false);
+  };
+
+  // دالة رفع الفيديو من الجهاز مباشرة إلى Supabase Storage
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingVideo(true);
+    setMessage('');
+    const fileExt = file.name.split('.').pop();
+    const fileName = `vid_${Date.now()}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      setMessage('فشل رفع الفيديو: ' + uploadError.message);
+    } else {
+      const { data } = supabase.storage.from('products').getPublicUrl(filePath);
+      setProductData((prev) => ({ ...prev, video_url: data.publicUrl }));
+      setMessage('✅ تم رفع الفيديو بنجاح!');
+    }
+    setUploadingVideo(false);
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaveLoading(true);
@@ -80,6 +133,7 @@ export default function AdminDashboard() {
         original_price: Number(productData.original_price),
         shipping_fee: Number(productData.shipping_fee),
         image_url: productData.image_url,
+        video_url: productData.video_url,
         description: productData.description,
         updated_at: new Date(),
       });
@@ -151,7 +205,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <form onSubmit={handleSave} className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-5">
+        <form onSubmit={handleSave} className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-6">
           <div>
             <label className="block mb-2 text-sm text-slate-300">اسم المنتج</label>
             <input
@@ -175,7 +229,7 @@ export default function AdminDashboard() {
               />
             </div>
             <div>
-              <label className="block mb-2 text-sm text-slate-300">السعر قبل الخصم (اختياري)</label>
+              <label className="block mb-2 text-sm text-slate-300">السعر قبل الخصم</label>
               <input
                 type="number"
                 value={productData.original_price}
@@ -195,15 +249,41 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div>
-            <label className="block mb-2 text-sm text-slate-300">رابط صورة المنتج</label>
+          {/* زر رفع صورة المنتج من جهازك */}
+          <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
+            <label className="block mb-2 text-sm font-semibold text-slate-200">صورة المنتج الرئيسية</label>
             <input
-              type="url"
-              value={productData.image_url}
-              onChange={(e) => setProductData({ ...productData, image_url: e.target.value })}
-              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400"
-              placeholder="https://example.com/image.jpg"
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              disabled={uploadingImage}
+              className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-500 file:text-white hover:file:bg-emerald-600 cursor-pointer"
             />
+            {uploadingImage && <p className="text-xs text-yellow-400 mt-2">جاري رفع الصورة...</p>}
+            {productData.image_url && (
+              <div className="mt-3 flex items-center gap-3">
+                <img src={productData.image_url} alt="معاينة" className="w-20 h-20 object-cover rounded-lg border border-slate-600" />
+                <span className="text-xs text-slate-400">الصورة الحالية جاهزة للعرض في المتجر</span>
+              </div>
+            )}
+          </div>
+
+          {/* زر رفع فيديو المنتج من جهازك */}
+          <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
+            <label className="block mb-2 text-sm font-semibold text-slate-200">فيديو توضيحي / إعلان للمنتج (اختياري)</label>
+            <input
+              type="file"
+              accept="video/*"
+              onChange={handleVideoUpload}
+              disabled={uploadingVideo}
+              className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-sky-500 file:text-white hover:file:bg-sky-600 cursor-pointer"
+            />
+            {uploadingVideo && <p className="text-xs text-yellow-400 mt-2">جاري رفع الفيديو...</p>}
+            {productData.video_url && (
+              <div className="mt-3">
+                <video src={productData.video_url} controls className="w-48 rounded-lg border border-slate-600" />
+              </div>
+            )}
           </div>
 
           <div>
@@ -218,7 +298,7 @@ export default function AdminDashboard() {
 
           <button
             type="submit"
-            disabled={saveLoading}
+            disabled={saveLoading || uploadingImage || uploadingVideo}
             className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-bold text-white transition text-lg disabled:opacity-50"
           >
             {saveLoading ? 'جاري الحفظ...' : 'حفظ التعديلات في الموقع 🚀'}
