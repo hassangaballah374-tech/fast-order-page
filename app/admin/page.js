@@ -18,9 +18,18 @@ export default function AdminDashboard() {
     original_price: '',
     shipping_fee: '',
     image_url: '',
+    images: [],
     video_url: '',
     description: '',
+    show_colors: false,
+    colors: [], // [{ name: 'أسود', code: '#000000' }]
+    show_sizes: false,
+    sizes: [],  // ['S', 'M', 'L']
   });
+
+  const [newColorName, setNewColorName] = useState('');
+  const [newColorCode, setNewColorCode] = useState('#000000');
+  const [newSizeName, setNewSizeName] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,8 +59,13 @@ export default function AdminDashboard() {
         original_price: data.original_price || '',
         shipping_fee: data.shipping_fee || '',
         image_url: data.image_url || '',
+        images: Array.isArray(data.images) ? data.images : (data.image_url ? [data.image_url] : []),
         video_url: data.video_url || '',
         description: data.description || '',
+        show_colors: !!data.show_colors,
+        colors: Array.isArray(data.colors) ? data.colors : [],
+        show_sizes: !!data.show_sizes,
+        sizes: Array.isArray(data.sizes) ? data.sizes : [],
       });
     }
   };
@@ -69,32 +83,58 @@ export default function AdminDashboard() {
     await supabase.auth.signOut();
   };
 
-  // دالة رفع الصور من الجهاز مباشرة إلى Supabase Storage
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  // رفع عدة صور دفعة واحدة
+  const handleMultipleImagesUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
 
     setUploadingImage(true);
     setMessage('');
-    const fileExt = file.name.split('.').pop();
-    const fileName = `img_${Date.now()}.${fileExt}`;
-    const filePath = `uploads/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('products')
-      .upload(filePath, file);
+    try {
+      const uploadedUrls = [];
+      for (const file of files) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `img_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `uploads/${fileName}`;
 
-    if (uploadError) {
-      setMessage('فشل رفع الصورة: ' + uploadError.message);
-    } else {
-      const { data } = supabase.storage.from('products').getPublicUrl(filePath);
-      setProductData((prev) => ({ ...prev, image_url: data.publicUrl }));
-      setMessage('✅ تم رفع الصورة بنجاح!');
+        const { error: uploadError } = await supabase.storage
+          .from('products')
+          .upload(filePath, file);
+
+        if (!uploadError) {
+          const { data } = supabase.storage.from('products').getPublicUrl(filePath);
+          uploadedUrls.push(data.publicUrl);
+        }
+      }
+
+      setProductData((prev) => {
+        const allImages = [...(prev.images || []), ...uploadedUrls];
+        return {
+          ...prev,
+          images: allImages,
+          image_url: allImages[0] || prev.image_url,
+        };
+      });
+      setMessage('✅ تم رفع الصور بنجاح!');
+    } catch (err) {
+      setMessage('فشل الرفع: ' + err.message);
     }
     setUploadingImage(false);
   };
 
-  // دالة رفع الفيديو من الجهاز مباشرة إلى Supabase Storage
+  const removeImage = (indexToRemove) => {
+    setProductData((prev) => {
+      const updated = prev.images.filter((_, idx) => idx !== indexToRemove);
+      return {
+        ...prev,
+        images: updated,
+        image_url: updated[0] || '',
+      };
+    });
+  };
+
+  // رفع فيديو
   const handleVideoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -119,6 +159,40 @@ export default function AdminDashboard() {
     setUploadingVideo(false);
   };
 
+  // إدارة الألوان
+  const addColor = () => {
+    if (!newColorName.trim()) return;
+    setProductData((prev) => ({
+      ...prev,
+      colors: [...prev.colors, { name: newColorName.trim(), code: newColorCode }],
+    }));
+    setNewColorName('');
+  };
+
+  const removeColor = (idx) => {
+    setProductData((prev) => ({
+      ...prev,
+      colors: prev.colors.filter((_, i) => i !== idx),
+    }));
+  };
+
+  // إدارة المقاسات
+  const addSize = () => {
+    if (!newSizeName.trim()) return;
+    setProductData((prev) => ({
+      ...prev,
+      sizes: [...prev.sizes, newSizeName.trim()],
+    }));
+    setNewSizeName('');
+  };
+
+  const removeSize = (idx) => {
+    setProductData((prev) => ({
+      ...prev,
+      sizes: prev.sizes.filter((_, i) => i !== idx),
+    }));
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaveLoading(true);
@@ -132,9 +206,14 @@ export default function AdminDashboard() {
         product_price: Number(productData.product_price),
         original_price: Number(productData.original_price),
         shipping_fee: Number(productData.shipping_fee),
-        image_url: productData.image_url,
+        image_url: productData.images[0] || productData.image_url,
+        images: productData.images,
         video_url: productData.video_url,
         description: productData.description,
+        show_colors: productData.show_colors,
+        colors: productData.colors,
+        show_sizes: productData.show_sizes,
+        sizes: productData.sizes,
         updated_at: new Date(),
       });
 
@@ -158,7 +237,7 @@ export default function AdminDashboard() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400 text-white"
+              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white"
               required
             />
           </div>
@@ -168,7 +247,7 @@ export default function AdminDashboard() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400 text-white"
+              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white"
               required
             />
           </div>
@@ -188,7 +267,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-slate-900 text-white p-6" dir="rtl">
       <div className="max-w-3xl mx-auto">
         <div className="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
-          <h1 className="text-2xl font-bold text-emerald-400">إدارة المنتج والعروض</h1>
+          <h1 className="text-2xl font-bold text-emerald-400">إدارة تفاصيل المنتج والعروض</h1>
           <button
             onClick={handleLogout}
             className="px-4 py-2 bg-red-500/20 text-red-300 rounded-lg hover:bg-red-500/30 text-sm"
@@ -212,7 +291,7 @@ export default function AdminDashboard() {
               type="text"
               value={productData.product_name}
               onChange={(e) => setProductData({ ...productData, product_name: e.target.value })}
-              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400"
+              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white"
               required
             />
           </div>
@@ -224,7 +303,7 @@ export default function AdminDashboard() {
                 type="number"
                 value={productData.product_price}
                 onChange={(e) => setProductData({ ...productData, product_price: e.target.value })}
-                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400"
+                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white"
                 required
               />
             </div>
@@ -234,7 +313,7 @@ export default function AdminDashboard() {
                 type="number"
                 value={productData.original_price}
                 onChange={(e) => setProductData({ ...productData, original_price: e.target.value })}
-                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400"
+                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white"
               />
             </div>
             <div>
@@ -243,32 +322,51 @@ export default function AdminDashboard() {
                 type="number"
                 value={productData.shipping_fee}
                 onChange={(e) => setProductData({ ...productData, shipping_fee: e.target.value })}
-                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400"
+                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white"
                 required
               />
             </div>
           </div>
 
-          {/* زر رفع صورة المنتج من جهازك */}
+          {/* رفع صور متعددة */}
           <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
-            <label className="block mb-2 text-sm font-semibold text-slate-200">صورة المنتج الرئيسية</label>
+            <label className="block mb-2 text-sm font-semibold text-slate-200">
+              معرض صور المنتج (يمكنك اختيار أكثر من صورة معاً)
+            </label>
             <input
               type="file"
               accept="image/*"
-              onChange={handleImageUpload}
+              multiple
+              onChange={handleMultipleImagesUpload}
               disabled={uploadingImage}
               className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-500 file:text-white hover:file:bg-emerald-600 cursor-pointer"
             />
-            {uploadingImage && <p className="text-xs text-yellow-400 mt-2">جاري رفع الصورة...</p>}
-            {productData.image_url && (
-              <div className="mt-3 flex items-center gap-3">
-                <img src={productData.image_url} alt="معاينة" className="w-20 h-20 object-cover rounded-lg border border-slate-600" />
-                <span className="text-xs text-slate-400">الصورة الحالية جاهزة للعرض في المتجر</span>
+            {uploadingImage && <p className="text-xs text-yellow-400 mt-2">جاري رفع الصور...</p>}
+
+            {productData.images && productData.images.length > 0 && (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4">
+                {productData.images.map((img, idx) => (
+                  <div key={idx} className="relative group border border-slate-600 rounded-lg overflow-hidden h-24">
+                    <img src={img} alt={`صورة ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold"
+                    >
+                      ×
+                    </button>
+                    {idx === 0 && (
+                      <span className="absolute bottom-1 right-1 bg-emerald-600 text-[10px] px-1.5 py-0.5 rounded text-white">
+                        الرئيسية
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
 
-          {/* زر رفع فيديو المنتج من جهازك */}
+          {/* رفع الفيديو */}
           <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
             <label className="block mb-2 text-sm font-semibold text-slate-200">فيديو توضيحي / إعلان للمنتج (اختياري)</label>
             <input
@@ -286,13 +384,112 @@ export default function AdminDashboard() {
             )}
           </div>
 
+          {/* قسم الألوان */}
+          <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-sm text-slate-200">خيارات الألوان</label>
+              <label className="flex items-center gap-2 cursor-pointer text-xs">
+                <input
+                  type="checkbox"
+                  checked={productData.show_colors}
+                  onChange={(e) => setProductData({ ...productData, show_colors: e.target.checked })}
+                  className="w-4 h-4 rounded text-emerald-500 focus:ring-0"
+                />
+                <span>إظهار خيار الألوان في الصفحة</span>
+              </label>
+            </div>
+
+            {productData.show_colors && (
+              <div className="space-y-3 pt-2">
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={newColorCode}
+                    onChange={(e) => setNewColorCode(e.target.value)}
+                    className="w-12 h-10 p-1 bg-slate-700 border border-slate-600 rounded-lg cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    placeholder="اسم اللون (مثال: أسود، أزرق داكن)"
+                    value={newColorName}
+                    onChange={(e) => setNewColorName(e.target.value)}
+                    className="flex-1 p-2 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={addColor}
+                    className="px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold"
+                  >
+                    إضافة
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {productData.colors.map((c, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-600">
+                      <span className="w-4 h-4 rounded-full border border-slate-400" style={{ backgroundColor: c.code }}></span>
+                      <span className="text-xs">{c.name}</span>
+                      <button type="button" onClick={() => removeColor(i)} className="text-red-400 text-xs hover:text-red-300 mr-1">×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* قسم المقاسات */}
+          <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="font-semibold text-sm text-slate-200">خيارات المقاسات</label>
+              <label className="flex items-center gap-2 cursor-pointer text-xs">
+                <input
+                  type="checkbox"
+                  checked={productData.show_sizes}
+                  onChange={(e) => setProductData({ ...productData, show_sizes: e.target.checked })}
+                  className="w-4 h-4 rounded text-emerald-500 focus:ring-0"
+                />
+                <span>إظهار خيار المقاسات في الصفحة</span>
+              </label>
+            </div>
+
+            {productData.show_sizes && (
+              <div className="space-y-3 pt-2">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="المقاس (مثال: S, M, L, XL أو 42, 44)"
+                    value={newSizeName}
+                    onChange={(e) => setNewSizeName(e.target.value)}
+                    className="flex-1 p-2 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={addSize}
+                    className="px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold"
+                  >
+                    إضافة
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {productData.sizes.map((s, i) => (
+                    <div key={i} className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-600">
+                      <span className="text-xs font-bold">{s}</span>
+                      <button type="button" onClick={() => removeSize(i)} className="text-red-400 text-xs hover:text-red-300 mr-1">×</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="block mb-2 text-sm text-slate-300">وصف ومميزات المنتج</label>
             <textarea
               rows="4"
               value={productData.description}
               onChange={(e) => setProductData({ ...productData, description: e.target.value })}
-              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400"
+              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white"
             ></textarea>
           </div>
 
