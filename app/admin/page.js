@@ -17,7 +17,15 @@ export default function AdminDashboard() {
     product_name: '',
     product_price: '',
     original_price: '',
-    shipping_fee: '',
+    shipping_fee: '50', // السعر الافتراضي
+    shipping_rates: {
+      cairo_giza: 50,
+      alex: 60,
+      delta: 65,
+      canal: 70,
+      upper_egypt: 80,
+      remote: 100,
+    },
     images: [],
     video_url: '',
     description: '',
@@ -58,7 +66,15 @@ export default function AdminDashboard() {
         product_name: data.product_name || '',
         product_price: data.product_price || '',
         original_price: data.original_price || '',
-        shipping_fee: data.shipping_fee || '',
+        shipping_fee: data.shipping_fee || '50',
+        shipping_rates: data.shipping_rates || {
+          cairo_giza: 50,
+          alex: 60,
+          delta: 65,
+          canal: 70,
+          upper_egypt: 80,
+          remote: 100,
+        },
         images: Array.isArray(data.images) ? data.images : (data.image_url ? [data.image_url] : []),
         video_url: data.video_url || '',
         description: data.description || '',
@@ -194,7 +210,8 @@ export default function AdminDashboard() {
         product_name: productData.product_name,
         product_price: Number(productData.product_price),
         original_price: Number(productData.original_price),
-        shipping_fee: Number(productData.shipping_fee),
+        shipping_fee: Number(productData.shipping_fee) || 0,
+        shipping_rates: productData.shipping_rates,
         image_url: productData.images[0] || '',
         images: productData.images,
         video_url: productData.video_url,
@@ -209,7 +226,7 @@ export default function AdminDashboard() {
     if (error) {
       setMessage('حدث خطأ أثناء الحفظ: ' + error.message);
     } else {
-      setMessage('✅ تم حفظ التعديلات بنجاح وتحديث الموقع بالكامل!');
+      setMessage('✅ تم حفظ التعديلات بنجاح وتحديث المتجر بالكامل!');
     }
     setSaveLoading(false);
   };
@@ -279,7 +296,7 @@ export default function AdminDashboard() {
             <label className="block mb-2 text-sm text-slate-300 font-semibold">اسم المتجر / العلامة التجارية</label>
             <input
               type="text"
-              placeholder="مثال: لَمّة ستور، متجر الأناقة..."
+              placeholder="مثال: لَمّة ستور"
               value={productData.store_name}
               onChange={(e) => setProductData({ ...productData, store_name: e.target.value })}
               className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white focus:border-emerald-400 focus:outline-none"
@@ -292,7 +309,7 @@ export default function AdminDashboard() {
             <label className="block mb-2 text-sm text-slate-300 font-semibold">اسم المنتج</label>
             <input
               type="text"
-              placeholder="مثال: كوتش مريح وعملي خامات عالية الجودة"
+              placeholder="مثال: كوتش مريح وعملي"
               value={productData.product_name}
               onChange={(e) => setProductData({ ...productData, product_name: e.target.value })}
               className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white focus:border-emerald-400 focus:outline-none"
@@ -300,43 +317,133 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* الأسعار */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* تفاصيل ووصف المنتج */}
+          <div>
+            <label className="block mb-2 text-sm text-slate-300 font-semibold">تفاصيل ومميزات المنتج (تظهر مباشرة تحت السعر)</label>
+            <textarea
+              rows="5"
+              placeholder="اكتب هنا مواصفات ومميزات المنتج التي تظهر للعميل في مقدمة الصفحة..."
+              value={productData.description}
+              onChange={(e) => setProductData({ ...productData, description: e.target.value })}
+              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white leading-relaxed focus:border-emerald-400 focus:outline-none"
+            ></textarea>
+          </div>
+
+          {/* أسعار المنتج */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block mb-2 text-sm text-slate-300">سعر البيع بعد الخصم (ج.م)</label>
+              <label className="block mb-2 text-sm text-slate-300 font-semibold">سعر البيع بعد الخصم (ج.م)</label>
               <input
                 type="number"
                 value={productData.product_price}
                 onChange={(e) => setProductData({ ...productData, product_price: e.target.value })}
-                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white"
+                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white focus:border-emerald-400 focus:outline-none"
                 required
               />
             </div>
             <div>
-              <label className="block mb-2 text-sm text-slate-300">السعر قبل الخصم (ج.م)</label>
+              <label className="block mb-2 text-sm text-slate-300 font-semibold">السعر قبل الخصم (ج.م)</label>
               <input
                 type="number"
                 value={productData.original_price}
                 onChange={(e) => setProductData({ ...productData, original_price: e.target.value })}
-                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white"
-              />
-            </div>
-            <div>
-              <label className="block mb-2 text-sm text-slate-300">مصاريف الشحن (ج.م)</label>
-              <input
-                type="number"
-                value={productData.shipping_fee}
-                onChange={(e) => setProductData({ ...productData, shipping_fee: e.target.value })}
-                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white"
-                required
+                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white focus:border-emerald-400 focus:outline-none"
               />
             </div>
           </div>
 
-          {/* معرض الصور المتعددة */}
+          {/* تسعير الشحن حسب المناطق والمحافظات */}
+          <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40 space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-emerald-400">تسعير الشحن حسب المحافظات والمناطق (ج.م)</h3>
+              <p className="text-xs text-slate-400 mt-0.5">سيتم تطبيق سعر الشحن المناسب تلقائياً عندما يختار العميل محافظته أثناء الطلب</p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+              <div>
+                <label className="block text-xs text-slate-300 mb-1">القاهرة والجيزة</label>
+                <input
+                  type="number"
+                  value={productData.shipping_rates?.cairo_giza ?? 50}
+                  onChange={(e) => setProductData({
+                    ...productData,
+                    shipping_rates: { ...productData.shipping_rates, cairo_giza: Number(e.target.value) }
+                  })}
+                  className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-600 text-white text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-300 mb-1">الإسكندرية</label>
+                <input
+                  type="number"
+                  value={productData.shipping_rates?.alex ?? 60}
+                  onChange={(e) => setProductData({
+                    ...productData,
+                    shipping_rates: { ...productData.shipping_rates, alex: Number(e.target.value) }
+                  })}
+                  className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-600 text-white text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-300 mb-1">وجه بحري (الدلتا)</label>
+                <input
+                  type="number"
+                  value={productData.shipping_rates?.delta ?? 65}
+                  onChange={(e) => setProductData({
+                    ...productData,
+                    shipping_rates: { ...productData.shipping_rates, delta: Number(e.target.value) }
+                  })}
+                  className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-600 text-white text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-300 mb-1">مدن القناة</label>
+                <input
+                  type="number"
+                  value={productData.shipping_rates?.canal ?? 70}
+                  onChange={(e) => setProductData({
+                    ...productData,
+                    shipping_rates: { ...productData.shipping_rates, canal: Number(e.target.value) }
+                  })}
+                  className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-600 text-white text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-300 mb-1">وجه قبلي (الصعيد)</label>
+                <input
+                  type="number"
+                  value={productData.shipping_rates?.upper_egypt ?? 80}
+                  onChange={(e) => setProductData({
+                    ...productData,
+                    shipping_rates: { ...productData.shipping_rates, upper_egypt: Number(e.target.value) }
+                  })}
+                  className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-600 text-white text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-300 mb-1">محافظات حدودية</label>
+                <input
+                  type="number"
+                  value={productData.shipping_rates?.remote ?? 100}
+                  onChange={(e) => setProductData({
+                    ...productData,
+                    shipping_rates: { ...productData.shipping_rates, remote: Number(e.target.value) }
+                  })}
+                  className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-600 text-white text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* معرض الصور */}
           <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
             <label className="block mb-2 text-sm font-semibold text-slate-200">
-              معرض صور المنتج (اختر صورة أو أكثر معاً لتقليبها في الصفحة)
+              معرض صور المنتج (اختر صورة أو أكثر معاً لتقليبها)
             </label>
             <input
               type="file"
@@ -486,18 +593,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* وصف المنتج */}
-          <div>
-            <label className="block mb-2 text-sm text-slate-300 font-semibold">وصف ومميزات المنتج</label>
-            <textarea
-              rows="5"
-              placeholder="اكتب هنا مميزات وتفاصيل المنتج..."
-              value={productData.description}
-              onChange={(e) => setProductData({ ...productData, description: e.target.value })}
-              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white leading-relaxed"
-            ></textarea>
           </div>
 
           <button
