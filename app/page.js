@@ -1,288 +1,310 @@
 'use client';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 
-import { useState } from 'react';
-import { supabase } from '../lib/supabase';
-
-// بيانات المحافظات ومصاريف الشحن (قابلة للتعديل حسب أسعارك)
-const SHIPPING_RATES = {
-  cairo_giza: { name: 'القاهرة والجيزة', cost: 50 },
-  alex: { name: 'الإسكندرية', cost: 60 },
-  delta: { name: 'وجه بحري والدلتا', cost: 65 },
-  canal: { name: 'مدن القناة', cost: 70 },
-  upper_egypt: { name: 'الصعيد ومحافظات أخرى', cost: 80 },
-};
-
-export default function LandingPage() {
-  // بيانات المنتج التجريبي
-  const product = {
-    name: 'المنتج المميز (عرض التوفير الحصري)',
-    price: 350, // سعر القطعة الواحدة بالجنيه
-    originalPrice: 500,
-    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80',
-  };
-
-  // State للنموذج والعمليات
-  const [quantity, setQuantity] = useState(1);
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    governorate: 'cairo_giza',
-    address: '',
-    notes: '',
-  });
+export default function AdminDashboard() {
+  const [session, setSession] = useState(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [message, setMessage] = useState('');
 
-  // حساب الإجمالي
-  const shippingCost = SHIPPING_RATES[formData.governorate]?.cost || 50;
-  const productsSubtotal = product.price * quantity;
-  const grandTotal = productsSubtotal + shippingCost;
+  const [productData, setProductData] = useState({
+    product_name: '',
+    product_price: '',
+    original_price: '',
+    shipping_fee: '',
+    image_url: '',
+    video_url: '',
+    description: '',
+  });
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) fetchSettings();
+    });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMsg('');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) fetchSettings();
+    });
 
-    // توليد معرف فريد للحدث (سنستخدمه للبيكسيل و CAPI في المرحلة القادمة)
-    const eventId = 'order_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    return () => subscription.unsubscribe();
+  }, []);
 
-    try {
-      // إرسال البيانات مباشرة إلى جدول orders في Supabase
-      const { data, error } = await supabase.from('orders').insert([
-        {
-          customer_name: formData.name,
-          phone: formData.phone,
-          governorate: SHIPPING_RATES[formData.governorate].name,
-          address: formData.address,
-          product_name: product.name,
-          quantity: quantity,
-          total_price: grandTotal,
-          shipping_cost: shippingCost,
-          notes: formData.notes,
-          event_id: eventId,
-          status: 'pending',
-        },
-      ]);
+  const fetchSettings = async () => {
+    const { data } = await supabase
+      .from('store_settings')
+      .select('*')
+      .eq('id', 1)
+      .single();
 
-      if (error) throw error;
-
-      // نجاح العملية
-      setIsSuccess(true);
-    } catch (err) {
-      console.error(err);
-      setErrorMsg('حدث خطأ أثناء تسجيل طلبك، برجاء المحاولة مجدداً أو التواصل معنا.');
-    } finally {
-      setLoading(false);
+    if (data) {
+      setProductData({
+        product_name: data.product_name || '',
+        product_price: data.product_price || '',
+        original_price: data.original_price || '',
+        shipping_fee: data.shipping_fee || '',
+        image_url: data.image_url || '',
+        video_url: data.video_url || '',
+        description: data.description || '',
+      });
     }
   };
 
-  if (isSuccess) {
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) setMessage('بيانات الدخول غير صحيحة');
+    setLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  // دالة رفع الصور
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setMessage('');
+    const fileExt = file.name.split('.').pop();
+    const fileName = `img_${Date.now()}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      setMessage('فشل رفع الصورة: ' + uploadError.message);
+    } else {
+      const { data } = supabase.storage.from('products').getPublicUrl(filePath);
+      setProductData((prev) => ({ ...prev, image_url: data.publicUrl }));
+      setMessage('✅ تم رفع الصورة بنجاح!');
+    }
+    setUploadingImage(false);
+  };
+
+  // دالة رفع الفيديو
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingVideo(true);
+    setMessage('');
+    const fileExt = file.name.split('.').pop();
+    const fileName = `vid_${Date.now()}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      setMessage('فشل رفع الفيديو: ' + uploadError.message);
+    } else {
+      const { data } = supabase.storage.from('products').getPublicUrl(filePath);
+      setProductData((prev) => ({ ...prev, video_url: data.publicUrl }));
+      setMessage('✅ تم رفع الفيديو بنجاح!');
+    }
+    setUploadingVideo(false);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaveLoading(true);
+    setMessage('');
+
+    const { error } = await supabase
+      .from('store_settings')
+      .upsert({
+        id: 1,
+        product_name: productData.product_name,
+        product_price: Number(productData.product_price),
+        original_price: Number(productData.original_price),
+        shipping_fee: Number(productData.shipping_fee),
+        image_url: productData.image_url,
+        video_url: productData.video_url,
+        description: productData.description,
+        updated_at: new Date(),
+      });
+
+    if (error) {
+      setMessage('حدث خطأ أثناء الحفظ: ' + error.message);
+    } else {
+      setMessage('✅ تم حفظ التعديلات بنجاح وتحديث المتجر!');
+    }
+    setSaveLoading(false);
+  };
+
+  if (!session) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans" dir="rtl">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center border border-green-100">
-          <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
-            ✓
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 text-white" dir="rtl">
+        <form onSubmit={handleLogin} className="bg-slate-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-700">
+          <h1 className="text-2xl font-bold mb-6 text-center text-emerald-400">لوحة تحكم المتجر</h1>
+          {message && <div className="p-3 mb-4 bg-red-500/20 text-red-300 rounded-lg text-sm text-center">{message}</div>}
+          <div className="mb-4">
+            <label className="block mb-2 text-sm text-slate-300">البريد الإلكتروني</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400 text-white"
+              required
+            />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">تم استلام طلبك بنجاح!</h2>
-          <p className="text-gray-600 mb-6">
-            شكراً لك يا <strong>{formData.name}</strong>. سنتواصل معك هاتفياً على الرقم ({formData.phone}) لتأكيد الشحن.
-          </p>
-          <div className="bg-gray-50 p-4 rounded-xl text-sm text-gray-700 space-y-1 mb-6 text-right">
-            <div><strong>المنتج:</strong> {product.name} (عدد {quantity})</div>
-            <div><strong>الإجمالي شامل الشحن:</strong> {grandTotal} ج.م</div>
-            <div><strong>الدفع:</strong> عند الاستلام (COD)</div>
+          <div className="mb-6">
+            <label className="block mb-2 text-sm text-slate-300">كلمة المرور</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400 text-white"
+              required
+            />
           </div>
           <button
-            onClick={() => window.location.reload()}
-            className="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 transition"
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-bold text-white transition disabled:opacity-50"
           >
-            العودة للصفحة الرئيسية
+            {loading ? 'جاري التحقق...' : 'تسجيل الدخول'}
           </button>
-        </div>
-      </main>
+        </form>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-gray-800 font-sans pb-16" dir="rtl">
-      {/* شريط الإعلان العلوي */}
-      <div className="bg-emerald-600 text-white text-center py-2 px-4 text-sm font-semibold">
-        🔥 خصم خاص لفترة محدودة + الدفع عند الاستلام ومعاينة المنتج قبل الدفع
-      </div>
+    <div className="min-h-screen bg-slate-900 text-white p-6" dir="rtl">
+      <div className="max-w-3xl mx-auto">
+        <div className="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
+          <h1 className="text-2xl font-bold text-emerald-400">إدارة المنتج والعروض</h1>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-500/20 text-red-300 rounded-lg hover:bg-red-500/30 text-sm"
+          >
+            تسجيل الخروج
+          </button>
+        </div>
 
-      <div className="max-w-4xl mx-auto px-4 pt-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-          
-          {/* قسم تفاصيل المنتج والصور */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-5">
-            <div className="relative rounded-xl overflow-hidden bg-gray-100 aspect-square">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-              <span className="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow">
-                وفر 30% اليوم
-              </span>
-            </div>
+        {message && (
+          <div className={`p-4 mb-6 rounded-xl text-center text-sm font-semibold ${
+            message.includes('✅') ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'
+          }`}>
+            {message}
+          </div>
+        )}
 
-            <div>
-              <h1 className="text-xl md:text-2xl font-black text-gray-900 leading-snug">
-                {product.name}
-              </h1>
-              <div className="flex items-center gap-3 mt-3">
-                <span className="text-2xl md:text-3xl font-black text-emerald-600">
-                  {product.price} ج.م
-                </span>
-                <span className="text-gray-400 line-through text-lg">
-                  {product.originalPrice} ج.م
-                </span>
-              </div>
-            </div>
-
-            {/* نقاط البيع السريعة (Trust Badges) */}
-            <ul className="space-y-2 border-t pt-4 text-sm text-gray-600">
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-500 font-bold">✓</span> شحن سريع لجميع المحافظات خلال 48 ساعة.
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-500 font-bold">✓</span> إمكانية فتح الشحنة ومعاينتها قبل الاستلام.
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-emerald-500 font-bold">✓</span> ضمان استبدال واسترجاع مجاني لمدة 14 يوماً.
-              </li>
-            </ul>
+        <form onSubmit={handleSave} className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-6">
+          <div>
+            <label className="block mb-2 text-sm text-slate-300">اسم المنتج</label>
+            <input
+              type="text"
+              value={productData.product_name}
+              onChange={(e) => setProductData({ ...productData, product_name: e.target.value })}
+              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400"
+              required
+            />
           </div>
 
-          {/* قسم نموذج الدفع والطلب السريع (One-Page Checkout) */}
-          <div className="bg-white p-6 rounded-2xl shadow-md border border-emerald-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b">
-              بيانات التوصيل السريع 🚚
-            </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block mb-2 text-sm text-slate-300">سعر البيع (ج.م)</label>
+              <input
+                type="number"
+                value={productData.product_price}
+                onChange={(e) => setProductData({ ...productData, product_price: e.target.value })}
+                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400"
+                required
+              />
+            </div>
+            <div>
+              <label className="block mb-2 text-sm text-slate-300">السعر قبل الخصم</label>
+              <input
+                type="number"
+                value={productData.original_price}
+                onChange={(e) => setProductData({ ...productData, original_price: e.target.value })}
+                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400"
+              />
+            </div>
+            <div>
+              <label className="block mb-2 text-sm text-slate-300">مصاريف الشحن (ج.م)</label>
+              <input
+                type="number"
+                value={productData.shipping_fee}
+                onChange={(e) => setProductData({ ...productData, shipping_fee: e.target.value })}
+                className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400"
+                required
+              />
+            </div>
+          </div>
 
-            {errorMsg && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4">
-                {errorMsg}
+          {/* قسم رفع صورة المنتج من جهازك */}
+          <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
+            <label className="block mb-2 text-sm font-semibold text-slate-200">صورة المنتج الرئيسية</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              disabled={uploadingImage}
+              className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-500 file:text-white hover:file:bg-emerald-600 cursor-pointer"
+            />
+            {uploadingImage && <p className="text-xs text-yellow-400 mt-2">جاري رفع الصورة...</p>}
+            {productData.image_url && (
+              <div className="mt-3 flex items-center gap-3">
+                <img src={productData.image_url} alt="معاينة" className="w-20 h-20 object-cover rounded-lg border border-slate-600" />
+                <span className="text-xs text-slate-400">الصورة الحالية جاهزة للعرض في المتجر</span>
               </div>
             )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* اختيار الكمية */}
-              <div>
-                <label className="block text-sm font-semibold mb-1">الكمية المطلوبة:</label>
-                <div className="flex items-center border rounded-xl w-36 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-12 py-2 bg-gray-100 hover:bg-gray-200 text-lg font-bold"
-                  >
-                    -
-                  </button>
-                  <span className="flex-1 text-center font-bold text-base">{quantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-12 py-2 bg-gray-100 hover:bg-gray-200 text-lg font-bold"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
-
-              {/* الاسم */}
-              <div>
-                <label className="block text-sm font-semibold mb-1">الاسم بالكامل *</label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  placeholder="مثال: محمد أحمد"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              {/* رقم الهاتف */}
-              <div>
-                <label className="block text-sm font-semibold mb-1">رقم الهاتف (واتساب متاح) *</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  required
-                  placeholder="01xxxxxxxxx"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-left"
-                  dir="ltr"
-                />
-              </div>
-
-              {/* المحافظة */}
-              <div>
-                <label className="block text-sm font-semibold mb-1">المحافظة *</label>
-                <select
-                  name="governorate"
-                  value={formData.governorate}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
-                >
-                  {Object.entries(SHIPPING_RATES).map(([key, val]) => (
-                    <option key={key} value={key}>
-                      {val.name} (شحن: {val.cost} ج.م)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* العنوان بالتفصيل */}
-              <div>
-                <label className="block text-sm font-semibold mb-1">العنوان بالتفصيل *</label>
-                <input
-                  type="text"
-                  name="address"
-                  required
-                  placeholder="المدينة / المنطقة / اسم الشارع / رقم العقار"
-                  value={formData.address}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                />
-              </div>
-
-              {/* ملخص السعر قبل التأكيد */}
-              <div className="bg-slate-50 p-4 rounded-xl space-y-2 border border-slate-100 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">سعر المنتجات ({quantity}):</span>
-                  <span className="font-semibold">{productsSubtotal} ج.م</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">مصاريف الشحن:</span>
-                  <span className="font-semibold">{shippingCost} ج.م</span>
-                </div>
-                <div className="border-t pt-2 flex justify-between text-base font-black text-gray-900">
-                  <span>المبلغ الإجمالي عند الاستلام:</span>
-                  <span className="text-emerald-600 text-lg">{grandTotal} ج.م</span>
-                </div>
-              </div>
-
-              {/* زر الشراء والتأكيد */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 px-4 rounded-xl text-lg shadow-lg hover:shadow-xl transition transform active:scale-[0.98] disabled:opacity-50"
-              >
-                {loading ? 'جاري تسجيل طلبك...' : 'اضغط هنا لتأكيد الطلب الآن 🛍️'}
-              </button>
-            </form>
           </div>
 
-        </div>
+          {/* قسم رفع فيديو المنتج أو إعلان للمنتج */}
+          <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
+            <label className="block mb-2 text-sm font-semibold text-slate-200">فيديو توضيحي / إعلان للمنتج (اختياري)</label>
+            <input
+              type="file"
+              accept="video/*"
+              onChange={handleVideoUpload}
+              disabled={uploadingVideo}
+              className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-sky-500 file:text-white hover:file:bg-sky-600 cursor-pointer"
+            />
+            {uploadingVideo && <p className="text-xs text-yellow-400 mt-2">جاري رفع الفيديو (قد يستغرق لحظات)...</p>}
+            {productData.video_url && (
+              <div className="mt-3">
+                <video src={productData.video_url} controls className="w-48 rounded-lg border border-slate-600" />
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block mb-2 text-sm text-slate-300">وصف ومميزات المنتج</label>
+            <textarea
+              rows="4"
+              value={productData.description}
+              onChange={(e) => setProductData({ ...productData, description: e.target.value })}
+              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 focus:outline-none focus:border-emerald-400"
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            disabled={saveLoading || uploadingImage || uploadingVideo}
+            className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-bold text-white transition text-lg disabled:opacity-50"
+          >
+            {saveLoading ? 'جاري الحفظ...' : 'حفظ التعديلات في الموقع 🚀'}
+          </button>
+        </form>
       </div>
-    </main>
+    </div>
   );
 }
