@@ -13,18 +13,18 @@ export default function AdminDashboard() {
   const [message, setMessage] = useState('');
 
   const [productData, setProductData] = useState({
+    store_name: 'متجرنا الرسمي',
     product_name: '',
     product_price: '',
     original_price: '',
     shipping_fee: '',
-    image_url: '',
     images: [],
     video_url: '',
     description: '',
     show_colors: false,
-    colors: [], // [{ name: 'أسود', code: '#000000' }]
+    colors: [],
     show_sizes: false,
-    sizes: [],  // ['S', 'M', 'L']
+    sizes: [],
   });
 
   const [newColorName, setNewColorName] = useState('');
@@ -54,11 +54,11 @@ export default function AdminDashboard() {
 
     if (data) {
       setProductData({
+        store_name: data.store_name || 'متجرنا الرسمي',
         product_name: data.product_name || '',
         product_price: data.product_price || '',
         original_price: data.original_price || '',
         shipping_fee: data.shipping_fee || '',
-        image_url: data.image_url || '',
         images: Array.isArray(data.images) ? data.images : (data.image_url ? [data.image_url] : []),
         video_url: data.video_url || '',
         description: data.description || '',
@@ -83,7 +83,6 @@ export default function AdminDashboard() {
     await supabase.auth.signOut();
   };
 
-  // رفع عدة صور دفعة واحدة
   const handleMultipleImagesUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -110,11 +109,7 @@ export default function AdminDashboard() {
 
       setProductData((prev) => {
         const allImages = [...(prev.images || []), ...uploadedUrls];
-        return {
-          ...prev,
-          images: allImages,
-          image_url: allImages[0] || prev.image_url,
-        };
+        return { ...prev, images: allImages };
       });
       setMessage('✅ تم رفع الصور بنجاح!');
     } catch (err) {
@@ -124,17 +119,12 @@ export default function AdminDashboard() {
   };
 
   const removeImage = (indexToRemove) => {
-    setProductData((prev) => {
-      const updated = prev.images.filter((_, idx) => idx !== indexToRemove);
-      return {
-        ...prev,
-        images: updated,
-        image_url: updated[0] || '',
-      };
-    });
+    setProductData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, idx) => idx !== indexToRemove),
+    }));
   };
 
-  // رفع فيديو
   const handleVideoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -159,7 +149,6 @@ export default function AdminDashboard() {
     setUploadingVideo(false);
   };
 
-  // إدارة الألوان
   const addColor = () => {
     if (!newColorName.trim()) return;
     setProductData((prev) => ({
@@ -176,7 +165,6 @@ export default function AdminDashboard() {
     }));
   };
 
-  // إدارة المقاسات
   const addSize = () => {
     if (!newSizeName.trim()) return;
     setProductData((prev) => ({
@@ -202,11 +190,12 @@ export default function AdminDashboard() {
       .from('store_settings')
       .upsert({
         id: 1,
+        store_name: productData.store_name,
         product_name: productData.product_name,
         product_price: Number(productData.product_price),
         original_price: Number(productData.original_price),
         shipping_fee: Number(productData.shipping_fee),
-        image_url: productData.images[0] || productData.image_url,
+        image_url: productData.images[0] || '',
         images: productData.images,
         video_url: productData.video_url,
         description: productData.description,
@@ -220,7 +209,7 @@ export default function AdminDashboard() {
     if (error) {
       setMessage('حدث خطأ أثناء الحفظ: ' + error.message);
     } else {
-      setMessage('✅ تم حفظ التعديلات بنجاح وتحديث المتجر!');
+      setMessage('✅ تم حفظ التعديلات بنجاح وتحديث الموقع بالكامل!');
     }
     setSaveLoading(false);
   };
@@ -267,7 +256,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-slate-900 text-white p-6" dir="rtl">
       <div className="max-w-3xl mx-auto">
         <div className="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
-          <h1 className="text-2xl font-bold text-emerald-400">إدارة تفاصيل المنتج والعروض</h1>
+          <h1 className="text-2xl font-bold text-emerald-400">إدارة الموقع والمتجر</h1>
           <button
             onClick={handleLogout}
             className="px-4 py-2 bg-red-500/20 text-red-300 rounded-lg hover:bg-red-500/30 text-sm"
@@ -285,20 +274,36 @@ export default function AdminDashboard() {
         )}
 
         <form onSubmit={handleSave} className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-6">
+          {/* اسم الموقع */}
           <div>
-            <label className="block mb-2 text-sm text-slate-300">اسم المنتج</label>
+            <label className="block mb-2 text-sm text-slate-300 font-semibold">اسم الموقع / البراند</label>
             <input
               type="text"
-              value={productData.product_name}
-              onChange={(e) => setProductData({ ...productData, product_name: e.target.value })}
-              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white"
+              placeholder="مثال: متجر الأناقة، لمّة ستور..."
+              value={productData.store_name}
+              onChange={(e) => setProductData({ ...productData, store_name: e.target.value })}
+              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white focus:border-emerald-400 focus:outline-none"
               required
             />
           </div>
 
+          {/* اسم المنتج */}
+          <div>
+            <label className="block mb-2 text-sm text-slate-300 font-semibold">اسم المنتج</label>
+            <input
+              type="text"
+              placeholder="مثال: ساعة ذكية أصلية مقاومة للماء"
+              value={productData.product_name}
+              onChange={(e) => setProductData({ ...productData, product_name: e.target.value })}
+              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white focus:border-emerald-400 focus:outline-none"
+              required
+            />
+          </div>
+
+          {/* الأسعار والشحن */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block mb-2 text-sm text-slate-300">سعر البيع (ج.م)</label>
+              <label className="block mb-2 text-sm text-slate-300">سعر البيع بعد الخصم (ج.م)</label>
               <input
                 type="number"
                 value={productData.product_price}
@@ -308,7 +313,7 @@ export default function AdminDashboard() {
               />
             </div>
             <div>
-              <label className="block mb-2 text-sm text-slate-300">السعر قبل الخصم</label>
+              <label className="block mb-2 text-sm text-slate-300">السعر قبل الخصم (ج.م)</label>
               <input
                 type="number"
                 value={productData.original_price}
@@ -328,10 +333,10 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* رفع صور متعددة */}
+          {/* رفع صور متعددة للتقليب */}
           <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
             <label className="block mb-2 text-sm font-semibold text-slate-200">
-              معرض صور المنتج (يمكنك اختيار أكثر من صورة معاً)
+              معرض صور المنتج (اختر صورة أو أكثر معاً لتقليبها)
             </label>
             <input
               type="file"
@@ -366,9 +371,9 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* رفع الفيديو */}
+          {/* رفع فيديو توضيحي */}
           <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
-            <label className="block mb-2 text-sm font-semibold text-slate-200">فيديو توضيحي / إعلان للمنتج (اختياري)</label>
+            <label className="block mb-2 text-sm font-semibold text-slate-200">فيديو توضيحي للمنتج (اختياري)</label>
             <input
               type="file"
               accept="video/*"
@@ -395,7 +400,7 @@ export default function AdminDashboard() {
                   onChange={(e) => setProductData({ ...productData, show_colors: e.target.checked })}
                   className="w-4 h-4 rounded text-emerald-500 focus:ring-0"
                 />
-                <span>إظهار خيار الألوان في الصفحة</span>
+                <span className="text-slate-300">إظهار خيار الألوان في المتجر</span>
               </label>
             </div>
 
@@ -407,10 +412,11 @@ export default function AdminDashboard() {
                     value={newColorCode}
                     onChange={(e) => setNewColorCode(e.target.value)}
                     className="w-12 h-10 p-1 bg-slate-700 border border-slate-600 rounded-lg cursor-pointer"
+                    title="اختر درجة اللون"
                   />
                   <input
                     type="text"
-                    placeholder="اسم اللون (مثال: أسود، أزرق داكن)"
+                    placeholder="اسم اللون (مثال: كحلي، أسود، زيتي)"
                     value={newColorName}
                     onChange={(e) => setNewColorName(e.target.value)}
                     className="flex-1 p-2 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
@@ -420,7 +426,7 @@ export default function AdminDashboard() {
                     onClick={addColor}
                     className="px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold"
                   >
-                    إضافة
+                    إضافة اللون
                   </button>
                 </div>
 
@@ -448,7 +454,7 @@ export default function AdminDashboard() {
                   onChange={(e) => setProductData({ ...productData, show_sizes: e.target.checked })}
                   className="w-4 h-4 rounded text-emerald-500 focus:ring-0"
                 />
-                <span>إظهار خيار المقاسات في الصفحة</span>
+                <span className="text-slate-300">إظهار خيار المقاسات في المتجر</span>
               </label>
             </div>
 
@@ -467,7 +473,7 @@ export default function AdminDashboard() {
                     onClick={addSize}
                     className="px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold"
                   >
-                    إضافة
+                    إضافة المقاس
                   </button>
                 </div>
 
@@ -483,20 +489,22 @@ export default function AdminDashboard() {
             )}
           </div>
 
+          {/* وصف المنتج */}
           <div>
-            <label className="block mb-2 text-sm text-slate-300">وصف ومميزات المنتج</label>
+            <label className="block mb-2 text-sm text-slate-300 font-semibold">وصف ومميزات المنتج</label>
             <textarea
-              rows="4"
+              rows="5"
+              placeholder="اكتب هنا كل مواصفات المنتج ومميزاته التي تظهر للعميل بالتفصيل..."
               value={productData.description}
               onChange={(e) => setProductData({ ...productData, description: e.target.value })}
-              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white"
+              className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white leading-relaxed"
             ></textarea>
           </div>
 
           <button
             type="submit"
             disabled={saveLoading || uploadingImage || uploadingVideo}
-            className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-bold text-white transition text-lg disabled:opacity-50"
+            className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-bold text-white transition text-lg disabled:opacity-50"
           >
             {saveLoading ? 'جاري الحفظ...' : 'حفظ التعديلات في الموقع 🚀'}
           </button>
