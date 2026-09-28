@@ -8,7 +8,10 @@ export default function Home() {
   const [orderLoading, setOrderLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const [activeImage, setActiveImage] = useState('');
+  // التحكم في معرض الصور والتقليب
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // اختيارات العميل
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
 
@@ -29,10 +32,6 @@ export default function Home() {
 
       if (data) {
         setProduct(data);
-        const imagesList = Array.isArray(data.images) && data.images.length > 0 
-          ? data.images 
-          : (data.image_url ? [data.image_url] : []);
-        if (imagesList.length > 0) setActiveImage(imagesList[0]);
         if (data.show_colors && Array.isArray(data.colors) && data.colors.length > 0) {
           setSelectedColor(data.colors[0].name);
         }
@@ -44,6 +43,22 @@ export default function Home() {
     }
     loadData();
   }, []);
+
+  const galleryImages = Array.isArray(product?.images) && product.images.length > 0
+    ? product.images
+    : (product?.image_url ? [product.image_url] : []);
+
+  const nextImage = () => {
+    if (galleryImages.length > 1) {
+      setCurrentIndex((prev) => (prev + 1) % galleryImages.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (galleryImages.length > 1) {
+      setCurrentIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,56 +103,80 @@ export default function Home() {
     );
   }
 
-  const galleryImages = Array.isArray(product?.images) && product.images.length > 0
-    ? product.images
-    : (product?.image_url ? [product.image_url] : []);
-
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans pb-16" dir="rtl">
-      {/* شريط الإعلان العلوي */}
+      {/* شريط الإعلان */}
       <div className="bg-emerald-600 text-white text-center py-2 px-4 text-xs sm:text-sm font-bold shadow-md">
         🚚 التوصيل متاح لجميع المحافظات والدفع عند الاستلام بعد المعاينة!
       </div>
 
-      <header className="bg-slate-900/80 backdrop-blur border-b border-slate-800 py-4 px-6 text-center sticky top-0 z-50 shadow-sm">
+      {/* اسم الموقع والترويسة */}
+      <header className="bg-slate-900/90 backdrop-blur border-b border-slate-800 py-4 px-6 text-center sticky top-0 z-50 shadow-sm">
         <h1 className="text-xl sm:text-2xl font-black text-emerald-400 tracking-wide">
-          {product?.product_name ? product.product_name : 'المتجر الرسمي'}
+          {product?.store_name || 'متجرنا الرسمي'}
         </h1>
       </header>
 
       <main className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl p-4 sm:p-6 space-y-6">
           
-          {/* قسم عرض الصورة الأساسية بجودة كاملة ونقية */}
-          {activeImage && (
-            <div className="w-full bg-black/40 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[300px] max-h-[520px]">
-              <img
-                src={activeImage}
-                alt={product?.product_name}
-                className="w-full h-auto max-h-[500px] object-contain block mx-auto transition duration-300"
-              />
+          {/* قسم تقليب الصور التفاعلي */}
+          {galleryImages.length > 0 && (
+            <div className="space-y-3">
+              <div className="relative w-full bg-black/50 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[300px] max-h-[500px] select-none">
+                <img
+                  src={galleryImages[currentIndex]}
+                  alt={product?.product_name}
+                  className="w-full h-auto max-h-[480px] object-contain block mx-auto transition-all duration-300"
+                />
+
+                {/* أزرار تقليب الصور (يمين ويسار) إذا كانت الصور أكثر من واحدة */}
+                {galleryImages.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={prevImage}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900/70 hover:bg-slate-900 border border-slate-600 flex items-center justify-center text-white text-lg transition shadow-lg"
+                      title="الصورة السابقة"
+                    >
+                      ❮
+                    </button>
+                    <button
+                      type="button"
+                      onClick={nextImage}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900/70 hover:bg-slate-900 border border-slate-600 flex items-center justify-center text-white text-lg transition shadow-lg"
+                      title="الصورة التالية"
+                    >
+                      ❯
+                    </button>
+                    <span className="absolute bottom-3 left-3 bg-black/70 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300">
+                      {currentIndex + 1} / {galleryImages.length}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* مصغرات المعرض للضغط والتنقل المباشر */}
+              {galleryImages.length > 1 && (
+                <div className="flex gap-2.5 overflow-x-auto pb-2">
+                  {galleryImages.map((img, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setCurrentIndex(idx)}
+                      className={`w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all ${
+                        currentIndex === idx ? 'border-emerald-500 scale-105 shadow-md shadow-emerald-500/20' : 'border-slate-700 opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* مصغرات معرض الصور */}
-          {galleryImages.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
-              {galleryImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => setActiveImage(img)}
-                  className={`w-20 h-20 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all ${
-                    activeImage === img ? 'border-emerald-500 scale-105 shadow-md shadow-emerald-500/30' : 'border-slate-700 opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* مشغل الفيديو التوضيحي إن وجد */}
+          {/* فيديو توضيحي إن وجد */}
           {product?.video_url && (
             <div className="rounded-2xl overflow-hidden border border-slate-800 bg-black">
               <video
@@ -148,7 +187,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* السعر وتفاصيل المنتج */}
+          {/* تفاصيل السعر والشحن واسم المنتج */}
           <div className="border-b border-slate-800 pb-5">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">{product?.product_name}</h2>
             <div className="flex items-baseline gap-3 mt-3">
@@ -162,7 +201,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* قسم الألوان */}
+          {/* اختيار الألوان */}
           {product?.show_colors && product.colors?.length > 0 && (
             <div className="space-y-3">
               <span className="block text-sm font-semibold text-slate-300">
@@ -188,7 +227,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* قسم المقاسات */}
+          {/* اختيار المقاسات */}
           {product?.show_sizes && product.sizes?.length > 0 && (
             <div className="space-y-3">
               <span className="block text-sm font-semibold text-slate-300">
@@ -215,7 +254,7 @@ export default function Home() {
 
           {/* وصف ومميزات المنتج */}
           {product?.description && (
-            <div className="space-y-2">
+            <div className="space-y-2 pt-2">
               <h3 className="text-sm font-bold text-slate-300">تفاصيل ومميزات المنتج:</h3>
               <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700/50 text-slate-200 leading-relaxed whitespace-pre-line text-sm sm:text-base">
                 {product.description}
@@ -227,12 +266,12 @@ export default function Home() {
         {/* نموذج استلام الطلب */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl">
           <h3 className="text-xl sm:text-2xl font-black text-emerald-400 mb-2 text-center">أدخل بياناتك لتأكيد الطلب</h3>
-          <p className="text-xs sm:text-sm text-slate-400 mb-6 text-center">الدفع عند الاستلام - خدمة عملاء متواصلة</p>
+          <p className="text-xs sm:text-sm text-slate-400 mb-6 text-center">الدفع عند الاستلام بعد فحص المنتج والمعاينة</p>
 
           {success ? (
             <div className="p-6 bg-emerald-500/20 border border-emerald-500 text-emerald-300 rounded-2xl text-center space-y-3">
               <p className="text-3xl font-black">🎉 تم استلام طلبك بنجاح!</p>
-              <p className="text-sm sm:text-base">سيتواصل معك فريق خدمة العملاء هاتفياً لتأكيد تفاصيل الشحن والعنوان.</p>
+              <p className="text-sm sm:text-base">سيتواصل معك فريق خدمة العملاء هاتفياً لتأكيد تفاصيل الشحن.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -241,7 +280,7 @@ export default function Home() {
                 <input
                   type="text"
                   required
-                  placeholder="مثال: أحمد محمد علي"
+                  placeholder="محمد أحمد"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full p-3.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-400 transition"
