@@ -8,12 +8,16 @@ export default function Home() {
   const [orderLoading, setOrderLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // التحكم في معرض الصور والتقليب
+  // السلايدر والتقليب
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // اختيارات العميل
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
+
+  // سلة المشتريات
+  const [cartCount, setCartCount] = useState(0);
+  const [addedNotice, setAddedNotice] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -31,7 +35,12 @@ export default function Home() {
         .single();
 
       if (data) {
-        setProduct(data);
+        // تنظيف أي نص افتراضي قديم
+        let cleanDesc = data.description || '';
+        cleanDesc = cleanDesc.replace(/^وصف المنتج ومميزاته هنا\.\.\.?\s*/i, '');
+
+        setProduct({ ...data, description: cleanDesc });
+
         if (data.show_colors && Array.isArray(data.colors) && data.colors.length > 0) {
           setSelectedColor(data.colors[0].name);
         }
@@ -60,6 +69,46 @@ export default function Home() {
     }
   };
 
+  // حدث: إضافة للسلة (AddToCart Event)
+  const handleAddToCart = () => {
+    setCartCount((prev) => prev + 1);
+    setAddedNotice(true);
+    setTimeout(() => setAddedNotice(false), 2500);
+
+    // تجهيز لـ Facebook Pixel / TikTok Pixel إذا ركبتهم
+    if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'AddToCart', {
+        content_name: product?.product_name,
+        value: product?.product_price,
+        currency: 'EGP',
+      });
+    }
+  };
+
+  // حدث: اطلب الآن والانتقال السريع لملء البيانات (InitiateCheckout Event)
+  const scrollToCheckout = () => {
+    if (cartCount === 0) {
+      setCartCount(1);
+    }
+
+    if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'InitiateCheckout', {
+        content_name: product?.product_name,
+        value: product?.product_price,
+        currency: 'EGP',
+      });
+    }
+
+    const formElement = document.getElementById('checkout-form');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth' });
+      // وضع المؤشر في أول خانة
+      const nameInput = document.getElementById('customer-name');
+      if (nameInput) nameInput.focus();
+    }
+  };
+
+  // حدث: إتمام الشراء (Purchase Event)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -89,6 +138,13 @@ export default function Home() {
 
     if (!error) {
       setSuccess(true);
+      if (typeof window !== 'undefined' && window.fbq) {
+        window.fbq('track', 'Purchase', {
+          content_name: product?.product_name,
+          value: (Number(product?.product_price) || 0) + (Number(product?.shipping_fee) || 0),
+          currency: 'EGP',
+        });
+      }
     } else {
       alert('حدث خطأ أثناء إرسال الطلب: ' + error.message);
     }
@@ -104,40 +160,53 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white font-sans pb-16" dir="rtl">
+    <div className="min-h-screen bg-slate-950 text-white font-sans pb-24" dir="rtl">
       {/* شريط الإعلان */}
       <div className="bg-emerald-600 text-white text-center py-2 px-4 text-xs sm:text-sm font-bold shadow-md">
         🚚 التوصيل متاح لجميع المحافظات والدفع عند الاستلام بعد المعاينة!
       </div>
 
-      {/* اسم الموقع والترويسة */}
-      <header className="bg-slate-900/90 backdrop-blur border-b border-slate-800 py-4 px-6 text-center sticky top-0 z-50 shadow-sm">
-        <h1 className="text-xl sm:text-2xl font-black text-emerald-400 tracking-wide">
+      {/* الهيدر مع اسم المتجر وأيقونة السلة */}
+      <header className="bg-slate-900/90 backdrop-blur border-b border-slate-800 py-3.5 px-4 sm:px-8 sticky top-0 z-50 flex items-center justify-between shadow-sm">
+        <h1 className="text-lg sm:text-xl font-black text-emerald-400">
           {product?.store_name || 'متجرنا الرسمي'}
         </h1>
+
+        {/* سلة المشتريات */}
+        <button
+          onClick={scrollToCheckout}
+          className="relative p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center gap-2 transition"
+          title="عرض السلة"
+        >
+          <span className="text-lg">🛒</span>
+          <span className="text-xs font-bold hidden sm:inline">السلة</span>
+          {cartCount > 0 && (
+            <span className="absolute -top-1.5 -left-1.5 bg-emerald-500 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-bounce">
+              {cartCount}
+            </span>
+          )}
+        </button>
       </header>
 
       <main className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl p-4 sm:p-6 space-y-6">
           
-          {/* قسم تقليب الصور التفاعلي */}
+          {/* سلايدر الصور */}
           {galleryImages.length > 0 && (
             <div className="space-y-3">
-              <div className="relative w-full bg-black/50 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[300px] max-h-[500px] select-none">
+              <div className="relative w-full bg-black/50 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[320px] max-h-[500px] select-none">
                 <img
                   src={galleryImages[currentIndex]}
                   alt={product?.product_name}
                   className="w-full h-auto max-h-[480px] object-contain block mx-auto transition-all duration-300"
                 />
 
-                {/* أزرار تقليب الصور (يمين ويسار) إذا كانت الصور أكثر من واحدة */}
                 {galleryImages.length > 1 && (
                   <>
                     <button
                       type="button"
                       onClick={prevImage}
                       className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900/70 hover:bg-slate-900 border border-slate-600 flex items-center justify-center text-white text-lg transition shadow-lg"
-                      title="الصورة السابقة"
                     >
                       ❮
                     </button>
@@ -145,7 +214,6 @@ export default function Home() {
                       type="button"
                       onClick={nextImage}
                       className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-slate-900/70 hover:bg-slate-900 border border-slate-600 flex items-center justify-center text-white text-lg transition shadow-lg"
-                      title="الصورة التالية"
                     >
                       ❯
                     </button>
@@ -156,7 +224,6 @@ export default function Home() {
                 )}
               </div>
 
-              {/* مصغرات المعرض للضغط والتنقل المباشر */}
               {galleryImages.length > 1 && (
                 <div className="flex gap-2.5 overflow-x-auto pb-2">
                   {galleryImages.map((img, idx) => (
@@ -176,7 +243,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* فيديو توضيحي إن وجد */}
+          {/* فيديو المنتج */}
           {product?.video_url && (
             <div className="rounded-2xl overflow-hidden border border-slate-800 bg-black">
               <video
@@ -187,7 +254,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* تفاصيل السعر والشحن واسم المنتج */}
+          {/* تفاصيل السعر */}
           <div className="border-b border-slate-800 pb-5">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">{product?.product_name}</h2>
             <div className="flex items-baseline gap-3 mt-3">
@@ -252,9 +319,38 @@ export default function Home() {
             </div>
           )}
 
-          {/* وصف ومميزات المنتج */}
+          {/* أزرار: إضافة إلى السلة + اطلب الآن */}
+          <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              id="btn-order-now"
+              onClick={scrollToCheckout}
+              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-lg rounded-2xl shadow-lg shadow-emerald-500/25 transition active:scale-[0.99] flex items-center justify-center gap-2"
+            >
+              <span>⚡</span>
+              <span>اطلب الآن</span>
+            </button>
+
+            <button
+              type="button"
+              id="btn-add-to-cart"
+              onClick={handleAddToCart}
+              className="w-full py-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-base rounded-2xl transition active:scale-[0.99] flex items-center justify-center gap-2"
+            >
+              <span>🛒</span>
+              <span>أضف إلى السلة</span>
+            </button>
+          </div>
+
+          {addedNotice && (
+            <div className="p-3 bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 rounded-xl text-center text-sm font-bold animate-pulse">
+              ✅ تمت إضافة المنتج إلى سلة المشتريات!
+            </div>
+          )}
+
+          {/* تفاصيل المنتج (تم تنظيف جملة وصف المنتج ومميزاته هنا الافتراضية) */}
           {product?.description && (
-            <div className="space-y-2 pt-2">
+            <div className="space-y-2 pt-2 border-t border-slate-800">
               <h3 className="text-sm font-bold text-slate-300">تفاصيل ومميزات المنتج:</h3>
               <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700/50 text-slate-200 leading-relaxed whitespace-pre-line text-sm sm:text-base">
                 {product.description}
@@ -263,21 +359,22 @@ export default function Home() {
           )}
         </div>
 
-        {/* نموذج استلام الطلب */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl">
-          <h3 className="text-xl sm:text-2xl font-black text-emerald-400 mb-2 text-center">أدخل بياناتك لتأكيد الطلب</h3>
-          <p className="text-xs sm:text-sm text-slate-400 mb-6 text-center">الدفع عند الاستلام بعد فحص المنتج والمعاينة</p>
+        {/* نموذج استلام الطلب - قسم الـ Checkout المستهدف بالسكرول */}
+        <div id="checkout-form" className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl scroll-mt-24">
+          <h3 className="text-xl sm:text-2xl font-black text-emerald-400 mb-1 text-center">أدخل بيانات التوصيل</h3>
+          <p className="text-xs sm:text-sm text-slate-400 mb-6 text-center">الدفع عند الاستلام بعد فحص ومعاينة المنتج</p>
 
           {success ? (
             <div className="p-6 bg-emerald-500/20 border border-emerald-500 text-emerald-300 rounded-2xl text-center space-y-3">
-              <p className="text-3xl font-black">🎉 تم استلام طلبك بنجاح!</p>
-              <p className="text-sm sm:text-base">سيتواصل معك فريق خدمة العملاء هاتفياً لتأكيد تفاصيل الشحن.</p>
+              <p className="text-3xl font-black">🎉 تم تأكيد طلبك بنجاح!</p>
+              <p className="text-sm sm:text-base">سيتواصل معك فريق خدمة العملاء هاتفياً لتأكيد الشحن والتوصيل.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm text-slate-300 mb-1.5 font-medium">الاسم ثلاثي</label>
+                <label className="block text-sm text-slate-300 mb-1.5 font-medium">الاسم بالكامل</label>
                 <input
+                  id="customer-name"
                   type="text"
                   required
                   placeholder="محمد أحمد"
@@ -288,7 +385,7 @@ export default function Home() {
               </div>
 
               <div>
-                <label className="block text-sm text-slate-300 mb-1.5 font-medium">رقم الهاتف (واتساب متاح عليه)</label>
+                <label className="block text-sm text-slate-300 mb-1.5 font-medium">رقم الهاتف (الواتساب)</label>
                 <input
                   type="tel"
                   required
@@ -304,7 +401,7 @@ export default function Home() {
                 <textarea
                   required
                   rows="2"
-                  placeholder="المحافظة - المدينة - الشارع - رقم العقار أو أقرب علامة مميزة"
+                  placeholder="المحافظة - المدينة - الشارع - رقم العقار..."
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   className="w-full p-3.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-400 transition"
@@ -314,16 +411,35 @@ export default function Home() {
               <div className="pt-2">
                 <button
                   type="submit"
+                  id="btn-confirm-order"
                   disabled={orderLoading}
                   className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 rounded-2xl font-black text-lg text-white transition shadow-lg shadow-emerald-500/25 active:scale-[0.99] disabled:opacity-50"
                 >
-                  {orderLoading ? 'جاري تأكيد طلبك...' : 'اضغط هنا لتأكيد الطلب الآن 🚚'}
+                  {orderLoading ? 'جاري تأكيد طلبك...' : 'تأكيد الطلب والدفع عند الاستلام 🚚'}
                 </button>
               </div>
             </form>
           )}
         </div>
       </main>
+
+      {/* زر ثابت يظهر في أسفل شاشات الموبايل (Sticky Buy Button) لرفع الـ Conversion Rate */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-slate-900/95 backdrop-blur border-t border-slate-800 z-40 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={scrollToCheckout}
+          className="flex-1 py-3 bg-emerald-500 text-white font-black text-base rounded-xl shadow-lg shadow-emerald-500/30"
+        >
+          اطلب الآن ⚡
+        </button>
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          className="px-4 py-3 bg-slate-800 text-slate-200 border border-slate-700 font-bold text-sm rounded-xl"
+        >
+          🛒
+        </button>
+      </div>
     </div>
   );
 }
