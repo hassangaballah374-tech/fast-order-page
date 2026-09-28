@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/supabase';
 
 // بيانات المحافظات ومصاريف الشحن (قابلة للتعديل حسب أسعارك)
 const SHIPPING_RATES = {
