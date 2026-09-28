@@ -13,7 +13,7 @@ export default function AdminDashboard() {
   const [message, setMessage] = useState('');
 
   const [productData, setProductData] = useState({
-    store_name: 'متجرنا الرسمي',
+    store_name: '',
     product_name: '',
     product_price: '',
     original_price: '',
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
 
     if (data) {
       setProductData({
-        store_name: data.store_name || 'متجرنا الرسمي',
+        store_name: data.store_name || '',
         product_name: data.product_name || '',
         product_price: data.product_price || '',
         original_price: data.original_price || '',
@@ -274,12 +274,12 @@ export default function AdminDashboard() {
         )}
 
         <form onSubmit={handleSave} className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-6">
-          {/* اسم الموقع */}
+          {/* اسم المتجر */}
           <div>
-            <label className="block mb-2 text-sm text-slate-300 font-semibold">اسم الموقع / البراند</label>
+            <label className="block mb-2 text-sm text-slate-300 font-semibold">اسم المتجر / العلامة التجارية</label>
             <input
               type="text"
-              placeholder="مثال: متجر الأناقة، لمّة ستور..."
+              placeholder="مثال: لَمّة ستور، متجر الأناقة..."
               value={productData.store_name}
               onChange={(e) => setProductData({ ...productData, store_name: e.target.value })}
               className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white focus:border-emerald-400 focus:outline-none"
@@ -292,7 +292,7 @@ export default function AdminDashboard() {
             <label className="block mb-2 text-sm text-slate-300 font-semibold">اسم المنتج</label>
             <input
               type="text"
-              placeholder="مثال: ساعة ذكية أصلية مقاومة للماء"
+              placeholder="مثال: كوتش مريح وعملي خامات عالية الجودة"
               value={productData.product_name}
               onChange={(e) => setProductData({ ...productData, product_name: e.target.value })}
               className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white focus:border-emerald-400 focus:outline-none"
@@ -300,7 +300,7 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* الأسعار والشحن */}
+          {/* الأسعار */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block mb-2 text-sm text-slate-300">سعر البيع بعد الخصم (ج.م)</label>
@@ -333,10 +333,10 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* رفع صور متعددة للتقليب */}
+          {/* معرض الصور المتعددة */}
           <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
             <label className="block mb-2 text-sm font-semibold text-slate-200">
-              معرض صور المنتج (اختر صورة أو أكثر معاً لتقليبها)
+              معرض صور المنتج (اختر صورة أو أكثر معاً لتقليبها في الصفحة)
             </label>
             <input
               type="file"
@@ -371,7 +371,7 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* رفع فيديو توضيحي */}
+          {/* رفع فيديو */}
           <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
             <label className="block mb-2 text-sm font-semibold text-slate-200">فيديو توضيحي للمنتج (اختياري)</label>
             <input
@@ -412,11 +412,10 @@ export default function AdminDashboard() {
                     value={newColorCode}
                     onChange={(e) => setNewColorCode(e.target.value)}
                     className="w-12 h-10 p-1 bg-slate-700 border border-slate-600 rounded-lg cursor-pointer"
-                    title="اختر درجة اللون"
                   />
                   <input
                     type="text"
-                    placeholder="اسم اللون (مثال: كحلي، أسود، زيتي)"
+                    placeholder="اسم اللون (مثال: أسود، كحلي، رصاصي)"
                     value={newColorName}
                     onChange={(e) => setNewColorName(e.target.value)}
                     className="flex-1 p-2 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
@@ -426,7 +425,7 @@ export default function AdminDashboard() {
                     onClick={addColor}
                     className="px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold"
                   >
-                    إضافة اللون
+                    إضافة
                   </button>
                 </div>
 
@@ -463,7 +462,7 @@ export default function AdminDashboard() {
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="المقاس (مثال: S, M, L, XL أو 42, 44)"
+                    placeholder="المقاس (مثال: 41, 42, 43 أو M, L, XL)"
                     value={newSizeName}
                     onChange={(e) => setNewSizeName(e.target.value)}
                     className="flex-1 p-2 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
@@ -473,7 +472,7 @@ export default function AdminDashboard() {
                     onClick={addSize}
                     className="px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold"
                   >
-                    إضافة المقاس
+                    إضافة
                   </button>
                 </div>
 
@@ -494,7 +493,7 @@ export default function AdminDashboard() {
             <label className="block mb-2 text-sm text-slate-300 font-semibold">وصف ومميزات المنتج</label>
             <textarea
               rows="5"
-              placeholder="اكتب هنا كل مواصفات المنتج ومميزاته التي تظهر للعميل بالتفصيل..."
+              placeholder="اكتب هنا مميزات وتفاصيل المنتج..."
               value={productData.description}
               onChange={(e) => setProductData({ ...productData, description: e.target.value })}
               className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white leading-relaxed"
