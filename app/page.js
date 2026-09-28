@@ -8,15 +8,16 @@ export default function Home() {
   const [orderLoading, setOrderLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // السلايدر والتقليب
+  // السلايدر
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // اختيارات العميل
+  // اختيارات اللون والمقاس
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
 
-  // سلة المشتريات
-  const [cartCount, setCartCount] = useState(0);
+  // حالة السلة والنافذة الجانبية (Drawer / Modal)
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedNotice, setAddedNotice] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -35,7 +36,6 @@ export default function Home() {
         .single();
 
       if (data) {
-        // تنظيف أي نص افتراضي قديم
         let cleanDesc = data.description || '';
         cleanDesc = cleanDesc.replace(/^وصف المنتج ومميزاته هنا\.\.\.?\s*/i, '');
 
@@ -69,13 +69,32 @@ export default function Home() {
     }
   };
 
-  // حدث: إضافة للسلة (AddToCart Event)
-  const handleAddToCart = () => {
-    setCartCount((prev) => prev + 1);
+  // إضافة منتج للسلة
+  const handleAddToCart = (openDrawer = false) => {
+    if (product?.show_colors && product.colors?.length > 0 && !selectedColor) {
+      alert('يرجى اختيار اللون أولاً');
+      return;
+    }
+    if (product?.show_sizes && product.sizes?.length > 0 && !selectedSize) {
+      alert('يرجى اختيار المقاس أولاً');
+      return;
+    }
+
+    const newItem = {
+      id: `${Date.now()}_${Math.random()}`,
+      name: product?.product_name || 'منتج',
+      price: Number(product?.product_price) || 0,
+      image: galleryImages[0] || '',
+      color: selectedColor || null,
+      size: selectedSize || null,
+      quantity: 1,
+    };
+
+    setCart((prev) => [...prev, newItem]);
     setAddedNotice(true);
     setTimeout(() => setAddedNotice(false), 2500);
 
-    // تجهيز لـ Facebook Pixel / TikTok Pixel إذا ركبتهم
+    // تتبع فيسبوك وتيك توك
     if (typeof window !== 'undefined' && window.fbq) {
       window.fbq('track', 'AddToCart', {
         content_name: product?.product_name,
@@ -83,12 +102,42 @@ export default function Home() {
         currency: 'EGP',
       });
     }
+
+    if (openDrawer) {
+      setIsCartOpen(true);
+    }
   };
 
-  // حدث: اطلب الآن والانتقال السريع لملء البيانات (InitiateCheckout Event)
+  // زيادة / إنقاص الكمية داخل السلة
+  const updateQuantity = (itemId, delta) => {
+    setCart((prev) =>
+      prev
+        .map((item) => {
+          if (item.id === itemId) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 ? { ...item, quantity: newQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean)
+    );
+  };
+
+  const removeItem = (itemId) => {
+    setCart((prev) => prev.filter((item) => item.id !== itemId));
+  };
+
+  // إجمالي السلة
+  const cartSubtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+
+  // زر "اطلب الآن" ينقله مباشرة لقسم ملء البيانات
   const scrollToCheckout = () => {
-    if (cartCount === 0) {
-      setCartCount(1);
+    setIsCartOpen(false);
+
+    // إذا كانت السلة فارغة يضيف المنتج تلقائياً
+    if (cart.length === 0) {
+      handleAddToCart(false);
     }
 
     if (typeof window !== 'undefined' && window.fbq) {
@@ -102,46 +151,54 @@ export default function Home() {
     const formElement = document.getElementById('checkout-form');
     if (formElement) {
       formElement.scrollIntoView({ behavior: 'smooth' });
-      // وضع المؤشر في أول خانة
       const nameInput = document.getElementById('customer-name');
       if (nameInput) nameInput.focus();
     }
   };
 
-  // حدث: إتمام الشراء (Purchase Event)
+  // تأكيد الطلب
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (product?.show_colors && product.colors?.length > 0 && !selectedColor) {
-      alert('يرجى اختيار اللون المطلوب');
-      return;
-    }
-    if (product?.show_sizes && product.sizes?.length > 0 && !selectedSize) {
-      alert('يرجى اختيار المقاس المطلوب');
-      return;
-    }
-
     setOrderLoading(true);
+
+    const itemsToOrder = cart.length > 0 ? cart : [
+      {
+        name: product?.product_name || 'منتج',
+        price: Number(product?.product_price) || 0,
+        color: selectedColor || null,
+        size: selectedSize || null,
+        quantity: 1,
+      }
+    ];
+
+    const subtotal = itemsToOrder.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    const shipping = Number(product?.shipping_fee) || 0;
+    const finalTotal = subtotal + shipping;
+
     const { error } = await supabase.from('orders').insert([
       {
         customer_name: formData.name,
         phone: formData.phone,
         address: formData.address,
         notes: formData.notes,
-        product_name: product?.product_name || 'طلب عام',
-        total_amount: (Number(product?.product_price) || 0) + (Number(product?.shipping_fee) || 0),
-        selected_color: selectedColor || null,
-        selected_size: selectedSize || null,
+        product_name: itemsToOrder.map((i) => `${i.name} (${i.quantity})`).join(' + '),
+        total_amount: finalTotal,
+        selected_color: itemsToOrder[0]?.color || selectedColor || null,
+        selected_size: itemsToOrder[0]?.size || selectedSize || null,
+        quantity: itemsToOrder.reduce((acc, i) => acc + i.quantity, 0),
+        items: itemsToOrder,
         status: 'جديد',
       },
     ]);
 
     if (!error) {
       setSuccess(true);
+      setCart([]);
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('track', 'Purchase', {
           content_name: product?.product_name,
-          value: (Number(product?.product_price) || 0) + (Number(product?.shipping_fee) || 0),
+          value: finalTotal,
           currency: 'EGP',
         });
       }
@@ -166,23 +223,22 @@ export default function Home() {
         🚚 التوصيل متاح لجميع المحافظات والدفع عند الاستلام بعد المعاينة!
       </div>
 
-      {/* الهيدر مع اسم المتجر وأيقونة السلة */}
-      <header className="bg-slate-900/90 backdrop-blur border-b border-slate-800 py-3.5 px-4 sm:px-8 sticky top-0 z-50 flex items-center justify-between shadow-sm">
+      {/* الهيدر العلوي */}
+      <header className="bg-slate-900/90 backdrop-blur border-b border-slate-800 py-3.5 px-4 sm:px-8 sticky top-0 z-40 flex items-center justify-between shadow-sm">
         <h1 className="text-lg sm:text-xl font-black text-emerald-400">
           {product?.store_name || 'متجرنا الرسمي'}
         </h1>
 
-        {/* سلة المشتريات */}
+        {/* زر فتح السلة في الهيدر */}
         <button
-          onClick={scrollToCheckout}
+          onClick={() => setIsCartOpen(true)}
           className="relative p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center gap-2 transition"
-          title="عرض السلة"
         >
-          <span className="text-lg">🛒</span>
+          <span className="text-xl">🛒</span>
           <span className="text-xs font-bold hidden sm:inline">السلة</span>
-          {cartCount > 0 && (
+          {totalCartCount > 0 && (
             <span className="absolute -top-1.5 -left-1.5 bg-emerald-500 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-bounce">
-              {cartCount}
+              {totalCartCount}
             </span>
           )}
         </button>
@@ -319,7 +375,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* أزرار: إضافة إلى السلة + اطلب الآن */}
+          {/* أزرار الإجراءات */}
           <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               type="button"
@@ -334,7 +390,7 @@ export default function Home() {
             <button
               type="button"
               id="btn-add-to-cart"
-              onClick={handleAddToCart}
+              onClick={() => handleAddToCart(true)}
               className="w-full py-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-base rounded-2xl transition active:scale-[0.99] flex items-center justify-center gap-2"
             >
               <span>🛒</span>
@@ -348,7 +404,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* تفاصيل المنتج (تم تنظيف جملة وصف المنتج ومميزاته هنا الافتراضية) */}
+          {/* تفاصيل المنتج */}
           {product?.description && (
             <div className="space-y-2 pt-2 border-t border-slate-800">
               <h3 className="text-sm font-bold text-slate-300">تفاصيل ومميزات المنتج:</h3>
@@ -359,7 +415,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* نموذج استلام الطلب - قسم الـ Checkout المستهدف بالسكرول */}
+        {/* نموذج استلام الطلب */}
         <div id="checkout-form" className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl scroll-mt-24">
           <h3 className="text-xl sm:text-2xl font-black text-emerald-400 mb-1 text-center">أدخل بيانات التوصيل</h3>
           <p className="text-xs sm:text-sm text-slate-400 mb-6 text-center">الدفع عند الاستلام بعد فحص ومعاينة المنتج</p>
@@ -423,7 +479,94 @@ export default function Home() {
         </div>
       </main>
 
-      {/* زر ثابت يظهر في أسفل شاشات الموبايل (Sticky Buy Button) لرفع الـ Conversion Rate */}
+      {/* نافذة سلة المشتريات المنبثقة (Drawer Modal) */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/70 backdrop-blur-sm transition-opacity">
+          <div className="w-full max-w-md h-full bg-slate-900 border-r border-slate-800 flex flex-col p-6 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🛒</span>
+                <h2 className="text-xl font-black text-white">سلة مشترياتك ({totalCartCount})</h2>
+              </div>
+              <button
+                onClick={() => setIsCartOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 text-lg font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* قائمة المنتجات في السلة */}
+            <div className="flex-1 overflow-y-auto py-4 space-y-3">
+              {cart.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-3">
+                  <span className="text-5xl">🛍️</span>
+                  <p className="text-base font-semibold">سلة المشتريات فارغة حالياً</p>
+                </div>
+              ) : (
+                cart.map((item) => (
+                  <div key={item.id} className="flex gap-3 bg-slate-800/70 p-3 rounded-2xl border border-slate-700/60 items-center">
+                    {item.image && (
+                      <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-xl border border-slate-700" />
+                    )}
+                    <div className="flex-1">
+                      <h4 className="font-bold text-sm text-white line-clamp-1">{item.name}</h4>
+                      <p className="text-emerald-400 font-extrabold text-sm mt-0.5">{item.price} ج.م</p>
+                      <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                        {item.color && <span>اللون: <strong className="text-slate-200">{item.color}</strong></span>}
+                        {item.size && <span>المقاس: <strong className="text-slate-200">{item.size}</strong></span>}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-2">
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="text-red-400 hover:text-red-300 text-xs font-bold"
+                      >
+                        حذف
+                      </button>
+                      <div className="flex items-center gap-2 bg-slate-700 px-2 py-1 rounded-lg">
+                        <button onClick={() => updateQuantity(item.id, -1)} className="text-slate-200 font-bold px-1">−</button>
+                        <span className="text-xs font-black">{item.quantity}</span>
+                        <button onClick={() => updateQuantity(item.id, 1)} className="text-slate-200 font-bold px-1">+</button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* الجزء السفلي من السلة */}
+            {cart.length > 0 && (
+              <div className="border-t border-slate-800 pt-4 space-y-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-400">إجمالي المنتجات:</span>
+                  <span className="font-extrabold text-white">{cartSubtotal} ج.م</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-slate-400">الشحن:</span>
+                  <span className="font-extrabold text-emerald-400">{product?.shipping_fee || 0} ج.م</span>
+                </div>
+                <div className="flex justify-between items-center text-base border-t border-slate-800 pt-2 font-black">
+                  <span>الإجمالي الكلي:</span>
+                  <span className="text-emerald-400 text-lg">{cartSubtotal + (Number(product?.shipping_fee) || 0)} ج.م</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={scrollToCheckout}
+                  className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 font-black text-white text-base rounded-2xl shadow-lg shadow-emerald-500/25 transition active:scale-[0.99] flex items-center justify-center gap-2"
+                >
+                  <span>⚡</span>
+                  <span>اطلب الآن وتأكيد البيانات</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* زر الموبايل الثابت */}
       <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-slate-900/95 backdrop-blur border-t border-slate-800 z-40 flex items-center gap-3">
         <button
           type="button"
@@ -434,10 +577,15 @@ export default function Home() {
         </button>
         <button
           type="button"
-          onClick={handleAddToCart}
-          className="px-4 py-3 bg-slate-800 text-slate-200 border border-slate-700 font-bold text-sm rounded-xl"
+          onClick={() => setIsCartOpen(true)}
+          className="relative px-4 py-3 bg-slate-800 text-slate-200 border border-slate-700 font-bold text-sm rounded-xl"
         >
           🛒
+          {totalCartCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+              {totalCartCount}
+            </span>
+          )}
         </button>
       </div>
     </div>
