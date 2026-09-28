@@ -2,6 +2,118 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
+// قائمة المحافظات المصرية ومراكزها وتصنيف منطقة الشحن
+const EGYPT_REGIONS = {
+  'القاهرة': {
+    zone: 'cairo_giza',
+    cities: ['مدينة نصر', 'مصر الجديدة', 'المعادي', 'التجمع الخامس / القاهرة الجديدة', 'الشروق', 'بدر', 'شبرا', 'حلوان', 'المقطم', 'عين شمس', 'الزيتون', 'وسط البلد']
+  },
+  'الجيزة': {
+    zone: 'cairo_giza',
+    cities: ['الدقي', 'المهندسين', 'الهرم', 'فيصل', 'مدينة 6 أكتوبر', 'الشيخ زايد', 'العمرانية', 'إمبابة', 'الحوامدية', 'البدرشين']
+  },
+  'الإسكندرية': {
+    zone: 'alex',
+    cities: ['سموحة', 'سيدي جابر', 'محرم بك', 'المنتزه', 'العصافرة', 'ميامي', 'العجمي', 'العامرية', 'برج العرب']
+  },
+  'البحيرة': {
+    zone: 'delta',
+    cities: ['دمنهور', 'كفر الدوار', 'حوش عيسى', 'أبو حمص', 'إيتاي البارود', 'كوم حمادة', 'رشيد', 'إدكو', 'الدلنجات', 'أبو المطامير', 'المحمودية']
+  },
+  'الغربية': {
+    zone: 'delta',
+    cities: ['طنطا', 'المحلة الكبرى', 'زفتى', 'كفر الزيات', 'سمنود', 'بسيون', 'السنطة', 'قطور']
+  },
+  'الشرقية': {
+    zone: 'delta',
+    cities: ['الزقازيق', 'العاشر من رمضان', 'بلبيس', 'منيا القمح', 'فاقوس', 'أبو حماد', 'أبو كبير', 'ههيا', 'ديرب نجم']
+  },
+  'الدقهلية': {
+    zone: 'delta',
+    cities: ['المنصورة', 'ميت غمر', 'السنبلاوين', 'دكرنس', 'بلقاس', 'شربين', 'طلخا', 'منية النصر', 'أجا']
+  },
+  'القليوبية': {
+    zone: 'delta',
+    cities: ['بنها', 'شبرا الخيمة', 'قليوب', 'القناطر الخيرية', 'الخانكة', 'طوخ', 'العبور', 'قها']
+  },
+  'المنوفية': {
+    zone: 'delta',
+    cities: ['شبين الكوم', 'مدينة السادات', 'منوف', 'أشمون', 'بركة السبع', 'قويسنا', 'الشهداء', 'تلا']
+  },
+  'كفر الشيخ': {
+    zone: 'delta',
+    cities: ['كفر الشيخ', 'دسوق', 'فوه', 'مطوبس', 'بيلا', 'الحامول', 'سيدي سالم', 'الرياض', 'قلين']
+  },
+  'دمياط': {
+    zone: 'delta',
+    cities: ['دمياط', 'دمياط الجديدة', 'رأس البر', 'فارسكور', 'الزرقا', 'كفر سعد']
+  },
+  'الإسماعيلية': {
+    zone: 'canal',
+    cities: ['الإسماعيلية', 'فايد', 'القنطرة شرق', 'القنطرة غرب', 'التل الكبير', 'أبو صوير']
+  },
+  'بورسعيد': {
+    zone: 'canal',
+    cities: ['حي الشرق', 'حي العرب', 'حي المناخ', 'حي الضواحي', 'حي الزهور', 'بورفؤاد']
+  },
+  'السويس': {
+    zone: 'canal',
+    cities: ['السويس', 'الأربعين', 'عتاقة', 'فيصل', 'الجناين']
+  },
+  'الفيوم': {
+    zone: 'upper_egypt',
+    cities: ['الفيوم', 'سنورس', 'إطسا', 'طامية', 'يوسف الصديق', 'إبشواي']
+  },
+  'بني سويف': {
+    zone: 'upper_egypt',
+    cities: ['بني سويف', 'الواسطى', 'ناصر', 'ببا', 'سمسطا', 'الفشن', 'إهناسيا']
+  },
+  'المنيا': {
+    zone: 'upper_egypt',
+    cities: ['المنيا', 'ملوي', 'بني مزار', 'مغاغة', 'أبو قرقاص', 'سمالوط', 'مطاي', 'دير مواس']
+  },
+  'أسيوط': {
+    zone: 'upper_egypt',
+    cities: ['أسيوط', 'ديروط', 'القوصية', 'أبنوب', 'منفلوط', 'أبو تيج', 'البداري', 'صدفا', 'ساحل سليم']
+  },
+  'سوهاج': {
+    zone: 'upper_egypt',
+    cities: ['سوهاج', 'طهطا', 'جرجا', 'المراغة', 'أخميم', 'المنشأة', 'طما', 'البلينا']
+  },
+  'قنا': {
+    zone: 'upper_egypt',
+    cities: ['قنا', 'نجع حمادي', 'دشنا', 'أبو تشت', 'قوص', 'نقادة', 'فرشوط']
+  },
+  'الأقصر': {
+    zone: 'upper_egypt',
+    cities: ['الأقصر', 'إسنا', 'أرمنت', 'القرنة', 'البياضية', 'الطود']
+  },
+  'أسوان': {
+    zone: 'upper_egypt',
+    cities: ['أسوان', 'كوم أمبو', 'إدفو', 'دراو', 'نصر النوبة']
+  },
+  'مطروح': {
+    zone: 'remote',
+    cities: ['مرسى مطروح', 'الحمام', 'العلمين', 'الضبعة', 'سيوة']
+  },
+  'البحر الأحمر': {
+    zone: 'remote',
+    cities: ['الغردقة', 'سفاجا', 'القصير', 'رأس غارب', 'مرسى علم']
+  },
+  'جنوب سيناء': {
+    zone: 'remote',
+    cities: ['شرم الشيخ', 'دهب', 'نويبع', 'طابا', 'طور سيناء', 'رأس سدر']
+  },
+  'شمال سيناء': {
+    zone: 'remote',
+    cities: ['العريش', 'بئر العبد', 'الشيخ زويد', 'رفح']
+  },
+  'الوادي الجديد': {
+    zone: 'remote',
+    cities: ['الخارجة', 'الداخلة', 'الفرافرة', 'باريس']
+  }
+};
+
 export default function Home() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,15 +127,20 @@ export default function Home() {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
 
-  // حالة السلة والنافذة الجانبية (Drawer / Modal)
+  // سلة المشتريات
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedNotice, setAddedNotice] = useState(false);
 
+  // بيانات العنوان والمحافظة المختارة
+  const [selectedGovernorate, setSelectedGovernorate] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [currentShippingFee, setCurrentShippingFee] = useState(50);
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    address: '',
+    detailedAddress: '',
     notes: '',
   });
 
@@ -47,11 +164,34 @@ export default function Home() {
         if (data.show_sizes && Array.isArray(data.sizes) && data.sizes.length > 0) {
           setSelectedSize(data.sizes[0]);
         }
+
+        const defaultRates = data.shipping_rates || {
+          cairo_giza: 50,
+          alex: 60,
+          delta: 65,
+          canal: 70,
+          upper_egypt: 80,
+          remote: 100,
+        };
+        // السعر الافتراضي قبل اختيار المحافظة
+        setCurrentShippingFee(defaultRates.cairo_giza || Number(data.shipping_fee) || 50);
       }
       setLoading(false);
     }
     loadData();
   }, []);
+
+  // تحديث سعر الشحن تلقائياً عند تغيير المحافظة
+  const handleGovernorateChange = (gov) => {
+    setSelectedGovernorate(gov);
+    setSelectedCity('');
+
+    if (!gov || !product?.shipping_rates) return;
+
+    const zoneKey = EGYPT_REGIONS[gov]?.zone || 'cairo_giza';
+    const rate = product.shipping_rates[zoneKey] ?? (Number(product.shipping_fee) || 50);
+    setCurrentShippingFee(rate);
+  };
 
   const galleryImages = Array.isArray(product?.images) && product.images.length > 0
     ? product.images
@@ -69,7 +209,6 @@ export default function Home() {
     }
   };
 
-  // إضافة منتج للسلة
   const handleAddToCart = (openDrawer = false) => {
     if (product?.show_colors && product.colors?.length > 0 && !selectedColor) {
       alert('يرجى اختيار اللون أولاً');
@@ -107,7 +246,6 @@ export default function Home() {
     }
   };
 
-  // زيادة / إنقاص الكمية داخل السلة
   const updateQuantity = (itemId, delta) => {
     setCart((prev) =>
       prev
@@ -129,7 +267,6 @@ export default function Home() {
   const cartSubtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
-  // اطلب الآن
   const scrollToCheckout = () => {
     setIsCartOpen(false);
 
@@ -153,9 +290,15 @@ export default function Home() {
     }
   };
 
-  // إرسال الطلب وحفظه في جدول orders
+  // تأكيد وحفظ الطلب
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!selectedGovernorate) {
+      alert('يرجى اختيار المحافظة');
+      return;
+    }
+
     setOrderLoading(true);
 
     const itemsToOrder = cart.length > 0 ? cart : [
@@ -169,18 +312,22 @@ export default function Home() {
     ];
 
     const subtotal = itemsToOrder.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const shipping = Number(product?.shipping_fee) || 0;
+    const shipping = Number(currentShippingFee) || 0;
     const finalTotal = subtotal + shipping;
+
+    const fullAddress = `${selectedGovernorate} - ${selectedCity || 'مركز/مدينة'} - ${formData.detailedAddress}`;
 
     const { error } = await supabase.from('orders').insert([
       {
         customer_name: formData.name,
         phone: formData.phone,
-        address: formData.address,
+        governorate: selectedGovernorate,
+        city: selectedCity,
+        address: fullAddress,
         notes: formData.notes,
         product_name: itemsToOrder.map((i) => `${i.name} (${i.quantity})`).join(' + '),
         total_amount: finalTotal,
-        total_price: finalTotal, // تم إرسالها هنا لحل إيرور violates not-null constraint
+        total_price: finalTotal,
         selected_color: itemsToOrder[0]?.color || selectedColor || null,
         selected_size: itemsToOrder[0]?.size || selectedSize || null,
         quantity: itemsToOrder.reduce((acc, i) => acc + i.quantity, 0),
@@ -215,19 +362,16 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans pb-24" dir="rtl">
-      {/* شريط الإعلان العلوي */}
+      {/* شريط الإعلان */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white text-center py-2 px-4 text-xs sm:text-sm font-bold shadow-md tracking-wide">
-        🚚 التوصيل متاح لجميع المحافظات والدفع عند الاستلام بعد المعاينة والفحص!
+        🚚 التوصيل متاح لجميع محافظات مصر والدفع عند الاستلام بعد المعاينة والفحص!
       </div>
 
-      {/* الهيدر العلوي مع اسم المتجر في المنتصف تماماً وتصميم جذاب */}
+      {/* الهيدر العلوي واسم المتجر في المنتصف */}
       <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 py-4 px-4 sm:px-8 sticky top-0 z-40 shadow-lg shadow-black/20">
         <div className="max-w-4xl mx-auto relative flex items-center justify-between">
-          
-          {/* عنصر موازنة فارغ في اليمين */}
           <div className="w-10 sm:w-20"></div>
 
-          {/* اسم المتجر في المنتصف */}
           <div className="text-center px-2">
             <h1 className="text-xl sm:text-3xl font-black tracking-wider bg-gradient-to-r from-white via-emerald-200 to-emerald-400 bg-clip-text text-transparent drop-shadow-sm select-none">
               {product?.store_name || 'متجرنا الرسمي'}
@@ -235,11 +379,10 @@ export default function Home() {
             <div className="w-12 h-1 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full mx-auto mt-1.5 opacity-80"></div>
           </div>
 
-          {/* زر السلة في اليسار */}
           <div className="w-10 sm:w-20 flex justify-end">
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative p-2.5 sm:px-3.5 sm:py-2 bg-slate-800/90 hover:bg-slate-800 rounded-2xl border border-slate-700/80 flex items-center gap-2 transition active:scale-95 shadow-md shadow-black/20"
+              className="relative p-2.5 sm:px-3.5 sm:py-2 bg-slate-800/90 hover:bg-slate-800 rounded-2xl border border-slate-700/80 flex items-center gap-2 transition active:scale-95 shadow-md"
               title="عرض السلة"
             >
               <span className="text-lg sm:text-xl">🛒</span>
@@ -251,14 +394,13 @@ export default function Home() {
               )}
             </button>
           </div>
-
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl p-4 sm:p-6 space-y-6">
           
-          {/* سلايدر الصور */}
+          {/* سلايدر صور المنتج */}
           {galleryImages.length > 0 && (
             <div className="space-y-3">
               <div className="relative w-full bg-black/50 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[320px] max-h-[500px] select-none">
@@ -321,8 +463,8 @@ export default function Home() {
             </div>
           )}
 
-          {/* تفاصيل السعر */}
-          <div className="border-b border-slate-800 pb-5">
+          {/* تفاصيل المنتج الأساسية: الاسم والسعر */}
+          <div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">{product?.product_name}</h2>
             <div className="flex items-baseline gap-3 mt-3">
               <span className="text-3xl sm:text-4xl font-black text-emerald-400">{product?.product_price} ج.م</span>
@@ -331,13 +473,23 @@ export default function Home() {
               )}
             </div>
             <div className="inline-block mt-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-full text-xs font-semibold">
-              مصاريف الشحن: {product?.shipping_fee || 0} ج.م فقط
+              🚚 الشحن يحسب حسب محافظتك عند تأكيد الطلب
             </div>
           </div>
 
+          {/* تفاصيل ومميزات المنتج تحت الاسم والسعر مباشرة */}
+          {product?.description && (
+            <div className="p-4 bg-slate-800/70 rounded-2xl border border-slate-700/60 space-y-2">
+              <h3 className="text-sm font-bold text-emerald-400">مميزات وتفاصيل المنتج:</h3>
+              <p className="text-slate-200 leading-relaxed whitespace-pre-line text-sm sm:text-base">
+                {product.description}
+              </p>
+            </div>
+          )}
+
           {/* اختيار الألوان */}
           {product?.show_colors && product.colors?.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-3 border-t border-slate-800 pt-4">
               <span className="block text-sm font-semibold text-slate-300">
                 اللون المختار: <strong className="text-emerald-400">{selectedColor}</strong>
               </span>
@@ -363,7 +515,7 @@ export default function Home() {
 
           {/* اختيار المقاسات */}
           {product?.show_sizes && product.sizes?.length > 0 && (
-            <div className="space-y-3">
+            <div className="space-y-3 border-t border-slate-800 pt-4">
               <span className="block text-sm font-semibold text-slate-300">
                 المقاس المختار: <strong className="text-emerald-400">{selectedSize}</strong>
               </span>
@@ -387,7 +539,7 @@ export default function Home() {
           )}
 
           {/* أزرار الإجراءات */}
-          <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-800">
             <button
               type="button"
               id="btn-order-now"
@@ -414,19 +566,9 @@ export default function Home() {
               ✅ تمت إضافة المنتج إلى سلة المشتريات!
             </div>
           )}
-
-          {/* تفاصيل المنتج */}
-          {product?.description && (
-            <div className="space-y-2 pt-2 border-t border-slate-800">
-              <h3 className="text-sm font-bold text-slate-300">تفاصيل ومميزات المنتج:</h3>
-              <div className="p-4 bg-slate-800/60 rounded-2xl border border-slate-700/50 text-slate-200 leading-relaxed whitespace-pre-line text-sm sm:text-base">
-                {product.description}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* نموذج استلام الطلب */}
+        {/* نموذج استلام الطلب مع اختيار المحافظة والمركز */}
         <div id="checkout-form" className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl scroll-mt-24">
           <h3 className="text-xl sm:text-2xl font-black text-emerald-400 mb-1 text-center">أدخل بيانات التوصيل</h3>
           <p className="text-xs sm:text-sm text-slate-400 mb-6 text-center">الدفع عند الاستلام بعد فحص ومعاينة المنتج</p>
@@ -444,7 +586,7 @@ export default function Home() {
                   id="customer-name"
                   type="text"
                   required
-                  placeholder="محمد أحمد"
+                  placeholder="محمد أحمد علي"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full p-3.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-400 transition"
@@ -463,16 +605,77 @@ export default function Home() {
                 />
               </div>
 
+              {/* القوائم المنسدلة: المحافظة والمركز */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm text-slate-300 mb-1.5 font-medium">المحافظة</label>
+                  <select
+                    required
+                    value={selectedGovernorate}
+                    onChange={(e) => handleGovernorateChange(e.target.value)}
+                    className="w-full p-3.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-400 transition cursor-pointer"
+                  >
+                    <option value="">اختر المحافظة...</option>
+                    {Object.keys(EGYPT_REGIONS).map((gov) => (
+                      <option key={gov} value={gov}>
+                        {gov}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm text-slate-300 mb-1.5 font-medium">المركز / المدينة</label>
+                  <select
+                    required
+                    disabled={!selectedGovernorate}
+                    value={selectedCity}
+                    onChange={(e) => setSelectedCity(e.target.value)}
+                    className="w-full p-3.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-400 transition cursor-pointer disabled:opacity-50"
+                  >
+                    <option value="">اختر المركز أو المدينة...</option>
+                    {selectedGovernorate &&
+                      EGYPT_REGIONS[selectedGovernorate]?.cities.map((city) => (
+                        <option key={city} value={city}>
+                          {city}
+                        </option>
+                      ))}
+                    <option value="مركز آخر">مركز / قرية أخرى</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* العنوان اليدوي التفصيلي */}
               <div>
-                <label className="block text-sm text-slate-300 mb-1.5 font-medium">العنوان بالتفصيل</label>
+                <label className="block text-sm text-slate-300 mb-1.5 font-medium">العنوان التفصيلي (الشارع والمنطقة ورقم العقار)</label>
                 <textarea
                   required
                   rows="2"
-                  placeholder="المحافظة - المدينة - الشارع - رقم العقار..."
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="مثال: شارع الجمهورية، بجوار مسجد النور، عمارة 5 الدور الثاني..."
+                  value={formData.detailedAddress}
+                  onChange={(e) => setFormData({ ...formData, detailedAddress: e.target.value })}
                   className="w-full p-3.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-400 transition"
                 ></textarea>
+              </div>
+
+              {/* ملخص تكلفة الطلب مع الشحن المخصص */}
+              <div className="bg-slate-800/80 p-4 rounded-2xl border border-slate-700 space-y-2 text-sm">
+                <div className="flex justify-between text-slate-300">
+                  <span>سعر المنتج / المنتجات:</span>
+                  <span className="font-bold text-white">
+                    {cart.length > 0 ? cartSubtotal : (Number(product?.product_price) || 0)} ج.م
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span>مصاريف الشحن ({selectedGovernorate || 'حدد المحافظة'}):</span>
+                  <span className="font-bold text-emerald-400">{currentShippingFee} ج.م</span>
+                </div>
+                <div className="border-t border-slate-700 pt-2 flex justify-between font-black text-base">
+                  <span>الإجمالي عند الاستلام:</span>
+                  <span className="text-emerald-400 text-lg">
+                    {(cart.length > 0 ? cartSubtotal : (Number(product?.product_price) || 0)) + currentShippingFee} ج.م
+                  </span>
+                </div>
               </div>
 
               <div className="pt-2">
@@ -490,7 +693,7 @@ export default function Home() {
         </div>
       </main>
 
-      {/* نافذة سلة المشتريات المنبثقة (Drawer Modal) */}
+      {/* نافذة سلة المشتريات المنبثقة */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/70 backdrop-blur-sm transition-opacity">
           <div className="w-full max-w-md h-full bg-slate-900 border-r border-slate-800 flex flex-col p-6 shadow-2xl">
@@ -507,7 +710,6 @@ export default function Home() {
               </button>
             </div>
 
-            {/* قائمة المنتجات في السلة */}
             <div className="flex-1 overflow-y-auto py-4 space-y-3">
               {cart.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-3">
@@ -547,7 +749,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* الجزء السفلي من السلة */}
             {cart.length > 0 && (
               <div className="border-t border-slate-800 pt-4 space-y-3">
                 <div className="flex justify-between items-center text-sm">
@@ -556,11 +757,11 @@ export default function Home() {
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-400">الشحن:</span>
-                  <span className="font-extrabold text-emerald-400">{product?.shipping_fee || 0} ج.م</span>
+                  <span className="font-extrabold text-emerald-400">{currentShippingFee} ج.م</span>
                 </div>
                 <div className="flex justify-between items-center text-base border-t border-slate-800 pt-2 font-black">
                   <span>الإجمالي الكلي:</span>
-                  <span className="text-emerald-400 text-lg">{cartSubtotal + (Number(product?.shipping_fee) || 0)} ج.م</span>
+                  <span className="text-emerald-400 text-lg">{cartSubtotal + currentShippingFee} ج.م</span>
                 </div>
 
                 <button
