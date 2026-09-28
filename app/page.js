@@ -94,7 +94,6 @@ export default function Home() {
     setAddedNotice(true);
     setTimeout(() => setAddedNotice(false), 2500);
 
-    // تتبع فيسبوك وتيك توك
     if (typeof window !== 'undefined' && window.fbq) {
       window.fbq('track', 'AddToCart', {
         content_name: product?.product_name,
@@ -127,15 +126,13 @@ export default function Home() {
     setCart((prev) => prev.filter((item) => item.id !== itemId));
   };
 
-  // إجمالي السلة
   const cartSubtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
-  // زر "اطلب الآن" ينقله مباشرة لقسم ملء البيانات
+  // اطلب الآن
   const scrollToCheckout = () => {
     setIsCartOpen(false);
 
-    // إذا كانت السلة فارغة يضيف المنتج تلقائياً
     if (cart.length === 0) {
       handleAddToCart(false);
     }
@@ -156,10 +153,9 @@ export default function Home() {
     }
   };
 
-  // تأكيد الطلب
+  // إرسال الطلب
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setOrderLoading(true);
 
     const itemsToOrder = cart.length > 0 ? cart : [
@@ -218,30 +214,44 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans pb-24" dir="rtl">
-      {/* شريط الإعلان */}
-      <div className="bg-emerald-600 text-white text-center py-2 px-4 text-xs sm:text-sm font-bold shadow-md">
-        🚚 التوصيل متاح لجميع المحافظات والدفع عند الاستلام بعد المعاينة!
+      {/* شريط الإعلان العلوي */}
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white text-center py-2 px-4 text-xs sm:text-sm font-bold shadow-md tracking-wide">
+        🚚 التوصيل متاح لجميع المحافظات والدفع عند الاستلام بعد المعاينة والفحص!
       </div>
 
-      {/* الهيدر العلوي */}
-      <header className="bg-slate-900/90 backdrop-blur border-b border-slate-800 py-3.5 px-4 sm:px-8 sticky top-0 z-40 flex items-center justify-between shadow-sm">
-        <h1 className="text-lg sm:text-xl font-black text-emerald-400">
-          {product?.store_name || 'متجرنا الرسمي'}
-        </h1>
+      {/* الهيدر العلوي مع اسم المتجر في المنتصف تماماً وتصميم جذاب */}
+      <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 py-4 px-4 sm:px-8 sticky top-0 z-40 shadow-lg shadow-black/20">
+        <div className="max-w-4xl mx-auto relative flex items-center justify-between">
+          
+          {/* عنصر وهمي فارغ في اليمين لموازنة زر السلة وجعل العنوان في المنتصف تماماً */}
+          <div className="w-10 sm:w-20"></div>
 
-        {/* زر فتح السلة في الهيدر */}
-        <button
-          onClick={() => setIsCartOpen(true)}
-          className="relative p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center gap-2 transition"
-        >
-          <span className="text-xl">🛒</span>
-          <span className="text-xs font-bold hidden sm:inline">السلة</span>
-          {totalCartCount > 0 && (
-            <span className="absolute -top-1.5 -left-1.5 bg-emerald-500 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-bounce">
-              {totalCartCount}
-            </span>
-          )}
-        </button>
+          {/* اسم المتجر في المنتصف بدقة وشكل فخم */}
+          <div className="text-center px-2">
+            <h1 className="text-xl sm:text-3xl font-black tracking-wider bg-gradient-to-r from-white via-emerald-200 to-emerald-400 bg-clip-text text-transparent drop-shadow-sm select-none">
+              {product?.store_name || 'متجرنا الرسمي'}
+            </h1>
+            <div className="w-12 h-1 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full mx-auto mt-1.5 opacity-80"></div>
+          </div>
+
+          {/* زر السلة في اليسار */}
+          <div className="w-10 sm:w-20 flex justify-end">
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-2.5 sm:px-3.5 sm:py-2 bg-slate-800/90 hover:bg-slate-800 rounded-2xl border border-slate-700/80 flex items-center gap-2 transition active:scale-95 shadow-md shadow-black/20"
+              title="عرض السلة"
+            >
+              <span className="text-lg sm:text-xl">🛒</span>
+              <span className="text-xs font-bold hidden sm:inline text-slate-200">السلة</span>
+              {totalCartCount > 0 && (
+                <span className="absolute -top-1.5 -left-1.5 bg-emerald-500 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center animate-bounce shadow-md shadow-emerald-500/50">
+                  {totalCartCount}
+                </span>
+              )}
+            </button>
+          </div>
+
+        </div>
       </header>
 
       <main className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
@@ -404,7 +414,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* تفاصيل المنتج */}
+          {/* تفاصيل ومميزات المنتج */}
           {product?.description && (
             <div className="space-y-2 pt-2 border-t border-slate-800">
               <h3 className="text-sm font-bold text-slate-300">تفاصيل ومميزات المنتج:</h3>
