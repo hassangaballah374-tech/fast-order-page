@@ -7,13 +7,13 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
-  // استبدل الأرقام بالأسفل برقم البيكسل الخاص بك
-  const FB_PIXEL_ID = '870300779500843';
+  // رقم البيكسل الخاص بك
+  const FB_PIXEL_ID = '1987515152011985'; // تأكد أنه نفس رقم البيكسل الخاص بك
 
   return (
     <html lang="ar" dir="rtl">
       <head>
-        {FB_PIXEL_ID && FB_PIXEL_ID !== '870300779500843' && (
+        {FB_PIXEL_ID && (
           <>
             <Script
               id="fb-pixel"
@@ -29,6 +29,8 @@ export default function RootLayout({ children }) {
                   s.parentNode.insertBefore(t,s)}(window, document,'script',
                   'https://connect.facebook.net/en_US/fbevents.js');
                   fbq('init', '${FB_PIXEL_ID}');
+                  fbq('dataProcessingOptions', []);
+                  fbq('set', 'test_event_code', 'TEST8657');
                   fbq('track', 'PageView');
                 `,
               }}
