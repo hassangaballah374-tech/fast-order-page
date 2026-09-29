@@ -8,7 +8,7 @@ export default function AdminDashboard() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // إعدادات المتجر
+  // إعدادات المتجر والشحن
   const [storeSettings, setStoreSettings] = useState({
     store_name: '',
     shipping_rates: {
@@ -40,12 +40,12 @@ export default function AdminDashboard() {
   const [colorInput, setColorInput] = useState({ name: '', code: '#000000' });
   const [sizeInput, setSizeInput] = useState('');
 
-  // الطلبات
+  // الطلبات والفلترة
   const [orders, setOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // التحديد المتعدد للطلبات
+  // التحديد المتعدد
   const [selectedOrderIds, setSelectedOrderIds] = useState([]);
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
 
@@ -56,32 +56,31 @@ export default function AdminDashboard() {
   async function loadAllData() {
     setLoading(true);
     try {
-      // 1. جلب إعدادات المتجر
-      const { data: sData } = await supabase.from('store_settings').select('*').eq('id', 1).maybeSingle();
-      if (sData) {
-        setStoreSettings({
-          store_name: sData.store_name || '',
-          shipping_rates: sData.shipping_rates || {
-            cairo_giza: 50,
-            alex: 55,
-            delta: 60,
-            canal: 65,
-            upper_egypt: 70,
-            remote: 80,
-          },
-        });
-      }
+      if (supabase) {
+        const { data: sData } = await supabase.from('store_settings').select('*').eq('id', 1).maybeSingle();
+        if (sData) {
+          setStoreSettings({
+            store_name: sData.store_name || '',
+            shipping_rates: sData.shipping_rates || {
+              cairo_giza: 50,
+              alex: 55,
+              delta: 60,
+              canal: 65,
+              upper_egypt: 70,
+              remote: 80,
+            },
+          });
+        }
 
-      // 2. جلب المنتج
-      const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false }).limit(1);
-      if (pData && pData.length > 0) {
-        setProduct(pData[0]);
-      }
+        const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false }).limit(1);
+        if (pData && pData.length > 0) {
+          setProduct(pData[0]);
+        }
 
-      // 3. جلب الطلبات
-      const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-      if (oData) {
-        setOrders(oData);
+        const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+        if (oData) {
+          setOrders(oData);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -89,7 +88,7 @@ export default function AdminDashboard() {
     setLoading(false);
   }
 
-  // حفظ الإعدادات والمنتج
+  // حفظ التعديلات
   async function handleSaveSettings(e) {
     e.preventDefault();
     setSaving(true);
@@ -137,7 +136,7 @@ export default function AdminDashboard() {
     setSaving(false);
   }
 
-  // إدارة صور وألوان المنتج
+  // إدارة الصور والألوان والمقاسات
   const handleAddImage = () => {
     if (!newImage.trim()) return;
     setProduct((prev) => ({ ...prev, images: [...(prev.images || []), newImage.trim()] }));
@@ -171,7 +170,7 @@ export default function AdminDashboard() {
     setProduct((prev) => ({ ...prev, sizes: (prev.sizes || []).filter((_, i) => i !== index) }));
   };
 
-  // دوال الطلبات
+  // دوال الطلبات والتحديد المتعدد
   const filteredOrders = orders.filter((o) => {
     const matchSearch =
       (o.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -224,14 +223,14 @@ export default function AdminDashboard() {
     }
   };
 
-  // إحصائيات سريعة
+  // إحصائيات
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const newOrdersCount = orders.filter((o) => (o.status || 'جديد') === 'جديد').length;
   const isAllSelected = filteredOrders.length > 0 && selectedOrderIds.length === filteredOrders.length;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0f172a] text-white flex items-center justify-center font-sans" dir="rtl">
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center font-sans" dir="rtl">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-slate-400 font-bold">جاري تحميل لوحة التحكم...</p>
@@ -241,10 +240,10 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans pb-16" dir="rtl">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16" dir="rtl">
       
-      {/* الشريط العلوي الأصلي */}
-      <header className="bg-[#1e293b]/80 backdrop-blur border-b border-slate-700/80 sticky top-0 z-30 px-4 sm:px-8 py-4">
+      {/* الشريط العلوي الداكن */}
+      <header className="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-30 px-4 sm:px-8 py-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚡</span>
@@ -254,8 +253,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* التبويبات بالترتيب الأصلي */}
-          <div className="flex items-center bg-[#0f172a] p-1.5 rounded-2xl border border-slate-700/70">
+          <div className="flex items-center bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
             <button
               onClick={() => setActiveTab('orders')}
               className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
@@ -263,7 +261,7 @@ export default function AdminDashboard() {
               }`}
             >
               <span>📦 الطلبات</span>
-              <span className="bg-[#1e293b] text-emerald-400 text-xs px-2 py-0.5 rounded-full font-black">
+              <span className="bg-slate-900 text-emerald-400 text-xs px-2 py-0.5 rounded-full font-black">
                 {orders.length}
               </span>
             </button>
@@ -289,38 +287,37 @@ export default function AdminDashboard() {
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
 
-        {/* بطاقات الإحصائيات العلوية */}
+        {/* بطاقات الإحصائيات */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-[#1e293b] p-5 rounded-3xl border border-slate-700/60 shadow-lg">
+          <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
             <div className="text-slate-400 text-xs font-bold mb-1">إجمالي المبيعات</div>
             <div className="text-2xl sm:text-3xl font-black text-emerald-400">{totalRevenue.toLocaleString()} ج.م</div>
           </div>
-          <div className="bg-[#1e293b] p-5 rounded-3xl border border-slate-700/60 shadow-lg">
-            <div className="text-slate-400 text-xs font-bold mb-1">إجمالي عدد الطلبات</div>
+          <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
+            <div className="text-slate-400 text-xs font-bold mb-1">إجمالي الطلبات</div>
             <div className="text-2xl sm:text-3xl font-black text-white">{orders.length} طلب</div>
           </div>
-          <div className="bg-[#1e293b] p-5 rounded-3xl border border-slate-700/60 shadow-lg">
+          <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
             <div className="text-slate-400 text-xs font-bold mb-1">طلبات جديدة في الانتظار</div>
             <div className="text-2xl sm:text-3xl font-black text-amber-400">{newOrdersCount} طلب</div>
           </div>
         </div>
 
-        {/* 1. تبويب الطلبات (مع ميزة التحديد المتعدد الجديدة) */}
+        {/* 1. تبويب الطلبات مع التحديد المتعدد وزر الواتساب */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
-            {/* شريط البحث والفلترة */}
-            <div className="bg-[#1e293b] p-4 rounded-3xl border border-slate-700/60 flex flex-col sm:flex-row gap-3">
+            <div className="bg-slate-900 p-4 rounded-3xl border border-slate-800 flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
                 placeholder="ابحث باسم العميل أو رقم هاتفه أو المحافظة..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 bg-[#0f172a] border border-slate-700 text-white rounded-2xl p-3 text-sm focus:outline-none focus:border-emerald-500"
+                className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-2xl p-3 text-sm focus:outline-none focus:border-emerald-500"
               />
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="bg-[#0f172a] border border-slate-700 text-slate-200 rounded-2xl p-3 text-sm font-bold cursor-pointer"
+                className="bg-slate-950 border border-slate-800 text-slate-200 rounded-2xl p-3 text-sm font-bold cursor-pointer"
               >
                 <option value="all">كل الحالات</option>
                 <option value="جديد">جديد</option>
@@ -331,15 +328,15 @@ export default function AdminDashboard() {
               </select>
               <button
                 onClick={loadAllData}
-                className="px-5 py-3 bg-[#0f172a] hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-2xl text-sm font-bold transition"
+                className="px-5 py-3 bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-2xl text-sm font-bold transition"
               >
                 🔄 تحديث
               </button>
             </div>
 
-            {/* شريط الحذف الجماعي العائم عند تحديد طلبات */}
+            {/* شريط الحذف الجماعي العائم */}
             {selectedOrderIds.length > 0 && (
-              <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-xl flex items-center justify-between animate-fade-in">
+              <div className="bg-emerald-600 text-white p-4 rounded-2xl shadow-xl flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="w-7 h-7 rounded-full bg-white text-emerald-800 flex items-center justify-center font-black text-xs">
                     {selectedOrderIds.length}
@@ -365,20 +362,20 @@ export default function AdminDashboard() {
             )}
 
             {/* جدول الطلبات */}
-            <div className="bg-[#1e293b] rounded-3xl border border-slate-700/60 overflow-hidden shadow-xl">
+            <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-xl">
               {filteredOrders.length === 0 ? (
                 <div className="p-12 text-center text-slate-400 font-bold">لا توجد طلبات مطابقة للبحث</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-right border-collapse">
                     <thead>
-                      <tr className="bg-[#0f172a]/60 border-b border-slate-700 text-slate-400 text-xs font-bold uppercase">
+                      <tr className="bg-slate-950/80 border-b border-slate-800 text-slate-400 text-xs font-bold uppercase">
                         <th className="p-4 w-12 text-center">
                           <input
                             type="checkbox"
                             checked={isAllSelected}
                             onChange={handleSelectAll}
-                            className="w-4 h-4 rounded text-emerald-600 bg-[#0f172a] border-slate-700 cursor-pointer"
+                            className="w-4 h-4 rounded text-emerald-600 bg-slate-950 border-slate-800 cursor-pointer"
                             title="تحديد الكل"
                           />
                         </th>
@@ -389,7 +386,7 @@ export default function AdminDashboard() {
                         <th className="p-4">المبلغ</th>
                         <th className="p-4">الحالة</th>
                         <th className="p-4">التاريخ</th>
-                        <th className="p-4 text-center">حذف</th>
+                        <th className="p-4 text-center">إجراءات</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800 text-sm">
@@ -407,12 +404,21 @@ export default function AdminDashboard() {
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={() => handleSelectOne(order.id)}
-                                className="w-4 h-4 rounded text-emerald-600 bg-[#0f172a] border-slate-700 cursor-pointer"
+                                className="w-4 h-4 rounded text-emerald-600 bg-slate-950 border-slate-800 cursor-pointer"
                               />
                             </td>
                             <td className="p-4 font-bold text-white">{order.customer_name}</td>
                             <td className="p-4 font-mono text-emerald-400" dir="ltr">
-                              {order.phone}
+                              <a
+                                href={`https://wa.me/2${order.phone?.replace(/[^0-9]/g, '')}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="hover:underline flex items-center gap-1.5"
+                                title="محادثة واتساب مباشرة"
+                              >
+                                <span>💬</span>
+                                <span>{order.phone}</span>
+                              </a>
                             </td>
                             <td className="p-4 text-xs text-slate-300 max-w-xs truncate" title={order.address}>
                               <span className="font-bold text-white">{order.governorate}</span> - {order.address}
@@ -433,7 +439,7 @@ export default function AdminDashboard() {
                               <select
                                 value={order.status || 'جديد'}
                                 onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                                className="bg-[#0f172a] border border-slate-700 text-xs font-bold rounded-xl p-2 text-white cursor-pointer focus:outline-none"
+                                className="bg-slate-950 border border-slate-800 text-xs font-bold rounded-xl p-2 text-white cursor-pointer focus:outline-none"
                               >
                                 <option value="جديد">جديد</option>
                                 <option value="تم التأكيد">تم التأكيد</option>
@@ -470,21 +476,21 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 2. تبويب بيانات المنتج (بتصميمه الأصلي القديم) */}
+        {/* 2. تبويب بيانات المنتج */}
         {activeTab === 'product' && (
           <form onSubmit={handleSaveSettings} className="space-y-6">
-            <div className="bg-[#1e293b] p-6 sm:p-8 rounded-3xl border border-slate-700/60 shadow-xl space-y-6">
-              <h2 className="text-xl font-black text-white border-b border-slate-700 pb-4">🛍️ تعديل بيانات المنتج المعروض</h2>
+            <div className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
+              <h2 className="text-xl font-black text-white border-b border-slate-800 pb-4">🛍️ بيانات وتفاصيل المنتج</h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="sm:col-span-1">
+                <div>
                   <label className="block text-xs font-bold text-slate-400 mb-2">اسم المنتج</label>
                   <input
                     type="text"
                     required
                     value={product.name || ''}
                     onChange={(e) => setProduct({ ...product, name: e.target.value })}
-                    className="w-full bg-[#0f172a] border border-slate-700 rounded-2xl p-3.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-white text-sm focus:outline-none focus:border-emerald-500"
                   />
                 </div>
                 <div>
@@ -494,16 +500,16 @@ export default function AdminDashboard() {
                     required
                     value={product.price || ''}
                     onChange={(e) => setProduct({ ...product, price: e.target.value })}
-                    className="w-full bg-[#0f172a] border border-slate-700 rounded-2xl p-3.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-white text-sm focus:outline-none focus:border-emerald-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-2">السعر الأصلي (قبل الخصم)</label>
+                  <label className="block text-xs font-bold text-slate-400 mb-2">السعر قبل الخصم</label>
                   <input
                     type="number"
                     value={product.original_price || ''}
                     onChange={(e) => setProduct({ ...product, original_price: e.target.value })}
-                    className="w-full bg-[#0f172a] border border-slate-700 rounded-2xl p-3.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-white text-sm focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               </div>
@@ -514,11 +520,11 @@ export default function AdminDashboard() {
                   rows="4"
                   value={product.description || ''}
                   onChange={(e) => setProduct({ ...product, description: e.target.value })}
-                  className="w-full bg-[#0f172a] border border-slate-700 rounded-2xl p-3.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-white text-sm focus:outline-none focus:border-emerald-500"
                 ></textarea>
               </div>
 
-              {/* صور المنتج */}
+              {/* معرض الصور */}
               <div className="space-y-3 pt-2">
                 <label className="block text-xs font-bold text-slate-400">معرض صور المنتج (روابط مباشرة)</label>
                 <div className="flex gap-2">
@@ -527,19 +533,19 @@ export default function AdminDashboard() {
                     placeholder="ضع رابط الصورة هنا..."
                     value={newImage}
                     onChange={(e) => setNewImage(e.target.value)}
-                    className="flex-1 bg-[#0f172a] border border-slate-700 rounded-2xl p-3 text-white text-sm"
+                    className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl p-3 text-white text-sm"
                   />
                   <button
                     type="button"
                     onClick={handleAddImage}
                     className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-sm"
                   >
-                    + إضافة صورة
+                    + إضافة
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-3 pt-2">
                   {product.images?.map((img, idx) => (
-                    <div key={idx} className="relative w-20 h-20 rounded-2xl overflow-hidden border border-slate-700 bg-black">
+                    <div key={idx} className="relative w-20 h-20 rounded-2xl overflow-hidden border border-slate-800 bg-black">
                       <img src={img} alt="" className="w-full h-full object-cover" />
                       <button
                         type="button"
@@ -554,7 +560,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* الألوان */}
-              <div className="pt-4 border-t border-slate-700/60 space-y-3">
+              <div className="pt-4 border-t border-slate-800 space-y-3">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -573,16 +579,16 @@ export default function AdminDashboard() {
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        placeholder="اسم اللون (مثال: أسود، أزرق)"
+                        placeholder="اسم اللون"
                         value={colorInput.name}
                         onChange={(e) => setColorInput({ ...colorInput, name: e.target.value })}
-                        className="flex-1 bg-[#0f172a] border border-slate-700 rounded-2xl p-2.5 text-white text-sm"
+                        className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl p-2.5 text-white text-sm"
                       />
                       <input
                         type="color"
                         value={colorInput.code}
                         onChange={(e) => setColorInput({ ...colorInput, code: e.target.value })}
-                        className="w-12 h-11 p-1 bg-[#0f172a] border border-slate-700 rounded-2xl cursor-pointer"
+                        className="w-12 h-11 p-1 bg-slate-950 border border-slate-800 rounded-2xl cursor-pointer"
                       />
                       <button
                         type="button"
@@ -594,8 +600,8 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {product.colors?.map((c, idx) => (
-                        <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0f172a] border border-slate-700 rounded-xl text-xs font-bold text-white">
-                          <span className="w-3.5 h-3.5 rounded-full border border-slate-600" style={{ backgroundColor: c.code }}></span>
+                        <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white">
+                          <span className="w-3.5 h-3.5 rounded-full border border-slate-700" style={{ backgroundColor: c.code }}></span>
                           <span>{c.name}</span>
                           <button type="button" onClick={() => handleRemoveColor(idx)} className="text-red-400 font-bold ml-1">✕</button>
                         </span>
@@ -606,7 +612,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* المقاسات */}
-              <div className="pt-4 border-t border-slate-700/60 space-y-3">
+              <div className="pt-4 border-t border-slate-800 space-y-3">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -628,7 +634,7 @@ export default function AdminDashboard() {
                         placeholder="المقاس (مثال: M, L, XL, 42)"
                         value={sizeInput}
                         onChange={(e) => setSizeInput(e.target.value)}
-                        className="flex-1 bg-[#0f172a] border border-slate-700 rounded-2xl p-2.5 text-white text-sm"
+                        className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl p-2.5 text-white text-sm"
                       />
                       <button
                         type="button"
@@ -640,7 +646,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {product.sizes?.map((s, idx) => (
-                        <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0f172a] border border-slate-700 rounded-xl text-xs font-bold text-white">
+                        <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white">
                           <span>{s}</span>
                           <button type="button" onClick={() => handleRemoveSize(idx)} className="text-red-400 font-bold ml-1">✕</button>
                         </span>
@@ -661,11 +667,11 @@ export default function AdminDashboard() {
           </form>
         )}
 
-        {/* 3. تبويب إعدادات المتجر والشحن (الأصلي) */}
+        {/* 3. تبويب إعدادات المتجر والشحن */}
         {activeTab === 'settings' && (
           <form onSubmit={handleSaveSettings} className="space-y-6">
-            <div className="bg-[#1e293b] p-6 sm:p-8 rounded-3xl border border-slate-700/60 shadow-xl space-y-6">
-              <h2 className="text-xl font-black text-white border-b border-slate-700 pb-4">⚙️ إعدادات المتجر وأسعار الشحن</h2>
+            <div className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
+              <h2 className="text-xl font-black text-white border-b border-slate-800 pb-4">⚙️ إعدادات المتجر وأسعار الشحن</h2>
 
               <div>
                 <label className="block text-xs font-bold text-slate-400 mb-2">اسم المتجر</label>
@@ -673,11 +679,11 @@ export default function AdminDashboard() {
                   type="text"
                   value={storeSettings.store_name}
                   onChange={(e) => setStoreSettings({ ...storeSettings, store_name: e.target.value })}
-                  className="w-full bg-[#0f172a] border border-slate-700 rounded-2xl p-3.5 text-white text-sm"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-white text-sm"
                 />
               </div>
 
-              <div className="pt-4 border-t border-slate-700/60 space-y-4">
+              <div className="pt-4 border-t border-slate-800 space-y-4">
                 <h3 className="text-sm font-bold text-emerald-400">🚚 تسعير الشحن حسب المناطق (ج.م)</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
@@ -689,7 +695,7 @@ export default function AdminDashboard() {
                         ...storeSettings,
                         shipping_rates: { ...storeSettings.shipping_rates, cairo_giza: Number(e.target.value) }
                       })}
-                      className="w-full bg-[#0f172a] border border-slate-700 rounded-xl p-3 text-white text-sm"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm"
                     />
                   </div>
                   <div>
@@ -701,7 +707,7 @@ export default function AdminDashboard() {
                         ...storeSettings,
                         shipping_rates: { ...storeSettings.shipping_rates, alex: Number(e.target.value) }
                       })}
-                      className="w-full bg-[#0f172a] border border-slate-700 rounded-xl p-3 text-white text-sm"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm"
                     />
                   </div>
                   <div>
@@ -713,7 +719,7 @@ export default function AdminDashboard() {
                         ...storeSettings,
                         shipping_rates: { ...storeSettings.shipping_rates, delta: Number(e.target.value) }
                       })}
-                      className="w-full bg-[#0f172a] border border-slate-700 rounded-xl p-3 text-white text-sm"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm"
                     />
                   </div>
                   <div>
@@ -725,7 +731,7 @@ export default function AdminDashboard() {
                         ...storeSettings,
                         shipping_rates: { ...storeSettings.shipping_rates, canal: Number(e.target.value) }
                       })}
-                      className="w-full bg-[#0f172a] border border-slate-700 rounded-xl p-3 text-white text-sm"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm"
                     />
                   </div>
                   <div>
@@ -737,7 +743,7 @@ export default function AdminDashboard() {
                         ...storeSettings,
                         shipping_rates: { ...storeSettings.shipping_rates, upper_egypt: Number(e.target.value) }
                       })}
-                      className="w-full bg-[#0f172a] border border-slate-700 rounded-xl p-3 text-white text-sm"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm"
                     />
                   </div>
                   <div>
@@ -749,7 +755,7 @@ export default function AdminDashboard() {
                         ...storeSettings,
                         shipping_rates: { ...storeSettings.shipping_rates, remote: Number(e.target.value) }
                       })}
-                      className="w-full bg-[#0f172a] border border-slate-700 rounded-xl p-3 text-white text-sm"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm"
                     />
                   </div>
                 </div>
