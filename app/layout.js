@@ -25,9 +25,15 @@ export default function RootLayout({ children }) {
               t.src=v;s=b.getElementsByTagName(e)[0];
               s.parentNode.insertBefore(t,s)}(window, document,'script',
               'https://connect.facebook.net/en_US/fbevents.js');
+              
               fbq('init', '${FB_PIXEL_ID}');
               fbq('set', 'test_event_code', 'TEST8657');
-              fbq('track', 'PageView');
+
+              // منع تكرار PageView في نفس الصفحة
+              if (!window._fbq_pageview_fired) {
+                window._fbq_pageview_fired = true;
+                fbq('track', 'PageView');
+              }
             `,
           }}
         />
