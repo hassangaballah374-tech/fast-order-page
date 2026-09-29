@@ -130,6 +130,9 @@ export default function Home() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedNotice, setAddedNotice] = useState(false);
 
+  // لمنع تكرار إرسال InitiateCheckout أكثر من مرة في نفس الجلسة
+  const [hasInitiatedCheckout, setHasInitiatedCheckout] = useState(false);
+
   const [selectedGovernorate, setSelectedGovernorate] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [currentShippingFee, setCurrentShippingFee] = useState(50);
@@ -201,77 +204,33 @@ export default function Home() {
     loadInitialData();
   }, []);
 
-  useEffect(() => {
-    if (!settings) return;
+  // دالة تتبع بدء الطلب InitiateCheckout
+  const triggerInitiateCheckout = () => {
+    if (hasInitiatedCheckout) return;
+    setHasInitiatedCheckout(true);
 
-    if (settings.fb_pixel_id && typeof window !== 'undefined') {
-      if (!window.fbq) {
-        (function(f, b, e, v, n, t, s) {
-          if (f.fbq) return;
-          n = f.fbq = function() {
-            n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
-          };
-          if (!f._fbq) f._fbq = n;
-          n.push = n;
-          n.loaded = !0;
-          n.version = '2.0';
-          n.queue = [];
-          t = b.createElement(e);
-          t.async = !0;
-          t.src = v;
-          s = b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t, s);
-        })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
-
-        window.fbq('init', settings.fb_pixel_id.trim());
-        window.fbq('track', 'PageView');
+    if (typeof window !== 'undefined') {
+      if (window.fbq) {
+        window.fbq('track', 'InitiateCheckout', {
+          content_name: product?.name || 'منتج',
+          value: product?.price || 0,
+          currency: 'EGP',
+        });
+      }
+      if (window.ttq) {
+        window.ttq.track('InitiateCheckout', {
+          content_name: product?.name || 'منتج',
+          value: product?.price || 0,
+          currency: 'EGP',
+        });
       }
     }
-
-    if (settings.tiktok_pixel_id && typeof window !== 'undefined') {
-      if (!window.ttq) {
-        (function(w, d, t) {
-          w.TiktokAnalyticsObject = t;
-          var ttq = (w[t] = w[t] || []);
-          ttq.methods = [
-            'page', 'track', 'identify', 'instances', 'debug', 'on', 'off', 'once', 'ready', 'alias', 'group', 'enableCookie', 'disableCookie'
-          ];
-          ttq.setAndDefer = function(t, e) {
-            t[e] = function() {
-              t.push([e].concat(Array.prototype.slice.call(arguments, 0)));
-            };
-          };
-          for (var i = 0; i < ttq.methods.length; i++) ttq.setAndDefer(ttq, ttq.methods[i]);
-          ttq.instance = function(t) {
-            for (var e = ttq._i[t] || [], n = 0; n < ttq.methods.length; n++) ttq.setAndDefer(e, ttq.methods[n]);
-            return e;
-          };
-          ttq.load = function(e, n) {
-            var i = 'https://analytics.tiktok.com/i18n/pixel/events.js';
-            ttq._i = ttq._i || {};
-            ttq._i[e] = [];
-            ttq._i[e]._u = i;
-            ttq._t = ttq._t || {};
-            ttq._t[e] = +new Date();
-            ttq._o = ttq._o || {};
-            ttq._o[e] = n || {};
-            var o = document.createElement('script');
-            o.type = 'text/javascript';
-            o.async = !0;
-            o.src = i + '?sdkid=' + e + '&lib=' + t;
-            var a = document.getElementsByTagName('script')[0];
-            a.parentNode.insertBefore(o, a);
-          };
-          ttq.load(settings.tiktok_pixel_id.trim());
-          ttq.page();
-        })(window, document, 'ttq');
-      }
-    }
-  }, [settings]);
+  };
 
   const handleGovernorateChange = (gov) => {
     setSelectedGovernorate(gov);
     setSelectedCity('');
+    triggerInitiateCheckout();
 
     if (!gov || !settings?.shipping_rates) return;
 
@@ -368,22 +327,7 @@ export default function Home() {
       handleAddToCart(false);
     }
 
-    if (typeof window !== 'undefined') {
-      if (window.fbq) {
-        window.fbq('track', 'InitiateCheckout', {
-          content_name: product?.name,
-          value: product?.price,
-          currency: 'EGP',
-        });
-      }
-      if (window.ttq) {
-        window.ttq.track('InitiateCheckout', {
-          content_name: product?.name,
-          value: product?.price,
-          currency: 'EGP',
-        });
-      }
-    }
+    triggerInitiateCheckout();
 
     const formElement = document.getElementById('checkout-form');
     if (formElement) {
@@ -709,6 +653,7 @@ export default function Home() {
           )}
         </div>
 
+        {/* نموذج كتابة البيانات وتأكيد الطلب */}
         <div id="checkout-form" className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 shadow-lg scroll-mt-24">
           <div className="text-center mb-6">
             <h3 className="text-xl sm:text-2xl font-black text-slate-900">أدخل بيانات التوصيل</h3>
@@ -730,7 +675,11 @@ export default function Home() {
                   required
                   placeholder="محمد أحمد علي"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onFocus={triggerInitiateCheckout}
+                  onChange={(e) => {
+                    triggerInitiateCheckout();
+                    setFormData({ ...formData, name: e.target.value });
+                  }}
                   className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-800 focus:outline-none focus:border-emerald-600 focus:bg-white transition"
                 />
               </div>
@@ -742,7 +691,11 @@ export default function Home() {
                   required
                   placeholder="01xxxxxxxxx"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onFocus={triggerInitiateCheckout}
+                  onChange={(e) => {
+                    triggerInitiateCheckout();
+                    setFormData({ ...formData, phone: e.target.value });
+                  }}
                   className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-800 focus:outline-none focus:border-emerald-600 focus:bg-white transition"
                 />
               </div>
@@ -771,7 +724,10 @@ export default function Home() {
                     required
                     disabled={!selectedGovernorate}
                     value={selectedCity}
-                    onChange={(e) => setSelectedCity(e.target.value)}
+                    onChange={(e) => {
+                      triggerInitiateCheckout();
+                      setSelectedCity(e.target.value);
+                    }}
                     className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-800 focus:outline-none focus:border-emerald-600 focus:bg-white transition cursor-pointer disabled:opacity-50 font-medium"
                   >
                     <option value="">اختر المركز أو المدينة...</option>
@@ -793,7 +749,11 @@ export default function Home() {
                   rows="2"
                   placeholder="مثال: شارع الجمهورية، بجوار مسجد النور، عمارة 5 الدور الثاني..."
                   value={formData.detailedAddress}
-                  onChange={(e) => setFormData({ ...formData, detailedAddress: e.target.value })}
+                  onFocus={triggerInitiateCheckout}
+                  onChange={(e) => {
+                    triggerInitiateCheckout();
+                    setFormData({ ...formData, detailedAddress: e.target.value });
+                  }}
                   className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-300 text-slate-800 focus:outline-none focus:border-emerald-600 focus:bg-white transition"
                 ></textarea>
               </div>
@@ -832,6 +792,7 @@ export default function Home() {
         </div>
       </main>
 
+      {/* نافذة سلة المشتريات المنبثقة */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/40 backdrop-blur-sm transition-opacity">
           <div className="w-full max-w-md h-full bg-white border-r border-slate-200 flex flex-col p-6 shadow-2xl">
@@ -916,6 +877,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* زر الموبايل العائم بالأسفل */}
       <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur border-t border-slate-200 z-40 flex items-center gap-3 shadow-lg">
         <button
           type="button"
