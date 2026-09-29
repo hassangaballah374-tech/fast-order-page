@@ -14,6 +14,8 @@ export default function AdminDashboard() {
 
   const [productData, setProductData] = useState({
     store_name: '',
+    fb_pixel_id: '',
+    tiktok_pixel_id: '',
     product_name: '',
     product_price: '',
     original_price: '',
@@ -63,6 +65,8 @@ export default function AdminDashboard() {
     if (data) {
       setProductData({
         store_name: data.store_name || '',
+        fb_pixel_id: data.fb_pixel_id || '',
+        tiktok_pixel_id: data.tiktok_pixel_id || '',
         product_name: data.product_name || '',
         product_price: data.product_price || '',
         original_price: data.original_price || '',
@@ -207,6 +211,8 @@ export default function AdminDashboard() {
       .upsert({
         id: 1,
         store_name: productData.store_name,
+        fb_pixel_id: productData.fb_pixel_id.trim(),
+        tiktok_pixel_id: productData.tiktok_pixel_id.trim(),
         product_name: productData.product_name,
         product_price: Number(productData.product_price),
         original_price: Number(productData.original_price),
@@ -226,7 +232,7 @@ export default function AdminDashboard() {
     if (error) {
       setMessage('حدث خطأ أثناء الحفظ: ' + error.message);
     } else {
-      setMessage('✅ تم حفظ التعديلات بنجاح وتحديث المتجر بالكامل!');
+      setMessage('✅ تم حفظ التعديلات وإعدادات البيكسل بنجاح!');
     }
     setSaveLoading(false);
   };
@@ -291,6 +297,7 @@ export default function AdminDashboard() {
         )}
 
         <form onSubmit={handleSave} className="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-6">
+          {/* اسم المتجر */}
           <div>
             <label className="block mb-2 text-sm text-slate-300 font-semibold">اسم المتجر / العلامة التجارية</label>
             <input
@@ -303,6 +310,39 @@ export default function AdminDashboard() {
             />
           </div>
 
+          {/* قسم تتبع البيكسل الإعلاني */}
+          <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40 space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-emerald-400">إعدادات بيكسل الإعلانات (Tracking Pixels)</h3>
+              <p className="text-xs text-slate-400 mt-0.5">ضع معرّف البيكسل لتفعيل التتبع التلقائي للأحداث (PageView, AddToCart, InitiateCheckout, Purchase)</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-slate-300 mb-1.5 font-semibold">Meta Pixel ID (فيسبوك بيكسل)</label>
+                <input
+                  type="text"
+                  placeholder="مثال: 123456789012345"
+                  value={productData.fb_pixel_id}
+                  onChange={(e) => setProductData({ ...productData, fb_pixel_id: e.target.value })}
+                  className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-600 text-white text-sm focus:border-emerald-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-300 mb-1.5 font-semibold">TikTok Pixel ID (تيك توك بيكسل)</label>
+                <input
+                  type="text"
+                  placeholder="مثال: C1234567890ABCDEF"
+                  value={productData.tiktok_pixel_id}
+                  onChange={(e) => setProductData({ ...productData, tiktok_pixel_id: e.target.value })}
+                  className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-600 text-white text-sm focus:border-emerald-400 focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* اسم المنتج */}
           <div>
             <label className="block mb-2 text-sm text-slate-300 font-semibold">اسم المنتج</label>
             <input
@@ -315,6 +355,7 @@ export default function AdminDashboard() {
             />
           </div>
 
+          {/* تفاصيل ومميزات المنتج */}
           <div>
             <label className="block mb-2 text-sm text-slate-300 font-semibold">تفاصيل ومميزات المنتج (تظهر مباشرة تحت السعر)</label>
             <textarea
@@ -326,6 +367,7 @@ export default function AdminDashboard() {
             ></textarea>
           </div>
 
+          {/* أسعار المنتج */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block mb-2 text-sm text-slate-300 font-semibold">سعر البيع بعد الخصم (ج.م)</label>
@@ -348,6 +390,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          {/* تسعير الشحن للمحافظات */}
           <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40 space-y-4">
             <div>
               <h3 className="text-base font-bold text-emerald-400">تسعير الشحن حسب المحافظات والمناطق (ج.م)</h3>
@@ -435,6 +478,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          {/* معرض الصور */}
           <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
             <label className="block mb-2 text-sm font-semibold text-slate-200">
               معرض صور المنتج (اختر صورة أو أكثر معاً لتقليبها)
@@ -472,6 +516,7 @@ export default function AdminDashboard() {
             )}
           </div>
 
+          {/* رفع فيديو */}
           <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40">
             <label className="block mb-2 text-sm font-semibold text-slate-200">فيديو توضيحي للمنتج (اختياري)</label>
             <input
@@ -489,6 +534,7 @@ export default function AdminDashboard() {
             )}
           </div>
 
+          {/* قسم الألوان */}
           <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40 space-y-3">
             <div className="flex items-center justify-between">
               <label className="font-semibold text-sm text-slate-200">خيارات الألوان</label>
@@ -541,6 +587,7 @@ export default function AdminDashboard() {
             )}
           </div>
 
+          {/* قسم المقاسات */}
           <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40 space-y-3">
             <div className="flex items-center justify-between">
               <label className="font-semibold text-sm text-slate-200">خيارات المقاسات</label>
@@ -560,7 +607,7 @@ export default function AdminDashboard() {
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="المقاس (مثال: 41, 42, 43 أو M, L, XL)"
+                    placeholder="المقاس (مثال: 41، 42، 43 أو M, L, XL)"
                     value={newSizeName}
                     onChange={(e) => setNewSizeName(e.target.value)}
                     className="flex-1 p-2 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
