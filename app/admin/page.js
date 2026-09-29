@@ -7,10 +7,10 @@ export default function AdminDashboard() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('products'); // 'products' | 'settings' | 'pixel'
-  const [message, setMessage] = useState('');
+  const [currentView, setCurrentView] = useState('overview'); // 'overview' | 'products' | 'orders'
+  const [statusMessage, setStatusMessage] = useState('');
 
-  // بيانات الإعدادات والبيكسل
+  // إعدادات المتجر والبيكسل والشحن
   const [settings, setSettings] = useState({
     store_name: '',
     fb_pixel_id: '',
@@ -25,11 +25,13 @@ export default function AdminDashboard() {
     },
   });
 
-  // قائمة المنتجات
+  // المنتجات والطلبات
   const [products, setProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
 
-  // نافذة إضافة / تعديل منتج
+  // نافذة إضافة وتعديل منتج
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({
@@ -49,38 +51,33 @@ export default function AdminDashboard() {
   const [newColorCode, setNewColorCode] = useState('#000000');
   const [newSizeName, setNewSizeName] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
-  const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) {
-        loadSettings();
-        loadProducts();
-      }
+      if (session) loadAllDashboardData();
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) {
-        loadSettings();
-        loadProducts();
-      }
+      if (session) loadAllDashboardData();
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadSettings = async () => {
-    const { data } = await supabase.from('store_settings').select('*').eq('id', 1).single();
-    if (data) {
+  const loadAllDashboardData = async () => {
+    setLoadingData(true);
+
+    // 1. جلب الإعدادات
+    const { data: setRes } = await supabase.from('store_settings').select('*').eq('id', 1).single();
+    if (setRes) {
       setSettings({
-        store_name: data.store_name || '',
-        fb_pixel_id: data.fb_pixel_id || '',
-        tiktok_pixel_id: data.tiktok_pixel_id || '',
-        shipping_rates: data.shipping_rates || {
+        store_name: setRes.store_name || '',
+        fb_pixel_id: setRes.fb_pixel_id || '',
+        tiktok_pixel_id: setRes.tiktok_pixel_id || '',
+        shipping_rates: setRes.shipping_rates || {
           cairo_giza: 50,
           alex: 60,
           delta: 65,
@@ -90,21 +87,24 @@ export default function AdminDashboard() {
         },
       });
     }
-  };
 
-  const loadProducts = async () => {
-    setLoadingProducts(true);
-    const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-    if (data) setProducts(data);
-    setLoadingProducts(false);
+    // 2. جلب المنتجات
+    const { data: prodRes } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+    if (prodRes) setProducts(prodRes);
+
+    // 3. جلب الطلبات
+    const { data: ordRes } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+    if (ordRes) setOrders(ordRes);
+
+    setLoadingData(false);
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setAuthLoading(true);
-    setMessage('');
+    setStatusMessage('');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setMessage('❌ بيانات تسجيل الدخول غير صحيحة');
+    if (error) setStatusMessage('❌ بيانات الدخول غير صحيحة');
     setAuthLoading(false);
   };
 
@@ -112,10 +112,11 @@ export default function AdminDashboard() {
     await supabase.auth.signOut();
   };
 
+  // حفظ الإعدادات والبيكسل
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
-    setMessage('');
+    setStatusMessage('');
 
     const { error } = await supabase.from('store_settings').upsert({
       id: 1,
@@ -127,14 +128,15 @@ export default function AdminDashboard() {
     });
 
     if (!error) {
-      setMessage('✅ تم حفظ الإعدادات بنجاح!');
-      setTimeout(() => setMessage(''), 3000);
+      setStatusMessage('✅ تم حفظ التعديلات بنجاح!');
+      setTimeout(() => setStatusMessage(''), 3000);
     } else {
-      setMessage('❌ خطأ في الحفظ: ' + error.message);
+      setStatusMessage('❌ خطأ أثناء الحفظ: ' + error.message);
     }
     setSavingSettings(false);
   };
 
+  // فتح نافذة الإضافة
   const openAddModal = () => {
     setEditingProduct(null);
     setProductForm({
@@ -152,6 +154,7 @@ export default function AdminDashboard() {
     setIsModalOpen(true);
   };
 
+  // فتح نافذة التعديل
   const openEditModal = (prod) => {
     setEditingProduct(prod);
     setProductForm({
@@ -169,16 +172,18 @@ export default function AdminDashboard() {
     setIsModalOpen(true);
   };
 
+  // حذف منتج
   const handleDeleteProduct = async (id) => {
-    if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
+    if (!confirm('هل تريد بالتأكيد حذف هذا المنتج؟')) return;
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (!error) {
-      loadProducts();
+      setProducts((prev) => prev.filter((p) => p.id !== id));
     } else {
-      alert('خطأ أثناء الحذف: ' + error.message);
+      alert('حدث خطأ أثناء الحذف: ' + error.message);
     }
   };
 
+  // رفع الصور
   const handleMultipleImagesUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -188,7 +193,7 @@ export default function AdminDashboard() {
       const urls = [];
       for (const file of files) {
         const fileExt = file.name.split('.').pop();
-        const fileName = `prod_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const fileName = `p_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `uploads/${fileName}`;
 
         const { error: uploadError } = await supabase.storage.from('products').upload(filePath, file);
@@ -199,18 +204,12 @@ export default function AdminDashboard() {
       }
       setProductForm((prev) => ({ ...prev, images: [...prev.images, ...urls] }));
     } catch (err) {
-      alert('فشل الرفع: ' + err.message);
+      alert('خطأ أثناء الرفع: ' + err.message);
     }
     setUploadingImage(false);
   };
 
-  const removeImage = (idx) => {
-    setProductForm((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== idx),
-    }));
-  };
-
+  // حفظ المنتج (إضافة أو تعديل)
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     setSavingProduct(true);
@@ -228,33 +227,38 @@ export default function AdminDashboard() {
       sizes: productForm.sizes,
     };
 
-    let resultError = null;
-
+    let resErr = null;
     if (editingProduct) {
       const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id);
-      resultError = error;
+      resErr = error;
     } else {
       const { error } = await supabase.from('products').insert([payload]);
-      resultError = error;
+      resErr = error;
     }
 
-    if (!resultError) {
+    if (!resErr) {
       setIsModalOpen(false);
-      loadProducts();
+      loadAllDashboardData();
     } else {
-      alert('حدث خطأ أثناء حفظ المنتج: ' + resultError.message);
+      alert('فشل حفظ المنتج: ' + resErr.message);
     }
     setSavingProduct(false);
   };
 
+  // إجمالي المبيعات
+  const totalRevenue = orders.reduce((sum, ord) => sum + (Number(ord.total_amount) || Number(ord.total_price) || 0), 0);
+
   if (!session) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 text-white font-sans" dir="rtl">
-        <form onSubmit={handleLogin} className="bg-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-700">
-          <h1 className="text-2xl font-black mb-6 text-center text-emerald-400">لوحة تحكم المتجر</h1>
-          {message && <div className="p-3 mb-4 bg-red-500/20 text-red-300 rounded-xl text-sm text-center">{message}</div>}
-          <div className="mb-4">
-            <label className="block mb-2 text-sm text-slate-300 font-semibold">البريد الإلكتروني</label>
+        <form onSubmit={handleLogin} className="bg-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-700 space-y-5">
+          <div className="text-center">
+            <h1 className="text-2xl font-black text-emerald-400">لوحة تحكم المتجر</h1>
+            <p className="text-xs text-slate-400 mt-1">سجل الدخول لإدارة منتجاتك ومبيعاتك</p>
+          </div>
+          {statusMessage && <div className="p-3 bg-red-500/20 text-red-300 rounded-xl text-sm text-center font-bold">{statusMessage}</div>}
+          <div>
+            <label className="block mb-2 text-xs font-bold text-slate-300">البريد الإلكتروني</label>
             <input
               type="email"
               value={email}
@@ -263,8 +267,8 @@ export default function AdminDashboard() {
               required
             />
           </div>
-          <div className="mb-6">
-            <label className="block mb-2 text-sm text-slate-300 font-semibold">كلمة المرور</label>
+          <div>
+            <label className="block mb-2 text-xs font-bold text-slate-300">كلمة المرور</label>
             <input
               type="password"
               value={password}
@@ -286,133 +290,319 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white font-sans p-4 sm:p-8" dir="rtl">
-      <div className="max-w-5xl mx-auto">
-        
-        {/* الترويسة العلوية */}
-        <header className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8 pb-6 border-b border-slate-800">
+    <div className="min-h-screen bg-slate-950 text-white font-sans antialiased" dir="rtl">
+      
+      {/* الشريط العلوي العام */}
+      <header className="bg-slate-900/90 backdrop-blur border-b border-slate-800 py-3.5 px-4 sm:px-8 sticky top-0 z-40 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">⚡</span>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-emerald-400">لوحة تحكم المتجر</h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">إدارة المنتجات، تسعير الشحن، وبيكسل التتبع الإعلاني</p>
+            <h1 className="text-base sm:text-lg font-black text-white">{settings.store_name || 'لوحة تحكم المتجر'}</h1>
+            <p className="text-[11px] text-emerald-400 font-semibold">متصل بقاعدة البيانات وجوجل شيت</p>
           </div>
-          <div className="flex items-center gap-3">
-            <a
-              href="/"
-              target="_blank"
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-bold border border-slate-700 transition"
-            >
-              👁️ معاينة المتجر
-            </a>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-xl text-sm font-bold transition"
-            >
-              تسجيل الخروج
-            </button>
-          </div>
-        </header>
+        </div>
 
-        {message && (
-          <div className="p-4 mb-6 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-center font-bold">
-            {message}
-          </div>
-        )}
-
-        {/* أزرار التبويبات الرئيسية (Tabs) */}
-        <div className="flex border-b border-slate-800 mb-8 gap-2 overflow-x-auto pb-1">
+        <div className="flex items-center gap-3">
+          <a
+            href="/"
+            target="_blank"
+            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+          >
+            <span>👁️</span>
+            <span>عرض المتجر</span>
+          </a>
           <button
-            onClick={() => setActiveTab('products')}
-            className={`py-3 px-5 font-black text-sm rounded-xl transition ${
-              activeTab === 'products'
+            onClick={handleLogout}
+            className="px-3.5 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/20 rounded-xl text-xs font-bold transition"
+          >
+            خروج
+          </button>
+        </div>
+      </header>
+
+      <div className="max-w-6xl mx-auto p-4 sm:p-8 space-y-8">
+        
+        {/* شريط الأقسام الرئيسي */}
+        <div className="flex bg-slate-900 p-1.5 rounded-2xl border border-slate-800 gap-1.5 overflow-x-auto">
+          <button
+            onClick={() => setCurrentView('overview')}
+            className={`flex-1 min-w-[130px] py-3 rounded-xl font-black text-xs sm:text-sm transition flex items-center justify-center gap-2 ${
+              currentView === 'overview'
                 ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
-            📦 المنتجات ({products.length})
+            <span>📊</span>
+            <span>الرئيسية والإعدادات</span>
           </button>
 
           <button
-            onClick={() => setActiveTab('settings')}
-            className={`py-3 px-5 font-black text-sm rounded-xl transition ${
-              activeTab === 'settings'
+            onClick={() => setCurrentView('products')}
+            className={`flex-1 min-w-[130px] py-3 rounded-xl font-black text-xs sm:text-sm transition flex items-center justify-center gap-2 ${
+              currentView === 'products'
                 ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
-            ⚙️ إعدادات المتجر والشحن
+            <span>📦</span>
+            <span>المنتجات ({products.length})</span>
           </button>
 
           <button
-            onClick={() => setActiveTab('pixel')}
-            className={`py-3 px-5 font-black text-sm rounded-xl transition ${
-              activeTab === 'pixel'
+            onClick={() => setCurrentView('orders')}
+            className={`flex-1 min-w-[130px] py-3 rounded-xl font-black text-xs sm:text-sm transition flex items-center justify-center gap-2 ${
+              currentView === 'orders'
                 ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800'
             }`}
           >
-            🎯 إعدادات البيكسل (Tracking)
+            <span>🛒</span>
+            <span>الطلبات ({orders.length})</span>
           </button>
         </div>
 
-        {/* 1. تبويب المنتجات */}
-        {activeTab === 'products' && (
+        {statusMessage && (
+          <div className="p-4 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-2xl text-center font-bold text-sm">
+            {statusMessage}
+          </div>
+        )}
+
+        {/* 1. قسم الرئيسية والإعدادات العامة والبيكسل */}
+        {currentView === 'overview' && (
+          <div className="space-y-8">
+            
+            {/* بطاقات الإحصائيات السريعة */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-xl">
+                <span className="text-xs text-slate-400 font-bold block mb-1">المنتجات المعروضة</span>
+                <span className="text-2xl sm:text-3xl font-black text-white">{products.length}</span>
+              </div>
+
+              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-xl">
+                <span className="text-xs text-slate-400 font-bold block mb-1">إجمالي الطلبات</span>
+                <span className="text-2xl sm:text-3xl font-black text-emerald-400">{orders.length}</span>
+              </div>
+
+              <div className="col-span-2 sm:col-span-1 bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-xl">
+                <span className="text-xs text-slate-400 font-bold block mb-1">إجمالي المبيعات</span>
+                <span className="text-2xl sm:text-3xl font-black text-emerald-400">{totalRevenue.toLocaleString()} <span className="text-xs text-slate-300">ج.م</span></span>
+              </div>
+            </div>
+
+            {/* فورم إعدادات الموقع والبيكسل والشحن */}
+            <form onSubmit={handleSaveSettings} className="space-y-6">
+              
+              {/* إعداد اسم الموقع */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl space-y-4">
+                <div className="border-b border-slate-800 pb-3">
+                  <h3 className="text-base font-black text-white">🏷️ اسم الموقع والمتجر</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">يظهر اسم المتجر في أعلى الصفحة الرئيسية وفي شريط الإعلانات</p>
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    required
+                    placeholder="مثال: لَمّة ستور، متجر الأناقة..."
+                    value={settings.store_name}
+                    onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
+                    className="w-full p-3.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-400 font-bold text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* إعدادات بيكسل الإعلانات */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl space-y-5">
+                <div className="border-b border-slate-800 pb-3">
+                  <h3 className="text-base font-black text-emerald-400">🎯 إعدادات بيكسل الإعلانات (Meta & TikTok Pixel)</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">ضع معرّف البيكسل لربط التتبع التلقائي لمبيعاتك وحملاتك الإعلانية</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">Meta Pixel ID (فيسبوك بيكسل)</label>
+                    <input
+                      type="text"
+                      placeholder="مثال: 123456789012345"
+                      value={settings.fb_pixel_id}
+                      onChange={(e) => setSettings({ ...settings, fb_pixel_id: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm font-mono focus:outline-none focus:border-emerald-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1.5">TikTok Pixel ID (تيك توك بيكسل)</label>
+                    <input
+                      type="text"
+                      placeholder="مثال: C1234567890ABCDEF"
+                      value={settings.tiktok_pixel_id}
+                      onChange={(e) => setSettings({ ...settings, tiktok_pixel_id: e.target.value })}
+                      className="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm font-mono focus:outline-none focus:border-emerald-400"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* تسعير الشحن الإقليمي */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl space-y-4">
+                <div className="border-b border-slate-800 pb-3">
+                  <h3 className="text-base font-black text-white">🚚 تسعير الشحن للمحافظات (ج.م)</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">تطبق التكلفة تلقائياً على العميل بمجرد اختيار محافظته</p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                  <div>
+                    <label className="block text-xs text-slate-300 mb-1 font-semibold">القاهرة والجيزة</label>
+                    <input
+                      type="number"
+                      value={settings.shipping_rates?.cairo_giza ?? 50}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        shipping_rates: { ...settings.shipping_rates, cairo_giza: Number(e.target.value) }
+                      })}
+                      className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-slate-300 mb-1 font-semibold">الإسكندرية</label>
+                    <input
+                      type="number"
+                      value={settings.shipping_rates?.alex ?? 60}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        shipping_rates: { ...settings.shipping_rates, alex: Number(e.target.value) }
+                      })}
+                      className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-slate-300 mb-1 font-semibold">وجه بحري (الدلتا)</label>
+                    <input
+                      type="number"
+                      value={settings.shipping_rates?.delta ?? 65}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        shipping_rates: { ...settings.shipping_rates, delta: Number(e.target.value) }
+                      })}
+                      className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-slate-300 mb-1 font-semibold">مدن القناة</label>
+                    <input
+                      type="number"
+                      value={settings.shipping_rates?.canal ?? 70}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        shipping_rates: { ...settings.shipping_rates, canal: Number(e.target.value) }
+                      })}
+                      className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-slate-300 mb-1 font-semibold">وجه قبلي (الصعيد)</label>
+                    <input
+                      type="number"
+                      value={settings.shipping_rates?.upper_egypt ?? 80}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        shipping_rates: { ...settings.shipping_rates, upper_egypt: Number(e.target.value) }
+                      })}
+                      className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-slate-300 mb-1 font-semibold">محافظات حدودية</label>
+                    <input
+                      type="number"
+                      value={settings.shipping_rates?.remote ?? 100}
+                      onChange={(e) => setSettings({
+                        ...settings,
+                        shipping_rates: { ...settings.shipping_rates, remote: Number(e.target.value) }
+                      })}
+                      className="w-full p-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingSettings}
+                className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-base rounded-2xl shadow-lg shadow-emerald-500/20 transition active:scale-[0.99] disabled:opacity-50"
+              >
+                {savingSettings ? 'جاري الحفظ...' : 'حفظ إعدادات المتجر والبيكسل والشحن 🚀'}
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* 2. قسم إدارة المنتجات */}
+        {currentView === 'products' && (
           <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-black text-white">قائمة المنتجات المعروضة</h2>
+            <div className="flex justify-between items-center bg-slate-900 p-5 rounded-3xl border border-slate-800">
+              <div>
+                <h2 className="text-lg font-black text-white">المنتجات المعروضة في المتجر</h2>
+                <p className="text-xs text-slate-400">يمكنك تعديل أي منتج أو حذفه أو إضافة منتج جديد</p>
+              </div>
               <button
                 onClick={openAddModal}
-                className="py-3 px-5 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm rounded-2xl shadow-lg shadow-emerald-500/20 transition active:scale-95 flex items-center gap-2"
+                className="py-3 px-5 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-emerald-500/20 transition active:scale-95 flex items-center gap-1.5"
               >
                 <span>➕</span>
                 <span>إضافة منتج جديد</span>
               </button>
             </div>
 
-            {loadingProducts ? (
+            {loadingData ? (
               <div className="p-12 text-center text-slate-400">جاري تحميل المنتجات...</div>
             ) : products.length === 0 ? (
-              <div className="bg-slate-800/50 border border-slate-800 rounded-3xl p-12 text-center space-y-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center space-y-4">
                 <span className="text-5xl">🛍️</span>
-                <p className="text-lg text-slate-300 font-bold">لا يوجد أي منتج مضاف حتى الآن!</p>
+                <p className="text-slate-300 font-bold">لا يوجد أي منتج في المتجر حتى الآن!</p>
                 <button
                   onClick={openAddModal}
                   className="py-3 px-6 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-sm"
                 >
-                  أضف أول منتج لمتجرك الآن
+                  أضف منتجك الأول الآن
                 </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                 {products.map((prod) => (
-                  <div key={prod.id} className="bg-slate-800/80 border border-slate-700 rounded-3xl p-4 flex flex-col justify-between shadow-xl">
+                  <div key={prod.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-4 flex flex-col justify-between shadow-xl">
                     <div className="space-y-3">
-                      <div className="w-full h-44 bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center border border-slate-700/60">
+                      <div className="w-full h-44 bg-slate-800 rounded-2xl overflow-hidden flex items-center justify-center border border-slate-700/50">
                         {Array.isArray(prod.images) && prod.images[0] ? (
                           <img src={prod.images[0]} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-slate-500 text-sm">بدون صورة</span>
+                          <span className="text-slate-500 text-xs">بدون صورة</span>
                         )}
                       </div>
                       <div>
-                        <h3 className="font-extrabold text-base text-white line-clamp-1">{prod.name}</h3>
-                        <p className="text-emerald-400 font-black text-lg mt-1">{prod.price} ج.م</p>
+                        <h4 className="font-extrabold text-base text-white line-clamp-1">{prod.name}</h4>
+                        <p className="text-emerald-400 font-black text-lg mt-0.5">{prod.price} ج.م</p>
                       </div>
-                      <div className="flex gap-2 text-xs text-slate-400">
-                        {prod.show_colors && <span>🎨 ألوان</span>}
-                        {prod.show_sizes && <span>📏 مقاسات</span>}
+                      <div className="flex gap-2 text-[11px] text-slate-400">
+                        {prod.show_colors && <span>🎨 ألوان مفعّلة</span>}
+                        {prod.show_sizes && <span>📏 مقاسات مفعّلة</span>}
                       </div>
                     </div>
 
-                    <div className="flex gap-2 mt-4 pt-4 border-t border-slate-700/60">
+                    <div className="flex gap-2 mt-4 pt-3 border-t border-slate-800">
                       <button
                         onClick={() => openEditModal(prod)}
-                        className="flex-1 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs rounded-xl transition"
+                        className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl transition"
                       >
                         تعديل ✏️
                       </button>
                       <button
                         onClick={() => handleDeleteProduct(prod.id)}
-                        className="py-2.5 px-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold text-xs rounded-xl transition"
+                        className="py-2.5 px-3.5 bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/20 font-bold text-xs rounded-xl transition"
                       >
                         حذف 🗑️
                       </button>
@@ -424,183 +614,81 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 2. تبويب إعدادات المتجر والشحن */}
-        {activeTab === 'settings' && (
-          <form onSubmit={handleSaveSettings} className="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-            <div>
-              <h2 className="text-xl font-black text-white mb-1">بيانات المتجر العامة</h2>
-              <p className="text-xs text-slate-400 mb-4">اسم المتجر يظهر في ترويسة الموقع لجميع الزوار</p>
-              <label className="block text-sm font-bold text-slate-300 mb-2">اسم المتجر / العلامة التجارية</label>
-              <input
-                type="text"
-                value={settings.store_name}
-                onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
-                placeholder="مثال: متجر لَمّة، الرواد ستور..."
-                className="w-full p-3.5 rounded-xl bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-emerald-400"
-                required
-              />
-            </div>
-
-            <div className="border-t border-slate-700 pt-6 space-y-4">
+        {/* 3. قسم الطلبات الواردة */}
+        {currentView === 'orders' && (
+          <div className="space-y-6">
+            <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 flex justify-between items-center">
               <div>
-                <h3 className="text-lg font-black text-emerald-400">تسعير الشحن الإقليمي للمحافظات (ج.م)</h3>
-                <p className="text-xs text-slate-400 mt-0.5">يتم احتساب التكلفة المحددة هنا فور اختيار العميل لمحافظته</p>
+                <h2 className="text-lg font-black text-white">الطلبات الواردة من المتجر</h2>
+                <p className="text-xs text-slate-400">تُحفظ تلقائياً هنا وفي جوجل شيت في نفس اللحظة</p>
               </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">القاهرة والجيزة</label>
-                  <input
-                    type="number"
-                    value={settings.shipping_rates?.cairo_giza ?? 50}
-                    onChange={(e) => setSettings({
-                      ...settings,
-                      shipping_rates: { ...settings.shipping_rates, cairo_giza: Number(e.target.value) }
-                    })}
-                    className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">الإسكندرية</label>
-                  <input
-                    type="number"
-                    value={settings.shipping_rates?.alex ?? 60}
-                    onChange={(e) => setSettings({
-                      ...settings,
-                      shipping_rates: { ...settings.shipping_rates, alex: Number(e.target.value) }
-                    })}
-                    className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">وجه بحري (الدلتا)</label>
-                  <input
-                    type="number"
-                    value={settings.shipping_rates?.delta ?? 65}
-                    onChange={(e) => setSettings({
-                      ...settings,
-                      shipping_rates: { ...settings.shipping_rates, delta: Number(e.target.value) }
-                    })}
-                    className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">مدن القناة</label>
-                  <input
-                    type="number"
-                    value={settings.shipping_rates?.canal ?? 70}
-                    onChange={(e) => setSettings({
-                      ...settings,
-                      shipping_rates: { ...settings.shipping_rates, canal: Number(e.target.value) }
-                    })}
-                    className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">وجه قبلي (الصعيد)</label>
-                  <input
-                    type="number"
-                    value={settings.shipping_rates?.upper_egypt ?? 80}
-                    onChange={(e) => setSettings({
-                      ...settings,
-                      shipping_rates: { ...settings.shipping_rates, upper_egypt: Number(e.target.value) }
-                    })}
-                    className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">محافظات حدودية</label>
-                  <input
-                    type="number"
-                    value={settings.shipping_rates?.remote ?? 100}
-                    onChange={(e) => setSettings({
-                      ...settings,
-                      shipping_rates: { ...settings.shipping_rates, remote: Number(e.target.value) }
-                    })}
-                    className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
-                  />
-                </div>
-              </div>
+              <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
+                {orders.length} طلب
+              </span>
             </div>
 
-            <button
-              type="submit"
-              disabled={savingSettings}
-              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-base rounded-2xl shadow-lg shadow-emerald-500/20 transition active:scale-[0.99] disabled:opacity-50"
-            >
-              {savingSettings ? 'جاري الحفظ...' : 'حفظ إعدادات المتجر والشحن 🚀'}
-            </button>
-          </form>
-        )}
-
-        {/* 3. تبويب إعدادات البيكسل */}
-        {activeTab === 'pixel' && (
-          <form onSubmit={handleSaveSettings} className="bg-slate-800/80 border border-slate-700 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-            <div>
-              <h2 className="text-xl font-black text-white mb-1">إعدادات بيكسل الإعلانات (Meta & TikTok)</h2>
-              <p className="text-xs text-slate-400 mb-6">
-                ضع معرفات البيكسل ليقوم المتجر تلقائياً بتتبع أحداث: الزيارة (PageView)، إضافة للسلة (AddToCart)، بدء الطلب (InitiateCheckout)، وإتمام الشراء (Purchase).
-              </p>
-            </div>
-
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-1.5 flex items-center gap-2">
-                  <span>🔵</span>
-                  <span>Meta Pixel ID (فيسبوك بيكسل)</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="مثال: 123456789012345"
-                  value={settings.fb_pixel_id}
-                  onChange={(e) => setSettings({ ...settings, fb_pixel_id: e.target.value })}
-                  className="w-full p-3.5 rounded-xl bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-emerald-400 font-mono text-sm"
-                />
+            {orders.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 font-bold">
+                لا توجد طلبات واردة حتى الآن.
               </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-300 mb-1.5 flex items-center gap-2">
-                  <span>⚫</span>
-                  <span>TikTok Pixel ID (تيك توك بيكسل)</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="مثال: C1234567890ABCDEF"
-                  value={settings.tiktok_pixel_id}
-                  onChange={(e) => setSettings({ ...settings, tiktok_pixel_id: e.target.value })}
-                  className="w-full p-3.5 rounded-xl bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-emerald-400 font-mono text-sm"
-                />
+            ) : (
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-right text-sm">
+                    <thead className="bg-slate-800/80 text-slate-300 text-xs font-bold border-b border-slate-700">
+                      <tr>
+                        <th className="p-3.5">العميل</th>
+                        <th className="p-3.5">الهاتف</th>
+                        <th className="p-3.5">المحافظة / العنوان</th>
+                        <th className="p-3.5">المنتج والمواصفات</th>
+                        <th className="p-3.5">الإجمالي</th>
+                        <th className="p-3.5">التاريخ</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {orders.map((ord) => (
+                        <tr key={ord.id} className="hover:bg-slate-800/40 text-slate-200 text-xs sm:text-sm">
+                          <td className="p-3.5 font-bold text-white">{ord.customer_name}</td>
+                          <td className="p-3.5 font-mono">{ord.phone}</td>
+                          <td className="p-3.5">{ord.address}</td>
+                          <td className="p-3.5">
+                            <span className="font-semibold text-emerald-300">{ord.product_name}</span>
+                            {(ord.selected_color || ord.selected_size) && (
+                              <span className="block text-[11px] text-slate-400 mt-0.5">
+                                {ord.selected_color && `اللون: ${ord.selected_color} `}
+                                {ord.selected_size && `المقاس: ${ord.selected_size}`}
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3.5 font-black text-emerald-400">
+                            {ord.total_amount || ord.total_price} ج.م
+                          </td>
+                          <td className="p-3.5 text-slate-400 text-xs">
+                            {new Date(ord.created_at).toLocaleDateString('ar-EG')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={savingSettings}
-              className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-base rounded-2xl shadow-lg shadow-emerald-500/20 transition active:scale-[0.99] disabled:opacity-50"
-            >
-              {savingSettings ? 'جاري الحفظ...' : 'حفظ إعدادات البيكسل 🚀'}
-            </button>
-          </form>
+            )}
+          </div>
         )}
 
       </div>
 
-      {/* نافذة منبثقة لإضافة أو تعديل منتج (Modal) */}
+      {/* نافذة Modal لإضافة أو تعديل منتج */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-slate-800 border border-slate-700 rounded-3xl w-full max-w-2xl p-6 sm:p-8 space-y-6 my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b border-slate-700 pb-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl p-6 sm:p-8 space-y-6 my-8 max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-4">
               <h3 className="text-xl font-black text-emerald-400">
-                {editingProduct ? 'تعديل المنتج' : 'إضافة منتج جديد'}
+                {editingProduct ? 'تعديل بيانات المنتج' : 'إضافة منتج جديد'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 font-bold"
+                className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 font-bold"
               >
                 ✕
               </button>
@@ -612,10 +700,10 @@ export default function AdminDashboard() {
                 <input
                   type="text"
                   required
-                  placeholder="مثال: كوتش مريح وعملي"
+                  placeholder="مثال: كوتش مريح خامات مستوردة"
                   value={productForm.name}
                   onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                  className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
+                  className="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm"
                 />
               </div>
 
@@ -627,7 +715,7 @@ export default function AdminDashboard() {
                     required
                     value={productForm.price}
                     onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                    className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
+                    className="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm"
                   />
                 </div>
                 <div>
@@ -636,7 +724,7 @@ export default function AdminDashboard() {
                     type="number"
                     value={productForm.original_price}
                     onChange={(e) => setProductForm({ ...productForm, original_price: e.target.value })}
-                    className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm"
+                    className="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm"
                   />
                 </div>
               </div>
@@ -645,16 +733,16 @@ export default function AdminDashboard() {
                 <label className="block text-xs font-bold text-slate-300 mb-1.5">وصف ومميزات المنتج</label>
                 <textarea
                   rows="4"
-                  placeholder="اكتب هنا كل مواصفات ومميزات المنتج..."
+                  placeholder="اكتب تفاصيل المنتج ومميزاته التي تظهر في المتجر..."
                   value={productForm.description}
                   onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                  className="w-full p-3 rounded-xl bg-slate-700 border border-slate-600 text-white text-sm leading-relaxed"
+                  className="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm leading-relaxed"
                 ></textarea>
               </div>
 
               {/* صور المنتج */}
-              <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40 space-y-3">
-                <label className="block text-xs font-bold text-slate-200">معرض الصور (اختر صورة أو أكثر)</label>
+              <div className="border border-slate-800 p-4 rounded-xl bg-slate-800/40 space-y-3">
+                <label className="block text-xs font-bold text-slate-200">معرض صور المنتج (اختر صورة أو أكثر)</label>
                 <input
                   type="file"
                   multiple
@@ -668,12 +756,12 @@ export default function AdminDashboard() {
                 {productForm.images.length > 0 && (
                   <div className="grid grid-cols-4 gap-2 pt-2">
                     {productForm.images.map((img, idx) => (
-                      <div key={idx} className="relative group border border-slate-600 rounded-lg overflow-hidden h-20">
+                      <div key={idx} className="relative group border border-slate-700 rounded-lg overflow-hidden h-20">
                         <img src={img} alt="" className="w-full h-full object-cover" />
                         <button
                           type="button"
-                          onClick={() => removeImage(idx)}
-                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                          onClick={() => setProductForm((p) => ({ ...p, images: p.images.filter((_, i) => i !== idx) }))}
+                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"
                         >
                           ×
                         </button>
@@ -683,8 +771,8 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              {/* قسم الألوان */}
-              <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40 space-y-3">
+              {/* الألوان */}
+              <div className="border border-slate-800 p-4 rounded-xl bg-slate-800/40 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-200">خيارات الألوان</span>
                   <label className="flex items-center gap-2 cursor-pointer text-xs">
@@ -705,14 +793,14 @@ export default function AdminDashboard() {
                         type="color"
                         value={newColorCode}
                         onChange={(e) => setNewColorCode(e.target.value)}
-                        className="w-10 h-9 p-1 bg-slate-700 border border-slate-600 rounded cursor-pointer"
+                        className="w-10 h-9 p-1 bg-slate-800 border border-slate-700 rounded cursor-pointer"
                       />
                       <input
                         type="text"
                         placeholder="اسم اللون (مثال: أسود)"
                         value={newColorName}
                         onChange={(e) => setNewColorName(e.target.value)}
-                        className="flex-1 p-2 rounded bg-slate-700 border border-slate-600 text-xs text-white"
+                        className="flex-1 p-2 rounded bg-slate-800 border border-slate-700 text-xs text-white"
                       />
                       <button
                         type="button"
@@ -733,7 +821,7 @@ export default function AdminDashboard() {
 
                     <div className="flex flex-wrap gap-2">
                       {productForm.colors.map((c, i) => (
-                        <div key={i} className="flex items-center gap-1.5 bg-slate-800 px-2 py-1 rounded border border-slate-600 text-xs">
+                        <div key={i} className="flex items-center gap-1.5 bg-slate-800 px-2 py-1 rounded border border-slate-700 text-xs">
                           <span className="w-3 h-3 rounded-full" style={{ backgroundColor: c.code }}></span>
                           <span>{c.name}</span>
                           <button
@@ -750,8 +838,8 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              {/* قسم المقاسات */}
-              <div className="border border-slate-700 p-4 rounded-xl bg-slate-700/40 space-y-3">
+              {/* المقاسات */}
+              <div className="border border-slate-800 p-4 rounded-xl bg-slate-800/40 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-200">خيارات المقاسات</span>
                   <label className="flex items-center gap-2 cursor-pointer text-xs">
@@ -773,7 +861,7 @@ export default function AdminDashboard() {
                         placeholder="المقاس (مثال: 42 أو XL)"
                         value={newSizeName}
                         onChange={(e) => setNewSizeName(e.target.value)}
-                        className="flex-1 p-2 rounded bg-slate-700 border border-slate-600 text-xs text-white"
+                        className="flex-1 p-2 rounded bg-slate-800 border border-slate-700 text-xs text-white"
                       />
                       <button
                         type="button"
@@ -794,7 +882,7 @@ export default function AdminDashboard() {
 
                     <div className="flex flex-wrap gap-2">
                       {productForm.sizes.map((s, i) => (
-                        <div key={i} className="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded border border-slate-600 text-xs font-bold">
+                        <div key={i} className="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded border border-slate-700 text-xs font-bold">
                           <span>{s}</span>
                           <button
                             type="button"
@@ -813,15 +901,15 @@ export default function AdminDashboard() {
               <div className="flex gap-3 pt-3">
                 <button
                   type="submit"
-                  disabled={savingProduct || uploadingImage || uploadingVideo}
+                  disabled={savingProduct || uploadingImage}
                   className="flex-1 py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-xl text-sm transition"
                 >
-                  {savingProduct ? 'جاري الحفظ...' : 'حفظ بيانات المنتج'}
+                  {savingProduct ? 'جاري الحفظ...' : 'حفظ المنتج'}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-3.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-xl text-sm"
+                  className="px-5 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-sm"
                 >
                   إلغاء
                 </button>
