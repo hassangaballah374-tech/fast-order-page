@@ -114,6 +114,8 @@ const EGYPT_REGIONS = {
   }
 };
 
+const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbw_zn4XtPgmuksXCQ8VsiUamby9bqj_OVuqJ4fEPhG9vHRww2qjsEvjuNg8SKSTJCwnbg/exec';
+
 export default function Home() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -127,12 +129,12 @@ export default function Home() {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
 
-  // سلة المشتريات مع الحفظ الدائم
+  // سلة المشتريات المحفوظة محلياً
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedNotice, setAddedNotice] = useState(false);
 
-  // بيانات العنوان والمحافظة المختارة
+  // بيانات العنوان والمحافظة
   const [selectedGovernorate, setSelectedGovernorate] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [currentShippingFee, setCurrentShippingFee] = useState(50);
@@ -144,7 +146,7 @@ export default function Home() {
     notes: '',
   });
 
-  // استرجاع السلة المحفوظة من ذاكرة المتصفح عند أول فتح للموقع
+  // استرجاع السلة من ذاكرة المتصفح
   useEffect(() => {
     try {
       const savedCart = localStorage.getItem('fast_order_cart');
@@ -156,7 +158,7 @@ export default function Home() {
     }
   }, []);
 
-  // حفظ أي تغيير في السلة تلقائياً في ذاكرة المتصفح (Persistence)
+  // حفظ السلة تلقائياً
   useEffect(() => {
     try {
       localStorage.setItem('fast_order_cart', JSON.stringify(cart));
@@ -309,6 +311,7 @@ export default function Home() {
     }
   };
 
+  // تأكيد الطلب وحفظه في Supabase وجوجل شيت
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -334,7 +337,12 @@ export default function Home() {
     const finalTotal = subtotal + shipping;
 
     const fullAddress = `${selectedGovernorate} - ${selectedCity || 'مركز/مدينة'} - ${formData.detailedAddress}`;
+    const productsSummary = itemsToOrder.map((i) => `${i.name} (عدد: ${i.quantity})`).join(' + ');
+    const colorsSummary = itemsToOrder.map((i) => i.color).filter(Boolean).join(', ') || selectedColor || '-';
+    const sizesSummary = itemsToOrder.map((i) => i.size).filter(Boolean).join(', ') || selectedSize || '-';
+    const totalQty = itemsToOrder.reduce((acc, i) => acc + i.quantity, 0);
 
+    // 1. الإرسال إلى Supabase
     const { error } = await supabase.from('orders').insert([
       {
         customer_name: formData.name,
@@ -343,16 +351,41 @@ export default function Home() {
         city: selectedCity,
         address: fullAddress,
         notes: formData.notes,
-        product_name: itemsToOrder.map((i) => `${i.name} (${i.quantity})`).join(' + '),
+        product_name: productsSummary,
         total_amount: finalTotal,
         total_price: finalTotal,
-        selected_color: itemsToOrder[0]?.color || selectedColor || null,
-        selected_size: itemsToOrder[0]?.size || selectedSize || null,
-        quantity: itemsToOrder.reduce((acc, i) => acc + i.quantity, 0),
+        selected_color: colorsSummary,
+        selected_size: sizesSummary,
+        quantity: totalQty,
         items: itemsToOrder,
         status: 'جديد',
       },
     ]);
+
+    // 2. المزامنة اللحظية مع شيت جوجل
+    try {
+      fetch(GOOGLE_SHEET_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          governorate: selectedGovernorate,
+          city: selectedCity,
+          address: formData.detailedAddress,
+          product_name: productsSummary,
+          color: colorsSummary,
+          size: sizesSummary,
+          quantity: totalQty,
+          shipping_fee: shipping,
+          total_amount: finalTotal,
+          notes: formData.notes,
+        }),
+      });
+    } catch (sheetError) {
+      console.error('Google Sheets sync error:', sheetError);
+    }
 
     if (!error) {
       setSuccess(true);
@@ -384,17 +417,17 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-28 antialiased" dir="rtl">
-      {/* شريط الإعلان العلوي المبهج */}
+      {/* شريط الإعلان العلوي */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-sm tracking-wide">
         🚚 التوصيل متاح لجميع محافظات مصر • الدفع عند الاستلام بعد المعاينة والفحص!
       </div>
 
-      {/* الهيدر العلوي الأبيض الأنيق - اسم المتجر بالمنتصف مع تأثير فاخر */}
+      {/* الهيدر العلوي الأبيض */}
       <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/80 py-4 px-4 sm:px-8 sticky top-0 z-40 shadow-sm">
         <div className="max-w-4xl mx-auto relative flex items-center justify-between">
           <div className="w-10 sm:w-20"></div>
 
-          {/* اسم المتجر في المنتصف */}
+          {/* اسم المتجر بالمنتصف */}
           <div className="text-center px-2">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 drop-shadow-sm select-none">
               {product?.store_name || 'متجرنا الرسمي'}
@@ -402,7 +435,7 @@ export default function Home() {
             <div className="w-12 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full mx-auto mt-1.5"></div>
           </div>
 
-          {/* زر السلة الأبيض المودرن */}
+          {/* زر السلة */}
           <div className="w-10 sm:w-20 flex justify-end">
             <button
               onClick={() => setIsCartOpen(true)}
@@ -422,10 +455,9 @@ export default function Home() {
       </header>
 
       <main className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
-        {/* بطاقة المنتج الأساسية البيضاء */}
         <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-lg p-5 sm:p-7 space-y-6">
           
-          {/* معرض الصور الفاتح والنقي */}
+          {/* معرض الصور الفاتح */}
           {galleryImages.length > 0 && (
             <div className="space-y-3">
               <div className="relative w-full bg-slate-100/70 rounded-2xl overflow-hidden border border-slate-200/80 flex items-center justify-center min-h-[320px] max-h-[520px] select-none p-2">
@@ -477,7 +509,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* فيديو المنتج */}
+          {/* فيديو توضيحي */}
           {product?.video_url && (
             <div className="rounded-2xl overflow-hidden border border-slate-200 bg-black">
               <video
@@ -488,7 +520,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* اسم المنتج وسعره */}
+          {/* اسم وسعر المنتج */}
           <div className="space-y-3">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
               {product?.product_name}
@@ -505,7 +537,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* تفاصيل ومميزات المنتج تحت الاسم والسعر مباشرة */}
+          {/* تفاصيل ومميزات المنتج */}
           {product?.description && (
             <div className="p-4 sm:p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
@@ -569,7 +601,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* أزرار الإجراءات الفاتحة والواضحة */}
+          {/* أزرار الإجراءات */}
           <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-100">
             <button
               type="button"
@@ -599,7 +631,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* نموذج استلام الطلب الفاتح */}
+        {/* نموذج استلام الطلب */}
         <div id="checkout-form" className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 shadow-lg scroll-mt-24">
           <div className="text-center mb-6">
             <h3 className="text-xl sm:text-2xl font-black text-slate-900">أدخل بيانات التوصيل</h3>
@@ -726,7 +758,7 @@ export default function Home() {
         </div>
       </main>
 
-      {/* نافذة سلة المشتريات المنبثقة البيضاء */}
+      {/* نافذة سلة المشتريات المنبثقة */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-slate-900/40 backdrop-blur-sm transition-opacity">
           <div className="w-full max-w-md h-full bg-white border-r border-slate-200 flex flex-col p-6 shadow-2xl">
@@ -811,7 +843,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* زر الموبايل الثابت الفاتح */}
+      {/* زر الموبايل الثابت */}
       <div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur border-t border-slate-200 z-40 flex items-center gap-3 shadow-lg">
         <button
           type="button"
