@@ -31,15 +31,6 @@ export default function RootLayout({ children }) {
             `,
           }}
         />
-        <noscript>
-          <img
-            height="1"
-            width="1"
-            style={{ display: 'none' }}
-            src={`https://www.facebook.com/tr?id=${FB_PIXEL_ID}&ev=PageView&noscript=1`}
-            alt=""
-          />
-        </noscript>
       </head>
       <body>{children}</body>
     </html>
