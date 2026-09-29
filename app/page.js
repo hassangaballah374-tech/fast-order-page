@@ -362,27 +362,55 @@ export default function Home() {
     const sizesSummary = itemsToOrder.map((i) => i.size).filter(Boolean).join(', ') || selectedSize || '-';
     const totalQty = itemsToOrder.reduce((acc, i) => acc + i.quantity, 0);
 
-    const { error } = await supabase.from('orders').insert([
-      {
-        customer_name: formData.name,
-        phone: formData.phone,
-        governorate: selectedGovernorate,
-        city: selectedCity,
-        address: fullAddress,
-        notes: formData.notes,
-        product_name: productsSummary,
-        total_amount: finalTotal,
-        total_price: finalTotal,
-        selected_color: colorsSummary,
-        selected_size: sizesSummary,
-        quantity: totalQty,
-        items: itemsToOrder,
-        status: 'جديد',
-      },
-    ]);
-
     try {
-      await fetch(GOOGLE_SHEET_URL, {
+      // 1. الحفظ السريع داخل Supabase
+      const { error } = await supabase.from('orders').insert([
+        {
+          customer_name: formData.name,
+          phone: formData.phone,
+          governorate: selectedGovernorate,
+          city: selectedCity,
+          address: fullAddress,
+          notes: formData.notes,
+          product_name: productsSummary,
+          total_amount: finalTotal,
+          total_price: finalTotal,
+          selected_color: colorsSummary,
+          selected_size: sizesSummary,
+          quantity: totalQty,
+          items: itemsToOrder,
+          status: 'جديد',
+        },
+      ]);
+
+      if (error) throw error;
+
+      // 2. إظهار شاشة النجاح فوراً في أجزاء من الثانية
+      setSuccess(true);
+      setOrderLoading(false);
+      setCart([]);
+      localStorage.removeItem('fast_order_cart');
+
+      // إرسال أحداث البيكسل في نفس اللحظة
+      if (typeof window !== 'undefined') {
+        if (window.fbq) {
+          window.fbq('track', 'Purchase', {
+            content_name: product?.name,
+            value: finalTotal,
+            currency: 'EGP',
+          });
+        }
+        if (window.ttq) {
+          window.ttq.track('CompletePayment', {
+            content_name: product?.name,
+            value: finalTotal,
+            currency: 'EGP',
+          });
+        }
+      }
+
+      // 3. إرسال الطلب لـ Google Sheets في الخلفية (Background) بدون تعطيل المستخدم
+      fetch(GOOGLE_SHEET_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'text/plain;charset=utf-8',
@@ -401,36 +429,12 @@ export default function Home() {
           total_amount: finalTotal,
           notes: formData.notes,
         }),
-      });
-    } catch (sheetError) {
-      console.error('Google Sheets error:', sheetError);
-    }
+      }).catch((sheetError) => console.error('Google Sheets background sync error:', sheetError));
 
-    if (!error) {
-      setSuccess(true);
-      setCart([]);
-      localStorage.removeItem('fast_order_cart');
-
-      if (typeof window !== 'undefined') {
-        if (window.fbq) {
-          window.fbq('track', 'Purchase', {
-            content_name: product?.name,
-            value: finalTotal,
-            currency: 'EGP',
-          });
-        }
-        if (window.ttq) {
-          window.ttq.track('CompletePayment', {
-            content_name: product?.name,
-            value: finalTotal,
-            currency: 'EGP',
-          });
-        }
-      }
-    } else {
-      alert('حدث خطأ أثناء إرسال الطلب: ' + error.message);
+    } catch (err) {
+      alert('حدث خطأ أثناء إرسال الطلب: ' + (err.message || 'يرجى المحاولة مرة أخرى'));
+      setOrderLoading(false);
     }
-    setOrderLoading(false);
   };
 
   if (loading) {
@@ -547,7 +551,7 @@ export default function Home() {
               {product?.name}
             </h2>
             <div className="flex items-baseline gap-3">
-              <span className="text-3xl sm:4xl font-black text-emerald-600">{product?.price} ج.م</span>
+              <span className="text-3xl sm:text-4xl font-black text-emerald-600">{product?.price} ج.م</span>
               {product?.original_price && (
                 <span className="text-xl line-through text-slate-400 font-medium">{product.original_price} ج.م</span>
               )}
@@ -648,7 +652,7 @@ export default function Home() {
           )}
         </div>
 
-        {/* نموذج كتابة البيانات وتأكيد الطلب */}
+        {/* نموذج كتابة البيانات وتأكيد الطلب السريع */}
         <div id="checkout-form" className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 shadow-lg scroll-mt-24">
           <div className="text-center mb-6">
             <h3 className="text-xl sm:text-2xl font-black text-slate-900">أدخل بيانات التوصيل</h3>
