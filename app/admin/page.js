@@ -112,7 +112,6 @@ export default function AdminDashboard() {
     await supabase.auth.signOut();
   };
 
-  // حفظ الإعدادات والبيكسل
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -136,7 +135,20 @@ export default function AdminDashboard() {
     setSavingSettings(false);
   };
 
-  // فتح نافذة الإضافة
+  // حذف طلب
+  const handleDeleteOrder = async (orderId) => {
+    if (!confirm('هل أنت متأكد من حذف هذا الطلب نهائياً؟')) return;
+
+    const { error } = await supabase.from('orders').delete().eq('id', orderId);
+    if (!error) {
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+      setStatusMessage('✅ تم حذف الطلب بنجاح');
+      setTimeout(() => setStatusMessage(''), 2500);
+    } else {
+      alert('حدث خطأ أثناء حذف الطلب: ' + error.message);
+    }
+  };
+
   const openAddModal = () => {
     setEditingProduct(null);
     setProductForm({
@@ -154,7 +166,6 @@ export default function AdminDashboard() {
     setIsModalOpen(true);
   };
 
-  // فتح نافذة التعديل
   const openEditModal = (prod) => {
     setEditingProduct(prod);
     setProductForm({
@@ -172,7 +183,6 @@ export default function AdminDashboard() {
     setIsModalOpen(true);
   };
 
-  // حذف منتج
   const handleDeleteProduct = async (id) => {
     if (!confirm('هل تريد بالتأكيد حذف هذا المنتج؟')) return;
     const { error } = await supabase.from('products').delete().eq('id', id);
@@ -183,7 +193,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // رفع الصور
   const handleMultipleImagesUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -209,7 +218,6 @@ export default function AdminDashboard() {
     setUploadingImage(false);
   };
 
-  // حفظ المنتج (إضافة أو تعديل)
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     setSavingProduct(true);
@@ -245,7 +253,6 @@ export default function AdminDashboard() {
     setSavingProduct(false);
   };
 
-  // إجمالي المبيعات
   const totalRevenue = orders.reduce((sum, ord) => sum + (Number(ord.total_amount) || Number(ord.total_price) || 0), 0);
 
   if (!session) {
@@ -291,8 +298,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white font-sans antialiased" dir="rtl">
-      
-      {/* الشريط العلوي العام */}
+      {/* الشريط العلوي */}
       <header className="bg-slate-900/90 backdrop-blur border-b border-slate-800 py-3.5 px-4 sm:px-8 sticky top-0 z-40 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-2xl">⚡</span>
@@ -321,8 +327,7 @@ export default function AdminDashboard() {
       </header>
 
       <div className="max-w-6xl mx-auto p-4 sm:p-8 space-y-8">
-        
-        {/* شريط الأقسام الرئيسي */}
+        {/* شريط الأقسام */}
         <div className="flex bg-slate-900 p-1.5 rounded-2xl border border-slate-800 gap-1.5 overflow-x-auto">
           <button
             onClick={() => setCurrentView('overview')}
@@ -367,11 +372,9 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 1. قسم الرئيسية والإعدادات العامة والبيكسل */}
+        {/* 1. قسم الرئيسية والإعدادات */}
         {currentView === 'overview' && (
           <div className="space-y-8">
-            
-            {/* بطاقات الإحصائيات السريعة */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-xl">
                 <span className="text-xs text-slate-400 font-bold block mb-1">المنتجات المعروضة</span>
@@ -389,20 +392,17 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* فورم إعدادات الموقع والبيكسل والشحن */}
             <form onSubmit={handleSaveSettings} className="space-y-6">
-              
-              {/* إعداد اسم الموقع */}
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl space-y-4">
                 <div className="border-b border-slate-800 pb-3">
                   <h3 className="text-base font-black text-white">🏷️ اسم الموقع والمتجر</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">يظهر اسم المتجر في أعلى الصفحة الرئيسية وفي شريط الإعلانات</p>
+                  <p className="text-xs text-slate-400 mt-0.5">يظهر اسم المتجر في ترويسة الموقع</p>
                 </div>
                 <div>
                   <input
                     type="text"
                     required
-                    placeholder="مثال: لَمّة ستور، متجر الأناقة..."
+                    placeholder="مثال: لَمّة ستور"
                     value={settings.store_name}
                     onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
                     className="w-full p-3.5 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-400 font-bold text-sm"
@@ -410,11 +410,10 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* إعدادات بيكسل الإعلانات */}
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl space-y-5">
                 <div className="border-b border-slate-800 pb-3">
                   <h3 className="text-base font-black text-emerald-400">🎯 إعدادات بيكسل الإعلانات (Meta & TikTok Pixel)</h3>
-                  <p className="text-xs text-slate-400 mt-0.5">ضع معرّف البيكسل لربط التتبع التلقائي لمبيعاتك وحملاتك الإعلانية</p>
+                  <p className="text-xs text-slate-400 mt-0.5">ضع معرّف البيكسل لربط التتبع التلقائي</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -442,7 +441,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* تسعير الشحن الإقليمي */}
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl space-y-4">
                 <div className="border-b border-slate-800 pb-3">
                   <h3 className="text-base font-black text-white">🚚 تسعير الشحن للمحافظات (ج.م)</h3>
@@ -614,13 +612,13 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* 3. قسم الطلبات الواردة */}
+        {/* 3. قسم الطلبات مع إمكانية الحذف */}
         {currentView === 'orders' && (
           <div className="space-y-6">
             <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 flex justify-between items-center">
               <div>
                 <h2 className="text-lg font-black text-white">الطلبات الواردة من المتجر</h2>
-                <p className="text-xs text-slate-400">تُحفظ تلقائياً هنا وفي جوجل شيت في نفس اللحظة</p>
+                <p className="text-xs text-slate-400">تستطيع حذف أي طلب تجريبي أو ملغي بضغطة زر</p>
               </div>
               <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
                 {orders.length} طلب
@@ -643,6 +641,7 @@ export default function AdminDashboard() {
                         <th className="p-3.5">المنتج والمواصفات</th>
                         <th className="p-3.5">الإجمالي</th>
                         <th className="p-3.5">التاريخ</th>
+                        <th className="p-3.5 text-center">إجراء</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800">
@@ -665,6 +664,15 @@ export default function AdminDashboard() {
                           </td>
                           <td className="p-3.5 text-slate-400 text-xs">
                             {new Date(ord.created_at).toLocaleDateString('ar-EG')}
+                          </td>
+                          <td className="p-3.5 text-center">
+                            <button
+                              onClick={() => handleDeleteOrder(ord.id)}
+                              className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/30 font-bold text-xs rounded-xl transition"
+                              title="حذف هذا الطلب"
+                            >
+                              حذف 🗑️
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -740,7 +748,6 @@ export default function AdminDashboard() {
                 ></textarea>
               </div>
 
-              {/* صور المنتج */}
               <div className="border border-slate-800 p-4 rounded-xl bg-slate-800/40 space-y-3">
                 <label className="block text-xs font-bold text-slate-200">معرض صور المنتج (اختر صورة أو أكثر)</label>
                 <input
@@ -761,7 +768,7 @@ export default function AdminDashboard() {
                         <button
                           type="button"
                           onClick={() => setProductForm((p) => ({ ...p, images: p.images.filter((_, i) => i !== idx) }))}
-                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold"
+                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
                         >
                           ×
                         </button>
@@ -771,7 +778,6 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              {/* الألوان */}
               <div className="border border-slate-800 p-4 rounded-xl bg-slate-800/40 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-200">خيارات الألوان</span>
@@ -838,7 +844,6 @@ export default function AdminDashboard() {
                 )}
               </div>
 
-              {/* المقاسات */}
               <div className="border border-slate-800 p-4 rounded-xl bg-slate-800/40 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-200">خيارات المقاسات</span>
