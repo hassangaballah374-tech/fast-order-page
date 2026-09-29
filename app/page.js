@@ -129,7 +129,7 @@ export default function Home() {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
 
-  // سلة المشتريات المحفوظة محلياً
+  // سلة المشتريات
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedNotice, setAddedNotice] = useState(false);
@@ -311,7 +311,6 @@ export default function Home() {
     }
   };
 
-  // تأكيد الطلب وحفظه في Supabase وجوجل شيت
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -362,12 +361,13 @@ export default function Home() {
       },
     ]);
 
-    // 2. المزامنة اللحظية مع شيت جوجل
+    // 2. المزامنة اللحظية مع جوجل شيت (باستخدام Content-Type: text/plain لمنع حجب CORS)
     try {
-      fetch(GOOGLE_SHEET_URL, {
+      await fetch(GOOGLE_SHEET_URL, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
         body: JSON.stringify({
           name: formData.name,
           phone: formData.phone,
@@ -422,7 +422,7 @@ export default function Home() {
         🚚 التوصيل متاح لجميع محافظات مصر • الدفع عند الاستلام بعد المعاينة والفحص!
       </div>
 
-      {/* الهيدر العلوي الأبيض */}
+      {/* الهيدر العلوي */}
       <header className="bg-white/90 backdrop-blur-md border-b border-slate-200/80 py-4 px-4 sm:px-8 sticky top-0 z-40 shadow-sm">
         <div className="max-w-4xl mx-auto relative flex items-center justify-between">
           <div className="w-10 sm:w-20"></div>
@@ -457,7 +457,7 @@ export default function Home() {
       <main className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-lg p-5 sm:p-7 space-y-6">
           
-          {/* معرض الصور الفاتح */}
+          {/* معرض الصور */}
           {galleryImages.length > 0 && (
             <div className="space-y-3">
               <div className="relative w-full bg-slate-100/70 rounded-2xl overflow-hidden border border-slate-200/80 flex items-center justify-center min-h-[320px] max-h-[520px] select-none p-2">
@@ -537,7 +537,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* تفاصيل ومميزات المنتج */}
+          {/* تفاصيل ومميزات المنتج تحت الاسم مباشرة */}
           {product?.description && (
             <div className="p-4 sm:p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
@@ -723,7 +723,7 @@ export default function Home() {
                 ></textarea>
               </div>
 
-              {/* ملخص تكلفة الطلب مع الشحن المخصص */}
+              {/* ملخص تكلفة الطلب */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2 text-sm">
                 <div className="flex justify-between text-slate-600 font-medium">
                   <span>سعر المنتج / المنتجات:</span>
