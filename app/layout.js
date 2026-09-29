@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   // استبدل الأرقام بالأسفل برقم البيكسل الخاص بك
-  const FB_PIXEL_ID = 'ضع_رقم_البيكسل_هنا';
+  const FB_PIXEL_ID = '870300779500843';
 
   return (
     <html lang="ar" dir="rtl">
