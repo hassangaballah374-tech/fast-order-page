@@ -57,7 +57,7 @@ export default function LuxuryProductPage() {
   const [cartOrderLoading, setCartOrderLoading] = useState(false);
   const [cartSuccess, setCartSuccess] = useState(false);
 
-  // تفاعلات الـ FOMO
+  // تفاعلات الـ FOMO والبارتكلز
   const [particles, setParticles] = useState([]);
   const [liveVisitors, setLiveVisitors] = useState(17);
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 48 });
@@ -70,7 +70,7 @@ export default function LuxuryProductPage() {
   const [currentShippingFee, setCurrentShippingFee] = useState(50);
   const [formData, setFormData] = useState({ name: '', phone: '', detailedAddress: '', notes: '' });
 
-  // سلة المشتريات
+  // شحن السلة
   const [cartGov, setCartGov] = useState('');
   const [cartCity, setCartCity] = useState('');
   const [cartShippingFee, setCartShippingFee] = useState(50);
@@ -96,7 +96,7 @@ export default function LuxuryProductPage() {
     };
   }, []);
 
-  // جلب السلة
+  // جلب السلة من المتصفح
   useEffect(() => {
     try {
       const saved = localStorage.getItem('fast_order_cart');
@@ -114,7 +114,7 @@ export default function LuxuryProductPage() {
     }
   }, [cart]);
 
-  // جلب بيانات المنتج والمخزون
+  // جلب المنتج وقاعدة البيانات
   useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -178,17 +178,17 @@ export default function LuxuryProductPage() {
     loadData();
   }, [productId]);
 
-  // انطلاق الإيموجيز التفاعلية
+  // انطلاق البارتكلز المتحركة عند النقر
   const triggerParticles = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const emojis = ['💖', '🔥', '✨', '⚡', '🎉', '🌟', '🛍️'];
-    const newItems = Array.from({ length: 12 }).map((_, i) => ({
+    const newItems = Array.from({ length: 14 }).map((_, i) => ({
       id: Date.now() + i,
       x: rect.left + rect.width / 2 + (Math.random() * 80 - 40),
       y: rect.top + (Math.random() * 40 - 20),
       emoji: emojis[Math.floor(Math.random() * emojis.length)],
-      vx: (Math.random() - 0.5) * 160,
-      vy: -(Math.random() * 120 + 80),
+      vx: (Math.random() - 0.5) * 180,
+      vy: -(Math.random() * 140 + 80),
     }));
 
     setParticles((prev) => [...prev, ...newItems]);
@@ -483,9 +483,9 @@ export default function LuxuryProductPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 font-sans pb-32 antialiased" dir="rtl">
+    <div className="min-h-screen bg-[#070b14] text-slate-100 font-sans pb-32 antialiased select-none" dir="rtl">
       
-      {/* طبقة البارتكلز */}
+      {/* طبقة البارتكلز المتحركة */}
       <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
         {particles.map((p) => (
           <span
@@ -503,7 +503,7 @@ export default function LuxuryProductPage() {
         ))}
       </div>
 
-      {/* شريط الإعلان */}
+      {/* شريط الإعلان الفاخر */}
       <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 border-b border-emerald-500/30 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-lg flex items-center justify-center gap-2">
         <span className="bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full text-[11px] border border-emerald-500/30 animate-pulse">
           عرض حصري
@@ -515,17 +515,20 @@ export default function LuxuryProductPage() {
         <span>للحصول على شحن سريع ومعاينة قبل الدفع! 🎁</span>
       </div>
 
-      {/* الترويسة */}
+      {/* الترويسة الزجاجية */}
       <header className="bg-[#0b1324]/80 backdrop-blur-xl border-b border-slate-800/80 py-3.5 px-4 sm:px-8 sticky top-0 z-40 shadow-xl">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-xs sm:text-sm font-bold text-slate-300 hover:text-white flex items-center gap-2 bg-slate-900/90 px-3.5 py-2 rounded-2xl border border-slate-700/60">
+          <Link
+            href="/"
+            className="text-xs sm:text-sm font-bold text-slate-300 hover:text-white flex items-center gap-2 bg-slate-900/90 px-3.5 py-2 rounded-2xl border border-slate-700/60 transition-all duration-300 hover:scale-105 active:scale-95 hover:border-emerald-500/60"
+          >
             <span>‹</span>
             <span>الكتالوج</span>
           </Link>
           <h1 className="text-base sm:text-lg font-black text-white">{settings?.store_name || 'متجرنا الرسمي'}</h1>
           <button
             onClick={() => { setIsCartOpen(true); setCartSuccess(false); }}
-            className="relative px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 shadow-lg"
+            className="relative px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 shadow-lg shadow-emerald-950/60 transition-all duration-300 hover:scale-105 active:scale-95"
           >
             <span>🛒</span>
             <span>السلة</span>
@@ -558,11 +561,11 @@ export default function LuxuryProductPage() {
             </div>
           </div>
 
-          {/* معرض الصور */}
+          {/* معرض الصور مع شارة الخصم */}
           {galleryImages.length > 0 && (
             <div className="space-y-3.5">
-              <div className="relative w-full bg-[#050811] rounded-3xl overflow-hidden border border-slate-800/80 flex items-center justify-center min-h-[320px] max-h-[500px] p-3">
-                <img src={galleryImages[currentIndex]} alt={product.name} className="w-full h-auto max-h-[460px] object-contain mx-auto transition-transform duration-500 hover:scale-105" />
+              <div className="relative w-full bg-[#050811] rounded-3xl overflow-hidden border border-slate-800/80 flex items-center justify-center min-h-[320px] max-h-[500px] p-3 shadow-inner group">
+                <img src={galleryImages[currentIndex]} alt={product.name} className="w-full h-auto max-h-[460px] object-contain mx-auto transition-transform duration-500 group-hover:scale-105" />
                 {hasDiscount && (
                   <div className="absolute top-4 right-4 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white font-black px-3.5 py-1.5 rounded-2xl shadow-2xl flex items-center gap-1.5 text-xs sm:text-sm animate-pulse">
                     <span>⚡</span>
@@ -576,8 +579,8 @@ export default function LuxuryProductPage() {
                     <button
                       key={idx}
                       onClick={() => setCurrentIndex(idx)}
-                      className={`w-20 h-20 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all p-1 bg-[#050811] ${
-                        currentIndex === idx ? 'border-emerald-500 scale-105 shadow-lg' : 'border-slate-800 opacity-60'
+                      className={`w-20 h-20 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all duration-300 p-1 bg-[#050811] hover:scale-110 active:scale-95 ${
+                        currentIndex === idx ? 'border-emerald-500 scale-105 shadow-lg shadow-emerald-950/60 ring-2 ring-emerald-500/20' : 'border-slate-800 opacity-60 hover:opacity-100'
                       }`}
                     >
                       <img src={img} alt="" className="w-full h-full object-cover rounded-xl" />
@@ -588,11 +591,17 @@ export default function LuxuryProductPage() {
             </div>
           )}
 
-          {/* الاسم والأسعار والتوفير المبهج */}
+          {/* فيديو المنتج */}
+          {product.video_url && (
+            <div className="rounded-3xl overflow-hidden border border-slate-800 bg-black shadow-xl">
+              <video src={product.video_url} controls className="w-full max-h-[440px] object-contain mx-auto" />
+            </div>
+          )}
+
+          {/* الاسم والأسعار وشارة التوفير الخضراء */}
           <div className="space-y-4">
             <h2 className="text-2xl sm:text-3xl font-black text-white">{product.name}</h2>
             
-            {/* كتلة الأسعار مع شارة التوفير الخضراء المبهجة */}
             <div className="bg-gradient-to-r from-[#050811] via-[#091122] to-[#050811] p-5 rounded-3xl border border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-1">
                 <span className="text-[11px] text-slate-400 block font-bold">السعر بعد التخفيض:</span>
@@ -625,7 +634,7 @@ export default function LuxuryProductPage() {
             </div>
           )}
 
-          {/* الألوان */}
+          {/* خيارات الألوان بحركات مغناطيسية */}
           {product.show_colors && product.colors?.length > 0 && (
             <div className="space-y-3 border-t border-slate-800/80 pt-4">
               <div className="flex items-center justify-between text-xs sm:text-sm font-bold">
@@ -638,13 +647,13 @@ export default function LuxuryProductPage() {
                     key={idx}
                     type="button"
                     onClick={() => setSelectedColor(c.name)}
-                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black transition-all ${
+                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black transition-all duration-300 hover:-translate-y-1 hover:scale-105 active:scale-95 ${
                       selectedColor === c.name
-                        ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-lg'
-                        : 'border-slate-800 bg-[#050811] text-slate-400'
+                        ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-lg shadow-emerald-950/50 ring-2 ring-emerald-500/40'
+                        : 'border-slate-800 bg-[#050811] text-slate-400 hover:border-slate-700 hover:text-white'
                     }`}
                   >
-                    <span className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: c.code }}></span>
+                    <span className="w-4 h-4 rounded-full border border-white/20 shadow" style={{ backgroundColor: c.code }}></span>
                     <span>{c.name}</span>
                   </button>
                 ))}
@@ -652,7 +661,7 @@ export default function LuxuryProductPage() {
             </div>
           )}
 
-          {/* المقاسات */}
+          {/* خيارات المقاسات بحركات ثلاثية الأبعاد */}
           {product.show_sizes && product.sizes?.length > 0 && (
             <div className="space-y-3 border-t border-slate-800/80 pt-4">
               <div className="flex items-center justify-between text-xs sm:text-sm font-bold">
@@ -665,10 +674,10 @@ export default function LuxuryProductPage() {
                     key={idx}
                     type="button"
                     onClick={() => setSelectedSize(s)}
-                    className={`min-w-[54px] px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black transition-all ${
+                    className={`min-w-[54px] px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black transition-all duration-300 hover:-translate-y-1 hover:scale-105 active:scale-95 ${
                       selectedSize === s
-                        ? 'border-emerald-500 bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
-                        : 'border-slate-800 bg-[#050811] text-slate-400'
+                        ? 'border-emerald-500 bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-950/50 ring-2 ring-emerald-500/40'
+                        : 'border-slate-800 bg-[#050811] text-slate-400 hover:border-slate-700 hover:text-white'
                     }`}
                   >
                     {s}
@@ -682,35 +691,39 @@ export default function LuxuryProductPage() {
           <div className="flex items-center justify-between border-t border-slate-800/80 pt-4">
             <span className="text-xs sm:text-sm font-bold text-slate-300">الكمية المطلوبة:</span>
             <div className="flex items-center gap-4 bg-[#050811] border border-slate-800 px-3.5 py-1.5 rounded-2xl">
-              <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-8 h-8 rounded-xl bg-slate-800 text-white font-black text-base flex items-center justify-center">
+              <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-base flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-90">
                 −
               </button>
               <span className="text-base font-black text-white w-6 text-center">{quantity}</span>
-              <button onClick={() => setQuantity((q) => q + 1)} className="w-8 h-8 rounded-xl bg-slate-800 text-white font-black text-base flex items-center justify-center">
+              <button onClick={() => setQuantity((q) => q + 1)} className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-base flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-90">
                 +
               </button>
             </div>
           </div>
 
-          {/* الأزرار جنب بعض */}
-          <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5 border-t border-slate-800/80">
+          {/* ---------------- الأزرار الخارقة بالأنيميشن والتفاعل الحركي ---------------- */}
+          <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-800/80">
+            {/* زر اطلب الآن مع الوميض الليزري وارتفاع الهوفر */}
             <button
               type="button"
               onClick={scrollToCheckout}
               disabled={actualStock <= 0}
-              className="w-full py-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 hover:brightness-110 text-white font-black text-base sm:text-lg rounded-2xl shadow-2xl transition active:scale-95 flex items-center justify-center gap-2.5 disabled:opacity-50"
+              className="relative overflow-hidden w-full py-4 sm:py-5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-base sm:text-lg rounded-2xl shadow-xl shadow-emerald-950/60 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-emerald-500/40 active:translate-y-0.5 active:scale-95 flex items-center justify-center gap-2.5 disabled:opacity-50 border border-emerald-300/40 group cursor-pointer"
             >
-              <span>⚡</span>
+              {/* شريط الإضاءة المار دورياً */}
+              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></span>
+              <span className="text-xl transition-transform duration-300 group-hover:scale-125 group-hover:rotate-12">⚡</span>
               <span>{actualStock <= 0 ? 'نفدت الكمية من المخزن' : 'اطلب الآن - الدفع عند الاستلام'}</span>
             </button>
 
+            {/* زر أضف إلى السلة بارتفاع وتوهج هوفر */}
             <button
               type="button"
               onClick={handleAddToCart}
               disabled={actualStock <= 0}
-              className="w-full py-4 bg-gradient-to-r from-slate-900 to-[#0f172a] hover:from-slate-800 text-white font-black text-base sm:text-lg rounded-2xl border border-slate-700/80 transition active:scale-95 flex items-center justify-center gap-2.5 disabled:opacity-50"
+              className="relative overflow-hidden w-full py-4 sm:py-5 bg-gradient-to-r from-slate-900 to-[#0f172a] hover:from-slate-800 hover:to-[#172554] text-white font-black text-base sm:text-lg rounded-2xl border border-slate-700/80 hover:border-emerald-500/60 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-emerald-950/40 active:translate-y-0.5 active:scale-95 flex items-center justify-center gap-2.5 disabled:opacity-50 group cursor-pointer"
             >
-              <span>🛒</span>
+              <span className="text-xl transition-transform duration-300 group-hover:scale-125 group-hover:-rotate-12">🛒</span>
               <span>أضف إلى السلة</span>
             </button>
           </div>
@@ -724,10 +737,10 @@ export default function LuxuryProductPage() {
           </div>
 
           {success ? (
-            <div className="p-8 bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 rounded-3xl text-center space-y-4">
+            <div className="p-8 bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 rounded-3xl text-center space-y-4 shadow-2xl">
               <p className="text-3xl font-black text-white">🎉 تم تسجيل طلبك بنجاح!</p>
-              <p className="text-xs sm:text-sm text-slate-300">تم خصم القطع من المخزون بنجاح وسيتواصل معك المندوب هاتفياً.</p>
-              <Link href="/" className="inline-block mt-4 px-7 py-3.5 bg-emerald-600 text-white font-black rounded-2xl text-xs sm:text-sm">
+              <p className="text-xs sm:text-sm text-slate-300">تم خصم القطع من المخزون وسيتواصل معك المندوب هاتفياً.</p>
+              <Link href="/" className="inline-block mt-4 px-7 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl text-xs sm:text-sm transition-all duration-300 hover:scale-105 active:scale-95 shadow-xl">
                 متابعة تصفح باقي المنتجات
               </Link>
             </div>
@@ -741,7 +754,7 @@ export default function LuxuryProductPage() {
                   placeholder="محمد أحمد علي"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm"
+                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
                 />
               </div>
 
@@ -753,7 +766,7 @@ export default function LuxuryProductPage() {
                   placeholder="01xxxxxxxxx"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono"
+                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
                 />
               </div>
 
@@ -764,7 +777,7 @@ export default function LuxuryProductPage() {
                     required
                     value={selectedGovernorate}
                     onChange={(e) => handleGovernorateChange(e.target.value)}
-                    className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 cursor-pointer transition-all duration-200"
                   >
                     <option value="">اختر المحافظة...</option>
                     {Object.keys(EGYPT_REGIONS).map((gov) => (
@@ -780,7 +793,7 @@ export default function LuxuryProductPage() {
                     disabled={!selectedGovernorate}
                     value={selectedCity}
                     onChange={(e) => setSelectedCity(e.target.value)}
-                    className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 cursor-pointer disabled:opacity-40"
+                    className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 cursor-pointer disabled:opacity-40 transition-all duration-200"
                   >
                     <option value="">اختر المركز...</option>
                     {selectedGovernorate &&
@@ -800,7 +813,7 @@ export default function LuxuryProductPage() {
                   placeholder="اسم الشارع، رقم العمارة، علامة بجوارك..."
                   value={formData.detailedAddress}
                   onChange={(e) => setFormData({ ...formData, detailedAddress: e.target.value })}
-                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm"
+                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm transition-all duration-200 focus:ring-2 focus:ring-emerald-500/20"
                 ></textarea>
               </div>
 
@@ -824,7 +837,7 @@ export default function LuxuryProductPage() {
               <button
                 type="submit"
                 disabled={orderLoading || actualStock <= 0}
-                className="w-full py-4.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:brightness-110 text-white font-black text-lg rounded-2xl shadow-2xl transition-all active:scale-95 disabled:opacity-50"
+                className="w-full py-4.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-lg rounded-2xl shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-emerald-500/40 active:translate-y-0.5 active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 {orderLoading ? 'جاري تسجيل الطلب وخصم المخزون...' : 'تأكيد الطلب والدفع عند الاستلام 🚚'}
               </button>
@@ -842,7 +855,7 @@ export default function LuxuryProductPage() {
                 <span className="text-2xl">🛒</span>
                 <h2 className="text-xl font-black text-white">سلة المشتريات ({totalCartCount})</h2>
               </div>
-              <button onClick={() => setIsCartOpen(false)} className="w-9 h-9 rounded-2xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold">
+              <button onClick={() => setIsCartOpen(false)} className="w-9 h-9 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center font-bold transition-all hover:scale-105 active:scale-95">
                 ✕
               </button>
             </div>
@@ -851,7 +864,7 @@ export default function LuxuryProductPage() {
               <div className="p-8 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-3xl text-center space-y-3 mt-6">
                 <p className="text-3xl font-black">🎉 تم تأكيد طلب السلة!</p>
                 <p className="text-xs text-slate-300">تم تحديث المخزون وسيتواصل معك فريق خدمة العملاء.</p>
-                <button onClick={() => setIsCartOpen(false)} className="mt-4 px-6 py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold">
+                <button onClick={() => setIsCartOpen(false)} className="mt-4 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg">
                   إغلاق السلة
                 </button>
               </div>
@@ -881,13 +894,13 @@ export default function LuxuryProductPage() {
                         </div>
 
                         <div className="flex flex-col items-end gap-2">
-                          <button onClick={() => removeCartItem(item.id)} className="text-red-400 hover:text-red-300 text-xs font-bold">
+                          <button onClick={() => removeCartItem(item.id)} className="text-red-400 hover:text-red-300 text-xs font-bold transition-colors">
                             حذف
                           </button>
                           <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 px-2 py-0.5 rounded-lg">
-                            <button onClick={() => updateCartQty(item.id, -1)} className="text-white font-bold px-1.5">−</button>
+                            <button onClick={() => updateCartQty(item.id, -1)} className="text-white font-bold px-1.5 transition-transform active:scale-90">−</button>
                             <span className="text-xs font-black text-emerald-400">{item.quantity}</span>
-                            <button onClick={() => updateCartQty(item.id, 1)} className="text-white font-bold px-1.5">+</button>
+                            <button onClick={() => updateCartQty(item.id, 1)} className="text-white font-bold px-1.5 transition-transform active:scale-90">+</button>
                           </div>
                         </div>
                       </div>
@@ -919,7 +932,7 @@ export default function LuxuryProductPage() {
                         placeholder="الاسم بالكامل"
                         value={cartForm.name}
                         onChange={(e) => setCartForm({ ...cartForm, name: e.target.value })}
-                        className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 transition-all"
                       />
                       <input
                         type="tel"
@@ -927,14 +940,14 @@ export default function LuxuryProductPage() {
                         placeholder="رقم الهاتف"
                         value={cartForm.phone}
                         onChange={(e) => setCartForm({ ...cartForm, phone: e.target.value })}
-                        className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 transition-all"
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <select
                           required
                           value={cartGov}
                           onChange={(e) => handleCartGovChange(e.target.value)}
-                          className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none"
+                          className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none transition-all"
                         >
                           <option value="">المحافظة...</option>
                           {Object.keys(EGYPT_REGIONS).map((g) => (
@@ -946,7 +959,7 @@ export default function LuxuryProductPage() {
                           disabled={!cartGov}
                           value={cartCity}
                           onChange={(e) => setCartCity(e.target.value)}
-                          className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none disabled:opacity-40"
+                          className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none disabled:opacity-40 transition-all"
                         >
                           <option value="">المركز...</option>
                           {cartGov &&
@@ -962,13 +975,13 @@ export default function LuxuryProductPage() {
                         placeholder="العنوان بالتفصيل"
                         value={cartForm.detailedAddress}
                         onChange={(e) => setCartForm({ ...cartForm, detailedAddress: e.target.value })}
-                        className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500 transition-all"
                       ></textarea>
 
                       <button
                         type="submit"
                         disabled={cartOrderLoading}
-                        className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 font-black text-white text-sm rounded-xl transition shadow-xl"
+                        className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 font-black text-white text-sm rounded-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/30 active:translate-y-0.5 active:scale-95 shadow-xl cursor-pointer"
                       >
                         {cartOrderLoading ? 'جاري تأكيد الطلب...' : 'تأكيد طلب السلة 🚚'}
                       </button>
@@ -981,12 +994,12 @@ export default function LuxuryProductPage() {
         </div>
       )}
 
-      {/* الشريط السفلي اللاصق للموبايل */}
+      {/* الشريط السفلي اللاصق للموبايل مع تأثيرات تفاعلية */}
       <div className="fixed bottom-0 inset-x-0 z-40 bg-[#0b1324]/90 backdrop-blur-xl border-t border-slate-800 p-3 sm:hidden shadow-2xl flex items-center gap-2.5">
         <button
           onClick={scrollToCheckout}
           disabled={actualStock <= 0}
-          className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm rounded-xl shadow-lg flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50"
+          className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black text-sm rounded-xl shadow-lg flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-95 disabled:opacity-50"
         >
           <span>⚡</span>
           <span>{actualStock <= 0 ? 'نفد المخزون' : `اطلب الآن (${currentSellingPrice} ج.م)`}</span>
@@ -995,7 +1008,7 @@ export default function LuxuryProductPage() {
         <button
           onClick={handleAddToCart}
           disabled={actualStock <= 0}
-          className="px-4 py-3 bg-slate-800 text-white rounded-xl font-black text-sm border border-slate-700 flex items-center justify-center active:scale-95 disabled:opacity-50"
+          className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-black text-sm border border-slate-700 flex items-center justify-center transition-all duration-200 active:scale-95 disabled:opacity-50"
         >
           <span>🛒</span>
         </button>
