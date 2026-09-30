@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
 export default function AdminPage() {
-  const [activeView, setActiveView] = useState('cart'); // 'cart' | 'products' | 'settings'
+  const [activeView, setActiveView] = useState('products'); // 'cart' | 'products' | 'settings'
   const [loading, setLoading] = useState(true);
 
   // إعدادات المتجر والبيكسل
@@ -52,51 +52,44 @@ export default function AdminPage() {
     setLoading(true);
     try {
       if (supabase) {
-        // 1. جلب كل صفوف store_settings للبحث عن أي منتج مسجل
-        const { data: allStoreRows } = await supabase.from('store_settings').select('*');
-        let activeStore = null;
-
-        if (allStoreRows && allStoreRows.length > 0) {
-          activeStore = allStoreRows.find((r) => r.product_name) || allStoreRows[0];
+        // 1. جلب إعدادات المتجر
+        const { data: sData } = await supabase.from('store_settings').select('*').limit(1).maybeSingle();
+        if (sData) {
           setSettings({
-            store_name: activeStore.store_name || '',
-            facebook_pixel_id: activeStore.facebook_pixel_id || '',
-            tiktok_pixel_id: activeStore.tiktok_pixel_id || '',
+            store_name: sData.store_name || '',
+            facebook_pixel_id: sData.facebook_pixel_id || '',
+            tiktok_pixel_id: sData.tiktok_pixel_id || '',
           });
         }
 
-        // 2. جلب المنتجات من جدول products
+        // 2. جلب كل المنتجات من جدول products
         const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
         let combined = pData ? [...pData] : [];
 
-        // 3. فحص كافة صفوف store_settings ودمج المنتج القديم المعروض حالياً بالمتجر
-        if (allStoreRows && allStoreRows.length > 0) {
-          allStoreRows.forEach((row, idx) => {
-            if (row.product_name) {
-              const exists = combined.some((p) => p.name === row.product_name);
-              if (!exists) {
-                combined.push({
-                  id: row.id ? `store_row_${row.id}` : `legacy_${idx}`,
-                  is_legacy: true,
-                  name: row.product_name,
-                  price: Number(row.product_price) || 0,
-                  original_price: Number(row.original_price) || null,
-                  description: row.description || '',
-                  images: row.images || (row.image_url ? [row.image_url] : []),
-                  video_url: row.video_url || '',
-                  show_colors: Boolean(row.show_colors),
-                  colors: row.colors || [],
-                  show_sizes: Boolean(row.show_sizes),
-                  sizes: row.sizes || [],
-                });
-              }
-            }
-          });
+        // ضم المنتج الأصلي من store_settings إن وجد ولم يكن مكرراً
+        if (sData && sData.product_name) {
+          const exists = combined.some((p) => p.name === sData.product_name);
+          if (!exists) {
+            combined.push({
+              id: 'legacy_product',
+              is_legacy: true,
+              name: sData.product_name,
+              price: Number(sData.product_price) || 0,
+              original_price: Number(sData.original_price) || null,
+              description: sData.description || '',
+              images: sData.images || (sData.image_url ? [sData.image_url] : []),
+              video_url: sData.video_url || '',
+              show_colors: Boolean(sData.show_colors),
+              colors: sData.colors || [],
+              show_sizes: Boolean(sData.show_sizes),
+              sizes: sData.sizes || [],
+            });
+          }
         }
 
         setProducts(combined);
 
-        // 4. جلب الطلبات
+        // 3. جلب الطلبات
         const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
         if (oData) setOrders(oData);
       }
@@ -130,8 +123,7 @@ export default function AdminPage() {
     const matchSearch =
       (o.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (o.phone || '').includes(searchTerm) ||
-      (o.governorate || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (o.city || '').toLowerCase().includes(searchTerm.toLowerCase());
+      (o.governorate || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchStatus = statusFilter === 'all' || o.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -144,14 +136,14 @@ export default function AdminPage() {
   };
 
   const handleDeleteOrder = async (id) => {
-    if (!confirm('هل تريد حذف هذا الطلب نهائياً من السلة؟')) return;
+    if (!confirm('هل تريد حذف هذا الطلب نهائياً؟')) return;
     const { error } = await supabase.from('orders').delete().eq('id', id);
     if (!error) {
       setOrders((prev) => prev.filter((o) => o.id !== id));
     }
   };
 
-  // دوال المنتجات
+  // فتح وإغلاق نافذة المنتج
   const openNewProductModal = () => {
     setEditingProduct(null);
     setProductForm({
@@ -197,54 +189,86 @@ export default function AdminPage() {
   const handleDeleteProduct = async (prod) => {
     if (!confirm(`هل أنت متأكد من حذف المنتج: ${prod.name}؟`)) return;
 
-    if (!String(prod.id).startsWith('store_row') && prod.id !== 'legacy_product') {
-      await supabase.from('products').delete().eq('id', prod.id);
+    if (prod.id !== 'legacy_product') {
+      const { error } = await supabase.from('products').delete().eq('id', prod.id);
+      if (error) alert('خطأ أثناء الحذف: ' + error.message);
+    } else {
+      await supabase.from('store_settings').update({
+        product_name: null,
+        product_price: null,
+        description: null,
+        images: [],
+      }).eq('id', 1);
     }
-
-    await supabase.from('store_settings').update({
-      product_name: null,
-      product_price: null,
-      description: null,
-      images: [],
-    }).eq('id', 1);
 
     setProducts((prev) => prev.filter((p) => p.id !== prod.id));
   };
 
-  // رفع الصور المباشر
-  const handleImageFileUpload = (e) => {
+  // ضغط الصور تلقائياً لتسريع الرفع والتخزين
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height *= maxDim / width;
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width *= maxDim / height;
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
+        };
+      };
+    });
+  };
+
+  const handleImageFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
     setUploadingMedia(true);
-    let loadedCount = 0;
-
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64Data = event.target.result;
-        setProductForm((prev) => ({
-          ...prev,
-          images: [...(prev.images || []), base64Data],
-        }));
-        loadedCount++;
-        if (loadedCount === files.length) {
-          setUploadingMedia(false);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-
+    try {
+      const compressedList = [];
+      for (const file of files) {
+        const compressed = await compressImage(file);
+        compressedList.push(compressed);
+      }
+      setProductForm((prev) => ({
+        ...prev,
+        images: [...(prev.images || []), ...compressedList],
+      }));
+    } catch (err) {
+      alert('خطأ أثناء رفع الصورة: ' + err.message);
+    }
+    setUploadingMedia(false);
     e.target.value = '';
   };
 
-  // رفع الفيديو المباشر
   const handleVideoFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 30 * 1024 * 1024) {
-      alert('حجم ملف الفيديو كبير، يُفضل اختيار فيديو أقل من 30 ميجابايت لضمان سرعة التصفح');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('⚠️ حجم الفيديو أكبر من 15 ميجابايت، يرجى اختيار فيديو أقصر أو لصق رابط مباشر');
+      return;
     }
 
     setUploadingMedia(true);
@@ -260,7 +284,7 @@ export default function AdminPage() {
     e.target.value = '';
   };
 
-  // حفظ المنتج في Supabase
+  // حفظ المنتج المستقل (دون استبدال القديم)
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     setSavingProduct(true);
@@ -272,44 +296,32 @@ export default function AdminPage() {
       description: productForm.description,
       images: productForm.images || [],
       video_url: productForm.video_url || '',
-      show_colors: productForm.show_colors,
+      show_colors: Boolean(productForm.show_colors),
       colors: productForm.colors || [],
-      show_sizes: productForm.show_sizes,
+      show_sizes: Boolean(productForm.show_sizes),
       sizes: productForm.sizes || [],
     };
 
     try {
-      const isLegacy = editingProduct?.id && (String(editingProduct.id).startsWith('store_row') || editingProduct.id === 'legacy_product');
-
-      if (editingProduct?.id && !isLegacy) {
+      if (editingProduct?.id && editingProduct.id !== 'legacy_product') {
+        // تعديل منتج قائم
         const { error } = await supabase.from('products').update(payload).eq('id', editingProduct.id);
         if (error) throw error;
         setProducts((prev) => prev.map((p) => (p.id === editingProduct.id ? { ...p, ...payload } : p)));
       } else {
+        // إضافة منتج جديد كصفحة منفصلة برقم id مستقل في جدول products!
         const { data, error } = await supabase.from('products').insert([payload]).select().single();
         if (error) throw error;
         if (data) {
-          setProducts((prev) => [data, ...prev.filter((p) => p.id !== editingProduct?.id)]);
+          setProducts((prev) => [data, ...prev]);
         }
       }
 
-      // تحديث store_settings لكي يعرضه المتجر الرئيسي فوراً
-      await supabase.from('store_settings').update({
-        product_name: payload.name,
-        product_price: payload.price,
-        original_price: payload.original_price,
-        description: payload.description,
-        images: payload.images,
-        video_url: payload.video_url,
-        show_colors: payload.show_colors,
-        colors: payload.colors,
-        show_sizes: payload.show_sizes,
-        sizes: payload.sizes,
-      }).eq('id', 1);
-
+      alert('✅ تم حفظ المنتج بنجاح كصفحة جديدة مستقلة!');
       setShowProductModal(false);
     } catch (err) {
-      alert('حدث خطأ أثناء حفظ المنتج: ' + err.message);
+      alert('❌ فشل الحفظ! السبب: ' + err.message);
+      console.error(err);
     }
     setSavingProduct(false);
   };
@@ -472,7 +484,7 @@ export default function AdminPage() {
                     <span>📊</span>
                     <span>تحليل ونسب حالات الطلبات (جدول الأعمدة)</span>
                   </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">نسبة وتوزيع كل حالة من إجمالي طلبات المتجر</p>
+                  <p className="text-xs text-slate-400 mt-0.5">توزيع حالات طلبات المتجر</p>
                 </div>
                 <span className="text-xs font-bold bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-emerald-400">
                   إجمالي الطلبات: {totalOrdersCount}
@@ -505,33 +517,9 @@ export default function AdminPage() {
                   })}
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 pt-2">
-                {statusStats.map((st, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setStatusFilter(st.key)}
-                    className={`p-3 rounded-2xl border text-right transition hover:scale-[1.02] ${
-                      statusFilter === st.key
-                        ? 'bg-slate-800 border-emerald-500 shadow-md ring-1 ring-emerald-500'
-                        : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-xs text-slate-400 font-bold mb-1">
-                      <span className="truncate">{st.label}</span>
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: st.barColor }}></span>
-                    </div>
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-base font-black text-white">{st.count}</span>
-                      <span className={`text-xs font-black ${st.textColor}`}>{st.percent}%</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
             </div>
 
-            {/* فلترة والبحث */}
+            {/* شريط البحث وفلترة الحالة */}
             <div className="bg-slate-900 p-4 rounded-3xl border border-slate-800 flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
@@ -567,168 +555,114 @@ export default function AdminPage() {
               </button>
             </div>
 
-            {/* قائمة كروت السلة مع الترقيم */}
+            {/* قائمة كروت السلة */}
             {filteredOrders.length === 0 ? (
               <div className="bg-slate-900 p-12 text-center text-slate-400 font-bold rounded-3xl border border-slate-800">
                 🛒 لا توجد طلبات مطابقة
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredOrders.map((order, index) => {
-                  const statusColors = {
-                    'جديد': 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
-                    'قيد الانتظار': 'bg-amber-500/20 text-amber-400 border-amber-500/40',
-                    'تم التأكيد': 'bg-blue-500/20 text-blue-400 border-blue-500/40',
-                    'تم الشحن': 'bg-purple-500/20 text-purple-400 border-purple-500/40',
-                    'تم التسليم': 'bg-teal-500/20 text-teal-400 border-teal-500/40',
-                    'مرتجع': 'bg-rose-500/20 text-rose-400 border-rose-500/40',
-                    'ملغي': 'bg-slate-700/40 text-slate-400 border-slate-600',
-                  };
-
-                  return (
-                    <div
-                      key={order.id}
-                      className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="flex flex-col items-center justify-center w-11 h-11 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 font-black">
-                            <span className="text-[10px] text-emerald-500 leading-none">طلب</span>
-                            <span className="text-base leading-none mt-0.5">#{index + 1}</span>
-                          </div>
-
-                          <div>
-                            <h3 className="font-black text-lg text-white">{order.customer_name}</h3>
-                            <span className="text-xs text-slate-400 font-mono">
-                              بتاريخ: {new Date(order.created_at).toLocaleDateString('ar-EG', {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </span>
-                          </div>
+                {filteredOrders.map((order, index) => (
+                  <div
+                    key={order.id}
+                    className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex flex-col items-center justify-center w-11 h-11 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 font-black">
+                          <span className="text-[10px] text-emerald-500 leading-none">طلب</span>
+                          <span className="text-base leading-none mt-0.5">#{index + 1}</span>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-slate-400 font-bold">الحالة:</span>
-                          <select
-                            value={order.status || 'جديد'}
-                            onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                            className={`text-xs font-black px-3 py-1.5 rounded-xl border cursor-pointer bg-slate-950 ${
-                              statusColors[order.status || 'جديد'] || 'border-slate-700 text-white'
-                            }`}
-                          >
-                            <option value="جديد">جديد</option>
-                            <option value="قيد الانتظار">قيد الانتظار</option>
-                            <option value="تم التأكيد">تم التأكيد</option>
-                            <option value="تم الشحن">تم الشحن</option>
-                            <option value="تم التسليم">تم التسليم</option>
-                            <option value="مرتجع">مرتجع</option>
-                            <option value="ملغي">ملغي</option>
-                          </select>
+                        <div>
+                          <h3 className="font-black text-lg text-white">{order.customer_name}</h3>
+                          <span className="text-xs text-slate-400 font-mono">
+                            {new Date(order.created_at).toLocaleDateString('ar-EG', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2">
-                          <span className="text-xs font-bold text-slate-400 block">📞 الهاتف:</span>
-                          <div className="flex items-center justify-between">
-                            <span className="font-mono text-emerald-400 font-bold" dir="ltr">{order.phone}</span>
-                            <a
-                              href={`https://wa.me/2${order.phone?.replace(/[^0-9]/g, '')}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-3 py-1 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-lg text-xs font-bold transition flex items-center gap-1"
-                            >
-                              <span>💬</span>
-                              <span>واتساب</span>
-                            </a>
-                          </div>
-                        </div>
-
-                        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-1">
-                          <span className="text-xs font-bold text-slate-400 block">📍 عنوان التوصيل:</span>
-                          <p className="text-white font-bold text-xs sm:text-sm">
-                            {order.governorate} {order.city && `- ${order.city}`}
-                          </p>
-                          <p className="text-slate-400 text-xs">{order.address}</p>
-                        </div>
-
-                        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 flex flex-col justify-between">
-                          <span className="text-xs font-bold text-slate-400">💰 المبلغ الإجمالي:</span>
-                          <div className="flex items-baseline justify-between mt-1">
-                            <span className="text-2xl font-black text-emerald-400">
-                              {order.total_amount || order.total_price} ج.م
-                            </span>
-                            <span className="text-[11px] text-slate-500 font-bold">شامل الشحن</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        <div className="space-y-1">
-                          <span className="text-xs font-bold text-slate-400 block">🛍️ تفاصيل المنتجات:</span>
-                          <p className="text-sm font-black text-white">{order.product_name}</p>
-                          <div className="flex flex-wrap gap-2 text-xs text-slate-400">
-                            {order.selected_color && order.selected_color !== '-' && (
-                              <span className="bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800">
-                                اللون: <strong className="text-slate-200">{order.selected_color}</strong>
-                              </span>
-                            )}
-                            {order.selected_size && order.selected_size !== '-' && (
-                              <span className="bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800">
-                                المقاس: <strong className="text-slate-200">{order.selected_size}</strong>
-                              </span>
-                            )}
-                            {order.quantity && (
-                              <span className="bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800">
-                                العدد: <strong className="text-emerald-400">{order.quantity}</strong>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => handleDeleteOrder(order.id)}
-                          className="px-4 py-2 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1 self-end sm:self-center"
-                        >
-                          <span>🗑️</span>
-                          <span>حذف الطلب</span>
-                        </button>
-                      </div>
-
+                      <select
+                        value={order.status || 'جديد'}
+                        onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                        className="text-xs font-black px-3 py-1.5 rounded-xl border cursor-pointer bg-slate-950 border-slate-700 text-white"
+                      >
+                        <option value="جديد">جديد</option>
+                        <option value="قيد الانتظار">قيد الانتظار</option>
+                        <option value="تم التأكيد">تم التأكيد</option>
+                        <option value="تم الشحن">تم الشحن</option>
+                        <option value="تم التسليم">تم التسليم</option>
+                        <option value="مرتجع">مرتجع</option>
+                        <option value="ملغي">ملغي</option>
+                      </select>
                     </div>
-                  );
-                })}
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80">
+                        <span className="text-xs font-bold text-slate-400 block mb-1">الهاتف:</span>
+                        <div className="flex justify-between items-center">
+                          <span className="font-mono text-emerald-400 font-bold" dir="ltr">{order.phone}</span>
+                          <a
+                            href={`https://wa.me/2${order.phone?.replace(/[^0-9]/g, '')}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-2.5 py-1 bg-emerald-600/20 text-emerald-400 rounded-lg text-xs font-bold"
+                          >
+                            واتساب
+                          </a>
+                        </div>
+                      </div>
+                      <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80">
+                        <span className="text-xs font-bold text-slate-400 block mb-1">العنوان:</span>
+                        <p className="text-white text-xs truncate">{order.governorate} - {order.address}</p>
+                      </div>
+                      <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80">
+                        <span className="text-xs font-bold text-slate-400 block mb-1">الإجمالي:</span>
+                        <p className="text-lg font-black text-emerald-400">{order.total_amount || order.total_price} ج.م</p>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-xs text-slate-300 font-bold">{order.product_name}</span>
+                      <button
+                        onClick={() => handleDeleteOrder(order.id)}
+                        className="px-3 py-1.5 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold"
+                      >
+                        حذف
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
         )}
 
-        {/* ---------------- 2. تبويب المنتجات والأرباح ---------------- */}
+        {/* ---------------- 2. تبويب المنتجات والأرباح (عرض كل المنتجات بروابطها) ---------------- */}
         {activeView === 'products' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 p-5 rounded-3xl border border-slate-800">
               <div>
-                <h2 className="text-xl font-black text-white">قائمة المنتجات المعروضة ({products.length})</h2>
-                <p className="text-xs text-slate-400 mt-0.5">إدارة أسعار البيع والتكلفة ومتابعة هوامش الأرباح</p>
+                <h2 className="text-xl font-black text-white">قائمة المنتجات ({products.length})</h2>
+                <p className="text-xs text-slate-400 mt-0.5">كل منتج له صفحة هبوط مستقلة ورابط إعلان خاص</p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={loadAllData}
-                  className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-2xl text-xs sm:text-sm transition flex items-center gap-1.5"
-                  title="إعادة فحص وجلب كل المنتجات"
+                  className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-2xl text-xs sm:text-sm"
                 >
-                  <span>🔄</span>
-                  <span>تحديث</span>
+                  🔄 تحديث
                 </button>
                 <button
                   onClick={openNewProductModal}
-                  className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs sm:text-sm transition shadow-lg flex items-center gap-2"
+                  className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs sm:text-sm shadow-lg flex items-center gap-2"
                 >
                   <span>➕</span>
-                  <span>إضافة منتج جديد</span>
+                  <span>إضافة منتج جديد كصفحة مستقلة</span>
                 </button>
               </div>
             </div>
@@ -739,6 +673,7 @@ export default function AdminPage() {
                 const price = Number(p.price) || 0;
                 const margin = price - cost;
                 const marginPercent = price > 0 && cost > 0 ? Math.round((margin / price) * 100) : 0;
+                const productUrl = p.id === 'legacy_product' ? '/' : `/p/${p.id}`;
 
                 return (
                   <div key={p.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg flex flex-col justify-between space-y-4">
@@ -757,22 +692,22 @@ export default function AdminPage() {
                         <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
                         {p.is_legacy && (
                           <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
-                            المنتج الرئيسي
+                            الرئيسية
                           </span>
                         )}
                       </div>
 
                       <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800/80 space-y-2 text-xs">
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-400">سعر البيع للعميل:</span>
+                          <span className="text-slate-400">سعر البيع:</span>
                           <span className="text-emerald-400 font-black text-sm">{price} ج.م</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-400">سعر التكلفة (الأصلي):</span>
+                          <span className="text-slate-400">سعر التكلفة:</span>
                           <span className="text-slate-300 font-bold">{cost > 0 ? `${cost} ج.م` : 'غير محدد'}</span>
                         </div>
                         <div className="border-t border-slate-800 pt-2 flex justify-between items-center font-bold">
-                          <span className="text-slate-300">صافي هامش الربح:</span>
+                          <span className="text-slate-300">صافي الربح:</span>
                           <span className={`text-sm font-black ${margin >= 0 ? 'text-teal-400' : 'text-red-400'}`}>
                             {margin > 0 ? `+${margin} ج.م (${marginPercent}%)` : `${margin} ج.م`}
                           </span>
@@ -781,24 +716,24 @@ export default function AdminPage() {
 
                       <div className="flex items-center gap-2 pt-1 text-xs">
                         <span className={`px-2.5 py-1 rounded-lg border font-bold ${p.show_colors ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>
-                          🎨 الألوان: {p.show_colors ? (p.colors?.length || 0) : 'معطلة'}
+                          الألوان: {p.show_colors ? (p.colors?.length || 0) : 'معطلة'}
                         </span>
                         <span className={`px-2.5 py-1 rounded-lg border font-bold ${p.show_sizes ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>
-                          📏 المقاسات: {p.show_sizes ? (p.sizes?.length || 0) : 'معطلة'}
+                          المقاسات: {p.show_sizes ? (p.sizes?.length || 0) : 'معطلة'}
                         </span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
                       <a
-                        href={p.is_legacy ? '/' : `/p/${p.id}`}
+                        href={productUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="py-2.5 px-3 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"
-                        title="فتح صفحة المنتج"
+                        title="فتح صفحة الهبوط المستقلة لهذا المنتج"
                       >
                         <span>🔗</span>
-                        <span>معاينة الإعلان</span>
+                        <span>رابط الصفحة</span>
                       </a>
                       <button
                         onClick={() => openEditProductModal(p)}
@@ -885,13 +820,13 @@ export default function AdminPage() {
 
       </main>
 
-      {/* نافذة مودال إضافة وتعديل المنتج */}
+      {/* نافذة المودال لإضافة وتعديل المنتج كصفحة مستقلة */}
       {showProductModal && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-xl font-black text-white">
-                {editingProduct ? '✏️️ تعديل المنتج' : '➕ إضافة منتج جديد'}
+                {editingProduct ? '✏️ تعديل المنتج' : '➕ إضافة منتج جديد (صفحة مستقلة)'}
               </h3>
               <button
                 onClick={() => setShowProductModal(false)}
@@ -958,7 +893,7 @@ export default function AdminPage() {
               <div className="space-y-3 pt-2 border-t border-slate-800">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-slate-300">
-                    📷 صور المنتج (اختر صور من جهازك أو هاتف المحمول)
+                    📷 صور المنتج (اختر صور من جهازك أو الصق رابط)
                   </label>
                   {uploadingMedia && (
                     <span className="text-xs text-amber-400 font-bold animate-pulse">جاري تجهيز الصورة...</span>
@@ -968,7 +903,7 @@ export default function AdminPage() {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <label className="flex-1 flex items-center justify-center gap-2 p-3.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border-2 border-dashed border-emerald-500/50 cursor-pointer text-xs font-bold transition">
                     <span className="text-lg">📁</span>
-                    <span>اضغط لاختيار صور من جهازك مباشرة</span>
+                    <span>اضغط لاختيار صور من جهازك</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -981,7 +916,7 @@ export default function AdminPage() {
                   <div className="flex-1 flex gap-2">
                     <input
                       type="url"
-                      placeholder="أو ضع رابط صورة إن رغبت..."
+                      placeholder="أو الصق رابط صورة..."
                       value={newImageUrl}
                       onChange={(e) => setNewImageUrl(e.target.value)}
                       className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"
@@ -1021,7 +956,7 @@ export default function AdminPage() {
               {/* رفع فيديو المنتج */}
               <div className="space-y-2 pt-2 border-t border-slate-800">
                 <label className="block text-xs font-bold text-slate-300">
-                  🎥 فيديو المنتج (اختر فيديو من جهازك مباشرة)
+                  🎥 فيديو المنتج (اختياري)
                 </label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <label className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border-2 border-dashed border-emerald-500/50 cursor-pointer text-xs font-bold transition">
@@ -1036,7 +971,7 @@ export default function AdminPage() {
                   </label>
                   <input
                     type="url"
-                    placeholder="أو رابط فيديو خارجي..."
+                    placeholder="أو رابط فيديو مباشر (MP4)..."
                     value={productForm.video_url || ''}
                     onChange={(e) => setProductForm({ ...productForm, video_url: e.target.value })}
                     className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"
@@ -1047,7 +982,7 @@ export default function AdminPage() {
                       onClick={() => setProductForm({ ...productForm, video_url: '' })}
                       className="px-3 py-2 bg-red-600/20 text-red-400 hover:text-white rounded-xl text-xs font-bold"
                     >
-                      حذف الفيديو
+                      حذف
                     </button>
                   )}
                 </div>
@@ -1192,7 +1127,7 @@ export default function AdminPage() {
                   disabled={savingProduct || uploadingMedia}
                   className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition shadow-lg disabled:opacity-50"
                 >
-                  {savingProduct ? 'جاري الحفظ...' : 'حفظ المنتج 💾'}
+                  {savingProduct ? 'جاري الحفظ...' : 'حفظ كصفحة مستقلة 💾'}
                 </button>
               </div>
             </form>
