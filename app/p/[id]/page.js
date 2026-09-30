@@ -51,17 +51,28 @@ export default function SingleProductPage() {
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
 
-  // السلة المشتركة
+  // إدارة سلة المشتريات
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [cartOrderLoading, setCartOrderLoading] = useState(false);
+  const [cartSuccess, setCartSuccess] = useState(false);
+  const [addedPopup, setAddedPopup] = useState(false);
+
   const hasFiredCheckout = useRef(false);
 
+  // بيانات الشحن المباشر
   const [selectedGovernorate, setSelectedGovernorate] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [currentShippingFee, setCurrentShippingFee] = useState(50);
-
   const [formData, setFormData] = useState({ name: '', phone: '', detailedAddress: '', notes: '' });
 
+  // بيانات شحن السلة
+  const [cartGov, setCartGov] = useState('');
+  const [cartCity, setCartCity] = useState('');
+  const [cartShippingFee, setCartShippingFee] = useState(50);
+  const [cartForm, setCartForm] = useState({ name: '', phone: '', detailedAddress: '' });
+
+  // مزامنة السلة مع التخزين المحلي للمتصفح
   useEffect(() => {
     try {
       const saved = localStorage.getItem('fast_order_cart');
@@ -86,7 +97,10 @@ export default function SingleProductPage() {
         const { data: sData } = await supabase.from('store_settings').select('*').limit(1).maybeSingle();
         if (sData) {
           setSettings(sData);
-          if (sData.shipping_rates?.cairo_giza) setCurrentShippingFee(sData.shipping_rates.cairo_giza);
+          if (sData.shipping_rates?.cairo_giza) {
+            setCurrentShippingFee(sData.shipping_rates.cairo_giza);
+            setCartShippingFee(sData.shipping_rates.cairo_giza);
+          }
         }
 
         let prod = null;
@@ -120,8 +134,13 @@ export default function SingleProductPage() {
             setSelectedSize(prod.sizes[0]);
           }
 
-          if (typeof window !== 'undefined' && window.fbq) {
-            window.fbq('track', 'ViewContent', { content_name: prod.name, value: Number(prod.price) || 0, currency: 'EGP' });
+          if (typeof window !== 'undefined') {
+            if (window.fbq) {
+              window.fbq('track', 'ViewContent', { content_name: prod.name, value: Number(prod.price) || 0, currency: 'EGP' });
+            }
+            if (window.ttq) {
+              window.ttq.track('ViewContent', { content_name: prod.name, value: Number(prod.price) || 0, currency: 'EGP' });
+            }
           }
         }
       } catch (err) {
@@ -141,8 +160,18 @@ export default function SingleProductPage() {
     setCurrentShippingFee(rate);
   };
 
+  const handleCartGovChange = (gov) => {
+    setCartGov(gov);
+    setCartCity('');
+    if (!gov || !settings?.shipping_rates) return;
+    const zoneKey = EGYPT_REGIONS[gov]?.zone || 'cairo_giza';
+    const rate = settings.shipping_rates[zoneKey] ?? 50;
+    setCartShippingFee(rate);
+  };
+
   const galleryImages = Array.isArray(product?.images) && product.images.length > 0 ? product.images : [];
 
+  // دالة الإضافة إلى السلة
   const handleAddToCart = () => {
     if (product?.show_colors && product.colors?.length > 0 && !selectedColor) {
       alert('يرجى اختيار اللون أولاً');
@@ -154,7 +183,7 @@ export default function SingleProductPage() {
     }
 
     const newItem = {
-      id: `${product.id}_${Date.now()}`,
+      id: `${product.id}_${selectedColor || ''}_${selectedSize || ''}_${Date.now()}`,
       productId: product.id,
       name: product.name,
       price: Number(product.price) || 0,
@@ -165,23 +194,54 @@ export default function SingleProductPage() {
     };
 
     setCart((prev) => [...prev, newItem]);
-    setIsCartOpen(true);
+    setAddedPopup(true);
+    setTimeout(() => setAddedPopup(false), 2500);
 
     if (typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'AddToCart', { content_name: product.name, value: (Number(product.price) || 0) * quantity, currency: 'EGP' });
+      window.fbq('track', 'AddToCart', {
+        content_name: product.name,
+        value: (Number(product.price) || 0) * quantity,
+        currency: 'EGP',
+      });
     }
   };
+
+  const updateCartQty = (itemId, delta) => {
+    setCart((prev) =>
+      prev
+        .map((item) => {
+          if (item.id === itemId) {
+            const nextQty = item.quantity + delta;
+            return nextQty > 0 ? { ...item, quantity: nextQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean)
+    );
+  };
+
+  const removeCartItem = (itemId) => {
+    setCart((prev) => prev.filter((item) => item.id !== itemId));
+  };
+
+  const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+  const cartSubtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   const scrollToCheckout = () => {
     if (!hasFiredCheckout.current) {
       hasFiredCheckout.current = true;
       if (typeof window !== 'undefined' && window.fbq) {
-        window.fbq('track', 'InitiateCheckout', { content_name: product?.name, value: (Number(product?.price) || 0) * quantity, currency: 'EGP' });
+        window.fbq('track', 'InitiateCheckout', {
+          content_name: product?.name,
+          value: (Number(product?.price) || 0) * quantity,
+          currency: 'EGP',
+        });
       }
     }
     document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // تأكيد الطلب المباشر
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedGovernorate) {
@@ -252,7 +312,73 @@ export default function SingleProductPage() {
     }
   };
 
-  const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
+  // تأكيد طلب سلة المشتريات
+  const handleCartSubmit = async (e) => {
+    e.preventDefault();
+    if (!cartGov) {
+      alert('يرجى اختيار المحافظة في السلة');
+      return;
+    }
+    if (cart.length === 0) return;
+
+    setCartOrderLoading(true);
+    const shipping = Number(cartShippingFee) || 0;
+    const finalTotal = cartSubtotal + shipping;
+    const fullAddress = `${cartGov} - ${cartCity || 'مركز/مدينة'} - ${cartForm.detailedAddress}`;
+    const productsSummary = cart.map((i) => `${i.name} (${i.quantity})`).join(' + ');
+    const colorsSummary = cart.map((i) => i.color).filter(Boolean).join(', ') || '-';
+    const sizesSummary = cart.map((i) => i.size).filter(Boolean).join(', ') || '-';
+    const totalQty = cart.reduce((acc, i) => acc + i.quantity, 0);
+
+    try {
+      const { error } = await supabase.from('orders').insert([
+        {
+          customer_name: cartForm.name,
+          phone: cartForm.phone,
+          governorate: cartGov,
+          city: cartCity,
+          address: fullAddress,
+          product_name: productsSummary,
+          total_amount: finalTotal,
+          total_price: finalTotal,
+          selected_color: colorsSummary,
+          selected_size: sizesSummary,
+          quantity: totalQty,
+          status: 'جديد',
+        },
+      ]);
+
+      if (error) throw error;
+
+      setCartSuccess(true);
+      setCart([]);
+      localStorage.removeItem('fast_order_cart');
+
+      if (typeof window !== 'undefined' && window.fbq) {
+        window.fbq('track', 'Purchase', { content_name: productsSummary, value: finalTotal, currency: 'EGP' });
+      }
+
+      fetch(GOOGLE_SHEET_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          name: cartForm.name,
+          phone: cartForm.phone,
+          governorate: cartGov,
+          city: cartCity,
+          address: cartForm.detailedAddress,
+          product_name: productsSummary,
+          quantity: totalQty,
+          shipping_fee: shipping,
+          total_amount: finalTotal,
+        }),
+      }).catch((err) => console.error(err));
+
+    } catch (err) {
+      alert('خطأ أثناء تأكيد طلب السلة: ' + err.message);
+    }
+    setCartOrderLoading(false);
+  };
 
   if (loading) {
     return (
@@ -268,28 +394,36 @@ export default function SingleProductPage() {
   if (!product) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center gap-4 font-sans p-6 text-center" dir="rtl">
+        <span className="text-5xl">🔍</span>
         <h2 className="text-2xl font-black">المنتج غير موجود!</h2>
-        <Link href="/" className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl text-sm">العودة للكتالوج</Link>
+        <Link href="/" className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl text-sm">العودة للمتجر</Link>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-28 antialiased" dir="rtl">
+      {/* شريط الإعلان */}
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-md">
+        🚚 التوصيل لجميع محافظات مصر • الدفع عند الاستلام بعد المعاينة والفحص!
+      </div>
+
+      {/* الترويسة العلوية مع زر العودة وزر السلة */}
       <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 py-3.5 px-4 sticky top-0 z-40 shadow-sm">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+          <Link href="/" className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 hover:border-slate-700">
             <span>‹</span>
             <span>كل المنتجات</span>
           </Link>
+
           <button
-            onClick={() => setIsCartOpen(true)}
-            className="relative px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1.5"
+            onClick={() => { setIsCartOpen(true); setCartSuccess(false); }}
+            className="relative px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow"
           >
             <span>🛒</span>
             <span>السلة</span>
             {totalCartCount > 0 && (
-              <span className="bg-emerald-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-black">
+              <span className="bg-white text-emerald-950 text-[11px] px-1.5 py-0.2 rounded-full font-black">
                 {totalCartCount}
               </span>
             )}
@@ -297,12 +431,27 @@ export default function SingleProductPage() {
         </div>
       </header>
 
+      {/* تنبيه سريع عند الإضافة للسلة */}
+      {addedPopup && (
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white px-5 py-2.5 rounded-2xl shadow-2xl font-bold text-xs sm:text-sm flex items-center gap-2 animate-bounce">
+          <span>✅</span>
+          <span>تمت إضافة المنتج إلى السلة بنجاح!</span>
+        </div>
+      )}
+
       <main className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 space-y-6 shadow-2xl">
+          
+          {/* معرض الصور */}
           {galleryImages.length > 0 && (
             <div className="space-y-3">
               <div className="relative w-full bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[300px] max-h-[460px] p-2">
                 <img src={galleryImages[currentIndex]} alt={product.name} className="w-full h-auto max-h-[440px] object-contain mx-auto" />
+                {galleryImages.length > 1 && (
+                  <div className="absolute bottom-3 left-3 bg-slate-900/90 border border-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300">
+                    {currentIndex + 1} / {galleryImages.length}
+                  </div>
+                )}
               </div>
               {galleryImages.length > 1 && (
                 <div className="flex gap-2.5 overflow-x-auto pb-1">
@@ -320,6 +469,14 @@ export default function SingleProductPage() {
             </div>
           )}
 
+          {/* فيديو المنتج */}
+          {product.video_url && (
+            <div className="rounded-2xl overflow-hidden border border-slate-800 bg-black">
+              <video src={product.video_url} controls className="w-full max-h-[420px] object-contain mx-auto" />
+            </div>
+          )}
+
+          {/* اسم المنتج والأسعار */}
           <div className="space-y-2">
             <h2 className="text-2xl sm:text-3xl font-black text-white">{product.name}</h2>
             <div className="flex items-baseline gap-3">
@@ -330,6 +487,7 @@ export default function SingleProductPage() {
             </div>
           </div>
 
+          {/* وصف المنتج */}
           {product.description && (
             <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800/80 text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line">
               {product.description}
@@ -379,20 +537,45 @@ export default function SingleProductPage() {
             </div>
           )}
 
-          {/* أزرار السلة والطلب الفوري */}
+          {/* الكمية */}
+          <div className="flex items-center justify-between border-t border-slate-800 pt-4">
+            <span className="text-xs sm:text-sm font-bold text-slate-300">الكمية المطلوبة:</span>
+            <div className="flex items-center gap-3 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black"
+              >
+                −
+              </button>
+              <span className="text-sm font-black text-white w-6 text-center">{quantity}</span>
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => q + 1)}
+                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          {/* ---------------- زر اطلب الآن وبجانبه زر أضف إلى السلة جنباً إلى جنب ---------------- */}
           <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-800">
+            {/* زر اطلب الآن الرئيسي */}
             <button
               type="button"
               onClick={scrollToCheckout}
-              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-base rounded-2xl shadow-xl transition active:scale-[0.99] flex items-center justify-center gap-2"
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-base sm:text-lg rounded-2xl shadow-xl shadow-emerald-950/40 transition active:scale-[0.99] flex items-center justify-center gap-2"
             >
               <span>⚡</span>
-              <span>اطلب الآن فوراً</span>
+              <span>اطلب الآن - الدفع عند الاستلام</span>
             </button>
+
+            {/* زر أضف إلى السلة بجانبه */}
             <button
               type="button"
               onClick={handleAddToCart}
-              className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-base rounded-2xl border border-slate-700 transition active:scale-[0.99] flex items-center justify-center gap-2"
+              className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-base sm:text-lg rounded-2xl border border-slate-700 transition active:scale-[0.99] flex items-center justify-center gap-2 shadow-lg"
             >
               <span>🛒</span>
               <span>أضف إلى السلة</span>
@@ -408,9 +591,12 @@ export default function SingleProductPage() {
           </div>
 
           {success ? (
-            <div className="p-6 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-2xl text-center space-y-2">
-              <p className="text-2xl font-black">🎉 تم تأكيد طلبك بنجاح!</p>
-              <p className="text-xs text-slate-300">سيتواصل معك فريق خدمة العملاء هاتفياً لتأكيد الشحن.</p>
+            <div className="p-6 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-2xl text-center space-y-3">
+              <p className="text-3xl font-black">🎉 تم تأكيد طلبك بنجاح!</p>
+              <p className="text-sm text-slate-300">سيتواصل معك فريق خدمة العملاء هاتفياً لتأكيد الشحن والتسليم.</p>
+              <Link href="/" className="inline-block mt-3 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold">
+                متابعة التسوق في المتجر
+              </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -478,7 +664,7 @@ export default function SingleProductPage() {
                 <textarea
                   required
                   rows="2"
-                  placeholder="الشارع، رقم العمارة، علامة مميزة..."
+                  placeholder="اسم الشارع، رقم العمارة، أو علامة مميزة..."
                   value={formData.detailedAddress}
                   onChange={(e) => setFormData({ ...formData, detailedAddress: e.target.value })}
                   className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm"
@@ -487,8 +673,8 @@ export default function SingleProductPage() {
 
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between text-slate-400">
-                  <span>سعر المنتج:</span>
-                  <span className="font-bold text-white">{product.price} ج.م</span>
+                  <span>سعر المنتج ({quantity} قطعة):</span>
+                  <span className="font-bold text-white">{Number(product.price) * quantity} ج.م</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>الشحن ({selectedGovernorate || 'حدد المحافظة'}):</span>
@@ -496,7 +682,7 @@ export default function SingleProductPage() {
                 </div>
                 <div className="border-t border-slate-800 pt-2 flex justify-between font-black text-sm sm:text-base">
                   <span className="text-white">المبلغ عند الاستلام:</span>
-                  <span className="text-emerald-400 text-xl">{Number(product.price) + currentShippingFee} ج.م</span>
+                  <span className="text-emerald-400 text-xl">{(Number(product.price) * quantity) + currentShippingFee} ج.م</span>
                 </div>
               </div>
 
@@ -511,6 +697,175 @@ export default function SingleProductPage() {
           )}
         </div>
       </main>
+
+      {/* دراوَر نافذة سلة المشتريات المنبثقة */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end">
+          <div className="w-full max-w-md h-full bg-slate-900 border-r border-slate-800 flex flex-col p-6 shadow-2xl overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🛒</span>
+                <h2 className="text-xl font-black text-white">سلة المشتريات ({totalCartCount})</h2>
+              </div>
+              <button
+                onClick={() => setIsCartOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {cartSuccess ? (
+              <div className="p-6 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl text-center space-y-2 mt-6">
+                <p className="text-2xl font-black">🎉 تم تأكيد طلب السلة بنجاح!</p>
+                <p className="text-xs text-slate-300">سيتواصل معك فريق خدمة العملاء لتأكيد الشحن.</p>
+                <button
+                  onClick={() => setIsCartOpen(false)}
+                  className="mt-4 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold"
+                >
+                  إغلاق
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex-1 py-4 space-y-3">
+                  {cart.length === 0 ? (
+                    <div className="py-16 text-center text-slate-500 font-bold space-y-2">
+                      <span className="text-4xl block">🛍️</span>
+                      <p>السلة فارغة حالياً</p>
+                    </div>
+                  ) : (
+                    cart.map((item) => (
+                      <div key={item.id} className="flex gap-3 bg-slate-950 p-3 rounded-2xl border border-slate-800 items-center">
+                        {item.image && (
+                          <img src={item.image} alt={item.name} className="w-14 h-14 object-cover rounded-xl border border-slate-800" />
+                        )}
+                        <div className="flex-1">
+                          <h4 className="font-bold text-xs text-white line-clamp-1">{item.name}</h4>
+                          <p className="text-emerald-400 font-black text-xs mt-0.5">{item.price} ج.م</p>
+                          {(item.color || item.size) && (
+                            <span className="text-[10px] text-slate-400 block mt-0.5">
+                              {item.color && `لون: ${item.color} `}
+                              {item.size && `مقاس: ${item.size}`}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col items-end gap-1.5">
+                          <button onClick={() => removeCartItem(item.id)} className="text-red-400 hover:text-red-300 text-[11px] font-bold">
+                            حذف
+                          </button>
+                          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 px-2 py-0.5 rounded-lg">
+                            <button onClick={() => updateCartQty(item.id, -1)} className="text-white font-bold px-1">−</button>
+                            <span className="text-xs font-black text-emerald-400">{item.quantity}</span>
+                            <button onClick={() => updateCartQty(item.id, 1)} className="text-white font-bold px-1">+</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {cart.length > 0 && (
+                  <form onSubmit={handleCartSubmit} className="border-t border-slate-800 pt-4 space-y-3">
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between text-slate-400">
+                        <span>إجمالي المنتجات:</span>
+                        <span className="text-white font-bold">{cartSubtotal} ج.م</span>
+                      </div>
+                      <div className="flex justify-between text-slate-400">
+                        <span>الشحن ({cartGov || 'حدد المحافظة'}):</span>
+                        <span className="text-emerald-400 font-bold">{cartShippingFee} ج.م</span>
+                      </div>
+                      <div className="flex justify-between text-sm font-black border-t border-slate-800 pt-1.5">
+                        <span className="text-white">الإجمالي النهائي:</span>
+                        <span className="text-emerald-400 text-base">{cartSubtotal + cartShippingFee} ج.م</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 pt-2">
+                      <input
+                        type="text"
+                        required
+                        placeholder="الاسم بالكامل"
+                        value={cartForm.name}
+                        onChange={(e) => setCartForm({ ...cartForm, name: e.target.value })}
+                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="رقم الهاتف"
+                        value={cartForm.phone}
+                        onChange={(e) => setCartForm({ ...cartForm, phone: e.target.value })}
+                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <select
+                          required
+                          value={cartGov}
+                          onChange={(e) => handleCartGovChange(e.target.value)}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none"
+                        >
+                          <option value="">المحافظة...</option>
+                          {Object.keys(EGYPT_REGIONS).map((g) => (
+                            <option key={g} value={g}>{g}</option>
+                          ))}
+                        </select>
+                        <select
+                          required
+                          disabled={!cartGov}
+                          value={cartCity}
+                          onChange={(e) => setCartCity(e.target.value)}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none disabled:opacity-50"
+                        >
+                          <option value="">المركز...</option>
+                          {cartGov &&
+                            EGYPT_REGIONS[cartGov]?.cities.map((c) => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          <option value="مركز آخر">مركز آخر</option>
+                        </select>
+                      </div>
+                      <textarea
+                        required
+                        rows="2"
+                        placeholder="العنوان بالتفصيل"
+                        value={cartForm.detailedAddress}
+                        onChange={(e) => setCartForm({ ...cartForm, detailedAddress: e.target.value })}
+                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                      ></textarea>
+
+                      <button
+                        type="submit"
+                        disabled={cartOrderLoading}
+                        className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 font-black text-white text-sm rounded-xl transition shadow-lg disabled:opacity-50"
+                      >
+                        {cartOrderLoading ? 'جاري تأكيد الطلب...' : 'تأكيد طلب السلة 🚚'}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* زر أيقونة السلة العائم أسفل الشاشة للموبايل والكمبيوتر */}
+      <button
+        onClick={() => { setIsCartOpen(true); setCartSuccess(false); }}
+        className="fixed bottom-5 left-5 z-40 bg-emerald-600 hover:bg-emerald-500 text-white p-3.5 rounded-full shadow-2xl flex items-center justify-center transition active:scale-95 border-2 border-emerald-400/40"
+        title="فتح سلة المشتريات"
+      >
+        <span className="text-xl">🛒</span>
+        {totalCartCount > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow">
+            {totalCartCount}
+          </span>
+        )}
+      </button>
+
     </div>
   );
 }
