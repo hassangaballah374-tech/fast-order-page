@@ -114,11 +114,11 @@ export default function LuxuryProductPage() {
     }
   }, [cart]);
 
-  // دالة حقن وتفعيل البيكسل التلقائي برقم ID ديناميكي
+  // دالة تفعيل البيكسل الآمنة المحصنة ضد الـ undefined
   const initFacebookPixel = (pixelId) => {
-    if (typeof window === 'undefined' || !pixelId) return;
-    const cleanId = String(pixelId).trim();
-    if (!cleanId) return;
+    if (typeof window === 'undefined') return;
+    const cleanId = pixelId ? String(pixelId).trim() : '';
+    if (!cleanId || cleanId === 'undefined' || cleanId === 'null') return;
 
     if (!window.fbq) {
       (function (f, b, e, v, n, t, s) {
@@ -147,7 +147,7 @@ export default function LuxuryProductPage() {
     }
   };
 
-  // جلب بيانات المنتج وتفعيل البيكسل فوراً
+  // جلب بيانات المنتج والبيكسل فوراً
   useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -159,7 +159,6 @@ export default function LuxuryProductPage() {
             setCurrentShippingFee(sData.shipping_rates.cairo_giza);
             setCartShippingFee(sData.shipping_rates.cairo_giza);
           }
-
           if (sData.facebook_pixel_id) {
             initFacebookPixel(sData.facebook_pixel_id);
           }
@@ -198,19 +197,11 @@ export default function LuxuryProductPage() {
             setSelectedSize(prod.sizes[0]);
           }
 
-          if (typeof window !== 'undefined') {
+          if (typeof window !== 'undefined' && sData?.facebook_pixel_id) {
             if (window.fbq) {
               window.fbq('track', 'ViewContent', {
                 content_name: prod.name,
                 content_ids: [String(prod.id)],
-                value: Number(prod.price) || 0,
-                currency: 'EGP',
-              });
-            }
-            if (window.ttq) {
-              window.ttq.track('ViewContent', {
-                content_name: prod.name,
-                content_id: String(prod.id),
                 value: Number(prod.price) || 0,
                 currency: 'EGP',
               });
@@ -337,7 +328,7 @@ export default function LuxuryProductPage() {
     document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // تأكيد الطلب المباشر مع تتبع المزدوج (Browser + CAPI Server)
+  // تأكيد الطلب المباشر مع خصم المخزون والتتبع المزدوج
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedGovernorate) {
@@ -383,10 +374,8 @@ export default function LuxuryProductPage() {
       setSuccess(true);
       setOrderLoading(false);
 
-      // معرف الحدث الموحد لمنع التكرار (Deduplication Event ID)
       const eventId = `order_${Date.now()}`;
 
-      // 1. تتبع المتصفح (Browser Pixel)
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('track', 'Purchase', {
           content_name: product?.name,
@@ -395,7 +384,6 @@ export default function LuxuryProductPage() {
         }, { eventID: eventId });
       }
 
-      // 2. تتبع السيرفر المباشر (Server-Side CAPI)
       fetch('/api/fb-conversion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -403,16 +391,8 @@ export default function LuxuryProductPage() {
           event_name: 'Purchase',
           event_id: eventId,
           event_source_url: typeof window !== 'undefined' ? window.location.href : '',
-          user_data: {
-            phone: formData.phone,
-            name: formData.name,
-            city: selectedCity,
-            governorate: selectedGovernorate,
-          },
-          custom_data: {
-            value: finalTotal,
-            content_name: product?.name,
-          }
+          user_data: { phone: formData.phone, name: formData.name, city: selectedCity, governorate: selectedGovernorate },
+          custom_data: { value: finalTotal, content_name: product?.name }
         }),
       }).catch((err) => console.error('CAPI trigger error:', err));
 
@@ -574,7 +554,7 @@ export default function LuxuryProductPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans pb-36 antialiased select-none" dir="rtl">
       
-      {/* البارتكلز المتحركة */}
+      {/* طبقة البارتكلز المتحركة */}
       <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
         {particles.map((p) => (
           <span
