@@ -37,6 +37,8 @@ export default function AdminPage() {
     sizes: [],
   });
 
+  // حالات الإدخال المؤقتة
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newColorName, setNewColorName] = useState('');
   const [newColorCode, setNewColorCode] = useState('#000000');
@@ -51,6 +53,7 @@ export default function AdminPage() {
     setLoading(true);
     try {
       if (supabase) {
+        // 1. جلب الإعدادات والبيكسل
         const { data: sData } = await supabase.from('store_settings').select('*').eq('id', 1).maybeSingle();
         if (sData) {
           setSettings({
@@ -60,9 +63,33 @@ export default function AdminPage() {
           });
         }
 
-        const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+        // 2. جلب المنتجات من جدول products
+        let { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+
+        // إذا كان جدول products فارغاً، قراءة المنتج المحفوظ في store_settings ونقله تلقائياً
+        if ((!pData || pData.length === 0) && sData && sData.product_name) {
+          const legacyProduct = {
+            name: sData.product_name,
+            price: Number(sData.product_price) || 0,
+            original_price: Number(sData.original_price) || null,
+            description: sData.description || '',
+            images: sData.images || (sData.image_url ? [sData.image_url] : []),
+            video_url: sData.video_url || '',
+            show_colors: Boolean(sData.show_colors),
+            colors: sData.colors || [],
+            show_sizes: Boolean(sData.show_sizes),
+            sizes: sData.sizes || [],
+          };
+
+          const { data: insertedProduct } = await supabase.from('products').insert([legacyProduct]).select().single();
+          if (insertedProduct) {
+            pData = [insertedProduct];
+          }
+        }
+
         if (pData) setProducts(pData);
 
+        // 3. جلب الطلبات
         const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
         if (oData) setOrders(oData);
       }
@@ -72,6 +99,7 @@ export default function AdminPage() {
     setLoading(false);
   }
 
+  // حفظ إعدادات البيكسل والمتجر
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -90,6 +118,7 @@ export default function AdminPage() {
     setSavingSettings(false);
   };
 
+  // فلترة الطلبات
   const filteredOrders = orders.filter((o) => {
     const matchSearch =
       (o.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -115,6 +144,7 @@ export default function AdminPage() {
     }
   };
 
+  // فتح وإغلاق مودال المنتج
   const openNewProductModal = () => {
     setEditingProduct(null);
     setProductForm({
@@ -165,6 +195,77 @@ export default function AdminPage() {
     }
   };
 
+  // رفع الصور من الجهاز (Supabase Storage أو Base64 كبديل آمن)
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setUploadingMedia(true);
+    for (const file of files) {
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `products/${fileName}`;
+
+        // محاولة الرفع لـ Supabase Storage bucket 'product-images'
+        const { error: uploadErr } = await supabase.storage.from('product-images').upload(filePath, file);
+
+        if (!uploadErr) {
+          const { data: publicData } = supabase.storage.from('product-images').getPublicUrl(filePath);
+          if (publicData?.publicUrl) {
+            setProductForm((prev) => ({ ...prev, images: [...prev.images, publicData.publicUrl] }));
+            continue;
+          }
+        }
+
+        // بديل تلقائي إذا لم يكن الـ bucket مفعل: التحويل المباشر لـ Data URL
+        const reader = new FileReader();
+        reader.onload = (uploadEvent) => {
+          setProductForm((prev) => ({ ...prev, images: [...prev.images, uploadEvent.target.result] }));
+        };
+        reader.readAsDataURL(file);
+
+      } catch (err) {
+        console.error('File upload error:', err);
+      }
+    }
+    setUploadingMedia(false);
+    e.target.value = '';
+  };
+
+  // رفع الفيديو كملف من الجهاز
+  const handleVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingMedia(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `video_${Date.now()}.${fileExt}`;
+      const filePath = `products/${fileName}`;
+
+      const { error: uploadErr } = await supabase.storage.from('product-images').upload(filePath, file);
+
+      if (!uploadErr) {
+        const { data: publicData } = supabase.storage.from('product-images').getPublicUrl(filePath);
+        if (publicData?.publicUrl) {
+          setProductForm((prev) => ({ ...prev, video_url: publicData.publicUrl }));
+        }
+      } else {
+        const reader = new FileReader();
+        reader.onload = (uploadEvent) => {
+          setProductForm((prev) => ({ ...prev, video_url: uploadEvent.target.result }));
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setUploadingMedia(false);
+    e.target.value = '';
+  };
+
+  // حفظ المنتج
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     setSavingProduct(true);
@@ -198,7 +299,7 @@ export default function AdminPage() {
     setSavingProduct(false);
   };
 
-  // دوال الألوان والمقاسات والصور
+  // دوال الألوان والمقاسات
   const addColor = () => {
     if (!newColorName.trim()) return;
     setProductForm((prev) => ({
@@ -229,15 +330,6 @@ export default function AdminPage() {
       ...prev,
       sizes: prev.sizes.filter((_, i) => i !== idx),
     }));
-  };
-
-  const addImage = () => {
-    if (!newImageUrl.trim()) return;
-    setProductForm((prev) => ({
-      ...prev,
-      images: [...(prev.images || []), newImageUrl.trim()],
-    }));
-    setNewImageUrl('');
   };
 
   const removeImage = (idx) => {
@@ -424,7 +516,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* فلترة والبحث */}
+            {/* شريط البحث وفلترة الحالة */}
             <div className="bg-slate-900 p-4 rounded-3xl border border-slate-800 flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
@@ -655,7 +747,6 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* شارات الألوان والمقاسات المفعلة */}
                       <div className="flex items-center gap-2 pt-1 text-xs">
                         <span className={`px-2.5 py-1 rounded-lg border font-bold ${p.show_colors ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>
                           🎨 الألوان: {p.show_colors ? (p.colors?.length || 0) : 'معطلة'}
@@ -667,11 +758,21 @@ export default function AdminPage() {
                     </div>
 
                     <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+                      <a
+                        href={`/p/${p.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="py-2.5 px-3 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"
+                        title="فتح صفحة الإعلان المستقلة للمنتج"
+                      >
+                        <span>🔗</span>
+                        <span>صفحة الإعلان</span>
+                      </a>
                       <button
                         onClick={() => openEditProductModal(p)}
                         className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
                       >
-                        <span>✏️️</span>
+                        <span>✏️</span>
                         <span>تعديل</span>
                       </button>
                       <button
@@ -752,9 +853,9 @@ export default function AdminPage() {
 
       </main>
 
-      {/* نافذة مودال إضافة وتعديل المنتج مع خيارات الألوان والمقاسات وزر إظهارها وإخفائها */}
+      {/* نافذة مودال إضافة وتعديل المنتج (مع رفع الصور والفيديو من الجهاز والألوان والمقاسات) */}
       {showProductModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-xl font-black text-white">
@@ -821,25 +922,52 @@ export default function AdminPage() {
                 ></textarea>
               </div>
 
-              {/* صور المنتج */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-400">معرض صور المنتج (روابط مباشرة)</label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    placeholder="رابط الصورة المباشر..."
-                    value={newImageUrl}
-                    onChange={(e) => setNewImageUrl(e.target.value)}
-                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={addImage}
-                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold"
-                  >
-                    + إضافة صورة
-                  </button>
+              {/* ---------------- 1. رفع صور المنتج (ملف مباشر أو رابط) ---------------- */}
+              <div className="space-y-3 pt-2 border-t border-slate-800">
+                <label className="block text-xs font-bold text-slate-300">
+                  📷 صور المنتج (اختر صور من جهازك أو استخدم رابط)
+                </label>
+                
+                <div className="flex flex-col sm:flex-row gap-3">
+                  {/* زر رفع ملف من الجهاز */}
+                  <label className="flex-1 flex items-center justify-center gap-2 p-3 bg-slate-800/80 hover:bg-slate-700 text-white rounded-xl border border-dashed border-slate-600 cursor-pointer text-xs font-bold transition">
+                    <span>📁</span>
+                    <span>{uploadingMedia ? 'جاري رفع الملف...' : 'اختر صور من جهازك'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={uploadingMedia}
+                    />
+                  </label>
+
+                  {/* بديل: إضافة رابط خارجي */}
+                  <div className="flex-1 flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="أو الصق رابط صورة مباشر..."
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newImageUrl.trim()) {
+                          setProductForm((prev) => ({ ...prev, images: [...prev.images, newImageUrl.trim()] }));
+                          setNewImageUrl('');
+                        }
+                      }}
+                      className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold"
+                    >
+                      إضافة
+                    </button>
+                  </div>
                 </div>
+
+                {/* المعرض المصغر للصور المرفوعة */}
                 <div className="flex flex-wrap gap-2 pt-1">
                   {productForm.images?.map((img, idx) => (
                     <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-800 bg-black">
@@ -848,6 +976,7 @@ export default function AdminPage() {
                         type="button"
                         onClick={() => removeImage(idx)}
                         className="absolute top-1 left-1 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]"
+                        title="حذف الصورة"
                       >
                         ✕
                       </button>
@@ -856,7 +985,43 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* ---------------- خيارات الألوان وزر إظهارها وإخفائها ---------------- */}
+              {/* ---------------- 2. فيديو المنتج (ملف مباشر أو رابط) ---------------- */}
+              <div className="space-y-2 pt-2 border-t border-slate-800">
+                <label className="block text-xs font-bold text-slate-300">
+                  🎥 فيديو المنتج (اختياري - اختر فيديو من جهازك أو رابط)
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <label className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-white rounded-xl border border-dashed border-slate-600 cursor-pointer text-xs font-bold transition">
+                    <span>🎬</span>
+                    <span>رفع فيديو من الجهاز</span>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoUpload}
+                      className="hidden"
+                      disabled={uploadingMedia}
+                    />
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="أو الصق رابط فيديو مباشر (MP4)..."
+                    value={productForm.video_url || ''}
+                    onChange={(e) => setProductForm({ ...productForm, video_url: e.target.value })}
+                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"
+                  />
+                  {productForm.video_url && (
+                    <button
+                      type="button"
+                      onClick={() => setProductForm({ ...productForm, video_url: '' })}
+                      className="px-3 py-2 bg-red-600/20 text-red-400 hover:text-white rounded-xl text-xs font-bold"
+                    >
+                      إلغاء الفيديو
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* ---------------- 3. خيارات الألوان وزر إظهارها وإخفائها ---------------- */}
               <div className="pt-3 border-t border-slate-800 space-y-3">
                 <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
                   <div className="flex items-center gap-2">
@@ -867,7 +1032,6 @@ export default function AdminPage() {
                     </div>
                   </div>
                   
-                  {/* زر إظهار وإخفاء خيارات الألوان */}
                   <button
                     type="button"
                     onClick={() => setProductForm({ ...productForm, show_colors: !productForm.show_colors })}
@@ -882,7 +1046,7 @@ export default function AdminPage() {
                 </div>
 
                 {productForm.show_colors && (
-                  <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/60 space-y-2.5 animate-fade-in">
+                  <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/60 space-y-2.5">
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -909,7 +1073,7 @@ export default function AdminPage() {
 
                     <div className="flex flex-wrap gap-2 pt-1">
                       {productForm.colors?.length === 0 ? (
-                        <span className="text-[11px] text-slate-500">لم تتم إضافة أي لون بعد. أضف أسماء الألوان بالأعلى.</span>
+                        <span className="text-[11px] text-slate-500">لم تتم إضافة أي لون بعد.</span>
                       ) : (
                         productForm.colors?.map((c, idx) => (
                           <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-white shadow-sm">
@@ -924,7 +1088,7 @@ export default function AdminPage() {
                 )}
               </div>
 
-              {/* ---------------- خيارات المقاسات وزر إظهارها وإخفائها ---------------- */}
+              {/* ---------------- 4. خيارات المقاسات وزر إظهارها وإخفائها ---------------- */}
               <div className="pt-3 border-t border-slate-800 space-y-3">
                 <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
                   <div className="flex items-center gap-2">
@@ -935,7 +1099,6 @@ export default function AdminPage() {
                     </div>
                   </div>
                   
-                  {/* زر إظهار وإخفاء خيارات المقاسات */}
                   <button
                     type="button"
                     onClick={() => setProductForm({ ...productForm, show_sizes: !productForm.show_sizes })}
@@ -950,7 +1113,7 @@ export default function AdminPage() {
                 </div>
 
                 {productForm.show_sizes && (
-                  <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/60 space-y-2.5 animate-fade-in">
+                  <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/60 space-y-2.5">
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -970,7 +1133,7 @@ export default function AdminPage() {
 
                     <div className="flex flex-wrap gap-2 pt-1">
                       {productForm.sizes?.length === 0 ? (
-                        <span className="text-[11px] text-slate-500">لم تتم إضافة أي مقاس بعد. أضف المقاسات بالأعلى.</span>
+                        <span className="text-[11px] text-slate-500">لم تتم إضافة أي مقاس بعد.</span>
                       ) : (
                         productForm.sizes?.map((s, idx) => (
                           <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-white shadow-sm">
@@ -994,10 +1157,10 @@ export default function AdminPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={savingProduct}
+                  disabled={savingProduct || uploadingMedia}
                   className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition shadow-lg disabled:opacity-50"
                 >
-                  {savingProduct ? 'جاري الحفظ...' : 'حفظ المنتج'}
+                  {savingProduct ? 'جاري الحفظ...' : 'حفظ المنتج 💾'}
                 </button>
               </div>
             </form>
