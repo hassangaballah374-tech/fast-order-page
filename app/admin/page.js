@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
 export default function AdminPage() {
-  const [activeView, setActiveView] = useState('cart'); // 'cart' (السلة والطلبات) | 'products' (المنتجات) | 'settings' (البيكسل والمتجر)
+  const [activeView, setActiveView] = useState('cart'); // 'cart' | 'products' | 'settings'
   const [loading, setLoading] = useState(true);
 
   // إعدادات المتجر والبيكسل
@@ -50,7 +50,6 @@ export default function AdminPage() {
     setLoading(true);
     try {
       if (supabase) {
-        // 1. جلب الإعدادات والبيكسل
         const { data: sData } = await supabase.from('store_settings').select('*').eq('id', 1).maybeSingle();
         if (sData) {
           setSettings({
@@ -60,11 +59,9 @@ export default function AdminPage() {
           });
         }
 
-        // 2. جلب المنتجات
         const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
         if (pData) setProducts(pData);
 
-        // 3. جلب طلبات السلة
         const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
         if (oData) setOrders(oData);
       }
@@ -74,7 +71,7 @@ export default function AdminPage() {
     setLoading(false);
   }
 
-  // حفظ إعدادات البيكسل
+  // حفظ الإعدادات
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -104,7 +101,7 @@ export default function AdminPage() {
     return matchSearch && matchStatus;
   });
 
-  // تحديث حالة الطلب في السلة
+  // تحديث حالة الطلب
   const handleUpdateStatus = async (id, status) => {
     const { error } = await supabase.from('orders').update({ status }).eq('id', id);
     if (!error) {
@@ -112,7 +109,7 @@ export default function AdminPage() {
     }
   };
 
-  // حذف طلب من السلة
+  // حذف طلب
   const handleDeleteOrder = async (id) => {
     if (!confirm('هل تريد حذف هذا الطلب نهائياً من السلة؟')) return;
     const { error } = await supabase.from('orders').delete().eq('id', id);
@@ -197,10 +194,29 @@ export default function AdminPage() {
     setSavingProduct(false);
   };
 
-  // دوال الحسابات
+  // الحسابات المالية وإحصائيات الحالات
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
-  const pendingCount = orders.filter((o) => (o.status || 'جديد') === 'جديد' || o.status === 'قيد الانتظار').length;
-  const deliveredCount = orders.filter((o) => o.status === 'تم التسليم').length;
+  const totalOrdersCount = orders.length;
+
+  // الحالات مع ألوانها وأيقوناتها
+  const ALL_STATUSES = [
+    { key: 'جديد', label: 'جديد', color: 'bg-emerald-500', barColor: '#10b981', textColor: 'text-emerald-400' },
+    { key: 'قيد الانتظار', label: 'قيد الانتظار', color: 'bg-amber-500', barColor: '#f59e0b', textColor: 'text-amber-400' },
+    { key: 'تم التأكيد', label: 'تم التأكيد', color: 'bg-blue-500', barColor: '#3b82f6', textColor: 'text-blue-400' },
+    { key: 'تم الشحن', label: 'تم الشحن', color: 'bg-purple-500', barColor: '#a855f7', textColor: 'text-purple-400' },
+    { key: 'تم التسليم', label: 'تم التسليم', color: 'bg-teal-500', barColor: '#14b8a6', textColor: 'text-teal-400' },
+    { key: 'مرتجع', label: 'مرتجع', color: 'bg-rose-500', barColor: '#f43f5e', textColor: 'text-rose-400' },
+    { key: 'ملغي', label: 'ملغي', color: 'bg-slate-500', barColor: '#64748b', textColor: 'text-slate-400' },
+  ];
+
+  // حساب عدد ونسبة كل حالة
+  const statusStats = ALL_STATUSES.map((st) => {
+    const count = orders.filter((o) => (o.status || 'جديد') === st.key).length;
+    const percent = totalOrdersCount > 0 ? ((count / totalOrdersCount) * 100).toFixed(1) : 0;
+    return { ...st, count, percent: Number(percent) };
+  });
+
+  const maxStatusCount = Math.max(...statusStats.map((s) => s.count), 1);
 
   if (loading) {
     return (
@@ -227,7 +243,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* التبويبات الثلاثة: السلة - المنتجات - البيكسل والإعدادات */}
+          {/* التبويبات الرئيسية */}
           <div className="flex items-center bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
             <button
               onClick={() => setActiveView('cart')}
@@ -267,71 +283,141 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
 
-        {/* ---------------- 1. تبويب السلة (الطلبات بكامل تفاصيلها) ---------------- */}
+        {/* ---------------- 1. تبويب السلة ---------------- */}
         {activeView === 'cart' && (
           <div className="space-y-6">
             
-            {/* بطاقات المتابعة السريعة للسلة */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            {/* البطاقات المالية العلوية */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
                 <div className="text-slate-400 text-xs font-bold mb-1">إجمالي مبيعات السلة</div>
-                <div className="text-2xl font-black text-emerald-400">{totalRevenue.toLocaleString()} ج.م</div>
+                <div className="text-2xl sm:text-3xl font-black text-emerald-400">{totalRevenue.toLocaleString()} ج.م</div>
               </div>
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
-                <div className="text-slate-400 text-xs font-bold mb-1">إجمالي طلبات السلة</div>
-                <div className="text-2xl font-black text-white">{orders.length} طلب</div>
+                <div className="text-slate-400 text-xs font-bold mb-1">إجمالي عدد الطلبات الكلي</div>
+                <div className="text-2xl sm:text-3xl font-black text-white">{totalOrdersCount} طلب</div>
               </div>
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
-                <div className="text-slate-400 text-xs font-bold mb-1">طلبات جديدة / قيد الانتظار</div>
-                <div className="text-2xl font-black text-amber-400">{pendingCount} طلب</div>
-              </div>
-              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
-                <div className="text-slate-400 text-xs font-bold mb-1">تم التسليم بنجاح</div>
-                <div className="text-2xl font-black text-teal-400">{deliveredCount} طلب</div>
+                <div className="text-slate-400 text-xs font-bold mb-1">متوسط قيمة الطلب الواحد</div>
+                <div className="text-2xl sm:text-3xl font-black text-teal-400">
+                  {totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0} ج.م
+                </div>
               </div>
             </div>
 
-            {/* شريط البحث وفلترة الحالة */}
+            {/* جدول الأعمدة ونسب كل حالة (Bar Chart & Analytics) */}
+            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                    <span>📊</span>
+                    <span>تحليل ونسب حالات الطلبات (جدول الأعمدة)</span>
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">نسبة وتوزيع كل حالة من إجمالي طلبات المتجر</p>
+                </div>
+                <span className="text-xs font-bold bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-emerald-400">
+                  إجمالي الطلبات: {totalOrdersCount}
+                </span>
+              </div>
+
+              {/* 1. الأعمدة الرأسية المقارنة (Visual Bar Chart) */}
+              <div className="pt-4 pb-2">
+                <div className="h-44 sm:h-52 flex items-end justify-between gap-2 sm:gap-4 px-2 sm:px-6 bg-slate-950/60 rounded-2xl border border-slate-800/80 pt-6 pb-3">
+                  {statusStats.map((st, idx) => {
+                    const barHeightPercent = totalOrdersCount > 0 ? Math.max((st.count / maxStatusCount) * 100, 6) : 6;
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group">
+                        <span className="text-[11px] font-black text-white mb-1.5 group-hover:scale-110 transition">
+                          {st.count}
+                        </span>
+                        <div className="w-full max-w-[42px] bg-slate-800/50 rounded-t-xl overflow-hidden flex items-end h-full">
+                          <div
+                            style={{ height: `${barHeightPercent}%`, backgroundColor: st.barColor }}
+                            className="w-full rounded-t-xl transition-all duration-700 shadow-lg group-hover:brightness-125"
+                          ></div>
+                        </div>
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-300 mt-2 truncate w-full text-center">
+                          {st.label}
+                        </span>
+                        <span className={`text-[10px] sm:text-[11px] font-black mt-0.5 ${st.textColor}`}>
+                          {st.percent}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. بطاقات النسب الأفقية التفصيلية */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 pt-2">
+                {statusStats.map((st, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setStatusFilter(st.key)}
+                    className={`p-3 rounded-2xl border text-right transition hover:scale-[1.02] ${
+                      statusFilter === st.key
+                        ? 'bg-slate-800 border-emerald-500 shadow-md ring-1 ring-emerald-500'
+                        : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs text-slate-400 font-bold mb-1">
+                      <span className="truncate">{st.label}</span>
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: st.barColor }}></span>
+                    </div>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-base font-black text-white">{st.count}</span>
+                      <span className={`text-xs font-black ${st.textColor}`}>{st.percent}%</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* شريط البحث وفلترة الحالة (مع خيار الكل) */}
             <div className="bg-slate-900 p-4 rounded-3xl border border-slate-800 flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
-                placeholder="ابحث بالاسم، رقم الهاتف، المحافظة أو المدينة..."
+                placeholder="ابحث باسم العميل، رقم الهاتف، المحافظة أو المركز..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-2xl p-3 text-sm focus:outline-none focus:border-emerald-500"
               />
 
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-slate-950 border border-slate-800 text-slate-200 rounded-2xl p-3 text-sm font-bold cursor-pointer"
-              >
-                <option value="all">كل حالات السلة</option>
-                <option value="جديد">جديد</option>
-                <option value="قيد الانتظار">قيد الانتظار</option>
-                <option value="تم التأكيد">تم التأكيد</option>
-                <option value="تم الشحن">تم الشحن</option>
-                <option value="تم التسليم">تم التسليم</option>
-                <option value="مرتجع">مرتجع</option>
-                <option value="ملغي">ملغي</option>
-              </select>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-400 whitespace-nowrap">الحالة:</span>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="bg-slate-950 border border-slate-800 text-slate-200 rounded-2xl p-3 text-sm font-bold cursor-pointer min-w-[150px] focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="all">الكل (جميع الحالات) ({totalOrdersCount})</option>
+                  <option value="جديد">جديد</option>
+                  <option value="قيد الانتظار">قيد الانتظار</option>
+                  <option value="تم التأكيد">تم التأكيد</option>
+                  <option value="تم الشحن">تم الشحن</option>
+                  <option value="تم التسليم">تم التسليم</option>
+                  <option value="مرتجع">مرتجع</option>
+                  <option value="ملغي">ملغي</option>
+                </select>
+              </div>
 
               <button
                 onClick={loadAllData}
                 className="px-5 py-3 bg-slate-950 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-2xl text-sm font-bold transition"
               >
-                🔄 تحديث السلة
+                🔄 تحديث
               </button>
             </div>
 
-            {/* قائمة كروت وعناصر السلة المفصلة */}
+            {/* قائمة كروت وعناصر السلة مع الترقيم التلقائي */}
             {filteredOrders.length === 0 ? (
               <div className="bg-slate-900 p-12 text-center text-slate-400 font-bold rounded-3xl border border-slate-800">
-                🛒 لا توجد طلبات في السلة حالياً
+                🛒 لا توجد طلبات مطابقة للبحث أو الفلتر المختار
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredOrders.map((order) => {
+                {filteredOrders.map((order, index) => {
                   const statusColors = {
                     'جديد': 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40',
                     'قيد الانتظار': 'bg-amber-500/20 text-amber-400 border-amber-500/40',
@@ -345,16 +431,21 @@ export default function AdminPage() {
                   return (
                     <div
                       key={order.id}
-                      className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4 transition hover:border-slate-700"
+                      className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4 transition hover:border-slate-700 relative overflow-hidden"
                     >
-                      {/* رأس الطلب: اسم العميل وحالته الحالية */}
+                      {/* رأس الطلب مع شارة الترقيم التلقائي والحالة */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
                         <div className="flex items-center gap-3">
-                          <span className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg font-black">
-                            👤
-                          </span>
+                          {/* شارة الترقيم التلقائي للطلب */}
+                          <div className="flex flex-col items-center justify-center w-11 h-11 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 font-black">
+                            <span className="text-[10px] text-emerald-500 leading-none">طلب</span>
+                            <span className="text-base leading-none mt-0.5">#{index + 1}</span>
+                          </div>
+
                           <div>
-                            <h3 className="font-black text-lg text-white">{order.customer_name}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-black text-lg text-white">{order.customer_name}</h3>
+                            </div>
                             <span className="text-xs text-slate-400 font-mono">
                               بتاريخ: {new Date(order.created_at).toLocaleDateString('ar-EG', {
                                 month: 'short',
@@ -366,7 +457,7 @@ export default function AdminPage() {
                           </div>
                         </div>
 
-                        {/* تغيير وتحديد حالة الطلب */}
+                        {/* تغيير الحالة */}
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-slate-400 font-bold">الحالة:</span>
                           <select
@@ -387,12 +478,10 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* بيانات الاتصال والعنوان وتفاصيل السلة */}
+                      {/* تفاصيل الهاتف والعنوان والإجمالي */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        
-                        {/* 1. بيانات التواصل */}
                         <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2">
-                          <span className="text-xs font-bold text-slate-400 block">📞 رقم الهاتف والتواصل:</span>
+                          <span className="text-xs font-bold text-slate-400 block">📞 الهاتف والتواصل:</span>
                           <div className="flex items-center justify-between">
                             <span className="font-mono text-emerald-400 font-bold" dir="ltr">{order.phone}</span>
                             <a
@@ -407,7 +496,6 @@ export default function AdminPage() {
                           </div>
                         </div>
 
-                        {/* 2. عنوان التوصيل */}
                         <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-1">
                           <span className="text-xs font-bold text-slate-400 block">📍 عنوان التوصيل:</span>
                           <p className="text-white font-bold text-xs sm:text-sm">
@@ -416,7 +504,6 @@ export default function AdminPage() {
                           <p className="text-slate-400 text-xs">{order.address}</p>
                         </div>
 
-                        {/* 3. الإجمالي الكلي للطلب */}
                         <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 flex flex-col justify-between">
                           <span className="text-xs font-bold text-slate-400">💰 المبلغ الإجمالي:</span>
                           <div className="flex items-baseline justify-between mt-1">
@@ -428,10 +515,10 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* محتويات المنتجات داخل الطلب */}
+                      {/* محتويات الطلب والمنتجات وحذف الطلب */}
                       <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="space-y-1">
-                          <span className="text-xs font-bold text-slate-400 block">🛍️ تفاصيل المنتجات المطلوبة:</span>
+                          <span className="text-xs font-bold text-slate-400 block">🛍️ المنتجات المطلوبة:</span>
                           <p className="text-sm font-black text-white">{order.product_name}</p>
                           <div className="flex flex-wrap gap-2 text-xs text-slate-400">
                             {order.selected_color && order.selected_color !== '-' && (
@@ -446,7 +533,7 @@ export default function AdminPage() {
                             )}
                             {order.quantity && (
                               <span className="bg-slate-900 px-2 py-0.5 rounded-md border border-slate-800">
-                                العدد الكلي: <strong className="text-emerald-400">{order.quantity}</strong>
+                                العدد: <strong className="text-emerald-400">{order.quantity}</strong>
                               </span>
                             )}
                           </div>
@@ -469,7 +556,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ---------------- 2. تبويب المنتجات وهامش الربح ---------------- */}
+        {/* ---------------- 2. تبويب المنتجات والأرباح ---------------- */}
         {activeView === 'products' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between bg-slate-900 p-5 rounded-3xl border border-slate-800">
@@ -535,7 +622,7 @@ export default function AdminPage() {
                         onClick={() => openEditProductModal(p)}
                         className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
                       >
-                        <span>✏️</span>
+                        <span>✏️️</span>
                         <span>تعديل</span>
                       </button>
                       <button
@@ -616,7 +703,7 @@ export default function AdminPage() {
 
       </main>
 
-      {/* نافذة مودال إضافة وتعديل المنتج */}
+      {/* مودال إضافة وتعديل المنتج */}
       {showProductModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
