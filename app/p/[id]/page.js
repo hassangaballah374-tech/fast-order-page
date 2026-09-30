@@ -308,7 +308,6 @@ export default function LuxuryProductPage() {
     const productsSummary = `${product?.name} (عدد: ${quantity})`;
 
     try {
-      // 1. تسجيل الطلب في جدول orders
       const { error } = await supabase.from('orders').insert([
         {
           customer_name: formData.name,
@@ -329,7 +328,6 @@ export default function LuxuryProductPage() {
 
       if (error) throw error;
 
-      // 2. خصم المخزون تلقائياً في قاعدة البيانات
       if (product.id && product.id !== 'legacy') {
         const newStock = Math.max(0, (product.stock || 0) - quantity);
         await supabase.from('products').update({ stock: newStock }).eq('id', product.id);
@@ -403,7 +401,6 @@ export default function LuxuryProductPage() {
 
       if (error) throw error;
 
-      // خصم مخزون كل منتج في السلة
       for (const item of cart) {
         if (item.productId && item.productId !== 'legacy') {
           const { data: pCurrent } = await supabase.from('products').select('stock').eq('id', item.productId).maybeSingle();
@@ -452,7 +449,7 @@ export default function LuxuryProductPage() {
     : 0;
   const savedAmount = hasDiscount ? originalOldPrice - currentSellingPrice : 0;
 
-  // الحساب الذكي لعبارة المخزون للعميل (متبقي أقل من كذا بدلاً من الرقم الفعلي)
+  // الحساب الذكي لعبارة المخزون للعميل
   const actualStock = product?.stock !== undefined ? product.stock : 20;
 
   const getSmartStockText = (stock) => {
@@ -544,7 +541,7 @@ export default function LuxuryProductPage() {
       <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="bg-gradient-to-b from-[#0f172a] to-[#0b1324] border border-slate-800/90 rounded-[32px] p-5 sm:p-8 space-y-6 shadow-2xl overflow-hidden">
           
-          {/* مؤشر الزوار وعبارة المخزون الذكية (متبقي أقل من كذا) */}
+          {/* مؤشر الزوار وعبارة المخزون الذكية */}
           <div className="flex flex-wrap items-center justify-between gap-2.5 bg-[#070b14]/70 p-3 rounded-2xl border border-slate-800/80 text-xs font-bold">
             <div className="flex items-center gap-2 text-emerald-400">
               <span className="relative flex h-2.5 w-2.5">
@@ -554,7 +551,6 @@ export default function LuxuryProductPage() {
               <span>يشاهد هذا المنتج الآن <strong className="text-white font-black">{liveVisitors}</strong> عميلاً</span>
             </div>
 
-            {/* عبارة المخزون المخصصة للعميل */}
             <div className="flex items-center gap-1.5 text-amber-400">
               <span className="bg-amber-500/15 text-amber-300 px-3 py-1 rounded-xl border border-amber-500/30 font-black animate-pulse">
                 {getSmartStockText(actualStock)}
@@ -592,9 +588,11 @@ export default function LuxuryProductPage() {
             </div>
           )}
 
-          {/* الاسم والأسعار والتوفير */}
+          {/* الاسم والأسعار والتوفير المبهج */}
           <div className="space-y-4">
             <h2 className="text-2xl sm:text-3xl font-black text-white">{product.name}</h2>
+            
+            {/* كتلة الأسعار مع شارة التوفير الخضراء المبهجة */}
             <div className="bg-gradient-to-r from-[#050811] via-[#091122] to-[#050811] p-5 rounded-3xl border border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-1">
                 <span className="text-[11px] text-slate-400 block font-bold">السعر بعد التخفيض:</span>
@@ -607,11 +605,14 @@ export default function LuxuryProductPage() {
                   )}
                 </div>
               </div>
+
               {hasDiscount && (
                 <div className="flex flex-col items-end gap-1.5">
-                  <span className="bg-red-500/15 border border-red-500/30 text-red-400 font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-xl">
-                    وفرت: {savedAmount} ج.م 💰
+                  <span className="bg-gradient-to-r from-emerald-500/20 via-teal-500/25 to-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-black text-xs sm:text-sm px-4 py-2 rounded-2xl shadow-lg shadow-emerald-950/40 flex items-center gap-1.5 animate-pulse">
+                    <span>💰</span>
+                    <span>وفرت: {savedAmount} ج.م</span>
                   </span>
+                  <span className="text-[11px] text-emerald-400/80 font-bold">شامل المعاينة قبل الاستلام</span>
                 </div>
               )}
             </div>
