@@ -38,7 +38,8 @@ export default function AdminPage() {
   });
 
   const [newImageUrl, setNewImageUrl] = useState('');
-  const [newColor, setNewColor] = useState({ name: '', code: '#000000' });
+  const [newColorName, setNewColorName] = useState('');
+  const [newColorCode, setNewColorCode] = useState('#000000');
   const [newSize, setNewSize] = useState('');
   const [savingProduct, setSavingProduct] = useState(false);
 
@@ -71,7 +72,6 @@ export default function AdminPage() {
     setLoading(false);
   }
 
-  // حفظ الإعدادات
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -90,7 +90,6 @@ export default function AdminPage() {
     setSavingSettings(false);
   };
 
-  // فلترة السلة
   const filteredOrders = orders.filter((o) => {
     const matchSearch =
       (o.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -101,7 +100,6 @@ export default function AdminPage() {
     return matchSearch && matchStatus;
   });
 
-  // تحديث حالة الطلب
   const handleUpdateStatus = async (id, status) => {
     const { error } = await supabase.from('orders').update({ status }).eq('id', id);
     if (!error) {
@@ -109,7 +107,6 @@ export default function AdminPage() {
     }
   };
 
-  // حذف طلب
   const handleDeleteOrder = async (id) => {
     if (!confirm('هل تريد حذف هذا الطلب نهائياً من السلة؟')) return;
     const { error } = await supabase.from('orders').delete().eq('id', id);
@@ -118,7 +115,6 @@ export default function AdminPage() {
     }
   };
 
-  // دوال المنتجات
   const openNewProductModal = () => {
     setEditingProduct(null);
     setProductForm({
@@ -133,6 +129,10 @@ export default function AdminPage() {
       show_sizes: false,
       sizes: [],
     });
+    setNewImageUrl('');
+    setNewColorName('');
+    setNewColorCode('#000000');
+    setNewSize('');
     setShowProductModal(true);
   };
 
@@ -150,6 +150,10 @@ export default function AdminPage() {
       show_sizes: Boolean(prod.show_sizes),
       sizes: prod.sizes || [],
     });
+    setNewImageUrl('');
+    setNewColorName('');
+    setNewColorCode('#000000');
+    setNewSize('');
     setShowProductModal(true);
   };
 
@@ -194,22 +198,68 @@ export default function AdminPage() {
     setSavingProduct(false);
   };
 
-  // الحسابات المالية وإحصائيات الحالات
+  // دوال الألوان والمقاسات والصور
+  const addColor = () => {
+    if (!newColorName.trim()) return;
+    setProductForm((prev) => ({
+      ...prev,
+      colors: [...(prev.colors || []), { name: newColorName.trim(), code: newColorCode }],
+    }));
+    setNewColorName('');
+  };
+
+  const removeColor = (idx) => {
+    setProductForm((prev) => ({
+      ...prev,
+      colors: prev.colors.filter((_, i) => i !== idx),
+    }));
+  };
+
+  const addSize = () => {
+    if (!newSize.trim()) return;
+    setProductForm((prev) => ({
+      ...prev,
+      sizes: [...(prev.sizes || []), newSize.trim()],
+    }));
+    setNewSize('');
+  };
+
+  const removeSize = (idx) => {
+    setProductForm((prev) => ({
+      ...prev,
+      sizes: prev.sizes.filter((_, i) => i !== idx),
+    }));
+  };
+
+  const addImage = () => {
+    if (!newImageUrl.trim()) return;
+    setProductForm((prev) => ({
+      ...prev,
+      images: [...(prev.images || []), newImageUrl.trim()],
+    }));
+    setNewImageUrl('');
+  };
+
+  const removeImage = (idx) => {
+    setProductForm((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== idx),
+    }));
+  };
+
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
 
-  // الحالات مع ألوانها وأيقوناتها
   const ALL_STATUSES = [
-    { key: 'جديد', label: 'جديد', color: 'bg-emerald-500', barColor: '#10b981', textColor: 'text-emerald-400' },
-    { key: 'قيد الانتظار', label: 'قيد الانتظار', color: 'bg-amber-500', barColor: '#f59e0b', textColor: 'text-amber-400' },
-    { key: 'تم التأكيد', label: 'تم التأكيد', color: 'bg-blue-500', barColor: '#3b82f6', textColor: 'text-blue-400' },
-    { key: 'تم الشحن', label: 'تم الشحن', color: 'bg-purple-500', barColor: '#a855f7', textColor: 'text-purple-400' },
-    { key: 'تم التسليم', label: 'تم التسليم', color: 'bg-teal-500', barColor: '#14b8a6', textColor: 'text-teal-400' },
-    { key: 'مرتجع', label: 'مرتجع', color: 'bg-rose-500', barColor: '#f43f5e', textColor: 'text-rose-400' },
-    { key: 'ملغي', label: 'ملغي', color: 'bg-slate-500', barColor: '#64748b', textColor: 'text-slate-400' },
+    { key: 'جديد', label: 'جديد', barColor: '#10b981', textColor: 'text-emerald-400' },
+    { key: 'قيد الانتظار', label: 'قيد الانتظار', barColor: '#f59e0b', textColor: 'text-amber-400' },
+    { key: 'تم التأكيد', label: 'تم التأكيد', barColor: '#3b82f6', textColor: 'text-blue-400' },
+    { key: 'تم الشحن', label: 'تم الشحن', barColor: '#a855f7', textColor: 'text-purple-400' },
+    { key: 'تم التسليم', label: 'تم التسليم', barColor: '#14b8a6', textColor: 'text-teal-400' },
+    { key: 'مرتجع', label: 'مرتجع', barColor: '#f43f5e', textColor: 'text-rose-400' },
+    { key: 'ملغي', label: 'ملغي', barColor: '#64748b', textColor: 'text-slate-400' },
   ];
 
-  // حساب عدد ونسبة كل حالة
   const statusStats = ALL_STATUSES.map((st) => {
     const count = orders.filter((o) => (o.status || 'جديد') === st.key).length;
     const percent = totalOrdersCount > 0 ? ((count / totalOrdersCount) * 100).toFixed(1) : 0;
@@ -218,12 +268,17 @@ export default function AdminPage() {
 
   const maxStatusCount = Math.max(...statusStats.map((s) => s.count), 1);
 
+  const currentMargin = (Number(productForm.price) || 0) - (Number(productForm.original_price) || 0);
+  const currentMarginPercent = productForm.price > 0 && productForm.original_price > 0
+    ? Math.round((currentMargin / Number(productForm.price)) * 100)
+    : 0;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center font-sans" dir="rtl">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-400 font-bold">جاري تحميل السلة ولوحة التحكم...</p>
+          <p className="text-slate-400 font-bold">جاري تحميل لوحة التحكم...</p>
         </div>
       </div>
     );
@@ -239,11 +294,10 @@ export default function AdminPage() {
             <span className="text-2xl">⚡</span>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-white">{settings.store_name || 'لوحة تحكم المتجر'}</h1>
-              <p className="text-xs text-slate-400">إدارة السلة والطلبات، المنتجات والتتبع</p>
+              <p className="text-xs text-slate-400">إدارة السلة، المنتجات، والتتبع</p>
             </div>
           </div>
 
-          {/* التبويبات الرئيسية */}
           <div className="flex items-center bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
             <button
               onClick={() => setActiveView('cart')}
@@ -283,29 +337,27 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
 
-        {/* ---------------- 1. تبويب السلة ---------------- */}
+        {/* 1. تبويب السلة */}
         {activeView === 'cart' && (
           <div className="space-y-6">
-            
-            {/* البطاقات المالية العلوية */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
                 <div className="text-slate-400 text-xs font-bold mb-1">إجمالي مبيعات السلة</div>
                 <div className="text-2xl sm:text-3xl font-black text-emerald-400">{totalRevenue.toLocaleString()} ج.م</div>
               </div>
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
-                <div className="text-slate-400 text-xs font-bold mb-1">إجمالي عدد الطلبات الكلي</div>
+                <div className="text-slate-400 text-xs font-bold mb-1">إجمالي عدد الطلبات</div>
                 <div className="text-2xl sm:text-3xl font-black text-white">{totalOrdersCount} طلب</div>
               </div>
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
-                <div className="text-slate-400 text-xs font-bold mb-1">متوسط قيمة الطلب الواحد</div>
+                <div className="text-slate-400 text-xs font-bold mb-1">متوسط الطلب</div>
                 <div className="text-2xl sm:text-3xl font-black text-teal-400">
                   {totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0} ج.م
                 </div>
               </div>
             </div>
 
-            {/* جدول الأعمدة ونسب كل حالة (Bar Chart & Analytics) */}
+            {/* جدول الأعمدة ونسب الحالات */}
             <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
                 <div>
@@ -320,7 +372,6 @@ export default function AdminPage() {
                 </span>
               </div>
 
-              {/* 1. الأعمدة الرأسية المقارنة (Visual Bar Chart) */}
               <div className="pt-4 pb-2">
                 <div className="h-44 sm:h-52 flex items-end justify-between gap-2 sm:gap-4 px-2 sm:px-6 bg-slate-950/60 rounded-2xl border border-slate-800/80 pt-6 pb-3">
                   {statusStats.map((st, idx) => {
@@ -348,7 +399,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* 2. بطاقات النسب الأفقية التفصيلية */}
               <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5 pt-2">
                 {statusStats.map((st, idx) => (
                   <button
@@ -374,22 +424,22 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* شريط البحث وفلترة الحالة (مع خيار الكل) */}
+            {/* فلترة والبحث */}
             <div className="bg-slate-900 p-4 rounded-3xl border border-slate-800 flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
-                placeholder="ابحث باسم العميل، رقم الهاتف، المحافظة أو المركز..."
+                placeholder="ابحث باسم العميل، الهاتف، أو المحافظة..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-2xl p-3 text-sm focus:outline-none focus:border-emerald-500"
               />
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-400 whitespace-nowrap">الحالة:</span>
+                <span className="text-xs font-bold text-slate-400">الحالة:</span>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="bg-slate-950 border border-slate-800 text-slate-200 rounded-2xl p-3 text-sm font-bold cursor-pointer min-w-[150px] focus:outline-none focus:border-emerald-500"
+                  className="bg-slate-950 border border-slate-800 text-slate-200 rounded-2xl p-3 text-sm font-bold cursor-pointer min-w-[150px]"
                 >
                   <option value="all">الكل (جميع الحالات) ({totalOrdersCount})</option>
                   <option value="جديد">جديد</option>
@@ -410,10 +460,10 @@ export default function AdminPage() {
               </button>
             </div>
 
-            {/* قائمة كروت وعناصر السلة مع الترقيم التلقائي */}
+            {/* قائمة كروت السلة مع الترقيم */}
             {filteredOrders.length === 0 ? (
               <div className="bg-slate-900 p-12 text-center text-slate-400 font-bold rounded-3xl border border-slate-800">
-                🛒 لا توجد طلبات مطابقة للبحث أو الفلتر المختار
+                🛒 لا توجد طلبات مطابقة
               </div>
             ) : (
               <div className="space-y-4">
@@ -431,21 +481,17 @@ export default function AdminPage() {
                   return (
                     <div
                       key={order.id}
-                      className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4 transition hover:border-slate-700 relative overflow-hidden"
+                      className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl space-y-4"
                     >
-                      {/* رأس الطلب مع شارة الترقيم التلقائي والحالة */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
                         <div className="flex items-center gap-3">
-                          {/* شارة الترقيم التلقائي للطلب */}
                           <div className="flex flex-col items-center justify-center w-11 h-11 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 font-black">
                             <span className="text-[10px] text-emerald-500 leading-none">طلب</span>
                             <span className="text-base leading-none mt-0.5">#{index + 1}</span>
                           </div>
 
                           <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-black text-lg text-white">{order.customer_name}</h3>
-                            </div>
+                            <h3 className="font-black text-lg text-white">{order.customer_name}</h3>
                             <span className="text-xs text-slate-400 font-mono">
                               بتاريخ: {new Date(order.created_at).toLocaleDateString('ar-EG', {
                                 month: 'short',
@@ -457,13 +503,12 @@ export default function AdminPage() {
                           </div>
                         </div>
 
-                        {/* تغيير الحالة */}
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-slate-400 font-bold">الحالة:</span>
                           <select
                             value={order.status || 'جديد'}
                             onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                            className={`text-xs font-black px-3 py-1.5 rounded-xl border cursor-pointer focus:outline-none bg-slate-950 ${
+                            className={`text-xs font-black px-3 py-1.5 rounded-xl border cursor-pointer bg-slate-950 ${
                               statusColors[order.status || 'جديد'] || 'border-slate-700 text-white'
                             }`}
                           >
@@ -478,10 +523,9 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* تفاصيل الهاتف والعنوان والإجمالي */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                         <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2">
-                          <span className="text-xs font-bold text-slate-400 block">📞 الهاتف والتواصل:</span>
+                          <span className="text-xs font-bold text-slate-400 block">📞 الهاتف:</span>
                           <div className="flex items-center justify-between">
                             <span className="font-mono text-emerald-400 font-bold" dir="ltr">{order.phone}</span>
                             <a
@@ -515,10 +559,9 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* محتويات الطلب والمنتجات وحذف الطلب */}
                       <div className="bg-slate-950/70 p-4 rounded-2xl border border-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div className="space-y-1">
-                          <span className="text-xs font-bold text-slate-400 block">🛍️ المنتجات المطلوبة:</span>
+                          <span className="text-xs font-bold text-slate-400 block">🛍️ تفاصيل المنتجات:</span>
                           <p className="text-sm font-black text-white">{order.product_name}</p>
                           <div className="flex flex-wrap gap-2 text-xs text-slate-400">
                             {order.selected_color && order.selected_color !== '-' && (
@@ -544,7 +587,7 @@ export default function AdminPage() {
                           className="px-4 py-2 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-1 self-end sm:self-center"
                         >
                           <span>🗑️</span>
-                          <span>حذف من السلة</span>
+                          <span>حذف الطلب</span>
                         </button>
                       </div>
 
@@ -561,7 +604,7 @@ export default function AdminPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between bg-slate-900 p-5 rounded-3xl border border-slate-800">
               <div>
-                <h2 className="text-xl font-black text-white">قائمة المنتجات المعروضة</h2>
+                <h2 className="text-xl font-black text-white">قائمة المنتجات المعروضة ({products.length})</h2>
                 <p className="text-xs text-slate-400 mt-0.5">إدارة أسعار البيع والتكلفة ومتابعة هوامش الأرباح</p>
               </div>
               <button
@@ -612,9 +655,15 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {p.description && (
-                        <p className="text-xs text-slate-400 line-clamp-2">{p.description}</p>
-                      )}
+                      {/* شارات الألوان والمقاسات المفعلة */}
+                      <div className="flex items-center gap-2 pt-1 text-xs">
+                        <span className={`px-2.5 py-1 rounded-lg border font-bold ${p.show_colors ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>
+                          🎨 الألوان: {p.show_colors ? (p.colors?.length || 0) : 'معطلة'}
+                        </span>
+                        <span className={`px-2.5 py-1 rounded-lg border font-bold ${p.show_sizes ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-500'}`}>
+                          📏 المقاسات: {p.show_sizes ? (p.sizes?.length || 0) : 'معطلة'}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
@@ -703,10 +752,10 @@ export default function AdminPage() {
 
       </main>
 
-      {/* مودال إضافة وتعديل المنتج */}
+      {/* نافذة مودال إضافة وتعديل المنتج مع خيارات الألوان والمقاسات وزر إظهارها وإخفائها */}
       {showProductModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-xl font-black text-white">
                 {editingProduct ? '✏️ تعديل المنتج' : '➕ إضافة منتج جديد'}
@@ -755,8 +804,15 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex justify-between items-center text-xs">
+                <span className="text-slate-400 font-bold">هامش الربح المتوقع للقطعة:</span>
+                <span className="text-emerald-400 font-black text-sm">
+                  {currentMargin} ج.م {currentMarginPercent > 0 && `(${currentMarginPercent}%)`}
+                </span>
+              </div>
+
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">وصف المنتج</label>
+                <label className="block text-xs font-bold text-slate-400 mb-1">وصف المنتج ومميزاته</label>
                 <textarea
                   rows="3"
                   value={productForm.description}
@@ -765,8 +821,9 @@ export default function AdminPage() {
                 ></textarea>
               </div>
 
+              {/* صور المنتج */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-400">صور المنتج</label>
+                <label className="block text-xs font-bold text-slate-400">معرض صور المنتج (روابط مباشرة)</label>
                 <div className="flex gap-2">
                   <input
                     type="url"
@@ -777,24 +834,19 @@ export default function AdminPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      if (newImageUrl.trim()) {
-                        setProductForm((prev) => ({ ...prev, images: [...prev.images, newImageUrl.trim()] }));
-                        setNewImageUrl('');
-                      }
-                    }}
+                    onClick={addImage}
                     className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold"
                   >
-                    + إضافة
+                    + إضافة صورة
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {productForm.images.map((img, idx) => (
-                    <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-800">
+                  {productForm.images?.map((img, idx) => (
+                    <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-800 bg-black">
                       <img src={img} alt="" className="w-full h-full object-cover" />
                       <button
                         type="button"
-                        onClick={() => setProductForm((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))}
+                        onClick={() => removeImage(idx)}
                         className="absolute top-1 left-1 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]"
                       >
                         ✕
@@ -802,6 +854,134 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* ---------------- خيارات الألوان وزر إظهارها وإخفائها ---------------- */}
+              <div className="pt-3 border-t border-slate-800 space-y-3">
+                <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🎨</span>
+                    <div>
+                      <span className="text-xs font-bold text-white block">خيارات ألوان المنتج</span>
+                      <span className="text-[11px] text-slate-400">السماح للعميل باختيار اللون عند الطلب</span>
+                    </div>
+                  </div>
+                  
+                  {/* زر إظهار وإخفاء خيارات الألوان */}
+                  <button
+                    type="button"
+                    onClick={() => setProductForm({ ...productForm, show_colors: !productForm.show_colors })}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      productForm.show_colors
+                        ? 'bg-emerald-600 text-white shadow'
+                        : 'bg-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span>{productForm.show_colors ? 'مفعلة (ظاهرة) 👁️' : 'معطلة (مخفية) 🙈'}</span>
+                  </button>
+                </div>
+
+                {productForm.show_colors && (
+                  <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/60 space-y-2.5 animate-fade-in">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="اسم اللون (مثال: كحلي، أحمر، رمادي)"
+                        value={newColorName}
+                        onChange={(e) => setNewColorName(e.target.value)}
+                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white text-xs focus:outline-none"
+                      />
+                      <input
+                        type="color"
+                        value={newColorCode}
+                        onChange={(e) => setNewColorCode(e.target.value)}
+                        className="w-12 h-10 p-1 bg-slate-900 border border-slate-800 rounded-xl cursor-pointer"
+                        title="اختر درجة اللون"
+                      />
+                      <button
+                        type="button"
+                        onClick={addColor}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold"
+                      >
+                        + إضافة
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {productForm.colors?.length === 0 ? (
+                        <span className="text-[11px] text-slate-500">لم تتم إضافة أي لون بعد. أضف أسماء الألوان بالأعلى.</span>
+                      ) : (
+                        productForm.colors?.map((c, idx) => (
+                          <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-white shadow-sm">
+                            <span className="w-3.5 h-3.5 rounded-full border border-slate-700" style={{ backgroundColor: c.code }}></span>
+                            <span>{c.name}</span>
+                            <button type="button" onClick={() => removeColor(idx)} className="text-red-400 hover:text-red-300 font-bold ml-1">✕</button>
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ---------------- خيارات المقاسات وزر إظهارها وإخفائها ---------------- */}
+              <div className="pt-3 border-t border-slate-800 space-y-3">
+                <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📏</span>
+                    <div>
+                      <span className="text-xs font-bold text-white block">خيارات مقاسات المنتج</span>
+                      <span className="text-[11px] text-slate-400">السماح للعميل باختيار المقاس عند الشراء</span>
+                    </div>
+                  </div>
+                  
+                  {/* زر إظهار وإخفاء خيارات المقاسات */}
+                  <button
+                    type="button"
+                    onClick={() => setProductForm({ ...productForm, show_sizes: !productForm.show_sizes })}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      productForm.show_sizes
+                        ? 'bg-emerald-600 text-white shadow'
+                        : 'bg-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span>{productForm.show_sizes ? 'مفعلة (ظاهرة) 👁️' : 'معطلة (مخفية) 🙈'}</span>
+                  </button>
+                </div>
+
+                {productForm.show_sizes && (
+                  <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/60 space-y-2.5 animate-fade-in">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="المقاس (مثال: M, L, XL, 42, 44)"
+                        value={newSize}
+                        onChange={(e) => setNewSize(e.target.value)}
+                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-white text-xs focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={addSize}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold"
+                      >
+                        + إضافة مقاس
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {productForm.sizes?.length === 0 ? (
+                        <span className="text-[11px] text-slate-500">لم تتم إضافة أي مقاس بعد. أضف المقاسات بالأعلى.</span>
+                      ) : (
+                        productForm.sizes?.map((s, idx) => (
+                          <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-white shadow-sm">
+                            <span>{s}</span>
+                            <button type="button" onClick={() => removeSize(idx)} className="text-red-400 hover:text-red-300 font-bold ml-1">✕</button>
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
