@@ -3,32 +3,28 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
 export default function AdminPage() {
-  const [activeView, setActiveView] = useState('products'); // 'cart' | 'products' | 'settings'
+  const [activeView, setActiveView] = useState('products');
   const [loading, setLoading] = useState(true);
 
-  // إعدادات المتجر والبيكسل
-  const [settings, setSettings] = useState({
-    store_name: '',
-    facebook_pixel_id: '',
-    tiktok_pixel_id: '',
-  });
+  const [settings, setSettings] = useState({ store_name: '', facebook_pixel_id: '', tiktok_pixel_id: '' });
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsNotice, setSettingsNotice] = useState(false);
 
-  // بيانات السلة (الطلبات)
   const [orders, setOrders] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // بيانات المنتجات
   const [products, setProducts] = useState([]);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+
+  // نموذج المنتج مع خانة المخزون
   const [productForm, setProductForm] = useState({
     name: '',
-    price: '',           // سعر البيع الفعلي للعميل
-    compare_price: '',   // السعر قبل الخصم (بدلاً من)
-    cost_price: '',      // سعر التكلفة الحقيقي
+    price: '',
+    compare_price: '',
+    cost_price: '',
+    stock: 20, // عدد القطع في المخزون
     description: '',
     images: [],
     video_url: '',
@@ -53,7 +49,6 @@ export default function AdminPage() {
     setLoading(true);
     try {
       if (supabase) {
-        // 1. جلب إعدادات المتجر
         const { data: sData } = await supabase.from('store_settings').select('*').limit(1).maybeSingle();
         if (sData) {
           setSettings({
@@ -63,11 +58,9 @@ export default function AdminPage() {
           });
         }
 
-        // 2. جلب المنتجات
         const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
         let list = pData ? [...pData] : [];
 
-        // دمج المنتج القديم مع توافق التسميات
         if (sData && sData.product_name) {
           const exists = list.some((p) => p.name === sData.product_name);
           if (!exists) {
@@ -78,6 +71,7 @@ export default function AdminPage() {
               price: Number(sData.product_price) || 0,
               compare_price: Number(sData.original_price) || null,
               cost_price: Number(sData.cost_price) || 0,
+              stock: Number(sData.stock) || 20,
               description: sData.description || '',
               images: sData.images || (sData.image_url ? [sData.image_url] : []),
               video_url: sData.video_url || '',
@@ -88,15 +82,13 @@ export default function AdminPage() {
             });
           }
         }
-
         setProducts(list);
 
-        // 3. جلب الطلبات
         const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
         if (oData) setOrders(oData);
       }
     } catch (e) {
-      console.error('Error loading data:', e);
+      console.error(e);
     }
     setLoading(false);
   }
@@ -124,8 +116,7 @@ export default function AdminPage() {
       (o.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (o.phone || '').includes(searchTerm) ||
       (o.governorate || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchStatus = statusFilter === 'all' || o.status === statusFilter;
-    return matchSearch && matchStatus;
+    return matchSearch && (statusFilter === 'all' || o.status === statusFilter);
   });
 
   const handleUpdateStatus = async (id, status) => {
@@ -150,6 +141,7 @@ export default function AdminPage() {
       price: '',
       compare_price: '',
       cost_price: '',
+      stock: 20,
       description: '',
       images: [],
       video_url: '',
@@ -172,6 +164,7 @@ export default function AdminPage() {
       price: prod.price || '',
       compare_price: prod.compare_price || prod.original_price || '',
       cost_price: prod.cost_price || '',
+      stock: prod.stock !== undefined ? prod.stock : 20,
       description: prod.description || '',
       images: prod.images || [],
       video_url: prod.video_url || '',
@@ -193,20 +186,10 @@ export default function AdminPage() {
     if (prod.id !== 'legacy_product') {
       const { error } = await supabase.from('products').delete().eq('id', prod.id);
       if (error) alert('خطأ أثناء الحذف: ' + error.message);
-    } else {
-      await supabase.from('store_settings').update({
-        product_name: null,
-        product_price: null,
-        original_price: null,
-        description: null,
-        images: [],
-      }).eq('id', 1);
     }
-
     setProducts((prev) => prev.filter((p) => p.id !== prod.id));
   };
 
-  // ضغط الصور تلقائياً لسرعة التحميل والحفظ
   const compressImage = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -243,18 +226,14 @@ export default function AdminPage() {
   const handleImageFileUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-
     setUploadingMedia(true);
     try {
-      const compressedList = [];
+      const list = [];
       for (const file of files) {
         const compressed = await compressImage(file);
-        compressedList.push(compressed);
+        list.push(compressed);
       }
-      setProductForm((prev) => ({
-        ...prev,
-        images: [...(prev.images || []), ...compressedList],
-      }));
+      setProductForm((prev) => ({ ...prev, images: [...(prev.images || []), ...list] }));
     } catch (err) {
       alert('خطأ أثناء قراءة الصورة: ' + err.message);
     }
@@ -265,12 +244,10 @@ export default function AdminPage() {
   const handleVideoFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     if (file.size > 15 * 1024 * 1024) {
-      alert('⚠️️ حجم الفيديو أكبر من 15 ميجابايت، يرجى اختيار فيديو أقصر أو لصق رابط مباشر');
+      alert('حجم الفيديو أكبر من 15 ميجابايت، يرجى اختيار فيديو أقصر');
       return;
     }
-
     setUploadingMedia(true);
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -281,20 +258,16 @@ export default function AdminPage() {
     e.target.value = '';
   };
 
-  // حفظ المنتج وتنسيق الحسابات
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     setSavingProduct(true);
 
-    const sellingPrice = Number(productForm.price) || 0;
-    const comparePrice = Number(productForm.compare_price) || null;
-    const costPrice = Number(productForm.cost_price) || 0;
-
     const payload = {
       name: productForm.name,
-      price: sellingPrice,
-      original_price: comparePrice,   // بدلاً من كذا (قبل الخصم)
-      cost_price: costPrice,          // سعر التكلفة
+      price: Number(productForm.price) || 0,
+      original_price: Number(productForm.compare_price) || null,
+      cost_price: Number(productForm.cost_price) || 0,
+      stock: Math.max(0, parseInt(productForm.stock) || 0), // حفظ المخزون
       description: productForm.description,
       images: productForm.images || [],
       video_url: productForm.video_url || '',
@@ -317,11 +290,10 @@ export default function AdminPage() {
         }
       }
 
-      alert('✅ تم حفظ المنتج بنجاح مع حساب الأرباح ونسب الخصم!');
+      alert('✅ تم حفظ المنتج وتحديث المخزون بنجاح!');
       setShowProductModal(false);
     } catch (err) {
       alert('❌ فشل الحفظ: ' + err.message);
-      console.error(err);
     }
     setSavingProduct(false);
   };
@@ -356,21 +328,16 @@ export default function AdminPage() {
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
 
-  // الحسابات اللحظية داخل النافذة
   const formSelling = Number(productForm.price) || 0;
   const formCompare = Number(productForm.compare_price) || 0;
   const formCost = Number(productForm.cost_price) || 0;
 
-  // نسبة الخصم للعميل
   const formDiscountPercent = formCompare > formSelling && formCompare > 0
     ? Math.round(((formCompare - formSelling) / formCompare) * 100)
     : 0;
 
-  // هامش الربح الصافي
   const formProfit = formSelling - formCost;
-  const formProfitPercent = formSelling > 0
-    ? Math.round((formProfit / formSelling) * 100)
-    : 0;
+  const formProfitPercent = formSelling > 0 ? Math.round((formProfit / formSelling) * 100) : 0;
 
   if (loading) {
     return (
@@ -385,14 +352,13 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16" dir="rtl">
-      {/* الترويسة */}
       <header className="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-30 px-4 sm:px-8 py-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚡</span>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-white">{settings.store_name || 'لوحة تحكم المتجر'}</h1>
-              <p className="text-xs text-slate-400">إدارة المنتجات، الأسعار، وهامش الربح</p>
+              <p className="text-xs text-slate-400">إدارة المخزون، الطلبات، والأرباح</p>
             </div>
           </div>
 
@@ -415,7 +381,7 @@ export default function AdminPage() {
                 activeView === 'products' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>🛍️ المنتجات والأرباح</span>
+              <span>🛍️ المنتجات والمخزون</span>
               <span className="bg-slate-900 text-emerald-400 text-xs px-2 py-0.5 rounded-full font-black">
                 {products.length}
               </span>
@@ -427,7 +393,7 @@ export default function AdminPage() {
                 activeView === 'settings' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>⚙️ البيكسل والمتجر</span>
+              <span>⚙️ الإعدادات</span>
             </button>
           </div>
         </div>
@@ -440,11 +406,11 @@ export default function AdminPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
-                <div className="text-slate-400 text-xs font-bold mb-1">إجمالي مبيعات السلة</div>
+                <div className="text-slate-400 text-xs font-bold mb-1">إجمالي المبيعات</div>
                 <div className="text-2xl sm:text-3xl font-black text-emerald-400">{totalRevenue.toLocaleString()} ج.م</div>
               </div>
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
-                <div className="text-slate-400 text-xs font-bold mb-1">إجمالي عدد الطلبات</div>
+                <div className="text-slate-400 text-xs font-bold mb-1">عدد الطلبات</div>
                 <div className="text-2xl sm:text-3xl font-black text-white">{totalOrdersCount} طلب</div>
               </div>
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
@@ -455,32 +421,6 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* شريط البحث والفلترة */}
-            <div className="bg-slate-900 p-4 rounded-3xl border border-slate-800 flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                placeholder="ابحث باسم العميل أو الهاتف..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-2xl p-3 text-sm focus:outline-none focus:border-emerald-500"
-              />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-slate-950 border border-slate-800 text-slate-200 rounded-2xl p-3 text-sm font-bold cursor-pointer"
-              >
-                <option value="all">الكل ({totalOrdersCount})</option>
-                <option value="جديد">جديد</option>
-                <option value="قيد الانتظار">قيد الانتظار</option>
-                <option value="تم التأكيد">تم التأكيد</option>
-                <option value="تم الشحن">تم الشحن</option>
-                <option value="تم التسليم">تم التسليم</option>
-                <option value="مرتجع">مرتجع</option>
-                <option value="ملغي">ملغي</option>
-              </select>
-            </div>
-
-            {/* كروت الطلبات */}
             <div className="space-y-4">
               {filteredOrders.map((order, idx) => (
                 <div key={order.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
@@ -517,25 +457,19 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 2. تبويب المنتجات والأرباح (عرض الخانات الأربع بالتنسيق الصحيح) */}
+        {/* 2. تبويب المنتجات والمخزون */}
         {activeView === 'products' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 p-5 rounded-3xl border border-slate-800">
               <div>
-                <h2 className="text-xl font-black text-white">قائمة المنتجات ({products.length})</h2>
-                <p className="text-xs text-slate-400 mt-0.5">تفاصيل سعر البيع، السعر قبل الخصم، التكلفة، وصافي الربح</p>
+                <h2 className="text-xl font-black text-white">قائمة المنتجات ومخزون القطع ({products.length})</h2>
+                <p className="text-xs text-slate-400 mt-0.5">متابعة المخزون، الأسعار، وهامش الربح لكل منتج</p>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={loadAllData}
-                  className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-2xl text-xs sm:text-sm"
-                >
+                <button onClick={loadAllData} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-2xl text-xs sm:text-sm">
                   🔄 تحديث
                 </button>
-                <button
-                  onClick={openNewProductModal}
-                  className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs sm:text-sm shadow-lg flex items-center gap-2"
-                >
+                <button onClick={openNewProductModal} className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl text-xs sm:text-sm shadow-lg flex items-center gap-2">
                   <span>➕</span>
                   <span>إضافة منتج جديد</span>
                 </button>
@@ -547,13 +481,12 @@ export default function AdminPage() {
                 const sellingPrice = Number(p.price) || 0;
                 const comparePrice = Number(p.compare_price || p.original_price) || 0;
                 const costPrice = Number(p.cost_price) || 0;
+                const stockCount = p.stock !== undefined ? p.stock : 20;
 
-                // نسبة الخصم للعميل (سعر قبل الخصم بدلاً من سعر البيع)
                 const discountPercent = comparePrice > sellingPrice && comparePrice > 0
                   ? Math.round(((comparePrice - sellingPrice) / comparePrice) * 100)
                   : 0;
 
-                // صافي الربح = سعر البيع - سعر التكلفة الحقيقي
                 const profitMargin = sellingPrice - costPrice;
                 const profitPercent = sellingPrice > 0 ? Math.round((profitMargin / sellingPrice) * 100) : 0;
                 const productUrl = p.id === 'legacy_product' ? '/' : `/p/${p.id}`;
@@ -578,33 +511,33 @@ export default function AdminPage() {
 
                       <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
 
-                      {/* الصندوق المالي المصحح ذو الخانات الأربع */}
-                      <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2.5 text-xs">
-                        {/* 1. سعر البيع للعميل */}
+                      {/* شريط مراقبة المخزون الحقيقي في لوحة الأدمن */}
+                      <div className="bg-[#050811] p-3 rounded-2xl border border-slate-800 flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-400">القطع المتبقية في المخزن:</span>
+                        <span className={`text-xs font-black px-3 py-1 rounded-xl border ${
+                          stockCount <= 5
+                            ? 'bg-red-500/10 border-red-500/30 text-red-400 animate-pulse'
+                            : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                        }`}>
+                          {stockCount} قطعة متبقية
+                        </span>
+                      </div>
+
+                      <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2 text-xs">
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-400">سعر البيع الحالي:</span>
-                          <span className="text-emerald-400 font-black text-base">{sellingPrice} ج.م</span>
+                          <span className="text-slate-400">سعر البيع:</span>
+                          <span className="text-emerald-400 font-black text-sm">{sellingPrice} ج.م</span>
                         </div>
-
-                        {/* 2. السعر قبل الخصم (بدلاً من كذا) */}
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-400">السعر قبل الخصم (بدلاً من):</span>
-                          <span className="text-slate-400 line-through font-bold">
-                            {comparePrice > 0 ? `${comparePrice} ج.م` : 'غير محدد'}
-                          </span>
+                          <span className="text-slate-400">بدلاً من:</span>
+                          <span className="text-slate-400 line-through font-bold">{comparePrice > 0 ? `${comparePrice} ج.م` : 'غير محدد'}</span>
                         </div>
-
-                        {/* 3. سعر التكلفة الحقيقي */}
-                        <div className="flex justify-between items-center border-t border-slate-800/80 pt-2">
-                          <span className="text-slate-400">سعر التكلفة عليك:</span>
-                          <span className="text-amber-400 font-bold">
-                            {costPrice > 0 ? `${costPrice} ج.م` : '0 ج.م'}
-                          </span>
+                        <div className="flex justify-between items-center border-t border-slate-800 pt-1.5">
+                          <span className="text-slate-400">سعر التكلفة:</span>
+                          <span className="text-amber-400 font-bold">{costPrice} ج.م</span>
                         </div>
-
-                        {/* 4. صافي هامش الربح المحسوب بدقة */}
-                        <div className="border-t border-slate-800 pt-2 flex justify-between items-center font-bold">
-                          <span className="text-slate-200">صافي هامش الربح:</span>
+                        <div className="border-t border-slate-800 pt-1.5 flex justify-between items-center font-bold">
+                          <span className="text-slate-200">صافي الربح:</span>
                           <span className={`text-sm font-black ${profitMargin >= 0 ? 'text-teal-400' : 'text-red-500'}`}>
                             {profitMargin >= 0 ? `+${profitMargin} ج.م` : `${profitMargin} ج.م`}
                             {profitPercent !== 0 && ` (${profitPercent}%)`}
@@ -614,26 +547,14 @@ export default function AdminPage() {
                     </div>
 
                     <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
-                      <a
-                        href={productUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="py-2.5 px-3 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"
-                      >
+                      <a href={productUrl} target="_blank" rel="noreferrer" className="py-2.5 px-3 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
                         <span>🔗</span>
                         <span>معاينة</span>
                       </a>
-                      <button
-                        onClick={() => openEditProductModal(p)}
-                        className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
-                      >
-                        <span>✏️</span>
-                        <span>تعديل</span>
+                      <button onClick={() => openEditProductModal(p)} className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold transition">
+                        <span>✏️ تعديل</span>
                       </button>
-                      <button
-                        onClick={() => handleDeleteProduct(p)}
-                        className="px-4 py-2.5 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition"
-                      >
+                      <button onClick={() => handleDeleteProduct(p)} className="px-4 py-2.5 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition">
                         حذف
                       </button>
                     </div>
@@ -644,7 +565,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 3. تبويب البيكسل */}
+        {/* 3. تبويب الإعدادات */}
         {activeView === 'settings' && (
           <form onSubmit={handleSaveSettings} className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
             <h2 className="text-xl font-black text-white border-b border-slate-800 pb-3">⚙️ ربط البيكسل وإعدادات المتجر</h2>
@@ -692,18 +613,15 @@ export default function AdminPage() {
 
       </main>
 
-      {/* نافذة مودال إضافة وتعديل المنتج مع الخانات الأربع الصريحة */}
+      {/* نافذة مودال إضافة وتعديل المنتج مع خانة المخزون الصريحة */}
       {showProductModal && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-xl font-black text-white">
-                {editingProduct ? '✏️ تعديل المنتج' : '➕ إضافة منتج جديد'}
+                {editingProduct ? '✏️ تعديل المنتج والمخزون' : '➕ إضافة منتج ومخزون جديد'}
               </h3>
-              <button
-                onClick={() => setShowProductModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white font-bold"
-              >
+              <button onClick={() => setShowProductModal(false)} className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white font-bold">
                 ✕
               </button>
             </div>
@@ -720,28 +638,22 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* الخانات المالية الثلاث المنفصلة */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* 1. سعر البيع */}
+              {/* الخانات المالية وخانة المخزون */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-emerald-400 mb-1">
-                    سعر البيع للعميل (ج.م) *
-                  </label>
+                  <label className="block text-xs font-bold text-emerald-400 mb-1">سعر البيع (ج.م) *</label>
                   <input
                     type="number"
                     required
                     value={productForm.price}
                     onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
                     placeholder="مثال: 455"
-                    className="w-full bg-slate-950 border border-emerald-500/40 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-emerald-500 font-bold"
+                    className="w-full bg-slate-950 border border-emerald-500/40 rounded-xl p-3 text-white text-sm focus:outline-none font-bold"
                   />
                 </div>
 
-                {/* 2. بدلاً من كذا (قبل الخصم) */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    بدلاً من كذا (قبل الخصم)
-                  </label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">بدلاً من كذا</label>
                   <input
                     type="number"
                     value={productForm.compare_price}
@@ -751,11 +663,8 @@ export default function AdminPage() {
                   />
                 </div>
 
-                {/* 3. سعر التكلفة الحقيقي */}
                 <div>
-                  <label className="block text-xs font-bold text-amber-400 mb-1">
-                    سعر التكلفة عليك (ج.م)
-                  </label>
+                  <label className="block text-xs font-bold text-amber-400 mb-1">سعر التكلفة</label>
                   <input
                     type="number"
                     value={productForm.cost_price}
@@ -764,25 +673,32 @@ export default function AdminPage() {
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm font-bold"
                   />
                 </div>
+
+                {/* خانة عدد القطع في المخزون */}
+                <div>
+                  <label className="block text-xs font-bold text-teal-400 mb-1">المخزون (عدد القطع) *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={productForm.stock}
+                    onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
+                    placeholder="مثال: 25"
+                    className="w-full bg-slate-950 border border-teal-500/40 rounded-xl p-3 text-white text-sm font-black focus:outline-none focus:border-teal-400"
+                  />
+                </div>
               </div>
 
-              {/* 4. لوحة ملخص الحسابات اللحظية المباشرة */}
+              {/* ملخص الخصم وصافي الربح */}
               <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2 text-xs">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-400">نسبة الخصم المعروضة للعميل:</span>
                   <span className="text-white font-black text-sm">
-                    {formDiscountPercent > 0 ? (
-                      <span className="bg-red-600/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-lg">
-                        خصم {formDiscountPercent}%
-                      </span>
-                    ) : (
-                      'لا يوجد خصم (نفس السعر)'
-                    )}
+                    {formDiscountPercent > 0 ? `خصم ${formDiscountPercent}%` : 'لا يوجد خصم'}
                   </span>
                 </div>
-
                 <div className="flex justify-between items-center border-t border-slate-800 pt-2">
-                  <span className="text-slate-400 font-bold">صافي الربح المتوقع للقطعة:</span>
+                  <span className="text-slate-400 font-bold">صافي الربح للقطعة:</span>
                   <span className={`text-base font-black ${formProfit >= 0 ? 'text-teal-400' : 'text-red-500'}`}>
                     {formProfit >= 0 ? `+${formProfit} ج.م` : `${formProfit} ج.م`}
                     {formProfitPercent !== 0 && ` (${formProfitPercent}%)`}
@@ -791,7 +707,7 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">وصف المنتج ومميزاته</label>
+                <label className="block text-xs font-bold text-slate-400 mb-1">وصف المنتج</label>
                 <textarea
                   rows="3"
                   value={productForm.description}
@@ -800,34 +716,22 @@ export default function AdminPage() {
                 ></textarea>
               </div>
 
-              {/* رفع صور المنتج */}
+              {/* الصور */}
               <div className="space-y-3 pt-2 border-t border-slate-800">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-slate-300">
-                    📷 صور المنتج (اختر صور من جهازك أو الصق رابط)
-                  </label>
-                  {uploadingMedia && (
-                    <span className="text-xs text-amber-400 font-bold animate-pulse">جاري ضغط الصورة...</span>
-                  )}
+                  <label className="block text-xs font-bold text-slate-300">📷 صور المنتج</label>
+                  {uploadingMedia && <span className="text-xs text-amber-400 animate-pulse">جاري الضغط...</span>}
                 </div>
-                
                 <div className="flex flex-col sm:flex-row gap-3">
                   <label className="flex-1 flex items-center justify-center gap-2 p-3.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border-2 border-dashed border-emerald-500/50 cursor-pointer text-xs font-bold transition">
-                    <span className="text-lg">📁</span>
-                    <span>اضغط لاختيار صور من جهازك</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageFileUpload}
-                      className="hidden"
-                    />
+                    <span>📁</span>
+                    <span>رفع صور من جهازك</span>
+                    <input type="file" accept="image/*" multiple onChange={handleImageFileUpload} className="hidden" />
                   </label>
-
                   <div className="flex-1 flex gap-2">
                     <input
                       type="url"
-                      placeholder="أو الصق رابط صورة..."
+                      placeholder="أو رابط صورة..."
                       value={newImageUrl}
                       onChange={(e) => setNewImageUrl(e.target.value)}
                       className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"
@@ -851,11 +755,7 @@ export default function AdminPage() {
                   {productForm.images?.map((img, idx) => (
                     <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-700 bg-black">
                       <img src={img} alt="" className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(idx)}
-                        className="absolute top-1 left-1 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]"
-                      >
+                      <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 left-1 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
                         ✕
                       </button>
                     </div>
@@ -863,89 +763,57 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* رفع فيديو المنتج */}
+              {/* الفيديو */}
               <div className="space-y-2 pt-2 border-t border-slate-800">
                 <label className="block text-xs font-bold text-slate-300">🎥 فيديو المنتج (اختياري)</label>
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <label className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border-2 border-dashed border-emerald-500/50 cursor-pointer text-xs font-bold transition">
-                    <span className="text-base">🎬</span>
+                  <label className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border-2 border-dashed border-emerald-500/50 cursor-pointer text-xs font-bold">
+                    <span>🎬</span>
                     <span>رفع فيديو من الجهاز</span>
-                    <input
-                      type="file"
-                      accept="video/mp4,video/webm,video/*"
-                      onChange={handleVideoFileUpload}
-                      className="hidden"
-                    />
+                    <input type="file" accept="video/mp4,video/webm,video/*" onChange={handleVideoFileUpload} className="hidden" />
                   </label>
                   <input
                     type="url"
-                    placeholder="أو رابط فيديو خارجي..."
+                    placeholder="أو رابط فيديو..."
                     value={productForm.video_url || ''}
                     onChange={(e) => setProductForm({ ...productForm, video_url: e.target.value })}
                     className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"
                   />
-                  {productForm.video_url && (
-                    <button
-                      type="button"
-                      onClick={() => setProductForm({ ...productForm, video_url: '' })}
-                      className="px-3 py-2 bg-red-600/20 text-red-400 hover:text-white rounded-xl text-xs font-bold"
-                    >
-                      حذف الفيديو
-                    </button>
-                  )}
                 </div>
               </div>
 
               {/* خيارات الألوان */}
               <div className="pt-3 border-t border-slate-800 space-y-3">
                 <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🎨</span>
-                    <div>
-                      <span className="text-xs font-bold text-white block">خيارات ألوان المنتج</span>
-                      <span className="text-[11px] text-slate-400">تحديد الألوان المتوفرة للعميل</span>
-                    </div>
-                  </div>
+                  <span className="text-xs font-bold text-white">خيارات الألوان</span>
                   <button
                     type="button"
                     onClick={() => setProductForm({ ...productForm, show_colors: !productForm.show_colors })}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-                      productForm.show_colors ? 'bg-emerald-600 text-white shadow' : 'bg-slate-800 text-slate-400'
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition ${
+                      productForm.show_colors ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
                     }`}
                   >
-                    {productForm.show_colors ? 'مفعلة (ظاهرة) 👁️' : 'معطلة (مخفية) 🙈'}
+                    {productForm.show_colors ? 'ظاهرة 👁️' : 'مخفية 🙈'}
                   </button>
                 </div>
-
                 {productForm.show_colors && (
-                  <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/60 space-y-2.5">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="اسم اللون"
-                        value={newColorName}
-                        onChange={(e) => setNewColorName(e.target.value)}
-                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2 text-white text-xs"
-                      />
-                      <input
-                        type="color"
-                        value={newColorCode}
-                        onChange={(e) => setNewColorCode(e.target.value)}
-                        className="w-12 h-10 p-1 bg-slate-900 border border-slate-800 rounded-xl cursor-pointer"
-                      />
-                      <button type="button" onClick={addColor} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold">
-                        + إضافة
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {productForm.colors?.map((c, idx) => (
-                        <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-white">
-                          <span className="w-3.5 h-3.5 rounded-full border border-slate-700" style={{ backgroundColor: c.code }}></span>
-                          <span>{c.name}</span>
-                          <button type="button" onClick={() => removeColor(idx)} className="text-red-400 ml-1">✕</button>
-                        </span>
-                      ))}
-                    </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="اسم اللون"
+                      value={newColorName}
+                      onChange={(e) => setNewColorName(e.target.value)}
+                      className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2 text-white text-xs"
+                    />
+                    <input
+                      type="color"
+                      value={newColorCode}
+                      onChange={(e) => setNewColorCode(e.target.value)}
+                      className="w-12 h-10 p-1 bg-slate-900 border border-slate-800 rounded-xl cursor-pointer"
+                    />
+                    <button type="button" onClick={addColor} className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold">
+                      + إضافة
+                    </button>
                   </div>
                 )}
               </div>
@@ -953,64 +821,39 @@ export default function AdminPage() {
               {/* خيارات المقاسات */}
               <div className="pt-3 border-t border-slate-800 space-y-3">
                 <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">📏</span>
-                    <div>
-                      <span className="text-xs font-bold text-white block">خيارات مقاسات المنتج</span>
-                      <span className="text-[11px] text-slate-400">تحديد المقاسات المتوفرة للعميل</span>
-                    </div>
-                  </div>
+                  <span className="text-xs font-bold text-white">خيارات المقاسات</span>
                   <button
                     type="button"
                     onClick={() => setProductForm({ ...productForm, show_sizes: !productForm.show_sizes })}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
-                      productForm.show_sizes ? 'bg-emerald-600 text-white shadow' : 'bg-slate-800 text-slate-400'
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition ${
+                      productForm.show_sizes ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
                     }`}
                   >
-                    {productForm.show_sizes ? 'مفعلة (ظاهرة) 👁️' : 'معطلة (مخفية) 🙈'}
+                    {productForm.show_sizes ? 'ظاهرة 👁️' : 'مخفية 🙈'}
                   </button>
                 </div>
-
                 {productForm.show_sizes && (
-                  <div className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/60 space-y-2.5">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="المقاس (M, L, XL, 42)"
-                        value={newSize}
-                        onChange={(e) => setNewSize(e.target.value)}
-                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2 text-white text-xs"
-                      />
-                      <button type="button" onClick={addSize} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold">
-                        + إضافة
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {productForm.sizes?.map((s, idx) => (
-                        <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold text-white">
-                          <span>{s}</span>
-                          <button type="button" onClick={() => removeSize(idx)} className="text-red-400 ml-1">✕</button>
-                        </span>
-                      ))}
-                    </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="المقاس (M, L, XL)"
+                      value={newSize}
+                      onChange={(e) => setNewSize(e.target.value)}
+                      className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2 text-white text-xs"
+                    />
+                    <button type="button" onClick={addSize} className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold">
+                      + إضافة
+                    </button>
                   </div>
                 )}
               </div>
 
               <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowProductModal(false)}
-                  className="px-5 py-2.5 bg-slate-800 text-slate-300 font-bold rounded-xl text-sm"
-                >
+                <button type="button" onClick={() => setShowProductModal(false)} className="px-5 py-2.5 bg-slate-800 text-slate-300 font-bold rounded-xl text-sm">
                   إلغاء
                 </button>
-                <button
-                  type="submit"
-                  disabled={savingProduct || uploadingMedia}
-                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition shadow-lg disabled:opacity-50"
-                >
-                  {savingProduct ? 'جاري الحفظ...' : 'حفظ كصفحة مستقلة 💾'}
+                <button type="submit" disabled={savingProduct || uploadingMedia} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm">
+                  {savingProduct ? 'جاري الحفظ...' : 'حفظ المنتج والمخزون 💾'}
                 </button>
               </div>
             </form>
