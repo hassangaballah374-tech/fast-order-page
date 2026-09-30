@@ -3,13 +3,12 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
 export default function AdminPage() {
-  // جعل الواجهة الافتراضية عند تحديث الداشبورد هي المنتجات والمخزون ('products')
   const [activeView, setActiveView] = useState('products');
   const [loading, setLoading] = useState(true);
 
   const [settings, setSettings] = useState({
     store_name: '',
-    facebook_pixel_id: '',
+    facebook_pixels: '',
     facebook_api_token: '',
     tiktok_pixel_id: '',
   });
@@ -58,7 +57,7 @@ export default function AdminPage() {
         if (sData) {
           setSettings({
             store_name: sData.store_name || '',
-            facebook_pixel_id: sData.facebook_pixel_id || '',
+            facebook_pixels: sData.facebook_pixels || sData.facebook_pixel_id || '',
             facebook_api_token: sData.facebook_api_token || '',
             tiktok_pixel_id: sData.tiktok_pixel_id || '',
           });
@@ -109,7 +108,8 @@ export default function AdminPage() {
       const payload = {
         id: targetId,
         store_name: settings.store_name,
-        facebook_pixel_id: (settings.facebook_pixel_id || '').trim(),
+        facebook_pixels: (settings.facebook_pixels || '').trim(),
+        facebook_pixel_id: (settings.facebook_pixels || '').split(',')[0]?.trim() || '',
         facebook_api_token: (settings.facebook_api_token || '').trim(),
         tiktok_pixel_id: (settings.tiktok_pixel_id || '').trim(),
       };
@@ -119,7 +119,7 @@ export default function AdminPage() {
 
       setSettingsNotice(true);
       setTimeout(() => setSettingsNotice(false), 3000);
-      alert('✅ تم حفظ إعدادات البيكسل بنجاح!');
+      alert('✅ تم حفظ إعدادات البيكسلات المتعددة بنجاح!');
     } catch (err) {
       alert('خطأ أثناء الحفظ: ' + err.message);
     }
@@ -312,7 +312,6 @@ export default function AdminPage() {
     setSavingProduct(false);
   };
 
-  // حساب الإحصائيات
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
 
@@ -346,12 +345,11 @@ export default function AdminPage() {
             <span className="text-2xl">⚡</span>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-white">{settings.store_name || 'LMAA STOR'}</h1>
-              <p className="text-xs text-slate-400">إدارة المخزون، الطلبات، والبيكسل السريع</p>
+              <p className="text-xs text-slate-400">إدارة المخزون، الطلبات، والبيكسلات المتعددة</p>
             </div>
           </div>
 
           <div className="flex items-center bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
-            {/* زر المنتجات أصبح الأول والافتراضي */}
             <button
               onClick={() => setActiveView('products')}
               className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
@@ -382,7 +380,7 @@ export default function AdminPage() {
                 activeView === 'settings' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>⚙️ إعدادات البيكسل</span>
+              <span>⚙️ إعدادات البيكسلات</span>
             </button>
           </div>
         </div>
@@ -390,7 +388,6 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
 
-        {/* 1. تبويب المنتجات والمخزون (الصفحة الرئيسية الافتراضية) */}
         {activeView === 'products' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 p-5 rounded-3xl border border-slate-800">
@@ -497,36 +494,29 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 2. تبويب السلة والطلبات والإحصائيات */}
         {activeView === 'cart' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
                 <div className="text-slate-400 text-xs font-bold">إجمالي المبيعات</div>
                 <div className="text-2xl sm:text-3xl font-black text-emerald-400">{totalRevenue.toLocaleString()} ج.م</div>
               </div>
-
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
                 <div className="text-slate-400 text-xs font-bold">إجمالي التكاليف</div>
                 <div className="text-2xl sm:text-3xl font-black text-amber-400">{totalCost.toLocaleString()} ج.م</div>
               </div>
-
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
                 <div className="text-slate-400 text-xs font-bold">إجمالي الربح الصافي</div>
                 <div className="text-2xl sm:text-3xl font-black text-teal-400">{totalProfit.toLocaleString()} ج.م</div>
               </div>
-
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
                 <div className="text-slate-400 text-xs font-bold">عدد الطلبات</div>
                 <div className="text-2xl sm:text-3xl font-black text-white">{totalOrdersCount} طلب</div>
               </div>
-
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
                 <div className="text-slate-400 text-xs font-bold">متوسط الطلب</div>
                 <div className="text-2xl sm:text-3xl font-black text-sky-400">{avgOrderValue.toLocaleString()} ج.م</div>
               </div>
-
             </div>
 
             <div className="space-y-4 pt-2">
@@ -566,23 +556,22 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 3. تبويب إعدادات البيكسل */}
         {activeView === 'settings' && (
           <form onSubmit={handleSaveSettings} className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
             <div className="border-b border-slate-800 pb-3">
               <h2 className="text-xl font-black text-white flex items-center gap-2">
                 <span>🎯</span>
-                <span>إعدادات التتبع والبيكسل السريع</span>
+                <span>إعدادات البيكسلات المتعددة (Multi-Pixel Tracking)</span>
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                ضع رقم الـ Pixel ID المباشر ورمز السيرفر لتفعيل التتبع الفوري في كافة الصفحات
+                أدخل أرقام بيكسلات فيسبوك مفصولة بفواصل (مثال: 111111, 222222) لتعمل كلها بنفس الكفاءة في نفس الوقت
               </p>
             </div>
 
             {settingsNotice && (
               <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2">
                 <span>✅</span>
-                <span>تم حفظ وتفعيل البيكسل بنجاح!</span>
+                <span>تم حفظ وتفعيل كافة البيكسلات بنجاح!</span>
               </div>
             )}
 
@@ -600,14 +589,14 @@ export default function AdminPage() {
               <div>
                 <label className="block text-xs font-bold text-emerald-400 mb-1.5 flex items-center gap-1.5">
                   <span>⚡</span>
-                  <span>معرّف بيكسل فيسبوك (Meta Pixel ID):</span>
+                  <span>أرقام بيكسلات فيسبوك (مفصولة بفواصل):</span>
                 </label>
                 <input
                   type="text"
                   dir="ltr"
-                  value={settings.facebook_pixel_id}
-                  onChange={(e) => setSettings({ ...settings, facebook_pixel_id: e.target.value })}
-                  placeholder="مثال: 1005710628595160"
+                  value={settings.facebook_pixels}
+                  onChange={(e) => setSettings({ ...settings, facebook_pixels: e.target.value })}
+                  placeholder="1005710628595160, 870300779500843"
                   className="w-full bg-slate-950 border border-emerald-500/50 focus:border-emerald-400 rounded-xl p-3.5 text-sm font-mono text-emerald-300 placeholder-slate-600 focus:outline-none"
                 />
               </div>
@@ -621,7 +610,7 @@ export default function AdminPage() {
                   dir="ltr"
                   value={settings.facebook_api_token}
                   onChange={(e) => setSettings({ ...settings, facebook_api_token: e.target.value })}
-                  placeholder="EAABw... (اختياري لتتبع السيرفر)"
+                  placeholder="EAABw..."
                   className="w-full bg-[#050811] border border-blue-500/40 rounded-xl p-3 text-xs font-mono text-blue-200 placeholder-slate-600 focus:outline-none"
                 />
               </div>
@@ -633,7 +622,7 @@ export default function AdminPage() {
                 disabled={savingSettings}
                 className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
               >
-                {savingSettings ? 'جاري الحفظ...' : 'حفظ وتفعيل البيكسل 💾'}
+                {savingSettings ? 'جاري الحفظ...' : 'حفظ وتفعيل البيكسلات 💾'}
               </button>
             </div>
           </form>
@@ -641,13 +630,12 @@ export default function AdminPage() {
 
       </main>
 
-      {/* نافذة مودال المنتج */}
       {showProductModal && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-xl font-black text-white">
-                {editingProduct ? '✏️️ تعديل المنتج والمخزون' : '➕ إضافة منتج ومخزون جديد'}
+                {editingProduct ? '✏ تعديل المنتج والمخزون' : '➕ إضافة منتج ومخزون جديد'}
               </h3>
               <button onClick={() => setShowProductModal(false)} className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white font-bold">
                 ✕
@@ -674,7 +662,6 @@ export default function AdminPage() {
                     required
                     value={productForm.price}
                     onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                    placeholder="مثال: 455"
                     className="w-full bg-slate-950 border border-emerald-500/40 rounded-xl p-3 text-white text-sm focus:outline-none font-bold"
                   />
                 </div>
@@ -685,7 +672,6 @@ export default function AdminPage() {
                     type="number"
                     value={productForm.compare_price}
                     onChange={(e) => setProductForm({ ...productForm, compare_price: e.target.value })}
-                    placeholder="مثال: 888"
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm"
                   />
                 </div>
@@ -697,7 +683,6 @@ export default function AdminPage() {
                     required
                     value={productForm.cost_price}
                     onChange={(e) => setProductForm({ ...productForm, cost_price: e.target.value })}
-                    placeholder="مثال: 250"
                     className="w-full bg-slate-950 border border-amber-500/40 rounded-xl p-3 text-white text-sm font-bold"
                   />
                 </div>
@@ -710,7 +695,6 @@ export default function AdminPage() {
                     min="0"
                     value={productForm.stock}
                     onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
-                    placeholder="مثال: 25"
                     className="w-full bg-slate-950 border border-teal-500/40 rounded-xl p-3 text-white text-sm font-black focus:outline-none"
                   />
                 </div>
@@ -724,52 +708,6 @@ export default function AdminPage() {
                   onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm"
                 ></textarea>
-              </div>
-
-              <div className="space-y-3 pt-2 border-t border-slate-800">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-slate-300">📷 صور المنتج</label>
-                  {uploadingMedia && <span className="text-xs text-amber-400 animate-pulse">جاري الضغط...</span>}
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <label className="flex-1 flex items-center justify-center gap-2 p-3.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border-2 border-dashed border-emerald-500/50 cursor-pointer text-xs font-bold">
-                    <span>📁</span>
-                    <span>رفع صور من جهازك</span>
-                    <input type="file" accept="image/*" multiple onChange={handleImageFileUpload} className="hidden" />
-                  </label>
-                  <div className="flex-1 flex gap-2">
-                    <input
-                      type="url"
-                      placeholder="أو رابط صورة..."
-                      value={newImageUrl}
-                      onChange={(e) => setNewImageUrl(e.target.value)}
-                      className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (newImageUrl.trim()) {
-                          setProductForm((prev) => ({ ...prev, images: [...(prev.images || []), newImageUrl.trim()] }));
-                          setNewImageUrl('');
-                        }
-                      }}
-                      className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold"
-                    >
-                      إضافة
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {productForm.images?.map((img, idx) => (
-                    <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-700 bg-black">
-                      <img src={img} alt="" className="w-full h-full object-cover" />
-                      <button type="button" onClick={() => removeImage(idx)} className="absolute top-1 left-1 bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
