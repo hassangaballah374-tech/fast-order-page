@@ -1,9 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 export default function AdminPage() {
-  const [activeView, setActiveView] = useState('main'); // 'main' (الرئيسية والطلبات) | 'products' (المنتجات)
+  const [activeView, setActiveView] = useState('main'); // 'main' | 'products'
   const [loading, setLoading] = useState(true);
 
   // إعدادات المتجر والبيكسل
@@ -26,8 +26,8 @@ export default function AdminPage() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [productForm, setProductForm] = useState({
     name: '',
-    price: '',          // سعر البيع للعميل
-    original_price: '', // سعر التكلفة / السعر الأصلي
+    price: '',
+    original_price: '',
     description: '',
     images: [],
     video_url: '',
@@ -50,7 +50,6 @@ export default function AdminPage() {
     setLoading(true);
     try {
       if (supabase) {
-        // 1. جلب الإعدادات والبيكسل
         const { data: sData } = await supabase.from('store_settings').select('*').eq('id', 1).maybeSingle();
         if (sData) {
           setSettings({
@@ -60,11 +59,9 @@ export default function AdminPage() {
           });
         }
 
-        // 2. جلب المنتجات
         const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
         if (pData) setProducts(pData);
 
-        // 3. جلب الطلبات
         const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
         if (oData) setOrders(oData);
       }
@@ -74,7 +71,6 @@ export default function AdminPage() {
     setLoading(false);
   }
 
-  // حفظ إعدادات البيكسل والمتجر
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -93,7 +89,6 @@ export default function AdminPage() {
     setSavingSettings(false);
   };
 
-  // دوال الطلبات
   const filteredOrders = orders.filter((o) => {
     const matchSearch =
       (o.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,7 +113,6 @@ export default function AdminPage() {
     }
   };
 
-  // دوال إدارة المنتجات
   const openNewProductModal = () => {
     setEditingProduct(null);
     setProductForm({
@@ -200,7 +194,6 @@ export default function AdminPage() {
     setSavingProduct(false);
   };
 
-  // إدارة عناصر المنتج (صور، ألوان، مقاسات)
   const addImageToForm = () => {
     if (!newImageUrl.trim()) return;
     setProductForm((prev) => ({ ...prev, images: [...prev.images, newImageUrl.trim()] }));
@@ -234,11 +227,9 @@ export default function AdminPage() {
     setProductForm((prev) => ({ ...prev, sizes: prev.sizes.filter((_, i) => i !== idx) }));
   };
 
-  // الحسابات المالية
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const pendingOrders = orders.filter((o) => (o.status || 'جديد') === 'جديد').length;
 
-  // احتساب هامش الربح للنموذج
   const currentMargin = (Number(productForm.price) || 0) - (Number(productForm.original_price) || 0);
   const currentMarginPercent = productForm.price > 0 && productForm.original_price > 0
     ? Math.round((currentMargin / Number(productForm.price)) * 100)
@@ -268,7 +259,6 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* أزرار التبديل الرئيسية */}
           <div className="flex items-center bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
             <button
               onClick={() => setActiveView('main')}
@@ -299,11 +289,9 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
 
-        {/* ---------------- 1. الصفحة الرئيسية: البيكسل، الإحصائيات، والطلبات ---------------- */}
+        {/* 1. الرئيسية والطلبات */}
         {activeView === 'main' && (
           <div className="space-y-6">
-            
-            {/* بطاقات الإحصائيات المالية */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
                 <div className="text-slate-400 text-xs font-bold mb-1">إجمالي الإيرادات الكلية</div>
@@ -319,7 +307,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* قسم إعدادات البيكسل واسم المتجر */}
+            {/* إعدادات البيكسل */}
             <form onSubmit={handleSaveSettings} className="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-lg space-y-4">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h2 className="text-base font-black text-white flex items-center gap-2">
@@ -379,7 +367,7 @@ export default function AdminPage() {
               </div>
             </form>
 
-            {/* جدول الطلبات وبيانات العملاء */}
+            {/* جدول الطلبات */}
             <div className="space-y-4">
               <div className="bg-slate-900 p-4 rounded-3xl border border-slate-800 flex flex-col sm:flex-row gap-3">
                 <input
@@ -498,11 +486,10 @@ export default function AdminPage() {
                 )}
               </div>
             </div>
-
           </div>
         )}
 
-        {/* ---------------- 2. صفحة المنتجات وهامش الربح ---------------- */}
+        {/* 2. صفحة المنتجات وهامش الربح */}
         {activeView === 'products' && (
           <div className="space-y-6">
             <div className="flex items-center justify-between bg-slate-900 p-5 rounded-3xl border border-slate-800">
@@ -519,7 +506,6 @@ export default function AdminPage() {
               </button>
             </div>
 
-            {/* شبكة المنتجات */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map((p) => {
                 const cost = Number(p.original_price) || 0;
@@ -542,7 +528,6 @@ export default function AdminPage() {
 
                       <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
 
-                      {/* شريط الأسعار وهوامش الربح */}
                       <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800/80 space-y-2 text-xs">
                         <div className="flex justify-between items-center">
                           <span className="text-slate-400">سعر البيع للعميل:</span>
@@ -589,7 +574,7 @@ export default function AdminPage() {
 
       </main>
 
-      {/* مودال (Modal) إضافة وتعديل المنتج وهامش الربح */}
+      {/* نافذة المودال لإضافة وتعديل المنتج */}
       {showProductModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
@@ -617,7 +602,6 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* الأسعار وحساب هامش الربح المباشر */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-400 mb-1">سعر البيع المطلوب (ج.م)</label>
@@ -642,7 +626,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* حاسبة هامش الربح اللحظية */}
               <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex justify-between items-center text-xs">
                 <span className="text-slate-400 font-bold">هامش الربح المتوقع للقطعة:</span>
                 <span className="text-emerald-400 font-black text-sm">
@@ -660,7 +643,6 @@ export default function AdminPage() {
                 ></textarea>
               </div>
 
-              {/* إضافة صور */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-slate-400">صور المنتج</label>
                 <div className="flex gap-2">
@@ -695,7 +677,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* خيارات الألوان */}
               <div className="pt-2 border-t border-slate-800 space-y-2">
                 <div className="flex items-center gap-2">
                   <input
@@ -747,7 +728,6 @@ export default function AdminPage() {
                 )}
               </div>
 
-              {/* خيارات المقاسات */}
               <div className="pt-2 border-t border-slate-800 space-y-2">
                 <div className="flex items-center gap-2">
                   <input
