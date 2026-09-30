@@ -96,7 +96,7 @@ export default function LuxuryProductPage() {
     };
   }, []);
 
-  // جلب السلة
+  // جلب السلة من المتصفح
   useEffect(() => {
     try {
       const saved = localStorage.getItem('fast_order_cart');
@@ -160,7 +160,6 @@ export default function LuxuryProductPage() {
             setCartShippingFee(sData.shipping_rates.cairo_giza);
           }
 
-          // تفعيل كود البيكسل الجديد فوراً
           if (sData.facebook_pixel_id) {
             initFacebookPixel(sData.facebook_pixel_id);
           }
@@ -199,7 +198,6 @@ export default function LuxuryProductPage() {
             setSelectedSize(prod.sizes[0]);
           }
 
-          // إرسال حدث ViewContent للبيكسل الجديد
           if (typeof window !== 'undefined') {
             if (window.fbq) {
               window.fbq('track', 'ViewContent', {
@@ -339,6 +337,7 @@ export default function LuxuryProductPage() {
     document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // تأكيد الطلب المباشر مع تتبع المزدوج (Browser + CAPI Server)
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedGovernorate) {
@@ -384,13 +383,38 @@ export default function LuxuryProductPage() {
       setSuccess(true);
       setOrderLoading(false);
 
+      // معرف الحدث الموحد لمنع التكرار (Deduplication Event ID)
+      const eventId = `order_${Date.now()}`;
+
+      // 1. تتبع المتصفح (Browser Pixel)
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('track', 'Purchase', {
           content_name: product?.name,
           value: finalTotal,
           currency: 'EGP',
-        });
+        }, { eventID: eventId });
       }
+
+      // 2. تتبع السيرفر المباشر (Server-Side CAPI)
+      fetch('/api/fb-conversion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_name: 'Purchase',
+          event_id: eventId,
+          event_source_url: typeof window !== 'undefined' ? window.location.href : '',
+          user_data: {
+            phone: formData.phone,
+            name: formData.name,
+            city: selectedCity,
+            governorate: selectedGovernorate,
+          },
+          custom_data: {
+            value: finalTotal,
+            content_name: product?.name,
+          }
+        }),
+      }).catch((err) => console.error('CAPI trigger error:', err));
 
       fetch(GOOGLE_SHEET_URL, {
         method: 'POST',
@@ -417,6 +441,7 @@ export default function LuxuryProductPage() {
     }
   };
 
+  // تأكيد طلب السلة
   const handleCartSubmit = async (e) => {
     e.preventDefault();
     if (!cartGov) {
@@ -465,9 +490,22 @@ export default function LuxuryProductPage() {
       setCart([]);
       localStorage.removeItem('fast_order_cart');
 
+      const eventId = `cart_${Date.now()}`;
       if (typeof window !== 'undefined' && window.fbq) {
-        window.fbq('track', 'Purchase', { content_name: productsSummary, value: finalTotal, currency: 'EGP' });
+        window.fbq('track', 'Purchase', { content_name: productsSummary, value: finalTotal, currency: 'EGP' }, { eventID: eventId });
       }
+
+      fetch('/api/fb-conversion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_name: 'Purchase',
+          event_id: eventId,
+          event_source_url: typeof window !== 'undefined' ? window.location.href : '',
+          user_data: { phone: cartForm.phone, name: cartForm.name, city: cartCity, governorate: cartGov },
+          custom_data: { value: finalTotal, content_name: productsSummary }
+        }),
+      }).catch((err) => console.error(err));
 
       fetch(GOOGLE_SHEET_URL, {
         method: 'POST',
@@ -536,7 +574,7 @@ export default function LuxuryProductPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans pb-36 antialiased select-none" dir="rtl">
       
-      {/* طبقة البارتكلز المتحركة */}
+      {/* البارتكلز المتحركة */}
       <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
         {particles.map((p) => (
           <span
@@ -554,7 +592,7 @@ export default function LuxuryProductPage() {
         ))}
       </div>
 
-      {/* شريط الإعلان الفاتح */}
+      {/* شريط الإعلان */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-sm flex items-center justify-center gap-2">
         <span className="bg-white/20 text-white px-2.5 py-0.5 rounded-full text-[11px] font-black animate-pulse">
           عرض حصري
@@ -566,7 +604,7 @@ export default function LuxuryProductPage() {
         <span>للحصول على شحن سريع ومعاينة قبل الدفع! 🎁</span>
       </div>
 
-      {/* الترويسة الفاتحة */}
+      {/* الترويسة الفاتحة الزجاجية */}
       <header className="bg-white/90 backdrop-blur-xl border-b border-slate-200/80 py-3.5 px-4 sm:px-8 sticky top-0 z-40 shadow-sm">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
@@ -597,7 +635,7 @@ export default function LuxuryProductPage() {
         {/* كارت المنتج الفاخر */}
         <div className="relative bg-white border border-slate-200/90 rounded-[32px] p-5 sm:p-8 space-y-6 shadow-xl shadow-slate-200/60 overflow-hidden">
           
-          {/* مؤشر الزوار وعبارة المخزون */}
+          {/* مؤشر الزوار والمخزون */}
           <div className="flex flex-wrap items-center justify-between gap-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs font-bold">
             <div className="flex items-center gap-2 text-emerald-700">
               <span className="relative flex h-2.5 w-2.5">
@@ -768,19 +806,17 @@ export default function LuxuryProductPage() {
 
           {/* ---------------- الأزرار: زر الدفع عند الاستلام مكبر وضخم ---------------- */}
           <div className="pt-3 grid grid-cols-1 sm:grid-cols-12 gap-3.5 border-t border-slate-100">
-            {/* الزر الرئيسي الأكبر: اطلب الآن - الدفع عند الاستلام */}
             <button
               type="button"
               onClick={scrollToCheckout}
               disabled={actualStock <= 0}
-              className="sm:col-span-8 relative overflow-hidden w-full py-5 sm:py-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xl sm:text-2xl rounded-3xl shadow-2xl shadow-emerald-600/35 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-emerald-600/50 active:translate-y-0.5 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 border-2 border-emerald-400/40 group cursor-pointer"
+              className="sm:col-span-8 relative overflow-hidden w-full py-5 sm:py-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xl sm:text-2xl rounded-3xl shadow-2xl shadow-emerald-600/35 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-emerald-600/50 active:translate-y-0.5 active:scale-95 flex items-center justify-center gap-3 disabled:opacity-50 border-2 border-emerald-400/30 group cursor-pointer"
             >
               <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></span>
               <span className="text-2xl sm:text-3xl transition-transform duration-300 group-hover:scale-125 group-hover:rotate-12">⚡</span>
               <span>{actualStock <= 0 ? 'نفدت الكمية من المخزن' : 'اطلب الآن - الدفع عند الاستلام'}</span>
             </button>
 
-            {/* الزر الثانوي: أضف إلى السلة */}
             <button
               type="button"
               onClick={handleAddToCart}
@@ -803,7 +839,7 @@ export default function LuxuryProductPage() {
           {success ? (
             <div className="p-8 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-3xl text-center space-y-4 shadow-sm">
               <p className="text-3xl font-black text-emerald-800">🎉 تم تسجيل طلبك بنجاح!</p>
-              <p className="text-xs sm:text-sm text-slate-600">تم خصم القطع من المخزون وسيتواصل معك المندوب هاتفياً لتأكيد الشحن.</p>
+              <p className="text-xs sm:text-sm text-slate-600">تم خصم القطع من المخزون وتفعيل التتبع، وسيتواصل معك المندوب هاتفياً.</p>
               <Link href="/" className="inline-block mt-4 px-7 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl text-xs sm:text-sm transition-all duration-300 hover:scale-105 active:scale-95 shadow-md">
                 متابعة تصفح باقي المنتجات
               </Link>
@@ -903,7 +939,7 @@ export default function LuxuryProductPage() {
                 disabled={orderLoading || actualStock <= 0}
                 className="w-full py-5 sm:py-6 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xl sm:text-2xl rounded-3xl shadow-2xl shadow-emerald-600/35 transition-all duration-300 hover:-translate-y-1 hover:shadow-emerald-600/50 active:translate-y-0.5 active:scale-95 disabled:opacity-50 cursor-pointer border-2 border-emerald-400/30"
               >
-                {orderLoading ? 'جاري تسجيل الطلب...' : 'تأكيد الطلب والدفع عند الاستلام 🚚'}
+                {orderLoading ? 'جاري تسجيل الطلب وتتبع السيرفر...' : 'تأكيد الطلب والدفع عند الاستلام 🚚'}
               </button>
             </form>
           )}
@@ -927,7 +963,7 @@ export default function LuxuryProductPage() {
             {cartSuccess ? (
               <div className="p-8 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-3xl text-center space-y-3 mt-6">
                 <p className="text-3xl font-black">🎉 تم تأكيد طلب السلة!</p>
-                <p className="text-xs sm:text-sm text-slate-600">تم تحديث المخزون وسيتواصل معك فريق خدمة العملاء لتأكيد الشحن.</p>
+                <p className="text-xs sm:text-sm text-slate-600">تم تحديث المخزون وإرسال بيانات التتبع، وسيتواصل معك فريق خدمة العملاء.</p>
                 <button onClick={() => setIsCartOpen(false)} className="mt-4 px-6 py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-md">
                   إغلاق السلة
                 </button>
@@ -1058,7 +1094,7 @@ export default function LuxuryProductPage() {
         </div>
       )}
 
-      {/* الشريط السفلي اللاصق للموبايل (فاتح ومكبر) */}
+      {/* الشريط السفلي اللاصق للموبايل */}
       <div className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200 p-3 sm:hidden shadow-2xl flex items-center gap-2.5">
         <button
           onClick={scrollToCheckout}
