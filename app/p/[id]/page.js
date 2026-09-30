@@ -96,7 +96,7 @@ export default function LuxuryProductPage() {
     };
   }, []);
 
-  // جلب السلة من المتصفح
+  // جلب السلة
   useEffect(() => {
     try {
       const saved = localStorage.getItem('fast_order_cart');
@@ -114,7 +114,40 @@ export default function LuxuryProductPage() {
     }
   }, [cart]);
 
-  // جلب بيانات المنتج
+  // دالة حقن وتفعيل البيكسل التلقائي برقم ID ديناميكي
+  const initFacebookPixel = (pixelId) => {
+    if (typeof window === 'undefined' || !pixelId) return;
+    const cleanId = String(pixelId).trim();
+    if (!cleanId) return;
+
+    if (!window.fbq) {
+      (function (f, b, e, v, n, t, s) {
+        if (f.fbq) return;
+        n = f.fbq = function () {
+          n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+        };
+        if (!f._fbq) f._fbq = n;
+        n.push = n;
+        n.loaded = !0;
+        n.version = '2.0';
+        n.queue = [];
+        t = b.createElement(e);
+        t.async = !0;
+        t.src = v;
+        s = b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t, s);
+      })(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+    }
+
+    try {
+      window.fbq('init', cleanId);
+      window.fbq('track', 'PageView');
+    } catch (err) {
+      console.error('FB Pixel Init Error:', err);
+    }
+  };
+
+  // جلب بيانات المنتج وتفعيل البيكسل فوراً
   useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -125,6 +158,11 @@ export default function LuxuryProductPage() {
           if (sData.shipping_rates?.cairo_giza) {
             setCurrentShippingFee(sData.shipping_rates.cairo_giza);
             setCartShippingFee(sData.shipping_rates.cairo_giza);
+          }
+
+          // تفعيل كود البيكسل الجديد فوراً
+          if (sData.facebook_pixel_id) {
+            initFacebookPixel(sData.facebook_pixel_id);
           }
         }
 
@@ -161,12 +199,23 @@ export default function LuxuryProductPage() {
             setSelectedSize(prod.sizes[0]);
           }
 
+          // إرسال حدث ViewContent للبيكسل الجديد
           if (typeof window !== 'undefined') {
             if (window.fbq) {
-              window.fbq('track', 'ViewContent', { content_name: prod.name, value: Number(prod.price) || 0, currency: 'EGP' });
+              window.fbq('track', 'ViewContent', {
+                content_name: prod.name,
+                content_ids: [String(prod.id)],
+                value: Number(prod.price) || 0,
+                currency: 'EGP',
+              });
             }
             if (window.ttq) {
-              window.ttq.track('ViewContent', { content_name: prod.name, value: Number(prod.price) || 0, currency: 'EGP' });
+              window.ttq.track('ViewContent', {
+                content_name: prod.name,
+                content_id: String(prod.id),
+                value: Number(prod.price) || 0,
+                currency: 'EGP',
+              });
             }
           }
         }
@@ -178,7 +227,6 @@ export default function LuxuryProductPage() {
     loadData();
   }, [productId]);
 
-  // انطلاق البارتكلز المتحركة عند النقر
   const triggerParticles = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const emojis = ['💖', '🔥', '✨', '⚡', '🎉', '🌟', '🛍️'];
@@ -291,7 +339,6 @@ export default function LuxuryProductPage() {
     document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // تأكيد الطلب المباشر
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedGovernorate) {
@@ -338,7 +385,11 @@ export default function LuxuryProductPage() {
       setOrderLoading(false);
 
       if (typeof window !== 'undefined' && window.fbq) {
-        window.fbq('track', 'Purchase', { content_name: product?.name, value: finalTotal, currency: 'EGP' });
+        window.fbq('track', 'Purchase', {
+          content_name: product?.name,
+          value: finalTotal,
+          currency: 'EGP',
+        });
       }
 
       fetch(GOOGLE_SHEET_URL, {
@@ -366,7 +417,6 @@ export default function LuxuryProductPage() {
     }
   };
 
-  // تأكيد طلب السلة
   const handleCartSubmit = async (e) => {
     e.preventDefault();
     if (!cartGov) {
@@ -504,7 +554,7 @@ export default function LuxuryProductPage() {
         ))}
       </div>
 
-      {/* شريط الإعلان الفاتح والأنيق */}
+      {/* شريط الإعلان الفاتح */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-sm flex items-center justify-center gap-2">
         <span className="bg-white/20 text-white px-2.5 py-0.5 rounded-full text-[11px] font-black animate-pulse">
           عرض حصري
@@ -516,7 +566,7 @@ export default function LuxuryProductPage() {
         <span>للحصول على شحن سريع ومعاينة قبل الدفع! 🎁</span>
       </div>
 
-      {/* الترويسة الفاتحة الزجاجية */}
+      {/* الترويسة الفاتحة */}
       <header className="bg-white/90 backdrop-blur-xl border-b border-slate-200/80 py-3.5 px-4 sm:px-8 sticky top-0 z-40 shadow-sm">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
@@ -544,7 +594,7 @@ export default function LuxuryProductPage() {
 
       <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
         
-        {/* كارت المنتج الفاخر بالألوان الفاتحة */}
+        {/* كارت المنتج الفاخر */}
         <div className="relative bg-white border border-slate-200/90 rounded-[32px] p-5 sm:p-8 space-y-6 shadow-xl shadow-slate-200/60 overflow-hidden">
           
           {/* مؤشر الزوار وعبارة المخزون */}
@@ -743,7 +793,7 @@ export default function LuxuryProductPage() {
           </div>
         </div>
 
-        {/* نموذج الشراء المباشر الفاتح */}
+        {/* نموذج الشراء المباشر */}
         <div id="checkout-form" className="bg-white border border-slate-200/90 rounded-[32px] p-5 sm:p-8 shadow-xl shadow-slate-200/50 scroll-mt-20 space-y-6">
           <div className="text-center space-y-1.5">
             <h3 className="text-xl sm:text-2xl font-black text-slate-900">بيانات توصيل الطلب</h3>
@@ -831,7 +881,6 @@ export default function LuxuryProductPage() {
                 ></textarea>
               </div>
 
-              {/* ملخص الفاتورة الفاتح */}
               <div className="bg-slate-50 p-4 sm:p-5 rounded-2xl border border-slate-200 space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between text-slate-600">
                   <span>سعر المنتج ({quantity} قطعة):</span>
@@ -849,7 +898,6 @@ export default function LuxuryProductPage() {
                 </div>
               </div>
 
-              {/* زر التأكيد المكبر والبارز */}
               <button
                 type="submit"
                 disabled={orderLoading || actualStock <= 0}
@@ -862,7 +910,7 @@ export default function LuxuryProductPage() {
         </div>
       </main>
 
-      {/* دراوَر السلة الجانبي الفاتح */}
+      {/* دراوَر السلة الجانبي */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
           <div className="w-full max-w-md h-full bg-white border-r border-slate-200 flex flex-col p-6 shadow-2xl overflow-y-auto">
