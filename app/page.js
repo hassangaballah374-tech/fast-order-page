@@ -40,13 +40,12 @@ export default function CatalogHome() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // حالة السلة
+  // السلة
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  // بيانات الشحن والشراء من السلة
   const [selectedGovernorate, setSelectedGovernorate] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [currentShippingFee, setCurrentShippingFee] = useState(50);
@@ -91,6 +90,7 @@ export default function CatalogHome() {
               id: 'legacy',
               name: storeData.product_name,
               price: storeData.product_price,
+              compare_price: storeData.original_price,
               original_price: storeData.original_price,
               description: storeData.description,
               images: storeData.images || (storeData.image_url ? [storeData.image_url] : []),
@@ -162,10 +162,7 @@ export default function CatalogHome() {
       alert('يرجى اختيار المحافظة أولاً');
       return;
     }
-    if (cart.length === 0) {
-      alert('السلة فارغة!');
-      return;
-    }
+    if (cart.length === 0) return;
 
     setOrderLoading(true);
     const shipping = Number(currentShippingFee) || 0;
@@ -239,12 +236,10 @@ export default function CatalogHome() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-24 antialiased" dir="rtl">
-      {/* شريط الإعلان */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-md">
         🚚 التوصيل متاح لجميع المحافظات • الدفع عند الاستلام بعد المعاينة!
       </div>
 
-      {/* الترويسة مع زر السلة */}
       <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-30 py-4 px-4 sm:px-8 shadow-sm">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -270,7 +265,6 @@ export default function CatalogHome() {
         </div>
       </header>
 
-      {/* كتالوج المنتجات */}
       <main className="max-w-6xl mx-auto p-4 sm:p-8 space-y-6">
         <div className="text-center py-4 space-y-2">
           <h2 className="text-2xl sm:text-3xl font-black text-white">المنتجات المتاحة</h2>
@@ -282,6 +276,11 @@ export default function CatalogHome() {
           {products.map((product) => {
             const image = Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null;
             const productLink = product.id === 'legacy' ? `/p/legacy` : `/p/${product.id}`;
+
+            const selling = Number(product.price) || 0;
+            const compare = Number(product.compare_price || product.original_price) || 0;
+            const hasDisc = compare > selling && selling > 0;
+            const discPercent = hasDisc ? Math.round(((compare - selling) / compare) * 100) : 0;
 
             return (
               <div
@@ -295,6 +294,13 @@ export default function CatalogHome() {
                     ) : (
                       <span className="text-5xl text-slate-600">📦</span>
                     )}
+
+                    {/* شارة الخصم المحسوبة على الكارت في الكتالوج */}
+                    {hasDisc && (
+                      <span className="absolute top-3 right-3 bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded-xl shadow-lg animate-pulse">
+                        خصم {discPercent}%
+                      </span>
+                    )}
                   </Link>
 
                   <div className="space-y-2">
@@ -304,9 +310,9 @@ export default function CatalogHome() {
                       </h3>
                     </Link>
                     <div className="flex items-baseline gap-2.5">
-                      <span className="text-2xl font-black text-emerald-400">{product.price} ج.م</span>
-                      {product.original_price && (
-                        <span className="text-sm line-through text-slate-500">{product.original_price} ج.م</span>
+                      <span className="text-2xl font-black text-emerald-400">{selling} ج.م</span>
+                      {hasDisc && (
+                        <span className="text-sm line-through text-slate-500 font-bold">{compare} ج.م</span>
                       )}
                     </div>
                   </div>
@@ -334,9 +340,9 @@ export default function CatalogHome() {
         </div>
       </main>
 
-      {/* دراوَر نافذة السلة الجانبية المنبثقة */}
+      {/* دراوَر نافذة السلة */}
       {isCartOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end transition-opacity">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end">
           <div className="w-full max-w-md h-full bg-slate-900 border-r border-slate-800 flex flex-col p-6 shadow-2xl overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div className="flex items-center gap-2">
@@ -372,7 +378,7 @@ export default function CatalogHome() {
                     </div>
                   ) : (
                     cart.map((item) => (
-                      <div key={item.id} className="flex gap-3 bg-slate-950 p-3 rounded-2xl border border-slate-800/80 items-center">
+                      <div key={item.id} className="flex gap-3 bg-slate-950 p-3 rounded-2xl border border-slate-800 items-center">
                         {item.image && (
                           <img src={item.image} alt={item.name} className="w-14 h-14 object-cover rounded-xl border border-slate-800" />
                         )}
@@ -488,7 +494,7 @@ export default function CatalogHome() {
         </div>
       )}
 
-      {/* زر السلة العائم أسفل الشاشة للموبايل */}
+      {/* زر السلة العائم */}
       <button
         onClick={() => { setIsCartOpen(true); setOrderSuccess(false); }}
         className="fixed bottom-5 left-5 z-40 bg-emerald-600 hover:bg-emerald-500 text-white p-3.5 rounded-full shadow-2xl flex items-center justify-center transition active:scale-95 border-2 border-emerald-400/40"
