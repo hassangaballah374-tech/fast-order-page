@@ -36,7 +36,7 @@ const EGYPT_REGIONS = {
 
 const GOOGLE_SHEET_URL = 'https://script.google.com/macros/s/AKfycbw_zn4XtPgmuksXCQ8VsiUamby9bqj_OVuqJ4fEPhG9vHRww2qjsEvjuNg8SKSTJCwnbg/exec';
 
-export default function SingleProductPage() {
+export default function LuxuryProductPage() {
   const params = useParams();
   const productId = params?.id;
 
@@ -56,22 +56,48 @@ export default function SingleProductPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartOrderLoading, setCartOrderLoading] = useState(false);
   const [cartSuccess, setCartSuccess] = useState(false);
-  const [addedPopup, setAddedPopup] = useState(false);
+
+  // إضافات تفاعلية و FOMO
+  const [particles, setParticles] = useState([]);
+  const [liveVisitors, setLiveVisitors] = useState(17);
+  const [stockLeft, setStockLeft] = useState(6);
+  const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 48 });
 
   const hasFiredCheckout = useRef(false);
 
-  // شحن مباشر
+  // الشحن المباشر
   const [selectedGovernorate, setSelectedGovernorate] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [currentShippingFee, setCurrentShippingFee] = useState(50);
   const [formData, setFormData] = useState({ name: '', phone: '', detailedAddress: '', notes: '' });
 
-  // شحن السلة
+  // سلة المشتريات
   const [cartGov, setCartGov] = useState('');
   const [cartCity, setCartCity] = useState('');
   const [cartShippingFee, setCartShippingFee] = useState(50);
   const [cartForm, setCartForm] = useState({ name: '', phone: '', detailedAddress: '' });
 
+  // عداد الـ FOMO المتناقص
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
+        if (prev.minutes > 0) return { minutes: prev.minutes - 1, seconds: 59 };
+        return { minutes: 15, seconds: 0 };
+      });
+    }, 1000);
+
+    const visitorInterval = setInterval(() => {
+      setLiveVisitors((v) => Math.floor(Math.random() * 9) + 14);
+    }, 7000);
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(visitorInterval);
+    };
+  }, []);
+
+  // جلب السلة من المتصفح
   useEffect(() => {
     try {
       const saved = localStorage.getItem('fast_order_cart');
@@ -89,8 +115,9 @@ export default function SingleProductPage() {
     }
   }, [cart]);
 
+  // جلب المنتج والبيكسل
   useEffect(() => {
-    async function loadProductData() {
+    async function loadData() {
       setLoading(true);
       try {
         const { data: sData } = await supabase.from('store_settings').select('*').limit(1).maybeSingle();
@@ -148,8 +175,27 @@ export default function SingleProductPage() {
       }
       setLoading(false);
     }
-    loadProductData();
+    loadData();
   }, [productId]);
+
+  // تأثير تفجير القلوب والإيموجيز التفاعلية عند النقر
+  const triggerParticles = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const emojis = ['💖', '🔥', '✨', '⚡', '🎉', '🌟', '🛍️'];
+    const newItems = Array.from({ length: 12 }).map((_, i) => ({
+      id: Date.now() + i,
+      x: rect.left + rect.width / 2 + (Math.random() * 80 - 40),
+      y: rect.top + (Math.random() * 40 - 20),
+      emoji: emojis[Math.floor(Math.random() * emojis.length)],
+      vx: (Math.random() - 0.5) * 160,
+      vy: -(Math.random() * 120 + 80),
+    }));
+
+    setParticles((prev) => [...prev, ...newItems]);
+    setTimeout(() => {
+      setParticles((prev) => prev.filter((p) => !newItems.some((n) => n.id === p.id)));
+    }, 1000);
+  };
 
   const handleGovernorateChange = (gov) => {
     setSelectedGovernorate(gov);
@@ -171,7 +217,8 @@ export default function SingleProductPage() {
 
   const galleryImages = Array.isArray(product?.images) && product.images.length > 0 ? product.images : [];
 
-  const handleAddToCart = () => {
+  // الإضافة إلى السلة مع المؤثرات
+  const handleAddToCart = (e) => {
     if (product?.show_colors && product.colors?.length > 0 && !selectedColor) {
       alert('يرجى اختيار اللون أولاً');
       return;
@@ -180,6 +227,8 @@ export default function SingleProductPage() {
       alert('يرجى اختيار المقاس أولاً');
       return;
     }
+
+    triggerParticles(e);
 
     const newItem = {
       id: `${product.id}_${selectedColor || ''}_${selectedSize || ''}_${Date.now()}`,
@@ -193,8 +242,6 @@ export default function SingleProductPage() {
     };
 
     setCart((prev) => [...prev, newItem]);
-    setAddedPopup(true);
-    setTimeout(() => setAddedPopup(false), 2500);
 
     if (typeof window !== 'undefined' && window.fbq) {
       window.fbq('track', 'AddToCart', {
@@ -203,6 +250,10 @@ export default function SingleProductPage() {
         currency: 'EGP',
       });
     }
+
+    setTimeout(() => {
+      setIsCartOpen(true);
+    }, 350);
   };
 
   const updateCartQty = (itemId, delta) => {
@@ -226,7 +277,8 @@ export default function SingleProductPage() {
   const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   const cartSubtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  const scrollToCheckout = () => {
+  const scrollToCheckout = (e) => {
+    triggerParticles(e);
     if (!hasFiredCheckout.current) {
       hasFiredCheckout.current = true;
       if (typeof window !== 'undefined' && window.fbq) {
@@ -240,6 +292,7 @@ export default function SingleProductPage() {
     document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // تأكيد الطلب المباشر
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedGovernorate) {
@@ -254,8 +307,6 @@ export default function SingleProductPage() {
 
     const fullAddress = `${selectedGovernorate} - ${selectedCity || 'مركز/مدينة'} - ${formData.detailedAddress}`;
     const productsSummary = `${product?.name} (عدد: ${quantity})`;
-    const colorChosen = selectedColor || '-';
-    const sizeChosen = selectedSize || '-';
 
     try {
       const { error } = await supabase.from('orders').insert([
@@ -269,8 +320,8 @@ export default function SingleProductPage() {
           product_name: productsSummary,
           total_amount: finalTotal,
           total_price: finalTotal,
-          selected_color: colorChosen,
-          selected_size: sizeChosen,
+          selected_color: selectedColor || '-',
+          selected_size: selectedSize || '-',
           quantity: quantity,
           status: 'جديد',
         },
@@ -295,8 +346,8 @@ export default function SingleProductPage() {
           city: selectedCity,
           address: formData.detailedAddress,
           product_name: productsSummary,
-          color: colorChosen,
-          size: sizeChosen,
+          color: selectedColor || '-',
+          size: selectedSize || '-',
           quantity: quantity,
           shipping_fee: shipping,
           total_amount: finalTotal,
@@ -310,10 +361,11 @@ export default function SingleProductPage() {
     }
   };
 
+  // تأكيد طلب السلة
   const handleCartSubmit = async (e) => {
     e.preventDefault();
     if (!cartGov) {
-      alert('يرجى اختيار المحافظة في السلة');
+      alert('يرجى اختيار المحافظة أولاً');
       return;
     }
     if (cart.length === 0) return;
@@ -323,9 +375,6 @@ export default function SingleProductPage() {
     const finalTotal = cartSubtotal + shipping;
     const fullAddress = `${cartGov} - ${cartCity || 'مركز/مدينة'} - ${cartForm.detailedAddress}`;
     const productsSummary = cart.map((i) => `${i.name} (${i.quantity})`).join(' + ');
-    const colorsSummary = cart.map((i) => i.color).filter(Boolean).join(', ') || '-';
-    const sizesSummary = cart.map((i) => i.size).filter(Boolean).join(', ') || '-';
-    const totalQty = cart.reduce((acc, i) => acc + i.quantity, 0);
 
     try {
       const { error } = await supabase.from('orders').insert([
@@ -338,9 +387,9 @@ export default function SingleProductPage() {
           product_name: productsSummary,
           total_amount: finalTotal,
           total_price: finalTotal,
-          selected_color: colorsSummary,
-          selected_size: sizesSummary,
-          quantity: totalQty,
+          selected_color: cart.map((i) => i.color).filter(Boolean).join(', ') || '-',
+          selected_size: cart.map((i) => i.size).filter(Boolean).join(', ') || '-',
+          quantity: totalCartCount,
           status: 'جديد',
         },
       ]);
@@ -365,7 +414,7 @@ export default function SingleProductPage() {
           city: cartCity,
           address: cartForm.detailedAddress,
           product_name: productsSummary,
-          quantity: totalQty,
+          quantity: totalCartCount,
           shipping_fee: shipping,
           total_amount: finalTotal,
         }),
@@ -377,21 +426,24 @@ export default function SingleProductPage() {
     setCartOrderLoading(false);
   };
 
-  // حساب دقيق لنسبة الخصم ومبلغ التوفير
+  // حساب الخصم والتوفير
   const currentSellingPrice = Number(product?.price) || 0;
   const originalOldPrice = Number(product?.compare_price || product?.original_price) || 0;
   const hasDiscount = originalOldPrice > currentSellingPrice && currentSellingPrice > 0;
   const discountPercent = hasDiscount
     ? Math.round(((originalOldPrice - currentSellingPrice) / originalOldPrice) * 100)
     : 0;
-  const savedAmount = hasDiscount ? (originalOldPrice - currentSellingPrice) : 0;
+  const savedAmount = hasDiscount ? originalOldPrice - currentSellingPrice : 0;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center font-sans" dir="rtl">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-400 font-bold">جاري تحميل صفحة المنتج...</p>
+      <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center font-sans" dir="rtl">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-14 h-14 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center text-xs">⚡</div>
+          </div>
+          <p className="text-slate-400 font-bold tracking-wide animate-pulse">جاري تجهيز التجربة الفاخرة...</p>
         </div>
       </div>
     );
@@ -399,37 +451,74 @@ export default function SingleProductPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center gap-4 font-sans p-6 text-center" dir="rtl">
-        <span className="text-5xl">🔍</span>
-        <h2 className="text-2xl font-black">المنتج غير موجود!</h2>
-        <Link href="/" className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl text-sm">العودة للمتجر</Link>
+      <div className="min-h-screen bg-[#070b14] text-white flex flex-col items-center justify-center gap-4 font-sans p-6 text-center" dir="rtl">
+        <span className="text-6xl animate-bounce">💎</span>
+        <h2 className="text-2xl font-black">المنتج غير موجود أو تم نقله</h2>
+        <Link href="/" className="px-7 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black rounded-2xl text-sm shadow-xl hover:brightness-110 transition">
+          العودة للكتالوج الرئيسي
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-28 antialiased" dir="rtl">
-      {/* شريط الإعلان */}
-      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-md">
-        🚚 التوصيل لجميع محافظات مصر • الدفع عند الاستلام بعد المعاينة والفحص!
+    <div className="min-h-screen bg-[#070b14] text-slate-100 font-sans pb-32 antialiased selection:bg-emerald-500 selection:text-black" dir="rtl">
+      
+      {/* 1. طبقة البارتكلز المتحركة عند الضغط (Confetti Particles) */}
+      <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
+        {particles.map((p) => (
+          <span
+            key={p.id}
+            style={{
+              left: `${p.x}px`,
+              top: `${p.y}px`,
+              transform: `translate(${p.vx}px, ${p.vy}px) scale(${Math.random() * 0.8 + 0.8})`,
+              transition: 'all 0.9s cubic-bezier(0.1, 0.9, 0.2, 1)',
+            }}
+            className="absolute text-xl select-none"
+          >
+            {p.emoji}
+          </span>
+        ))}
       </div>
 
-      {/* الترويسة العلوية */}
-      <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 py-3.5 px-4 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 hover:border-slate-700">
+      {/* 2. شريط الطوارئ والعرض الحصري التنازلي الفاخر (FOMO Bar) */}
+      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 border-b border-emerald-500/30 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-lg flex items-center justify-center gap-2">
+        <span className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full text-[11px] border border-emerald-500/30 animate-pulse">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          عرض حصري
+        </span>
+        <span>اطلب خلال</span>
+        <span className="font-mono bg-black/60 px-2 py-0.5 rounded-lg text-emerald-300 font-black border border-emerald-500/40">
+          {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+        </span>
+        <span>للحصول على الشحن السريع ومعاينة مجانية قبل الدفع! 🎁</span>
+      </div>
+
+      {/* 3. الترويسة الشفافة الزجاجية (Glass Header) */}
+      <header className="bg-[#0b1324]/80 backdrop-blur-xl border-b border-slate-800/80 py-3.5 px-4 sm:px-8 sticky top-0 z-40 shadow-xl">
+        <div className="max-w-3xl mx-auto flex items-center justify-between">
+          <Link
+            href="/"
+            className="text-xs sm:text-sm font-bold text-slate-300 hover:text-white flex items-center gap-2 bg-slate-900/90 px-3.5 py-2 rounded-2xl border border-slate-700/60 transition hover:border-emerald-500/60 shadow"
+          >
             <span>‹</span>
-            <span>كل المنتجات</span>
+            <span>الكتالوج</span>
           </Link>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xl">✨</span>
+            <h1 className="text-base sm:text-lg font-black text-white tracking-wide">{settings?.store_name || 'VIP Store'}</h1>
+          </div>
 
           <button
             onClick={() => { setIsCartOpen(true); setCartSuccess(false); }}
-            className="relative px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow"
+            className="relative px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 text-white rounded-2xl text-xs sm:text-sm font-black transition flex items-center gap-2 shadow-lg shadow-emerald-950/60 border border-emerald-400/30 active:scale-95"
           >
             <span>🛒</span>
-            <span>السلة</span>
+            <span className="hidden sm:inline">السلة</span>
             {totalCartCount > 0 && (
-              <span className="bg-white text-emerald-950 text-[11px] px-1.5 py-0.2 rounded-full font-black">
+              <span className="bg-white text-emerald-950 text-xs px-2 py-0.2 rounded-full font-black animate-pulse">
                 {totalCartCount}
               </span>
             )}
@@ -437,46 +526,70 @@ export default function SingleProductPage() {
         </div>
       </header>
 
-      {/* إشعار الإضافة للسلة */}
-      {addedPopup && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white px-5 py-2.5 rounded-2xl shadow-2xl font-bold text-xs sm:text-sm flex items-center gap-2 animate-bounce">
-          <span>✅</span>
-          <span>تمت إضافة المنتج إلى السلة بنجاح!</span>
-        </div>
-      )}
+      <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
 
-      <main className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 space-y-6 shadow-2xl">
+        {/* 4. كارت المنتج الأسطوري (Luxury Product Container) */}
+        <div className="relative bg-gradient-to-b from-[#0f172a] to-[#0b1324] border border-slate-800/90 rounded-[32px] p-5 sm:p-8 space-y-6 shadow-2xl backdrop-blur-sm overflow-hidden">
           
-          {/* معرض الصور مع شارة الخصم العلوية */}
+          {/* لمسة إضاءة علوية ناعمة (Glow) */}
+          <div className="absolute top-0 right-1/4 w-72 h-32 bg-emerald-500/10 blur-3xl pointer-events-none rounded-full"></div>
+
+          {/* مؤشر حي: الزوار والمخزون المتبقي */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5 bg-[#070b14]/70 p-3 rounded-2xl border border-slate-800/80 text-xs font-bold">
+            <div className="flex items-center gap-2 text-emerald-400">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              </span>
+              <span>يشاهد هذا المنتج الآن <strong className="text-white font-black">{liveVisitors}</strong> عميلاً</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-amber-400">
+              <span>🔥</span>
+              <span>متبقي في المخزن: <strong className="text-white bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/30">{stockLeft} قطع</strong> فقط</span>
+            </div>
+          </div>
+
+          {/* 5. معرض الصور التفاعلي السينمائي */}
           {galleryImages.length > 0 && (
-            <div className="space-y-3">
-              <div className="relative w-full bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[300px] max-h-[460px] p-2">
-                <img src={galleryImages[currentIndex]} alt={product.name} className="w-full h-auto max-h-[440px] object-contain mx-auto" />
-                
-                {/* شارة الخصم البارزة على الصورة */}
+            <div className="space-y-3.5">
+              <div className="relative w-full bg-[#050811] rounded-3xl overflow-hidden border border-slate-800/80 flex items-center justify-center min-h-[320px] max-h-[500px] p-3 shadow-inner group">
+                <img
+                  src={galleryImages[currentIndex]}
+                  alt={product.name}
+                  className="w-full h-auto max-h-[460px] object-contain mx-auto transition-transform duration-500 group-hover:scale-105"
+                />
+
+                {/* شارة الخصم الفاخرة المزدوجة */}
                 {hasDiscount && (
-                  <div className="absolute top-3 right-3 bg-red-600 text-white font-black px-3 py-1.5 rounded-2xl shadow-xl flex items-center gap-1 text-xs sm:text-sm animate-pulse">
-                    <span>🔥</span>
+                  <div className="absolute top-4 right-4 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white font-black px-3.5 py-1.5 rounded-2xl shadow-2xl flex items-center gap-1.5 text-xs sm:text-sm border border-red-400/40 animate-pulse">
+                    <span>⚡</span>
                     <span>خصم {discountPercent}%</span>
                   </div>
                 )}
 
+                {/* مؤشر رقم الصورة */}
                 {galleryImages.length > 1 && (
-                  <div className="absolute bottom-3 left-3 bg-slate-900/90 border border-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300">
+                  <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur border border-slate-700/60 px-3 py-1 rounded-xl text-xs font-bold text-slate-300 shadow">
                     {currentIndex + 1} / {galleryImages.length}
                   </div>
                 )}
               </div>
+
+              {/* مصغرات المعرض */}
               {galleryImages.length > 1 && (
-                <div className="flex gap-2.5 overflow-x-auto pb-1">
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
                   {galleryImages.map((img, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentIndex(idx)}
-                      className={`w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 ${currentIndex === idx ? 'border-emerald-500' : 'border-slate-800 opacity-60'}`}
+                      className={`w-20 h-20 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all duration-300 p-1 bg-[#050811] ${
+                        currentIndex === idx
+                          ? 'border-emerald-500 scale-105 shadow-lg shadow-emerald-950/60 ring-2 ring-emerald-500/20'
+                          : 'border-slate-800 opacity-60 hover:opacity-100 hover:border-slate-700'
+                      }`}
                     >
-                      <img src={img} alt="" className="w-full h-full object-cover" />
+                      <img src={img} alt="" className="w-full h-full object-cover rounded-xl" />
                     </button>
                   ))}
                 </div>
@@ -484,68 +597,68 @@ export default function SingleProductPage() {
             </div>
           )}
 
-          {/* فيديو المنتج */}
+          {/* فيديو المنتج إن وجد */}
           {product.video_url && (
-            <div className="rounded-2xl overflow-hidden border border-slate-800 bg-black">
-              <video src={product.video_url} controls className="w-full max-h-[420px] object-contain mx-auto" />
+            <div className="rounded-3xl overflow-hidden border border-slate-800 bg-black shadow-xl">
+              <video src={product.video_url} controls className="w-full max-h-[440px] object-contain mx-auto" />
             </div>
           )}
 
-          {/* اسم المنتج وقسم الأسعار ونسبة الخصم والتوفير */}
-          <div className="space-y-3">
-            <h2 className="text-2xl sm:text-3xl font-black text-white">{product.name}</h2>
-            
-            {/* كتلة الأسعار مع شارة الخصم الصريحة */}
-            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+          {/* 6. كتلة الاسم والأسعار مع حساب التوفير */}
+          <div className="space-y-4">
+            <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-wide">{product.name}</h2>
+
+            <div className="bg-gradient-to-r from-[#050811] via-[#091122] to-[#050811] p-5 rounded-3xl border border-slate-800/80 flex flex-wrap items-center justify-between gap-4 shadow-lg">
               <div className="space-y-1">
-                <span className="text-[11px] text-slate-400 block font-bold">السعر الآن لفترة محدودة:</span>
+                <span className="text-[11px] text-slate-400 block font-bold">السعر النهائي بعد التخفيض:</span>
                 <div className="flex items-baseline gap-3">
-                  <span className="text-3xl sm:text-4xl font-black text-emerald-400">{currentSellingPrice} ج.م</span>
+                  <span className="text-3xl sm:text-4xl font-black text-emerald-400 tracking-tight">{currentSellingPrice} ج.م</span>
                   {hasDiscount && (
-                    <span className="text-base sm:text-lg line-through text-slate-500 font-bold">
+                    <span className="text-base sm:text-lg line-through text-slate-500 font-bold decoration-red-500/60">
                       {originalOldPrice} ج.م
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* بطاقات الخصم والتوفير للعميل */}
               {hasDiscount && (
                 <div className="flex flex-col items-end gap-1.5">
-                  <span className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-xl shadow-lg flex items-center gap-1">
-                    <span>⚡</span>
-                    <span>خصم {discountPercent}%</span>
+                  <span className="bg-red-500/15 border border-red-500/30 text-red-400 font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-xl shadow-md">
+                    وفرت اليوم: {savedAmount} ج.م 💰
                   </span>
-                  <span className="text-[11px] text-emerald-400 font-black bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">
-                    وفرت: {savedAmount} ج.م
-                  </span>
+                  <span className="text-[11px] text-emerald-400 font-bold">شامل المعاينة قبل الاستلام</span>
                 </div>
               )}
             </div>
           </div>
 
-          {/* وصف المنتج */}
+          {/* الوصف */}
           {product.description && (
-            <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800/80 text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line">
+            <div className="p-4 sm:p-5 bg-[#050811]/90 rounded-3xl border border-slate-800/80 text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line shadow-inner">
               {product.description}
             </div>
           )}
 
-          {/* الألوان */}
+          {/* 7. خيارات الألوان بشكل أزرار فخمة متناسقة */}
           {product.show_colors && product.colors?.length > 0 && (
-            <div className="space-y-2.5 border-t border-slate-800 pt-4">
-              <span className="block text-xs sm:text-sm font-bold text-slate-300">
-                اللون: <strong className="text-emerald-400">{selectedColor}</strong>
-              </span>
-              <div className="flex flex-wrap gap-2">
+            <div className="space-y-3 border-t border-slate-800/80 pt-4">
+              <div className="flex items-center justify-between text-xs sm:text-sm font-bold">
+                <span className="text-slate-300">اختر اللون المفضل:</span>
+                <span className="text-emerald-400 font-black">{selectedColor}</span>
+              </div>
+              <div className="flex flex-wrap gap-2.5">
                 {product.colors.map((c, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => setSelectedColor(c.name)}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-bold transition ${selectedColor === c.name ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border-slate-800 bg-slate-950 text-slate-400'}`}
+                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black transition-all active:scale-95 ${
+                      selectedColor === c.name
+                        ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-lg shadow-emerald-950/50 ring-2 ring-emerald-500/30'
+                        : 'border-slate-800 bg-[#050811] text-slate-400 hover:border-slate-700 hover:text-white'
+                    }`}
                   >
-                    <span className="w-3.5 h-3.5 rounded-full border border-slate-700" style={{ backgroundColor: c.code }}></span>
+                    <span className="w-4 h-4 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: c.code }}></span>
                     <span>{c.name}</span>
                   </button>
                 ))}
@@ -553,19 +666,24 @@ export default function SingleProductPage() {
             </div>
           )}
 
-          {/* المقاسات */}
+          {/* 8. خيارات المقاسات */}
           {product.show_sizes && product.sizes?.length > 0 && (
-            <div className="space-y-2.5 border-t border-slate-800 pt-4">
-              <span className="block text-xs sm:text-sm font-bold text-slate-300">
-                المقاس: <strong className="text-emerald-400">{selectedSize}</strong>
-              </span>
-              <div className="flex flex-wrap gap-2">
+            <div className="space-y-3 border-t border-slate-800/80 pt-4">
+              <div className="flex items-center justify-between text-xs sm:text-sm font-bold">
+                <span className="text-slate-300">اختر المقاس المناسب:</span>
+                <span className="text-emerald-400 font-black">{selectedSize}</span>
+              </div>
+              <div className="flex flex-wrap gap-2.5">
                 {product.sizes.map((s, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => setSelectedSize(s)}
-                    className={`min-w-[48px] px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-black transition ${selectedSize === s ? 'border-emerald-500 bg-emerald-600 text-white' : 'border-slate-800 bg-slate-950 text-slate-400'}`}
+                    className={`min-w-[54px] px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black transition-all active:scale-95 ${
+                      selectedSize === s
+                        ? 'border-emerald-500 bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-950/50 ring-2 ring-emerald-500/30'
+                        : 'border-slate-800 bg-[#050811] text-slate-400 hover:border-slate-700 hover:text-white'
+                    }`}
                   >
                     {s}
                   </button>
@@ -574,99 +692,134 @@ export default function SingleProductPage() {
             </div>
           )}
 
-          {/* الكمية */}
-          <div className="flex items-center justify-between border-t border-slate-800 pt-4">
+          {/* 9. عداد الكمية */}
+          <div className="flex items-center justify-between border-t border-slate-800/80 pt-4">
             <span className="text-xs sm:text-sm font-bold text-slate-300">الكمية المطلوبة:</span>
-            <div className="flex items-center gap-3 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
+            <div className="flex items-center gap-4 bg-[#050811] border border-slate-800 px-3.5 py-1.5 rounded-2xl">
               <button
                 type="button"
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black"
+                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-base flex items-center justify-center transition active:scale-90"
               >
                 −
               </button>
-              <span className="text-sm font-black text-white w-6 text-center">{quantity}</span>
+              <span className="text-base font-black text-white w-6 text-center">{quantity}</span>
               <button
                 type="button"
                 onClick={() => setQuantity((q) => q + 1)}
-                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black"
+                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-base flex items-center justify-center transition active:scale-90"
               >
                 +
               </button>
             </div>
           </div>
 
-          {/* زر اطلب الآن وزر أضف للسلة جنباً إلى جنب */}
-          <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-800">
+          {/* 10. الأزرار الخارقة (Super Buttons مع Shimmer والبارتكلز) */}
+          <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5 border-t border-slate-800/80">
+            {/* زر اطلب الآن مع وميض ضوئي فخم */}
             <button
               type="button"
               onClick={scrollToCheckout}
-              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-base sm:text-lg rounded-2xl shadow-xl shadow-emerald-950/40 transition active:scale-[0.99] flex items-center justify-center gap-2"
+              className="relative overflow-hidden w-full py-4 sm:py-4.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 hover:brightness-110 text-white font-black text-base sm:text-lg rounded-2xl shadow-2xl shadow-emerald-950/60 transition-all duration-300 active:scale-95 flex items-center justify-center gap-2.5 border border-emerald-300/30 group"
             >
-              <span>⚡</span>
+              {/* شريط الإضاءة المار فوق الزر */}
+              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></span>
+              <span className="text-xl animate-pulse">⚡</span>
               <span>اطلب الآن - الدفع عند الاستلام</span>
             </button>
 
+            {/* زر أضف إلى السلة مع انطلاق الإيموجيز */}
             <button
               type="button"
               onClick={handleAddToCart}
-              className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-base sm:text-lg rounded-2xl border border-slate-700 transition active:scale-[0.99] flex items-center justify-center gap-2 shadow-lg"
+              className="relative w-full py-4 sm:py-4.5 bg-gradient-to-r from-slate-900 to-[#0f172a] hover:from-slate-800 hover:to-slate-900 text-white font-black text-base sm:text-lg rounded-2xl border border-slate-700/80 hover:border-emerald-500/60 transition-all duration-300 active:scale-95 flex items-center justify-center gap-2.5 shadow-xl shadow-black/50"
             >
-              <span>🛒</span>
+              <span className="text-xl">🛒</span>
               <span>أضف إلى السلة</span>
             </button>
           </div>
+
+          {/* 11. شارات الثقة الفارهة (Luxury Guarantee Badges) */}
+          <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-slate-800/80 text-center">
+            <div className="bg-[#050811] p-3 rounded-2xl border border-slate-800/60 space-y-1">
+              <span className="text-xl block">🛡️</span>
+              <span className="text-[11px] font-bold text-slate-300 block">معاينة قبل الاستلام</span>
+              <span className="text-[9px] text-slate-500 block">افحص منتجك بيدك</span>
+            </div>
+
+            <div className="bg-[#050811] p-3 rounded-2xl border border-slate-800/60 space-y-1">
+              <span className="text-xl block">🔄</span>
+              <span className="text-[11px] font-bold text-slate-300 block">ضمان استبدال 14 يوم</span>
+              <span className="text-[9px] text-slate-500 block">استبدال سهل وسريع</span>
+            </div>
+
+            <div className="bg-[#050811] p-3 rounded-2xl border border-slate-800/60 space-y-1">
+              <span className="text-xl block">⚡</span>
+              <span className="text-[11px] font-bold text-slate-300 block">شحن فوري سريع</span>
+              <span className="text-[9px] text-slate-500 block">خلال 24 - 48 ساعة</span>
+            </div>
+          </div>
+
         </div>
 
-        {/* نموذج الشراء المباشر */}
-        <div id="checkout-form" className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl scroll-mt-20">
-          <div className="text-center mb-6">
+        {/* 12. نموذج إدخال بيانات الطلب (High-Conversion Checkout Card) */}
+        <div id="checkout-form" className="bg-gradient-to-b from-[#0f172a] to-[#0b1324] border border-slate-800/90 rounded-[32px] p-5 sm:p-8 shadow-2xl scroll-mt-20 space-y-6">
+          <div className="text-center space-y-1.5">
+            <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-inner">
+              📝
+            </div>
             <h3 className="text-xl sm:text-2xl font-black text-white">بيانات توصيل الطلب</h3>
-            <p className="text-xs text-slate-400 mt-1">الدفع نقداً بعد استلام وفحص الشحنة</p>
+            <p className="text-xs text-slate-400">ادخل بياناتك وسيتم شحن طلبك والتواصل معك فوراً</p>
           </div>
 
           {success ? (
-            <div className="p-6 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-2xl text-center space-y-3">
-              <p className="text-3xl font-black">🎉 تم تأكيد طلبك بنجاح!</p>
-              <p className="text-sm text-slate-300">سيتواصل معك فريق خدمة العملاء هاتفياً لتأكيد الشحن والتسليم.</p>
-              <Link href="/" className="inline-block mt-3 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold">
-                متابعة التسوق في المتجر
+            <div className="p-8 bg-gradient-to-b from-emerald-950/40 to-slate-900 border border-emerald-500/40 text-emerald-300 rounded-3xl text-center space-y-4 shadow-2xl animate-fade-in">
+              <span className="text-6xl block animate-bounce">🎉</span>
+              <p className="text-2xl sm:text-3xl font-black text-white">تم تأكيد طلبك بنجاح!</p>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
+                شكراً لثقتك بنا! يقوم فريق الدعم بتجهيز شحنتك وسنتصل بك هاتفياً لتأكيد موعد التسليم.
+              </p>
+              <Link
+                href="/"
+                className="inline-block mt-4 px-7 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black rounded-2xl text-xs sm:text-sm shadow-xl hover:brightness-110 transition"
+              >
+                متابعة تصفح باقي المنتجات 🛍️
               </Link>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">الاسم بالكامل</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">الاسم بالكامل *</label>
                 <input
                   type="text"
                   required
                   placeholder="محمد أحمد علي"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm"
+                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm transition"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">رقم الهاتف (الواتساب)</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">رقم الهاتف (الواتساب) للتأكيد *</label>
                 <input
                   type="tel"
                   required
                   placeholder="01xxxxxxxxx"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm"
+                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm font-mono transition"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1.5">المحافظة</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">المحافظة *</label>
                   <select
                     required
                     value={selectedGovernorate}
                     onChange={(e) => handleGovernorateChange(e.target.value)}
-                    className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 cursor-pointer"
+                    className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 cursor-pointer"
                   >
                     <option value="">اختر المحافظة...</option>
                     {Object.keys(EGYPT_REGIONS).map((gov) => (
@@ -676,13 +829,13 @@ export default function SingleProductPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1.5">المركز / المدينة</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">المركز / المدينة *</label>
                   <select
                     required
                     disabled={!selectedGovernorate}
                     value={selectedCity}
                     onChange={(e) => setSelectedCity(e.target.value)}
-                    className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 cursor-pointer disabled:opacity-50"
+                    className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 cursor-pointer disabled:opacity-40"
                   >
                     <option value="">اختر المركز...</option>
                     {selectedGovernorate &&
@@ -695,48 +848,51 @@ export default function SingleProductPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">العنوان بالتفصيل</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">العنوان بالتفصيل (الشارع وعلامة مميزة) *</label>
                 <textarea
                   required
                   rows="2"
-                  placeholder="اسم الشارع، رقم العمارة، أو علامة مميزة..."
+                  placeholder="اسم الشارع، رقم العمارة، الشقة، علامة بجوارك..."
                   value={formData.detailedAddress}
                   onChange={(e) => setFormData({ ...formData, detailedAddress: e.target.value })}
-                  className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm"
+                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm transition"
                 ></textarea>
               </div>
 
-              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs sm:text-sm">
+              {/* ملخص الفاتورة الشفاف */}
+              <div className="bg-[#050811] p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between text-slate-400">
                   <span>سعر المنتج ({quantity} قطعة):</span>
                   <span className="font-bold text-white">{currentSellingPrice * quantity} ج.م</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
-                  <span>الشحن ({selectedGovernorate || 'حدد المحافظة'}):</span>
+                  <span>مصاريف الشحن ({selectedGovernorate || 'حدد المحافظة'}):</span>
                   <span className="font-bold text-emerald-400">{currentShippingFee} ج.م</span>
                 </div>
-                <div className="border-t border-slate-800 pt-2 flex justify-between font-black text-sm sm:text-base">
-                  <span className="text-white">المبلغ عند الاستلام:</span>
-                  <span className="text-emerald-400 text-xl">{(currentSellingPrice * quantity) + currentShippingFee} ج.م</span>
+                <div className="border-t border-slate-800 pt-2.5 flex justify-between font-black text-sm sm:text-base">
+                  <span className="text-white">المبلغ النهائي عند الاستلام:</span>
+                  <span className="text-emerald-400 text-xl font-black">
+                    {(currentSellingPrice * quantity) + currentShippingFee} ج.م
+                  </span>
                 </div>
               </div>
 
               <button
                 type="submit"
                 disabled={orderLoading}
-                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg rounded-2xl shadow-xl transition disabled:opacity-50"
+                className="w-full py-4.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:brightness-110 text-white font-black text-lg rounded-2xl shadow-2xl shadow-emerald-950/60 transition-all duration-300 active:scale-95 disabled:opacity-50 border border-emerald-400/30"
               >
-                {orderLoading ? 'جاري تأكيد الطلب...' : 'تأكيد الطلب والدفع عند الاستلام 🚚'}
+                {orderLoading ? 'جاري تسجيل طلبك الفاخر...' : 'تأكيد الطلب والدفع عند الاستلام 🚚'}
               </button>
             </form>
           )}
         </div>
       </main>
 
-      {/* دراوَر السلة الجانبي */}
+      {/* 13. دراوَر السلة الجانبي المنبثق الفاخر (VIP Cart Drawer) */}
       {isCartOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end">
-          <div className="w-full max-w-md h-full bg-slate-900 border-r border-slate-800 flex flex-col p-6 shadow-2xl overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex justify-end">
+          <div className="w-full max-w-md h-full bg-[#0b1324] border-r border-slate-800 flex flex-col p-6 shadow-2xl overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">🛒</span>
@@ -744,40 +900,40 @@ export default function SingleProductPage() {
               </div>
               <button
                 onClick={() => setIsCartOpen(false)}
-                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold"
+                className="w-9 h-9 rounded-2xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold transition"
               >
                 ✕
               </button>
             </div>
 
             {cartSuccess ? (
-              <div className="p-6 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl text-center space-y-2 mt-6">
-                <p className="text-2xl font-black">🎉 تم تأكيد طلب السلة بنجاح!</p>
-                <p className="text-xs text-slate-300">سيتواصل معك فريق خدمة العملاء لتأكيد الشحن.</p>
+              <div className="p-8 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-3xl text-center space-y-3 mt-6">
+                <p className="text-3xl font-black">🎉 تم تأكيد طلب السلة!</p>
+                <p className="text-xs text-slate-300">سيتواصل معك فريق خدمة العملاء لتأكيد الشحن والتسليم.</p>
                 <button
                   onClick={() => setIsCartOpen(false)}
-                  className="mt-4 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold"
+                  className="mt-4 px-6 py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-lg"
                 >
-                  إغلاق
+                  إغلاق السلة
                 </button>
               </div>
             ) : (
               <>
                 <div className="flex-1 py-4 space-y-3">
                   {cart.length === 0 ? (
-                    <div className="py-16 text-center text-slate-500 font-bold space-y-2">
-                      <span className="text-4xl block">🛍️</span>
-                      <p>السلة فارغة حالياً</p>
+                    <div className="py-20 text-center text-slate-500 font-bold space-y-3">
+                      <span className="text-5xl block animate-bounce">🛍️</span>
+                      <p className="text-sm">سلتك فارغة، أضف منتجاتك المفضلة الآن</p>
                     </div>
                   ) : (
                     cart.map((item) => (
-                      <div key={item.id} className="flex gap-3 bg-slate-950 p-3 rounded-2xl border border-slate-800 items-center">
+                      <div key={item.id} className="flex gap-3 bg-[#050811] p-3.5 rounded-2xl border border-slate-800/80 items-center">
                         {item.image && (
-                          <img src={item.image} alt={item.name} className="w-14 h-14 object-cover rounded-xl border border-slate-800" />
+                          <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-xl border border-slate-800" />
                         )}
                         <div className="flex-1">
-                          <h4 className="font-bold text-xs text-white line-clamp-1">{item.name}</h4>
-                          <p className="text-emerald-400 font-black text-xs mt-0.5">{item.price} ج.م</p>
+                          <h4 className="font-bold text-xs sm:text-sm text-white line-clamp-1">{item.name}</h4>
+                          <p className="text-emerald-400 font-black text-xs mt-1">{item.price} ج.م</p>
                           {(item.color || item.size) && (
                             <span className="text-[10px] text-slate-400 block mt-0.5">
                               {item.color && `لون: ${item.color} `}
@@ -786,14 +942,14 @@ export default function SingleProductPage() {
                           )}
                         </div>
 
-                        <div className="flex flex-col items-end gap-1.5">
-                          <button onClick={() => removeCartItem(item.id)} className="text-red-400 hover:text-red-300 text-[11px] font-bold">
+                        <div className="flex flex-col items-end gap-2">
+                          <button onClick={() => removeCartItem(item.id)} className="text-red-400 hover:text-red-300 text-xs font-bold">
                             حذف
                           </button>
                           <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 px-2 py-0.5 rounded-lg">
-                            <button onClick={() => updateCartQty(item.id, -1)} className="text-white font-bold px-1">−</button>
+                            <button onClick={() => updateCartQty(item.id, -1)} className="text-white font-bold px-1.5">−</button>
                             <span className="text-xs font-black text-emerald-400">{item.quantity}</span>
-                            <button onClick={() => updateCartQty(item.id, 1)} className="text-white font-bold px-1">+</button>
+                            <button onClick={() => updateCartQty(item.id, 1)} className="text-white font-bold px-1.5">+</button>
                           </div>
                         </div>
                       </div>
@@ -812,7 +968,7 @@ export default function SingleProductPage() {
                         <span>الشحن ({cartGov || 'حدد المحافظة'}):</span>
                         <span className="text-emerald-400 font-bold">{cartShippingFee} ج.م</span>
                       </div>
-                      <div className="flex justify-between text-sm font-black border-t border-slate-800 pt-1.5">
+                      <div className="flex justify-between text-sm font-black border-t border-slate-800 pt-2">
                         <span className="text-white">الإجمالي النهائي:</span>
                         <span className="text-emerald-400 text-base">{cartSubtotal + cartShippingFee} ج.م</span>
                       </div>
@@ -825,7 +981,7 @@ export default function SingleProductPage() {
                         placeholder="الاسم بالكامل"
                         value={cartForm.name}
                         onChange={(e) => setCartForm({ ...cartForm, name: e.target.value })}
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
                       />
                       <input
                         type="tel"
@@ -833,14 +989,14 @@ export default function SingleProductPage() {
                         placeholder="رقم الهاتف"
                         value={cartForm.phone}
                         onChange={(e) => setCartForm({ ...cartForm, phone: e.target.value })}
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <select
                           required
                           value={cartGov}
                           onChange={(e) => handleCartGovChange(e.target.value)}
-                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none"
+                          className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none"
                         >
                           <option value="">المحافظة...</option>
                           {Object.keys(EGYPT_REGIONS).map((g) => (
@@ -852,7 +1008,7 @@ export default function SingleProductPage() {
                           disabled={!cartGov}
                           value={cartCity}
                           onChange={(e) => setCartCity(e.target.value)}
-                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none disabled:opacity-50"
+                          className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none disabled:opacity-40"
                         >
                           <option value="">المركز...</option>
                           {cartGov &&
@@ -868,13 +1024,13 @@ export default function SingleProductPage() {
                         placeholder="العنوان بالتفصيل"
                         value={cartForm.detailedAddress}
                         onChange={(e) => setCartForm({ ...cartForm, detailedAddress: e.target.value })}
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full p-3 bg-[#050811] border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
                       ></textarea>
 
                       <button
                         type="submit"
                         disabled={cartOrderLoading}
-                        className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 font-black text-white text-sm rounded-xl transition shadow-lg disabled:opacity-50"
+                        className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 font-black text-white text-sm rounded-xl transition shadow-xl"
                       >
                         {cartOrderLoading ? 'جاري تأكيد الطلب...' : 'تأكيد طلب السلة 🚚'}
                       </button>
@@ -887,19 +1043,23 @@ export default function SingleProductPage() {
         </div>
       )}
 
-      {/* زر السلة العائم */}
-      <button
-        onClick={() => { setIsCartOpen(true); setCartSuccess(false); }}
-        className="fixed bottom-5 left-5 z-40 bg-emerald-600 hover:bg-emerald-500 text-white p-3.5 rounded-full shadow-2xl flex items-center justify-center transition active:scale-95 border-2 border-emerald-400/40"
-        title="فتح سلة المشتريات"
-      >
-        <span className="text-xl">🛒</span>
-        {totalCartCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow">
-            {totalCartCount}
-          </span>
-        )}
-      </button>
+      {/* 14. الشريط السفلي اللاصق الفاخر للموبايل (Sticky Bottom Mobile Action Bar) */}
+      <div className="fixed bottom-0 inset-x-0 z-40 bg-[#0b1324]/90 backdrop-blur-xl border-t border-slate-800 p-3 sm:hidden shadow-2xl flex items-center gap-2.5">
+        <button
+          onClick={scrollToCheckout}
+          className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm rounded-xl shadow-lg flex items-center justify-center gap-1.5 active:scale-95"
+        >
+          <span>⚡</span>
+          <span>اطلب الآن ({currentSellingPrice} ج.م)</span>
+        </button>
+
+        <button
+          onClick={handleAddToCart}
+          className="px-4 py-3 bg-slate-800 text-white rounded-xl font-black text-sm border border-slate-700 flex items-center justify-center active:scale-95"
+        >
+          <span>🛒</span>
+        </button>
+      </div>
 
     </div>
   );
