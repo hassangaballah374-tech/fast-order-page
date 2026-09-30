@@ -3,7 +3,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
 export default function AdminPage() {
-  const [activeView, setActiveView] = useState('cart');
+  // جعل الواجهة الافتراضية عند تحديث الداشبورد هي المنتجات والمخزون ('products')
+  const [activeView, setActiveView] = useState('products');
   const [loading, setLoading] = useState(true);
 
   const [settings, setSettings] = useState({
@@ -311,11 +312,10 @@ export default function AdminPage() {
     setSavingProduct(false);
   };
 
-  // حساب الإحصائيات (المبيعات، التكاليف، الأرباح، الطلبات)
+  // حساب الإحصائيات
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
 
-  // حساب إجمالي التكاليف بناءً على سعر تكلفة المنتجات المرتبطة بالطلبات
   let totalCost = 0;
   orders.forEach((o) => {
     const matchedProduct = products.find((p) => o.product_name && o.product_name.includes(p.name));
@@ -351,18 +351,7 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
-            <button
-              onClick={() => setActiveView('cart')}
-              className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
-                activeView === 'cart' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <span>🛒 السلة</span>
-              <span className="bg-slate-900 text-emerald-400 text-xs px-2 py-0.5 rounded-full font-black">
-                {orders.length}
-              </span>
-            </button>
-
+            {/* زر المنتجات أصبح الأول والافتراضي */}
             <button
               onClick={() => setActiveView('products')}
               className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
@@ -372,6 +361,18 @@ export default function AdminPage() {
               <span>🛍️ المنتجات والمخزون</span>
               <span className="bg-slate-900 text-emerald-400 text-xs px-2 py-0.5 rounded-full font-black">
                 {products.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveView('cart')}
+              className={`px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 ${
+                activeView === 'cart' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>🛒 السلة والطلبات</span>
+              <span className="bg-slate-900 text-emerald-400 text-xs px-2 py-0.5 rounded-full font-black">
+                {orders.length}
               </span>
             </button>
 
@@ -389,78 +390,7 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
 
-        {/* 1. تبويب السلة والطلبات والإحصائيات */}
-        {activeView === 'cart' && (
-          <div className="space-y-6">
-            
-            {/* بطاقات الإحصائيات (المبيعات، التكاليف، الأرباح، الطلبات، المتوسط) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              
-              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-                <div className="text-slate-400 text-xs font-bold">إجمالي المبيعات</div>
-                <div className="text-2xl sm:text-3xl font-black text-emerald-400">{totalRevenue.toLocaleString()} ج.م</div>
-              </div>
-
-              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-                <div className="text-slate-400 text-xs font-bold">إجمالي التكاليف</div>
-                <div className="text-2xl sm:text-3xl font-black text-amber-400">{totalCost.toLocaleString()} ج.م</div>
-              </div>
-
-              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-                <div className="text-slate-400 text-xs font-bold">إجمالي الربح الصافي</div>
-                <div className="text-2xl sm:text-3xl font-black text-teal-400">{totalProfit.toLocaleString()} ج.م</div>
-              </div>
-
-              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-                <div className="text-slate-400 text-xs font-bold">عدد الطلبات</div>
-                <div className="text-2xl sm:text-3xl font-black text-white">{totalOrdersCount} طلب</div>
-              </div>
-
-              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
-                <div className="text-slate-400 text-xs font-bold">متوسط الطلب</div>
-                <div className="text-2xl sm:text-3xl font-black text-sky-400">{avgOrderValue.toLocaleString()} ج.م</div>
-              </div>
-
-            </div>
-
-            <div className="space-y-4 pt-2">
-              <h3 className="text-lg font-black text-white">قائمة الطلبات الواردة</h3>
-              {filteredOrders.map((order, idx) => (
-                <div key={order.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
-                  <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-                    <span className="font-black text-white">طلب #{idx + 1} - {order.customer_name}</span>
-                    <select
-                      value={order.status || 'جديد'}
-                      onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                      className="bg-slate-950 border border-slate-700 text-xs font-bold text-emerald-400 p-1.5 rounded-xl"
-                    >
-                      <option value="جديد">جديد</option>
-                      <option value="قيد الانتظار">قيد الانتظار</option>
-                      <option value="تم التأكيد">تم التأكيد</option>
-                      <option value="تم الشحن">تم الشحن</option>
-                      <option value="تم التسليم">تم التسليم</option>
-                      <option value="مرتجع">مرتجع</option>
-                      <option value="ملغي">ملغي</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                    <div>الهاتف: <strong className="text-white" dir="ltr">{order.phone}</strong></div>
-                    <div>العنوان: <strong className="text-white">{order.governorate} - {order.address}</strong></div>
-                    <div>الإجمالي: <strong className="text-emerald-400">{order.total_amount || order.total_price} ج.م</strong></div>
-                  </div>
-                  <div className="flex justify-between items-center pt-2">
-                    <span className="text-xs text-slate-400">{order.product_name}</span>
-                    <button onClick={() => handleDeleteOrder(order.id)} className="text-red-400 hover:text-red-300 text-xs font-bold">
-                      حذف
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 2. تبويب المنتجات والمخزون */}
+        {/* 1. تبويب المنتجات والمخزون (الصفحة الرئيسية الافتراضية) */}
         {activeView === 'products' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 p-5 rounded-3xl border border-slate-800">
@@ -563,6 +493,75 @@ export default function AdminPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* 2. تبويب السلة والطلبات والإحصائيات */}
+        {activeView === 'cart' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              
+              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
+                <div className="text-slate-400 text-xs font-bold">إجمالي المبيعات</div>
+                <div className="text-2xl sm:text-3xl font-black text-emerald-400">{totalRevenue.toLocaleString()} ج.م</div>
+              </div>
+
+              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
+                <div className="text-slate-400 text-xs font-bold">إجمالي التكاليف</div>
+                <div className="text-2xl sm:text-3xl font-black text-amber-400">{totalCost.toLocaleString()} ج.م</div>
+              </div>
+
+              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
+                <div className="text-slate-400 text-xs font-bold">إجمالي الربح الصافي</div>
+                <div className="text-2xl sm:text-3xl font-black text-teal-400">{totalProfit.toLocaleString()} ج.م</div>
+              </div>
+
+              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
+                <div className="text-slate-400 text-xs font-bold">عدد الطلبات</div>
+                <div className="text-2xl sm:text-3xl font-black text-white">{totalOrdersCount} طلب</div>
+              </div>
+
+              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
+                <div className="text-slate-400 text-xs font-bold">متوسط الطلب</div>
+                <div className="text-2xl sm:text-3xl font-black text-sky-400">{avgOrderValue.toLocaleString()} ج.م</div>
+              </div>
+
+            </div>
+
+            <div className="space-y-4 pt-2">
+              <h3 className="text-lg font-black text-white">قائمة الطلبات الواردة</h3>
+              {filteredOrders.map((order, idx) => (
+                <div key={order.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <span className="font-black text-white">طلب #{idx + 1} - {order.customer_name}</span>
+                    <select
+                      value={order.status || 'جديد'}
+                      onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                      className="bg-slate-950 border border-slate-700 text-xs font-bold text-emerald-400 p-1.5 rounded-xl"
+                    >
+                      <option value="جديد">جديد</option>
+                      <option value="قيد الانتظار">قيد الانتظار</option>
+                      <option value="تم التأكيد">تم التأكيد</option>
+                      <option value="تم الشحن">تم الشحن</option>
+                      <option value="تم التسليم">تم التسليم</option>
+                      <option value="مرتجع">مرتجع</option>
+                      <option value="ملغي">ملغي</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                    <div>الهاتف: <strong className="text-white" dir="ltr">{order.phone}</strong></div>
+                    <div>العنوان: <strong className="text-white">{order.governorate} - {order.address}</strong></div>
+                    <div>الإجمالي: <strong className="text-emerald-400">{order.total_amount || order.total_price} ج.م</strong></div>
+                  </div>
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-xs text-slate-400">{order.product_name}</span>
+                    <button onClick={() => handleDeleteOrder(order.id)} className="text-red-400 hover:text-red-300 text-xs font-bold">
+                      حذف
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
