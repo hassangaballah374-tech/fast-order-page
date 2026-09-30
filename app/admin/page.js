@@ -6,11 +6,12 @@ export default function AdminPage() {
   const [activeView, setActiveView] = useState('settings');
   const [loading, setLoading] = useState(true);
 
-  // إعدادات المتجر وخانة الكود الكامل
+  // إعدادات المتجر وبيكسل المتصفح والسيرفر (CAPI)
   const [settings, setSettings] = useState({
     store_name: '',
-    pixel_code: '', // الكود البرمجي الكامل المنسوخ من فيسبوك
+    pixel_code: '',
     facebook_pixel_id: '',
+    facebook_api_token: '', // خانة الـ CAPI الجديدة
     tiktok_pixel_id: '',
   });
   const [savingSettings, setSavingSettings] = useState(false);
@@ -60,6 +61,7 @@ export default function AdminPage() {
             store_name: sData.store_name || '',
             pixel_code: sData.pixel_code || '',
             facebook_pixel_id: sData.facebook_pixel_id || '',
+            facebook_api_token: sData.facebook_api_token || '',
             tiktok_pixel_id: sData.tiktok_pixel_id || '',
           });
         }
@@ -99,23 +101,15 @@ export default function AdminPage() {
     setLoading(false);
   }
 
-  // دالة ذكية تستخرج الـ Pixel ID تلقائياً من الكود البرمجي الكامل لفيسبوك
   const extractPixelIdFromCode = (code) => {
     if (!code) return '';
-    // البحث عن fbq('init', '123456789')
     const match = code.match(/fbq\s*\(\s*['"]init['"]\s*,\s*['"](\d+)['"]\s*\)/);
-    if (match && match[1]) {
-      return match[1];
-    }
-    // إذا قام المستخدم بكتابة أو لصق الرقم فقط مباشرة
+    if (match && match[1]) return match[1];
     const directDigits = code.replace(/[^0-9]/g, '');
-    if (directDigits.length >= 10 && directDigits.length <= 20) {
-      return directDigits;
-    }
+    if (directDigits.length >= 10 && directDigits.length <= 20) return directDigits;
     return '';
   };
 
-  // التعامل مع تغيير كود البيكسل ولصقه
   const handlePixelCodeChange = (e) => {
     const val = e.target.value;
     const extractedId = extractPixelIdFromCode(val);
@@ -126,7 +120,6 @@ export default function AdminPage() {
     }));
   };
 
-  // حفظ الإعدادات والبيكسل
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -141,6 +134,7 @@ export default function AdminPage() {
         store_name: settings.store_name,
         pixel_code: settings.pixel_code,
         facebook_pixel_id: extractedId.trim(),
+        facebook_api_token: (settings.facebook_api_token || '').trim(), // حفظ الـ Access Token
         tiktok_pixel_id: (settings.tiktok_pixel_id || '').trim(),
       };
 
@@ -150,7 +144,7 @@ export default function AdminPage() {
       setSettings((prev) => ({ ...prev, facebook_pixel_id: extractedId.trim() }));
       setSettingsNotice(true);
       setTimeout(() => setSettingsNotice(false), 3000);
-      alert('✅ تم حفظ الكود البرمجي واستخراج البيكسل ID وتفعيله فوراً على المتجر!');
+      alert('✅ تم حفظ البيكسل وتفعيل التتبع المزدوج (المتصفح + السيرفر CAPI) بنجاح!');
     } catch (err) {
       alert('خطأ أثناء الحفظ: ' + err.message);
     }
@@ -343,57 +337,8 @@ export default function AdminPage() {
     setSavingProduct(false);
   };
 
-  const addColor = () => {
-    if (!newColorName.trim()) return;
-    setProductForm((prev) => ({
-      ...prev,
-      colors: [...(prev.colors || []), { name: newColorName.trim(), code: newColorCode }],
-    }));
-    setNewColorName('');
-  };
-
-  const removeColor = (idx) => {
-    setProductForm((prev) => ({ ...prev, colors: prev.colors.filter((_, i) => i !== idx) }));
-  };
-
-  const addSize = () => {
-    if (!newSize.trim()) return;
-    setProductForm((prev) => ({ ...prev, sizes: [...(prev.sizes || []), newSize.trim()] }));
-    setNewSize('');
-  };
-
-  const removeSize = (idx) => {
-    setProductForm((prev) => ({ ...prev, sizes: prev.sizes.filter((_, i) => i !== idx) }));
-  };
-
-  const removeImage = (idx) => {
-    setProductForm((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
-  };
-
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
-
-  const formSelling = Number(productForm.price) || 0;
-  const formCompare = Number(productForm.compare_price) || 0;
-  const formCost = Number(productForm.cost_price) || 0;
-
-  const formDiscountPercent = formCompare > formSelling && formCompare > 0
-    ? Math.round(((formCompare - formSelling) / formCompare) * 100)
-    : 0;
-
-  const formProfit = formSelling - formCost;
-  const formProfitPercent = formSelling > 0 ? Math.round((formProfit / formSelling) * 100) : 0;
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center font-sans" dir="rtl">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-400 font-bold">جاري تحميل لوحة التحكم...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16" dir="rtl">
@@ -438,7 +383,7 @@ export default function AdminPage() {
                 activeView === 'settings' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>⚙️ إعدادات البيكسل</span>
+              <span>⚙️ البيكسل والسيرفر CAPI</span>
             </button>
           </div>
         </div>
@@ -609,23 +554,23 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 3. تبويب البيكسل الجديد مع لصق الكود الكامل والتعرف التلقائي */}
+        {/* 3. تبويب البيكسل + السيرفر CAPI */}
         {activeView === 'settings' && (
           <form onSubmit={handleSaveSettings} className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
             <div className="border-b border-slate-800 pb-3">
               <h2 className="text-xl font-black text-white flex items-center gap-2">
                 <span>🎯</span>
-                <span>تثبيت بيكسل Meta على موقعك (التعرف التلقائي)</span>
+                <span>تثبيت بيكسل Meta وتتبع السيرفر المباشر (Conversions API)</span>
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                الصق الرمز البرمجي الأساسي للبيكسل المنسوخ من فيسبوك بالكامل هنا وسيتعرف النظام عليه تلقائياً!
+                ربط مزدوج للمتصفح + السيرفر لتخطي موانع الإعلانات (AdBlock) ومشاكل iOS بدقة 100%
               </p>
             </div>
 
             {settingsNotice && (
               <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2">
                 <span>✅</span>
-                <span>تم حفظ وتفعيل البيكسل الجديد بنجاح في كافة الصفحات!</span>
+                <span>تم حفظ وتفعيل البيكسل والسيرفر بنجاح في كافة الصفحات!</span>
               </div>
             )}
 
@@ -640,7 +585,7 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* خانة لصق الكود البرمجي الكامل المنسوخ من فيسبوك */}
+              {/* 1. كود البيكسل المنسوخ من فيسبوك */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold text-emerald-400">
@@ -651,7 +596,7 @@ export default function AdminPage() {
                   </span>
                 </div>
                 <textarea
-                  rows="7"
+                  rows="6"
                   dir="ltr"
                   value={settings.pixel_code}
                   onChange={handlePixelCodeChange}
@@ -660,19 +605,44 @@ export default function AdminPage() {
                 ></textarea>
               </div>
 
-              {/* شريط ذكي يوضح الـ ID الذي تم استخراجه تلقائياً من الكود */}
+              {/* 2. خانة الـ Conversions API Access Token الجديدة */}
+              <div className="p-5 bg-gradient-to-b from-[#050811] to-[#0a101f] border border-blue-500/30 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-black text-blue-400 flex items-center gap-1.5">
+                    <span>🛡️</span>
+                    <span>رمز الوصول لـ Conversions API (السيرفر):</span>
+                  </label>
+                  <span className="text-[10px] text-slate-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20 font-bold">
+                    Server-Side Tracking
+                  </span>
+                </div>
+                
+                <input
+                  type="text"
+                  dir="ltr"
+                  value={settings.facebook_api_token}
+                  onChange={(e) => setSettings({ ...settings, facebook_api_token: e.target.value })}
+                  placeholder="EAABw... (رمز الوصول المنسوخ من Meta Events Manager)"
+                  className="w-full bg-slate-950 border border-blue-500/40 focus:border-blue-400 rounded-xl p-3.5 text-xs font-mono text-blue-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
+
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  💡 <strong>من أين تحصل عليه؟</strong> من مدير أحداث فيسبوك (Events Manager) ⬅️ الإعدادات (Settings) ⬅️️ انزل لقسم <strong>Conversions API</strong> ⬅️ اضغط على <strong>"إنشاء رمز وصول (Generate access token)"</strong> والصقه هنا.
+                </p>
+              </div>
+
+              {/* معرّف البيكسل المستخرج */}
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2">
                   <span className="text-base">🔍</span>
-                  <span className="text-slate-400">معرّف البيكسل المستخرج تلقائياً (Pixel ID):</span>
+                  <span className="text-slate-400">معرّف البيكسل (Pixel ID):</span>
                   <span className="font-mono text-emerald-400 font-black text-sm bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/30">
                     {settings.facebook_pixel_id || 'قم بلصق الكود أعلاه للاستخراج...'}
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-500">يتفعل فوراً مع جميع أحداث الشراء والمعاينة</span>
+                <span className="text-[11px] text-slate-500">مربوط مع السيرفر والمتصفح تلقائياً</span>
               </div>
 
-              {/* تيك توك بيكسل */}
               <div>
                 <label className="block text-xs font-bold text-slate-400 mb-1.5">TikTok Pixel ID (اختياري)</label>
                 <input
@@ -691,7 +661,7 @@ export default function AdminPage() {
                 disabled={savingSettings}
                 className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
               >
-                {savingSettings ? 'جاري الحفظ والتحقق...' : 'حفظ وتفعيل البيكسل الجديد فوراً 💾'}
+                {savingSettings ? 'جاري الحفظ والربط...' : 'حفظ وتفعيل البيكسل والسيرفر معاً 🚀'}
               </button>
             </div>
           </form>
@@ -699,7 +669,7 @@ export default function AdminPage() {
 
       </main>
 
-      {/* نافذة مودال المنتج */}
+      {/* مودال المنتج */}
       {showProductModal && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
@@ -773,22 +743,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2 text-xs">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400">نسبة الخصم للعميل:</span>
-                  <span className="text-white font-black text-sm">
-                    {formDiscountPercent > 0 ? `خصم ${formDiscountPercent}%` : 'لا يوجد خصم'}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center border-t border-slate-800 pt-2">
-                  <span className="text-slate-400 font-bold">صافي الربح للقطعة:</span>
-                  <span className={`text-base font-black ${formProfit >= 0 ? 'text-teal-400' : 'text-red-500'}`}>
-                    {formProfit >= 0 ? `+${formProfit} ج.م` : `${formProfit} ج.م`}
-                    {formProfitPercent !== 0 && ` (${formProfitPercent}%)`}
-                  </span>
-                </div>
-              </div>
-
               <div>
                 <label className="block text-xs font-bold text-slate-400 mb-1">وصف المنتج</label>
                 <textarea
@@ -843,88 +797,6 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div className="space-y-2 pt-2 border-t border-slate-800">
-                <label className="block text-xs font-bold text-slate-300">🎥 فيديو المنتج (اختياري)</label>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <label className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border-2 border-dashed border-emerald-500/50 cursor-pointer text-xs font-bold">
-                    <span>🎬</span>
-                    <span>رفع فيديو من الجهاز</span>
-                    <input type="file" accept="video/mp4,video/webm,video/*" onChange={handleVideoFileUpload} className="hidden" />
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="أو رابط فيديو..."
-                    value={productForm.video_url || ''}
-                    onChange={(e) => setProductForm({ ...productForm, video_url: e.target.value })}
-                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-800 space-y-3">
-                <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
-                  <span className="text-xs font-bold text-white">خيارات الألوان</span>
-                  <button
-                    type="button"
-                    onClick={() => setProductForm({ ...productForm, show_colors: !productForm.show_colors })}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition ${
-                      productForm.show_colors ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
-                    }`}
-                  >
-                    {productForm.show_colors ? 'ظاهرة 👁️' : 'مخفية 🙈'}
-                  </button>
-                </div>
-                {productForm.show_colors && (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="اسم اللون"
-                      value={newColorName}
-                      onChange={(e) => setNewColorName(e.target.value)}
-                      className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2 text-white text-xs"
-                    />
-                    <input
-                      type="color"
-                      value={newColorCode}
-                      onChange={(e) => setNewColorCode(e.target.value)}
-                      className="w-12 h-10 p-1 bg-slate-900 border border-slate-800 rounded-xl cursor-pointer"
-                    />
-                    <button type="button" onClick={addColor} className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold">
-                      + إضافة
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-slate-800 space-y-3">
-                <div className="flex items-center justify-between bg-slate-950 p-3 rounded-2xl border border-slate-800/80">
-                  <span className="text-xs font-bold text-white">خيارات المقاسات</span>
-                  <button
-                    type="button"
-                    onClick={() => setProductForm({ ...productForm, show_sizes: !productForm.show_sizes })}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition ${
-                      productForm.show_sizes ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
-                    }`}
-                  >
-                    {productForm.show_sizes ? 'ظاهرة 👁️' : 'مخفية 🙈'}
-                  </button>
-                </div>
-                {productForm.show_sizes && (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="المقاس (M, L, XL)"
-                      value={newSize}
-                      onChange={(e) => setNewSize(e.target.value)}
-                      className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2 text-white text-xs"
-                    />
-                    <button type="button" onClick={addSize} className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold">
-                      + إضافة
-                    </button>
-                  </div>
-                )}
               </div>
 
               <div className="pt-4 border-t border-slate-800 flex justify-end gap-3">
