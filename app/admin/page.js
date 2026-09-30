@@ -552,7 +552,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 3. تبويب إعدادات البيكسل السريع (باستخدام Pixel ID مباشرة) */}
+        {/* 3. تبويب إعدادات البيكسل برقم ID المباشر */}
         {activeView === 'settings' && (
           <form onSubmit={handleSaveSettings} className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
             <div className="border-b border-slate-800 pb-3">
@@ -561,7 +561,7 @@ export default function AdminPage() {
                 <span>إعدادات التتبع والبيكسل السريع</span>
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                ضع رقم الـ Pixel ID المباشر ورمز السيرفر لتفعيل التتبع التلقائي الفوري في كافة الصفحات
+                ضع رقم الـ Pixel ID المباشر ورمز السيرفر لتفعيل التتبع الفوري في كافة الصفحات
               </p>
             </div>
 
@@ -583,7 +583,7 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* 1. خانة رقم الـ Pixel ID المباشر */}
+              {/* رقم الـ Pixel ID المباشر */}
               <div>
                 <label className="block text-xs font-bold text-emerald-400 mb-1.5 flex items-center gap-1.5">
                   <span>⚡</span>
@@ -600,7 +600,7 @@ export default function AdminPage() {
                 <p className="text-[11px] text-slate-400 mt-1">الرقم المكون من أرقام فقط والموجود أعلى لوحة تحكم إعلانات فيسبوك.</p>
               </div>
 
-              {/* 2. خانة رمز الوصول للسيرفر CAPI */}
+              {/* رمز الوصول للسيرفر CAPI */}
               <div className="p-4 bg-slate-950 border border-blue-500/30 rounded-2xl space-y-2">
                 <label className="block text-xs font-black text-blue-400">
                   🛡️ رمز الوصول لـ Conversions API (السيرفر CAPI):
