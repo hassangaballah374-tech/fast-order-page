@@ -8,11 +8,10 @@ export default function AdminPage() {
 
   const [settings, setSettings] = useState({
     store_name: '',
-    pixel_1: '',
-    pixel_2: '',
-    pixel_3: '',
-    pixel_4: '',
-    facebook_api_token: '',
+    pixel_1: '', token_1: '',
+    pixel_2: '', token_2: '',
+    pixel_3: '', token_3: '',
+    pixel_4: '', token_4: '',
     tiktok_pixel_id: '',
   });
   const [savingSettings, setSavingSettings] = useState(false);
@@ -58,14 +57,13 @@ export default function AdminPage() {
       if (supabase) {
         const { data: sData } = await supabase.from('store_settings').select('*').limit(1).maybeSingle();
         if (sData) {
-          // إذا كان هناك نظام قديم مدمج، نقوم بتوزيعه أو قراءته
           setSettings({
             store_name: sData.store_name || '',
-            pixel_1: sData.pixel_1 || (sData.facebook_pixels ? sData.facebook_pixels.split(',')[0]?.trim() : '') || sData.facebook_pixel_id || '',
-            pixel_2: sData.pixel_2 || (sData.facebook_pixels ? sData.facebook_pixels.split(',')[1]?.trim() : '') || '',
-            pixel_3: sData.pixel_3 || (sData.facebook_pixels ? sData.facebook_pixels.split(',')[2]?.trim() : '') || '',
-            pixel_4: sData.pixel_4 || (sData.facebook_pixels ? sData.facebook_pixels.split(',')[3]?.trim() : '') || '',
-            facebook_api_token: sData.facebook_api_token || '',
+            pixel_1: sData.pixel_1 || sData.facebook_pixel_id || '',
+            token_1: sData.token_1 || sData.facebook_api_token || '',
+            pixel_2: sData.pixel_2 || '', token_2: sData.token_2 || '',
+            pixel_3: sData.pixel_3 || '', token_3: sData.token_3 || '',
+            pixel_4: sData.pixel_4 || '', token_4: sData.token_4 || '',
             tiktok_pixel_id: sData.tiktok_pixel_id || '',
           });
         }
@@ -112,21 +110,19 @@ export default function AdminPage() {
       const { data: existing } = await supabase.from('store_settings').select('id').limit(1).maybeSingle();
       const targetId = existing?.id || 1;
 
-      // تجميع البيكسلات المدخلة في مصفوفة وتكوين string مفصول بفواصل للتوافق مع السيرفر
-      const activePixelsList = [settings.pixel_1, settings.pixel_2, settings.pixel_3, settings.pixel_4]
-        .map((p) => (p || '').trim())
-        .filter(Boolean);
-
       const payload = {
         id: targetId,
         store_name: settings.store_name,
-        pixel_1: settings.pixel_1.trim(),
-        pixel_2: settings.pixel_2.trim(),
-        pixel_3: settings.pixel_3.trim(),
-        pixel_4: settings.pixel_4.trim(),
-        facebook_pixels: activePixelsList.join(', '),
-        facebook_pixel_id: activePixelsList[0] || '',
-        facebook_api_token: (settings.facebook_api_token || '').trim(),
+        pixel_1: (settings.pixel_1 || '').trim(),
+        token_1: (settings.token_1 || '').trim(),
+        pixel_2: (settings.pixel_2 || '').trim(),
+        token_2: (settings.token_2 || '').trim(),
+        pixel_3: (settings.pixel_3 || '').trim(),
+        token_3: (settings.token_3 || '').trim(),
+        pixel_4: (settings.pixel_4 || '').trim(),
+        token_4: (settings.token_4 || '').trim(),
+        facebook_pixel_id: (settings.pixel_1 || '').trim(), // توافق عكسي
+        facebook_api_token: (settings.token_1 || '').trim(),
         tiktok_pixel_id: (settings.tiktok_pixel_id || '').trim(),
       };
 
@@ -135,7 +131,7 @@ export default function AdminPage() {
 
       setSettingsNotice(true);
       setTimeout(() => setSettingsNotice(false), 3000);
-      alert('✅ تم حفظ إعدادات جميع البيكسلات المستقلة وتفعيلها بنجاح!');
+      alert('✅ تم حفظ كافة البيكسلات ورموز وصول الـ API الخاصة بها بنجاح!');
     } catch (err) {
       alert('خطأ أثناء الحفظ: ' + err.message);
     }
@@ -361,7 +357,7 @@ export default function AdminPage() {
             <span className="text-2xl">⚡</span>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-white">{settings.store_name || 'LMAA STOR'}</h1>
-              <p className="text-xs text-slate-400">إدارة المخزون، الطلبات، والبيكسلات المستقلة</p>
+              <p className="text-xs text-slate-400">إدارة المخزون، الطلبات، والبيكسلات ورموز الـ API</p>
             </div>
           </div>
 
@@ -396,7 +392,7 @@ export default function AdminPage() {
                 activeView === 'settings' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>⚙️ إعدادات البيكسلات</span>
+              <span>⚙️️ إعدادات البيكسلات و الـ API</span>
             </button>
           </div>
         </div>
@@ -572,23 +568,23 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* تبويب إعدادات البيكسلات المستقلة (كل بيكسل في خانة وحدها) */}
+        {/* تبويب إعدادات البيكسلات المستقلة مع رموز الـ API الخاصة بها */}
         {activeView === 'settings' && (
           <form onSubmit={handleSaveSettings} className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
             <div className="border-b border-slate-800 pb-3">
               <h2 className="text-xl font-black text-white flex items-center gap-2">
                 <span>🎯</span>
-                <span>إعدادات البيكسلات المستقلة (Multi-Pixel Manager)</span>
+                <span>إعدادات البيكسلات المستقلة ورموز وصول السيرفر (CAPI Tokens)</span>
               </h2>
               <p className="text-xs text-slate-400 mt-1">
-                كل بيكسل مخصص له خانة مستقلة، وجميعها ستعمل وتقرأ الأحداث بالتوازي في نفس اللحظة عبر الويب والسيرفر
+                لكل بيكسل معرّف مستقل ورمز وصول API خاص به، وجميعها ستعمل وتقرأ الأحداث بالتوازي في نفس اللحظة
               </p>
             </div>
 
             {settingsNotice && (
               <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2">
                 <span>✅</span>
-                <span>تم حفظ وتفعيل كافة البيكسلات المستقلة بنجاح!</span>
+                <span>تم حفظ إعدادات البيكسلات ورموز الوصول بنجاح!</span>
               </div>
             )}
 
@@ -603,70 +599,98 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* خانات مستقلة للبيكسلات */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-emerald-400 mb-1.5">⚡ بيكسل فيسبوك (1):</label>
+              {/* البيكسل الأول */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                <h4 className="text-xs font-black text-emerald-400">⚡ بيكسل فيسبوك (1)</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
                     type="text"
                     dir="ltr"
                     value={settings.pixel_1}
                     onChange={(e) => setSettings({ ...settings, pixel_1: e.target.value })}
-                    placeholder="مثال: 1005710628595160"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-mono text-emerald-300 focus:outline-none focus:border-emerald-500"
+                    placeholder="Pixel ID 1 (مثال: 1005...)"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-white"
+                  />
+                  <input
+                    type="text"
+                    dir="ltr"
+                    value={settings.token_1}
+                    onChange={(e) => setSettings({ ...settings, token_1: e.target.value })}
+                    placeholder="API Access Token 1 (EAABw...)"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-blue-300"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-emerald-400 mb-1.5">⚡ بيكسل فيسبوك (2):</label>
+              {/* البيكسل الثاني */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                <h4 className="text-xs font-black text-emerald-400">⚡ بيكسل فيسبوك (2)</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
                     type="text"
                     dir="ltr"
                     value={settings.pixel_2}
                     onChange={(e) => setSettings({ ...settings, pixel_2: e.target.value })}
-                    placeholder="مثال: 222222222222222"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-mono text-emerald-300 focus:outline-none focus:border-emerald-500"
+                    placeholder="Pixel ID 2"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-white"
+                  />
+                  <input
+                    type="text"
+                    dir="ltr"
+                    value={settings.token_2}
+                    onChange={(e) => setSettings({ ...settings, token_2: e.target.value })}
+                    placeholder="API Access Token 2"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-blue-300"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-emerald-400 mb-1.5">⚡ بيكسل فيسبوك (3):</label>
+              {/* البيكسل الثالث */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                <h4 className="text-xs font-black text-emerald-400">⚡ بيكسل فيسبوك (3)</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
                     type="text"
                     dir="ltr"
                     value={settings.pixel_3}
                     onChange={(e) => setSettings({ ...settings, pixel_3: e.target.value })}
-                    placeholder="مثال: 333333333333333"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-mono text-emerald-300 focus:outline-none focus:border-emerald-500"
+                    placeholder="Pixel ID 3"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-white"
+                  />
+                  <input
+                    type="text"
+                    dir="ltr"
+                    value={settings.token_3}
+                    onChange={(e) => setSettings({ ...settings, token_3: e.target.value })}
+                    placeholder="API Access Token 3"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-blue-300"
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-emerald-400 mb-1.5">⚡ بيكسل فيسبوك (4):</label>
+              {/* البيكسل الرابع */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                <h4 className="text-xs font-black text-emerald-400">⚡ بيكسل فيسبوك (4)</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
                     type="text"
                     dir="ltr"
                     value={settings.pixel_4}
                     onChange={(e) => setSettings({ ...settings, pixel_4: e.target.value })}
-                    placeholder="مثال: 444444444444444"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-mono text-emerald-300 focus:outline-none focus:border-emerald-500"
+                    placeholder="Pixel ID 4"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-white"
+                  />
+                  <input
+                    type="text"
+                    dir="ltr"
+                    value={settings.token_4}
+                    onChange={(e) => setSettings({ ...settings, token_4: e.target.value })}
+                    placeholder="API Access Token 4"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-blue-300"
                   />
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-950 border border-blue-500/30 rounded-2xl space-y-2 mt-4">
-                <label className="block text-xs font-black text-blue-400">
-                  🛡️ رمز الوصول لـ Conversions API (السيرفر CAPI):
-                </label>
-                <input
-                  type="text"
-                  dir="ltr"
-                  value={settings.facebook_api_token}
-                  onChange={(e) => setSettings({ ...settings, facebook_api_token: e.target.value })}
-                  placeholder="EAABw..."
-                  className="w-full bg-[#050811] border border-blue-500/40 rounded-xl p-3 text-xs font-mono text-blue-200 placeholder-slate-600 focus:outline-none"
-                />
-              </div>
             </div>
 
             <div className="pt-2">
@@ -675,7 +699,7 @@ export default function AdminPage() {
                 disabled={savingSettings}
                 className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
               >
-                {savingSettings ? 'جاري الحفظ...' : 'حفظ وتفعيل البيكسلات 💾'}
+                {savingSettings ? 'جاري الحفظ...' : 'حفظ وتفعيل البيكسلات ورموز الوصول 💾'}
               </button>
             </div>
           </form>
