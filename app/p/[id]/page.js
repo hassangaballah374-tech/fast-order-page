@@ -57,10 +57,9 @@ export default function LuxuryProductPage() {
   const [cartOrderLoading, setCartOrderLoading] = useState(false);
   const [cartSuccess, setCartSuccess] = useState(false);
 
-  // إضافات تفاعلية و FOMO
+  // تفاعلات الـ FOMO
   const [particles, setParticles] = useState([]);
   const [liveVisitors, setLiveVisitors] = useState(17);
-  const [stockLeft, setStockLeft] = useState(6);
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 48 });
 
   const hasFiredCheckout = useRef(false);
@@ -77,7 +76,7 @@ export default function LuxuryProductPage() {
   const [cartShippingFee, setCartShippingFee] = useState(50);
   const [cartForm, setCartForm] = useState({ name: '', phone: '', detailedAddress: '' });
 
-  // عداد الـ FOMO المتناقص
+  // عداد الـ FOMO
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -97,7 +96,7 @@ export default function LuxuryProductPage() {
     };
   }, []);
 
-  // جلب السلة من المتصفح
+  // جلب السلة
   useEffect(() => {
     try {
       const saved = localStorage.getItem('fast_order_cart');
@@ -115,7 +114,7 @@ export default function LuxuryProductPage() {
     }
   }, [cart]);
 
-  // جلب المنتج والبيكسل
+  // جلب بيانات المنتج والمخزون
   useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -137,7 +136,8 @@ export default function LuxuryProductPage() {
               name: sData.product_name,
               price: Number(sData.product_price) || 0,
               compare_price: Number(sData.original_price) || null,
-              original_price: Number(sData.original_price) || null,
+              cost_price: Number(sData.cost_price) || 0,
+              stock: Number(sData.stock) || 20,
               description: sData.description || '',
               images: sData.images || (sData.image_url ? [sData.image_url] : []),
               video_url: sData.video_url || '',
@@ -178,7 +178,7 @@ export default function LuxuryProductPage() {
     loadData();
   }, [productId]);
 
-  // تأثير تفجير القلوب والإيموجيز التفاعلية عند النقر
+  // انطلاق الإيموجيز التفاعلية
   const triggerParticles = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const emojis = ['💖', '🔥', '✨', '⚡', '🎉', '🌟', '🛍️'];
@@ -217,7 +217,6 @@ export default function LuxuryProductPage() {
 
   const galleryImages = Array.isArray(product?.images) && product.images.length > 0 ? product.images : [];
 
-  // الإضافة إلى السلة مع المؤثرات
   const handleAddToCart = (e) => {
     if (product?.show_colors && product.colors?.length > 0 && !selectedColor) {
       alert('يرجى اختيار اللون أولاً');
@@ -292,7 +291,7 @@ export default function LuxuryProductPage() {
     document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // تأكيد الطلب المباشر
+  // تأكيد الطلب المباشر مع خصم المخزون التلقائي
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedGovernorate) {
@@ -309,6 +308,7 @@ export default function LuxuryProductPage() {
     const productsSummary = `${product?.name} (عدد: ${quantity})`;
 
     try {
+      // 1. تسجيل الطلب في جدول orders
       const { error } = await supabase.from('orders').insert([
         {
           customer_name: formData.name,
@@ -328,6 +328,13 @@ export default function LuxuryProductPage() {
       ]);
 
       if (error) throw error;
+
+      // 2. خصم المخزون تلقائياً في قاعدة البيانات
+      if (product.id && product.id !== 'legacy') {
+        const newStock = Math.max(0, (product.stock || 0) - quantity);
+        await supabase.from('products').update({ stock: newStock }).eq('id', product.id);
+        setProduct((prev) => ({ ...prev, stock: newStock }));
+      }
 
       setSuccess(true);
       setOrderLoading(false);
@@ -361,7 +368,7 @@ export default function LuxuryProductPage() {
     }
   };
 
-  // تأكيد طلب السلة
+  // تأكيد طلب السلة مع خصم المخزون
   const handleCartSubmit = async (e) => {
     e.preventDefault();
     if (!cartGov) {
@@ -396,6 +403,17 @@ export default function LuxuryProductPage() {
 
       if (error) throw error;
 
+      // خصم مخزون كل منتج في السلة
+      for (const item of cart) {
+        if (item.productId && item.productId !== 'legacy') {
+          const { data: pCurrent } = await supabase.from('products').select('stock').eq('id', item.productId).maybeSingle();
+          if (pCurrent) {
+            const nextStock = Math.max(0, (pCurrent.stock || 0) - item.quantity);
+            await supabase.from('products').update({ stock: nextStock }).eq('id', item.productId);
+          }
+        }
+      }
+
       setCartSuccess(true);
       setCart([]);
       localStorage.removeItem('fast_order_cart');
@@ -426,7 +444,6 @@ export default function LuxuryProductPage() {
     setCartOrderLoading(false);
   };
 
-  // حساب الخصم والتوفير
   const currentSellingPrice = Number(product?.price) || 0;
   const originalOldPrice = Number(product?.compare_price || product?.original_price) || 0;
   const hasDiscount = originalOldPrice > currentSellingPrice && currentSellingPrice > 0;
@@ -435,15 +452,25 @@ export default function LuxuryProductPage() {
     : 0;
   const savedAmount = hasDiscount ? originalOldPrice - currentSellingPrice : 0;
 
+  // الحساب الذكي لعبارة المخزون للعميل (متبقي أقل من كذا بدلاً من الرقم الفعلي)
+  const actualStock = product?.stock !== undefined ? product.stock : 20;
+
+  const getSmartStockText = (stock) => {
+    if (stock <= 0) return 'نفدت الكمية من المخزن ⚠️';
+    if (stock <= 5) return 'متبقي في المخزن أقل من 5 قطع فقط! 🔥';
+    if (stock <= 10) return 'متبقي في المخزن أقل من 10 قطع فقط ⚡';
+    if (stock <= 15) return 'متبقي في المخزن أقل من 15 قطعة 🛍️';
+    if (stock <= 25) return 'متبقي في المخزن أقل من 25 قطعة ✨';
+    if (stock <= 50) return 'متبقي في المخزن أقل من 50 قطعة 📦';
+    return `متبقي في المخزن أقل من ${Math.ceil(stock / 10) * 10} قطعة`;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center font-sans" dir="rtl">
         <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="w-14 h-14 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center text-xs">⚡</div>
-          </div>
-          <p className="text-slate-400 font-bold tracking-wide animate-pulse">جاري تجهيز التجربة الفاخرة...</p>
+          <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+          <p className="text-slate-400 font-bold">جاري تحميل المتجر...</p>
         </div>
       </div>
     );
@@ -452,19 +479,16 @@ export default function LuxuryProductPage() {
   if (!product) {
     return (
       <div className="min-h-screen bg-[#070b14] text-white flex flex-col items-center justify-center gap-4 font-sans p-6 text-center" dir="rtl">
-        <span className="text-6xl animate-bounce">💎</span>
-        <h2 className="text-2xl font-black">المنتج غير موجود أو تم نقله</h2>
-        <Link href="/" className="px-7 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black rounded-2xl text-sm shadow-xl hover:brightness-110 transition">
-          العودة للكتالوج الرئيسي
-        </Link>
+        <h2 className="text-2xl font-black">المنتج غير موجود!</h2>
+        <Link href="/" className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl text-sm">العودة للكتالوج</Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 font-sans pb-32 antialiased selection:bg-emerald-500 selection:text-black" dir="rtl">
+    <div className="min-h-screen bg-[#070b14] text-slate-100 font-sans pb-32 antialiased" dir="rtl">
       
-      {/* 1. طبقة البارتكلز المتحركة عند الضغط (Confetti Particles) */}
+      {/* طبقة البارتكلز */}
       <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
         {particles.map((p) => (
           <span
@@ -482,41 +506,32 @@ export default function LuxuryProductPage() {
         ))}
       </div>
 
-      {/* 2. شريط الطوارئ والعرض الحصري التنازلي الفاخر (FOMO Bar) */}
+      {/* شريط الإعلان */}
       <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-950 border-b border-emerald-500/30 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-lg flex items-center justify-center gap-2">
-        <span className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full text-[11px] border border-emerald-500/30 animate-pulse">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+        <span className="bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full text-[11px] border border-emerald-500/30 animate-pulse">
           عرض حصري
         </span>
         <span>اطلب خلال</span>
         <span className="font-mono bg-black/60 px-2 py-0.5 rounded-lg text-emerald-300 font-black border border-emerald-500/40">
           {String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
         </span>
-        <span>للحصول على الشحن السريع ومعاينة مجانية قبل الدفع! 🎁</span>
+        <span>للحصول على شحن سريع ومعاينة قبل الدفع! 🎁</span>
       </div>
 
-      {/* 3. الترويسة الشفافة الزجاجية (Glass Header) */}
+      {/* الترويسة */}
       <header className="bg-[#0b1324]/80 backdrop-blur-xl border-b border-slate-800/80 py-3.5 px-4 sm:px-8 sticky top-0 z-40 shadow-xl">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link
-            href="/"
-            className="text-xs sm:text-sm font-bold text-slate-300 hover:text-white flex items-center gap-2 bg-slate-900/90 px-3.5 py-2 rounded-2xl border border-slate-700/60 transition hover:border-emerald-500/60 shadow"
-          >
+          <Link href="/" className="text-xs sm:text-sm font-bold text-slate-300 hover:text-white flex items-center gap-2 bg-slate-900/90 px-3.5 py-2 rounded-2xl border border-slate-700/60">
             <span>‹</span>
             <span>الكتالوج</span>
           </Link>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xl">✨</span>
-            <h1 className="text-base sm:text-lg font-black text-white tracking-wide">{settings?.store_name || 'VIP Store'}</h1>
-          </div>
-
+          <h1 className="text-base sm:text-lg font-black text-white">{settings?.store_name || 'متجرنا الرسمي'}</h1>
           <button
             onClick={() => { setIsCartOpen(true); setCartSuccess(false); }}
-            className="relative px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 text-white rounded-2xl text-xs sm:text-sm font-black transition flex items-center gap-2 shadow-lg shadow-emerald-950/60 border border-emerald-400/30 active:scale-95"
+            className="relative px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 shadow-lg"
           >
             <span>🛒</span>
-            <span className="hidden sm:inline">السلة</span>
+            <span>السلة</span>
             {totalCartCount > 0 && (
               <span className="bg-white text-emerald-950 text-xs px-2 py-0.2 rounded-full font-black animate-pulse">
                 {totalCartCount}
@@ -527,14 +542,9 @@ export default function LuxuryProductPage() {
       </header>
 
       <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
-
-        {/* 4. كارت المنتج الأسطوري (Luxury Product Container) */}
-        <div className="relative bg-gradient-to-b from-[#0f172a] to-[#0b1324] border border-slate-800/90 rounded-[32px] p-5 sm:p-8 space-y-6 shadow-2xl backdrop-blur-sm overflow-hidden">
+        <div className="bg-gradient-to-b from-[#0f172a] to-[#0b1324] border border-slate-800/90 rounded-[32px] p-5 sm:p-8 space-y-6 shadow-2xl overflow-hidden">
           
-          {/* لمسة إضاءة علوية ناعمة (Glow) */}
-          <div className="absolute top-0 right-1/4 w-72 h-32 bg-emerald-500/10 blur-3xl pointer-events-none rounded-full"></div>
-
-          {/* مؤشر حي: الزوار والمخزون المتبقي */}
+          {/* مؤشر الزوار وعبارة المخزون الذكية (متبقي أقل من كذا) */}
           <div className="flex flex-wrap items-center justify-between gap-2.5 bg-[#070b14]/70 p-3 rounded-2xl border border-slate-800/80 text-xs font-bold">
             <div className="flex items-center gap-2 text-emerald-400">
               <span className="relative flex h-2.5 w-2.5">
@@ -544,49 +554,34 @@ export default function LuxuryProductPage() {
               <span>يشاهد هذا المنتج الآن <strong className="text-white font-black">{liveVisitors}</strong> عميلاً</span>
             </div>
 
+            {/* عبارة المخزون المخصصة للعميل */}
             <div className="flex items-center gap-1.5 text-amber-400">
-              <span>🔥</span>
-              <span>متبقي في المخزن: <strong className="text-white bg-amber-500/20 px-2 py-0.5 rounded-lg border border-amber-500/30">{stockLeft} قطع</strong> فقط</span>
+              <span className="bg-amber-500/15 text-amber-300 px-3 py-1 rounded-xl border border-amber-500/30 font-black animate-pulse">
+                {getSmartStockText(actualStock)}
+              </span>
             </div>
           </div>
 
-          {/* 5. معرض الصور التفاعلي السينمائي */}
+          {/* معرض الصور */}
           {galleryImages.length > 0 && (
             <div className="space-y-3.5">
-              <div className="relative w-full bg-[#050811] rounded-3xl overflow-hidden border border-slate-800/80 flex items-center justify-center min-h-[320px] max-h-[500px] p-3 shadow-inner group">
-                <img
-                  src={galleryImages[currentIndex]}
-                  alt={product.name}
-                  className="w-full h-auto max-h-[460px] object-contain mx-auto transition-transform duration-500 group-hover:scale-105"
-                />
-
-                {/* شارة الخصم الفاخرة المزدوجة */}
+              <div className="relative w-full bg-[#050811] rounded-3xl overflow-hidden border border-slate-800/80 flex items-center justify-center min-h-[320px] max-h-[500px] p-3">
+                <img src={galleryImages[currentIndex]} alt={product.name} className="w-full h-auto max-h-[460px] object-contain mx-auto transition-transform duration-500 hover:scale-105" />
                 {hasDiscount && (
-                  <div className="absolute top-4 right-4 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white font-black px-3.5 py-1.5 rounded-2xl shadow-2xl flex items-center gap-1.5 text-xs sm:text-sm border border-red-400/40 animate-pulse">
+                  <div className="absolute top-4 right-4 bg-gradient-to-r from-red-600 via-rose-600 to-red-600 text-white font-black px-3.5 py-1.5 rounded-2xl shadow-2xl flex items-center gap-1.5 text-xs sm:text-sm animate-pulse">
                     <span>⚡</span>
                     <span>خصم {discountPercent}%</span>
                   </div>
                 )}
-
-                {/* مؤشر رقم الصورة */}
-                {galleryImages.length > 1 && (
-                  <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur border border-slate-700/60 px-3 py-1 rounded-xl text-xs font-bold text-slate-300 shadow">
-                    {currentIndex + 1} / {galleryImages.length}
-                  </div>
-                )}
               </div>
-
-              {/* مصغرات المعرض */}
               {galleryImages.length > 1 && (
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
                   {galleryImages.map((img, idx) => (
                     <button
                       key={idx}
                       onClick={() => setCurrentIndex(idx)}
-                      className={`w-20 h-20 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all duration-300 p-1 bg-[#050811] ${
-                        currentIndex === idx
-                          ? 'border-emerald-500 scale-105 shadow-lg shadow-emerald-950/60 ring-2 ring-emerald-500/20'
-                          : 'border-slate-800 opacity-60 hover:opacity-100 hover:border-slate-700'
+                      className={`w-20 h-20 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all p-1 bg-[#050811] ${
+                        currentIndex === idx ? 'border-emerald-500 scale-105 shadow-lg' : 'border-slate-800 opacity-60'
                       }`}
                     >
                       <img src={img} alt="" className="w-full h-full object-cover rounded-xl" />
@@ -597,22 +592,14 @@ export default function LuxuryProductPage() {
             </div>
           )}
 
-          {/* فيديو المنتج إن وجد */}
-          {product.video_url && (
-            <div className="rounded-3xl overflow-hidden border border-slate-800 bg-black shadow-xl">
-              <video src={product.video_url} controls className="w-full max-h-[440px] object-contain mx-auto" />
-            </div>
-          )}
-
-          {/* 6. كتلة الاسم والأسعار مع حساب التوفير */}
+          {/* الاسم والأسعار والتوفير */}
           <div className="space-y-4">
-            <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight tracking-wide">{product.name}</h2>
-
-            <div className="bg-gradient-to-r from-[#050811] via-[#091122] to-[#050811] p-5 rounded-3xl border border-slate-800/80 flex flex-wrap items-center justify-between gap-4 shadow-lg">
+            <h2 className="text-2xl sm:text-3xl font-black text-white">{product.name}</h2>
+            <div className="bg-gradient-to-r from-[#050811] via-[#091122] to-[#050811] p-5 rounded-3xl border border-slate-800/80 flex flex-wrap items-center justify-between gap-4">
               <div className="space-y-1">
-                <span className="text-[11px] text-slate-400 block font-bold">السعر النهائي بعد التخفيض:</span>
+                <span className="text-[11px] text-slate-400 block font-bold">السعر بعد التخفيض:</span>
                 <div className="flex items-baseline gap-3">
-                  <span className="text-3xl sm:text-4xl font-black text-emerald-400 tracking-tight">{currentSellingPrice} ج.م</span>
+                  <span className="text-3xl sm:text-4xl font-black text-emerald-400">{currentSellingPrice} ج.م</span>
                   {hasDiscount && (
                     <span className="text-base sm:text-lg line-through text-slate-500 font-bold decoration-red-500/60">
                       {originalOldPrice} ج.م
@@ -620,13 +607,11 @@ export default function LuxuryProductPage() {
                   )}
                 </div>
               </div>
-
               {hasDiscount && (
                 <div className="flex flex-col items-end gap-1.5">
-                  <span className="bg-red-500/15 border border-red-500/30 text-red-400 font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-xl shadow-md">
-                    وفرت اليوم: {savedAmount} ج.م 💰
+                  <span className="bg-red-500/15 border border-red-500/30 text-red-400 font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-xl">
+                    وفرت: {savedAmount} ج.م 💰
                   </span>
-                  <span className="text-[11px] text-emerald-400 font-bold">شامل المعاينة قبل الاستلام</span>
                 </div>
               )}
             </div>
@@ -634,16 +619,16 @@ export default function LuxuryProductPage() {
 
           {/* الوصف */}
           {product.description && (
-            <div className="p-4 sm:p-5 bg-[#050811]/90 rounded-3xl border border-slate-800/80 text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line shadow-inner">
+            <div className="p-4 sm:p-5 bg-[#050811]/90 rounded-3xl border border-slate-800/80 text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line">
               {product.description}
             </div>
           )}
 
-          {/* 7. خيارات الألوان بشكل أزرار فخمة متناسقة */}
+          {/* الألوان */}
           {product.show_colors && product.colors?.length > 0 && (
             <div className="space-y-3 border-t border-slate-800/80 pt-4">
               <div className="flex items-center justify-between text-xs sm:text-sm font-bold">
-                <span className="text-slate-300">اختر اللون المفضل:</span>
+                <span className="text-slate-300">اللون:</span>
                 <span className="text-emerald-400 font-black">{selectedColor}</span>
               </div>
               <div className="flex flex-wrap gap-2.5">
@@ -652,13 +637,13 @@ export default function LuxuryProductPage() {
                     key={idx}
                     type="button"
                     onClick={() => setSelectedColor(c.name)}
-                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black transition-all active:scale-95 ${
+                    className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black transition-all ${
                       selectedColor === c.name
-                        ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-lg shadow-emerald-950/50 ring-2 ring-emerald-500/30'
-                        : 'border-slate-800 bg-[#050811] text-slate-400 hover:border-slate-700 hover:text-white'
+                        ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-lg'
+                        : 'border-slate-800 bg-[#050811] text-slate-400'
                     }`}
                   >
-                    <span className="w-4 h-4 rounded-full border border-white/20 shadow-sm" style={{ backgroundColor: c.code }}></span>
+                    <span className="w-4 h-4 rounded-full border border-white/20" style={{ backgroundColor: c.code }}></span>
                     <span>{c.name}</span>
                   </button>
                 ))}
@@ -666,11 +651,11 @@ export default function LuxuryProductPage() {
             </div>
           )}
 
-          {/* 8. خيارات المقاسات */}
+          {/* المقاسات */}
           {product.show_sizes && product.sizes?.length > 0 && (
             <div className="space-y-3 border-t border-slate-800/80 pt-4">
               <div className="flex items-center justify-between text-xs sm:text-sm font-bold">
-                <span className="text-slate-300">اختر المقاس المناسب:</span>
+                <span className="text-slate-300">المقاس:</span>
                 <span className="text-emerald-400 font-black">{selectedSize}</span>
               </div>
               <div className="flex flex-wrap gap-2.5">
@@ -679,10 +664,10 @@ export default function LuxuryProductPage() {
                     key={idx}
                     type="button"
                     onClick={() => setSelectedSize(s)}
-                    className={`min-w-[54px] px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black transition-all active:scale-95 ${
+                    className={`min-w-[54px] px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-black transition-all ${
                       selectedSize === s
-                        ? 'border-emerald-500 bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-950/50 ring-2 ring-emerald-500/30'
-                        : 'border-slate-800 bg-[#050811] text-slate-400 hover:border-slate-700 hover:text-white'
+                        ? 'border-emerald-500 bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
+                        : 'border-slate-800 bg-[#050811] text-slate-400'
                     }`}
                   >
                     {s}
@@ -692,98 +677,57 @@ export default function LuxuryProductPage() {
             </div>
           )}
 
-          {/* 9. عداد الكمية */}
+          {/* الكمية */}
           <div className="flex items-center justify-between border-t border-slate-800/80 pt-4">
             <span className="text-xs sm:text-sm font-bold text-slate-300">الكمية المطلوبة:</span>
             <div className="flex items-center gap-4 bg-[#050811] border border-slate-800 px-3.5 py-1.5 rounded-2xl">
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-base flex items-center justify-center transition active:scale-90"
-              >
+              <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="w-8 h-8 rounded-xl bg-slate-800 text-white font-black text-base flex items-center justify-center">
                 −
               </button>
               <span className="text-base font-black text-white w-6 text-center">{quantity}</span>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => q + 1)}
-                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-base flex items-center justify-center transition active:scale-90"
-              >
+              <button onClick={() => setQuantity((q) => q + 1)} className="w-8 h-8 rounded-xl bg-slate-800 text-white font-black text-base flex items-center justify-center">
                 +
               </button>
             </div>
           </div>
 
-          {/* 10. الأزرار الخارقة (Super Buttons مع Shimmer والبارتكلز) */}
+          {/* الأزرار جنب بعض */}
           <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3.5 border-t border-slate-800/80">
-            {/* زر اطلب الآن مع وميض ضوئي فخم */}
             <button
               type="button"
               onClick={scrollToCheckout}
-              className="relative overflow-hidden w-full py-4 sm:py-4.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 hover:brightness-110 text-white font-black text-base sm:text-lg rounded-2xl shadow-2xl shadow-emerald-950/60 transition-all duration-300 active:scale-95 flex items-center justify-center gap-2.5 border border-emerald-300/30 group"
+              disabled={actualStock <= 0}
+              className="w-full py-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 hover:brightness-110 text-white font-black text-base sm:text-lg rounded-2xl shadow-2xl transition active:scale-95 flex items-center justify-center gap-2.5 disabled:opacity-50"
             >
-              {/* شريط الإضاءة المار فوق الزر */}
-              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></span>
-              <span className="text-xl animate-pulse">⚡</span>
-              <span>اطلب الآن - الدفع عند الاستلام</span>
+              <span>⚡</span>
+              <span>{actualStock <= 0 ? 'نفدت الكمية من المخزن' : 'اطلب الآن - الدفع عند الاستلام'}</span>
             </button>
 
-            {/* زر أضف إلى السلة مع انطلاق الإيموجيز */}
             <button
               type="button"
               onClick={handleAddToCart}
-              className="relative w-full py-4 sm:py-4.5 bg-gradient-to-r from-slate-900 to-[#0f172a] hover:from-slate-800 hover:to-slate-900 text-white font-black text-base sm:text-lg rounded-2xl border border-slate-700/80 hover:border-emerald-500/60 transition-all duration-300 active:scale-95 flex items-center justify-center gap-2.5 shadow-xl shadow-black/50"
+              disabled={actualStock <= 0}
+              className="w-full py-4 bg-gradient-to-r from-slate-900 to-[#0f172a] hover:from-slate-800 text-white font-black text-base sm:text-lg rounded-2xl border border-slate-700/80 transition active:scale-95 flex items-center justify-center gap-2.5 disabled:opacity-50"
             >
-              <span className="text-xl">🛒</span>
+              <span>🛒</span>
               <span>أضف إلى السلة</span>
             </button>
           </div>
-
-          {/* 11. شارات الثقة الفارهة (Luxury Guarantee Badges) */}
-          <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-slate-800/80 text-center">
-            <div className="bg-[#050811] p-3 rounded-2xl border border-slate-800/60 space-y-1">
-              <span className="text-xl block">🛡️</span>
-              <span className="text-[11px] font-bold text-slate-300 block">معاينة قبل الاستلام</span>
-              <span className="text-[9px] text-slate-500 block">افحص منتجك بيدك</span>
-            </div>
-
-            <div className="bg-[#050811] p-3 rounded-2xl border border-slate-800/60 space-y-1">
-              <span className="text-xl block">🔄</span>
-              <span className="text-[11px] font-bold text-slate-300 block">ضمان استبدال 14 يوم</span>
-              <span className="text-[9px] text-slate-500 block">استبدال سهل وسريع</span>
-            </div>
-
-            <div className="bg-[#050811] p-3 rounded-2xl border border-slate-800/60 space-y-1">
-              <span className="text-xl block">⚡</span>
-              <span className="text-[11px] font-bold text-slate-300 block">شحن فوري سريع</span>
-              <span className="text-[9px] text-slate-500 block">خلال 24 - 48 ساعة</span>
-            </div>
-          </div>
-
         </div>
 
-        {/* 12. نموذج إدخال بيانات الطلب (High-Conversion Checkout Card) */}
+        {/* نموذج الشراء المباشر */}
         <div id="checkout-form" className="bg-gradient-to-b from-[#0f172a] to-[#0b1324] border border-slate-800/90 rounded-[32px] p-5 sm:p-8 shadow-2xl scroll-mt-20 space-y-6">
           <div className="text-center space-y-1.5">
-            <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-inner">
-              📝
-            </div>
             <h3 className="text-xl sm:text-2xl font-black text-white">بيانات توصيل الطلب</h3>
             <p className="text-xs text-slate-400">ادخل بياناتك وسيتم شحن طلبك والتواصل معك فوراً</p>
           </div>
 
           {success ? (
-            <div className="p-8 bg-gradient-to-b from-emerald-950/40 to-slate-900 border border-emerald-500/40 text-emerald-300 rounded-3xl text-center space-y-4 shadow-2xl animate-fade-in">
-              <span className="text-6xl block animate-bounce">🎉</span>
-              <p className="text-2xl sm:text-3xl font-black text-white">تم تأكيد طلبك بنجاح!</p>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
-                شكراً لثقتك بنا! يقوم فريق الدعم بتجهيز شحنتك وسنتصل بك هاتفياً لتأكيد موعد التسليم.
-              </p>
-              <Link
-                href="/"
-                className="inline-block mt-4 px-7 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black rounded-2xl text-xs sm:text-sm shadow-xl hover:brightness-110 transition"
-              >
-                متابعة تصفح باقي المنتجات 🛍️
+            <div className="p-8 bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 rounded-3xl text-center space-y-4">
+              <p className="text-3xl font-black text-white">🎉 تم تسجيل طلبك بنجاح!</p>
+              <p className="text-xs sm:text-sm text-slate-300">تم خصم القطع من المخزون بنجاح وسيتواصل معك المندوب هاتفياً.</p>
+              <Link href="/" className="inline-block mt-4 px-7 py-3.5 bg-emerald-600 text-white font-black rounded-2xl text-xs sm:text-sm">
+                متابعة تصفح باقي المنتجات
               </Link>
             </div>
           ) : (
@@ -796,7 +740,7 @@ export default function LuxuryProductPage() {
                   placeholder="محمد أحمد علي"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm transition"
+                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm"
                 />
               </div>
 
@@ -808,7 +752,7 @@ export default function LuxuryProductPage() {
                   placeholder="01xxxxxxxxx"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm font-mono transition"
+                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm font-mono"
                 />
               </div>
 
@@ -848,18 +792,17 @@ export default function LuxuryProductPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">العنوان بالتفصيل (الشارع وعلامة مميزة) *</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">العنوان بالتفصيل *</label>
                 <textarea
                   required
                   rows="2"
-                  placeholder="اسم الشارع، رقم العمارة، الشقة، علامة بجوارك..."
+                  placeholder="اسم الشارع، رقم العمارة، علامة بجوارك..."
                   value={formData.detailedAddress}
                   onChange={(e) => setFormData({ ...formData, detailedAddress: e.target.value })}
-                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 text-sm transition"
+                  className="w-full p-4 rounded-2xl bg-[#050811] border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm"
                 ></textarea>
               </div>
 
-              {/* ملخص الفاتورة الشفاف */}
               <div className="bg-[#050811] p-4 sm:p-5 rounded-2xl border border-slate-800 space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between text-slate-400">
                   <span>سعر المنتج ({quantity} قطعة):</span>
@@ -879,17 +822,17 @@ export default function LuxuryProductPage() {
 
               <button
                 type="submit"
-                disabled={orderLoading}
-                className="w-full py-4.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:brightness-110 text-white font-black text-lg rounded-2xl shadow-2xl shadow-emerald-950/60 transition-all duration-300 active:scale-95 disabled:opacity-50 border border-emerald-400/30"
+                disabled={orderLoading || actualStock <= 0}
+                className="w-full py-4.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:brightness-110 text-white font-black text-lg rounded-2xl shadow-2xl transition-all active:scale-95 disabled:opacity-50"
               >
-                {orderLoading ? 'جاري تسجيل طلبك الفاخر...' : 'تأكيد الطلب والدفع عند الاستلام 🚚'}
+                {orderLoading ? 'جاري تسجيل الطلب وخصم المخزون...' : 'تأكيد الطلب والدفع عند الاستلام 🚚'}
               </button>
             </form>
           )}
         </div>
       </main>
 
-      {/* 13. دراوَر السلة الجانبي المنبثق الفاخر (VIP Cart Drawer) */}
+      {/* دراوَر السلة الجانبي */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex justify-end">
           <div className="w-full max-w-md h-full bg-[#0b1324] border-r border-slate-800 flex flex-col p-6 shadow-2xl overflow-y-auto">
@@ -898,10 +841,7 @@ export default function LuxuryProductPage() {
                 <span className="text-2xl">🛒</span>
                 <h2 className="text-xl font-black text-white">سلة المشتريات ({totalCartCount})</h2>
               </div>
-              <button
-                onClick={() => setIsCartOpen(false)}
-                className="w-9 h-9 rounded-2xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold transition"
-              >
+              <button onClick={() => setIsCartOpen(false)} className="w-9 h-9 rounded-2xl bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold">
                 ✕
               </button>
             </div>
@@ -909,11 +849,8 @@ export default function LuxuryProductPage() {
             {cartSuccess ? (
               <div className="p-8 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-3xl text-center space-y-3 mt-6">
                 <p className="text-3xl font-black">🎉 تم تأكيد طلب السلة!</p>
-                <p className="text-xs text-slate-300">سيتواصل معك فريق خدمة العملاء لتأكيد الشحن والتسليم.</p>
-                <button
-                  onClick={() => setIsCartOpen(false)}
-                  className="mt-4 px-6 py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow-lg"
-                >
+                <p className="text-xs text-slate-300">تم تحديث المخزون وسيتواصل معك فريق خدمة العملاء.</p>
+                <button onClick={() => setIsCartOpen(false)} className="mt-4 px-6 py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold">
                   إغلاق السلة
                 </button>
               </div>
@@ -923,7 +860,7 @@ export default function LuxuryProductPage() {
                   {cart.length === 0 ? (
                     <div className="py-20 text-center text-slate-500 font-bold space-y-3">
                       <span className="text-5xl block animate-bounce">🛍️</span>
-                      <p className="text-sm">سلتك فارغة، أضف منتجاتك المفضلة الآن</p>
+                      <p className="text-sm">سلتك فارغة حالياً</p>
                     </div>
                   ) : (
                     cart.map((item) => (
@@ -1043,19 +980,21 @@ export default function LuxuryProductPage() {
         </div>
       )}
 
-      {/* 14. الشريط السفلي اللاصق الفاخر للموبايل (Sticky Bottom Mobile Action Bar) */}
+      {/* الشريط السفلي اللاصق للموبايل */}
       <div className="fixed bottom-0 inset-x-0 z-40 bg-[#0b1324]/90 backdrop-blur-xl border-t border-slate-800 p-3 sm:hidden shadow-2xl flex items-center gap-2.5">
         <button
           onClick={scrollToCheckout}
-          className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm rounded-xl shadow-lg flex items-center justify-center gap-1.5 active:scale-95"
+          disabled={actualStock <= 0}
+          className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-black text-sm rounded-xl shadow-lg flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50"
         >
           <span>⚡</span>
-          <span>اطلب الآن ({currentSellingPrice} ج.م)</span>
+          <span>{actualStock <= 0 ? 'نفد المخزون' : `اطلب الآن (${currentSellingPrice} ج.م)`}</span>
         </button>
 
         <button
           onClick={handleAddToCart}
-          className="px-4 py-3 bg-slate-800 text-white rounded-xl font-black text-sm border border-slate-700 flex items-center justify-center active:scale-95"
+          disabled={actualStock <= 0}
+          className="px-4 py-3 bg-slate-800 text-white rounded-xl font-black text-sm border border-slate-700 flex items-center justify-center active:scale-95 disabled:opacity-50"
         >
           <span>🛒</span>
         </button>
