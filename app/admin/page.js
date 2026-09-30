@@ -3,10 +3,16 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
 export default function AdminPage() {
-  const [activeView, setActiveView] = useState('products');
+  const [activeView, setActiveView] = useState('settings');
   const [loading, setLoading] = useState(true);
 
-  const [settings, setSettings] = useState({ store_name: '', facebook_pixel_id: '', tiktok_pixel_id: '' });
+  // إعدادات المتجر وخانة الكود الكامل
+  const [settings, setSettings] = useState({
+    store_name: '',
+    pixel_code: '', // الكود البرمجي الكامل المنسوخ من فيسبوك
+    facebook_pixel_id: '',
+    tiktok_pixel_id: '',
+  });
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsNotice, setSettingsNotice] = useState(false);
 
@@ -52,6 +58,7 @@ export default function AdminPage() {
         if (sData) {
           setSettings({
             store_name: sData.store_name || '',
+            pixel_code: sData.pixel_code || '',
             facebook_pixel_id: sData.facebook_pixel_id || '',
             tiktok_pixel_id: sData.tiktok_pixel_id || '',
           });
@@ -92,26 +99,58 @@ export default function AdminPage() {
     setLoading(false);
   }
 
-  // حفظ إعدادات البيكسل والمتجر
+  // دالة ذكية تستخرج الـ Pixel ID تلقائياً من الكود البرمجي الكامل لفيسبوك
+  const extractPixelIdFromCode = (code) => {
+    if (!code) return '';
+    // البحث عن fbq('init', '123456789')
+    const match = code.match(/fbq\s*\(\s*['"]init['"]\s*,\s*['"](\d+)['"]\s*\)/);
+    if (match && match[1]) {
+      return match[1];
+    }
+    // إذا قام المستخدم بكتابة أو لصق الرقم فقط مباشرة
+    const directDigits = code.replace(/[^0-9]/g, '');
+    if (directDigits.length >= 10 && directDigits.length <= 20) {
+      return directDigits;
+    }
+    return '';
+  };
+
+  // التعامل مع تغيير كود البيكسل ولصقه
+  const handlePixelCodeChange = (e) => {
+    const val = e.target.value;
+    const extractedId = extractPixelIdFromCode(val);
+    setSettings((prev) => ({
+      ...prev,
+      pixel_code: val,
+      facebook_pixel_id: extractedId || prev.facebook_pixel_id,
+    }));
+  };
+
+  // حفظ الإعدادات والبيكسل
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
     try {
+      const extractedId = extractPixelIdFromCode(settings.pixel_code) || settings.facebook_pixel_id;
+
       const { data: existing } = await supabase.from('store_settings').select('id').limit(1).maybeSingle();
       const targetId = existing?.id || 1;
 
-      const { error } = await supabase.from('store_settings').upsert({
+      const payload = {
         id: targetId,
         store_name: settings.store_name,
-        facebook_pixel_id: (settings.facebook_pixel_id || '').trim(),
+        pixel_code: settings.pixel_code,
+        facebook_pixel_id: extractedId.trim(),
         tiktok_pixel_id: (settings.tiktok_pixel_id || '').trim(),
-      });
+      };
 
+      const { error } = await supabase.from('store_settings').upsert(payload);
       if (error) throw error;
 
+      setSettings((prev) => ({ ...prev, facebook_pixel_id: extractedId.trim() }));
       setSettingsNotice(true);
       setTimeout(() => setSettingsNotice(false), 3000);
-      alert('✅ تم حفظ وتحديث معرّف البيكسل وإعدادات المتجر بنجاح!');
+      alert('✅ تم حفظ الكود البرمجي واستخراج البيكسل ID وتفعيله فوراً على المتجر!');
     } catch (err) {
       alert('خطأ أثناء الحفظ: ' + err.message);
     }
@@ -364,7 +403,7 @@ export default function AdminPage() {
             <span className="text-2xl">⚡</span>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-white">{settings.store_name || 'لوحة تحكم المتجر'}</h1>
-              <p className="text-xs text-slate-400">إدارة المخزون، الطلبات، والبيكسل</p>
+              <p className="text-xs text-slate-400">إدارة المخزون، الطلبات، والبيكسل التلقائي</p>
             </div>
           </div>
 
@@ -399,7 +438,7 @@ export default function AdminPage() {
                 activeView === 'settings' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>⚙️ البيكسل والمتجر</span>
+              <span>⚙️ إعدادات البيكسل</span>
             </button>
           </div>
         </div>
@@ -570,49 +609,91 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 3. تبويب البيكسل */}
+        {/* 3. تبويب البيكسل الجديد مع لصق الكود الكامل والتعرف التلقائي */}
         {activeView === 'settings' && (
           <form onSubmit={handleSaveSettings} className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
-            <h2 className="text-xl font-black text-white border-b border-slate-800 pb-3">⚙️ ربط البيكسل وإعدادات المتجر</h2>
+            <div className="border-b border-slate-800 pb-3">
+              <h2 className="text-xl font-black text-white flex items-center gap-2">
+                <span>🎯</span>
+                <span>تثبيت بيكسل Meta على موقعك (التعرف التلقائي)</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                الصق الرمز البرمجي الأساسي للبيكسل المنسوخ من فيسبوك بالكامل هنا وسيتعرف النظام عليه تلقائياً!
+              </p>
+            </div>
+
             {settingsNotice && (
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-bold">
-                ✅ تم حفظ إعدادات البيكسل بنجاح!
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2">
+                <span>✅</span>
+                <span>تم حفظ وتفعيل البيكسل الجديد بنجاح في كافة الصفحات!</span>
               </div>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">اسم المتجر</label>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">اسم المتجر</label>
                 <input
                   type="text"
                   value={settings.store_name}
                   onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-white text-sm focus:outline-none focus:border-emerald-500"
                 />
               </div>
+
+              {/* خانة لصق الكود البرمجي الكامل المنسوخ من فيسبوك */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">Meta Pixel ID (فيسبوك بيكسل)</label>
-                <input
-                  type="text"
-                  value={settings.facebook_pixel_id}
-                  onChange={(e) => setSettings({ ...settings, facebook_pixel_id: e.target.value })}
-                  placeholder="مثال: 870300779500843"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm font-mono"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-emerald-400">
+                    📋 الصق الرمز البرمجي الأساسي لبيكسل Meta بالكامل هنا:
+                  </label>
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    {settings.facebook_pixel_id ? `المعرّف الحالي: ${settings.facebook_pixel_id}` : 'لم يتم التعرف على معرّف بعد'}
+                  </span>
+                </div>
+                <textarea
+                  rows="7"
+                  dir="ltr"
+                  value={settings.pixel_code}
+                  onChange={handlePixelCodeChange}
+                  placeholder={`<!-- Meta Pixel Code -->\n<script>\n!function(f,b,e,v,n,t,s)...\nfbq('init', '1005710628595160');\nfbq('track', 'PageView');\n</script>\n<!-- End Meta Pixel Code -->`}
+                  className="w-full bg-[#050811] border border-emerald-500/40 focus:border-emerald-400 rounded-2xl p-4 text-xs font-mono text-emerald-300 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 leading-relaxed shadow-inner"
+                ></textarea>
               </div>
+
+              {/* شريط ذكي يوضح الـ ID الذي تم استخراجه تلقائياً من الكود */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🔍</span>
+                  <span className="text-slate-400">معرّف البيكسل المستخرج تلقائياً (Pixel ID):</span>
+                  <span className="font-mono text-emerald-400 font-black text-sm bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/30">
+                    {settings.facebook_pixel_id || 'قم بلصق الكود أعلاه للاستخراج...'}
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-500">يتفعل فوراً مع جميع أحداث الشراء والمعاينة</span>
+              </div>
+
+              {/* تيك توك بيكسل */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">TikTok Pixel ID</label>
+                <label className="block text-xs font-bold text-slate-400 mb-1.5">TikTok Pixel ID (اختياري)</label>
                 <input
                   type="text"
                   value={settings.tiktok_pixel_id}
                   onChange={(e) => setSettings({ ...settings, tiktok_pixel_id: e.target.value })}
                   placeholder="مثال: C1234567890"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm font-mono"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
-            <button type="submit" disabled={savingSettings} className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm">
-              {savingSettings ? 'جاري الحفظ...' : 'حفظ وتفعيل البيكسل 💾'}
-            </button>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={savingSettings}
+                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
+              >
+                {savingSettings ? 'جاري الحفظ والتحقق...' : 'حفظ وتفعيل البيكسل الجديد فوراً 💾'}
+              </button>
+            </div>
           </form>
         )}
 
