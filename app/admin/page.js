@@ -3,10 +3,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
 export default function AdminPage() {
-  const [activeView, setActiveView] = useState('settings');
+  const [activeView, setActiveView] = useState('cart');
   const [loading, setLoading] = useState(true);
 
-  // إعدادات المتجر ومعرّف البيكسل المباشر ورمز السيرفر
   const [settings, setSettings] = useState({
     store_name: '',
     facebook_pixel_id: '',
@@ -99,7 +98,6 @@ export default function AdminPage() {
     setLoading(false);
   }
 
-  // حفظ الإعدادات والبيكسل المباشر
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -120,7 +118,7 @@ export default function AdminPage() {
 
       setSettingsNotice(true);
       setTimeout(() => setSettingsNotice(false), 3000);
-      alert('✅ تم حفظ رقم البيكسل وتفعيل التتبع بنجاح!');
+      alert('✅ تم حفظ إعدادات البيكسل بنجاح!');
     } catch (err) {
       alert('خطأ أثناء الحفظ: ' + err.message);
     }
@@ -313,19 +311,21 @@ export default function AdminPage() {
     setSavingProduct(false);
   };
 
+  // حساب الإحصائيات (المبيعات، التكاليف، الأرباح، الطلبات)
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
 
-  const formSelling = Number(productForm.price) || 0;
-  const formCompare = Number(productForm.compare_price) || 0;
-  const formCost = Number(productForm.cost_price) || 0;
+  // حساب إجمالي التكاليف بناءً على سعر تكلفة المنتجات المرتبطة بالطلبات
+  let totalCost = 0;
+  orders.forEach((o) => {
+    const matchedProduct = products.find((p) => o.product_name && o.product_name.includes(p.name));
+    const costPerItem = matchedProduct ? Number(matchedProduct.cost_price) || 0 : 0;
+    const qty = Number(o.quantity) || 1;
+    totalCost += costPerItem * qty;
+  });
 
-  const formDiscountPercent = formCompare > formSelling && formCompare > 0
-    ? Math.round(((formCompare - formSelling) / formCompare) * 100)
-    : 0;
-
-  const formProfit = formSelling - formCost;
-  const formProfitPercent = formSelling > 0 ? Math.round((formProfit / formSelling) * 100) : 0;
+  const totalProfit = totalRevenue - totalCost;
+  const avgOrderValue = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
 
   if (loading) {
     return (
@@ -345,7 +345,7 @@ export default function AdminPage() {
           <div className="flex items-center gap-3">
             <span className="text-2xl">⚡</span>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-white">{settings.store_name || 'لوحة تحكم المتجر'}</h1>
+              <h1 className="text-xl sm:text-2xl font-black text-white">{settings.store_name || 'LMAA STOR'}</h1>
               <p className="text-xs text-slate-400">إدارة المخزون، الطلبات، والبيكسل السريع</p>
             </div>
           </div>
@@ -389,27 +389,42 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
 
-        {/* 1. تبويب السلة */}
+        {/* 1. تبويب السلة والطلبات والإحصائيات */}
         {activeView === 'cart' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
-                <div className="text-slate-400 text-xs font-bold mb-1">إجمالي المبيعات</div>
+            
+            {/* بطاقات الإحصائيات (المبيعات، التكاليف، الأرباح، الطلبات، المتوسط) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              
+              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
+                <div className="text-slate-400 text-xs font-bold">إجمالي المبيعات</div>
                 <div className="text-2xl sm:text-3xl font-black text-emerald-400">{totalRevenue.toLocaleString()} ج.م</div>
               </div>
-              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
-                <div className="text-slate-400 text-xs font-bold mb-1">عدد الطلبات</div>
+
+              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
+                <div className="text-slate-400 text-xs font-bold">إجمالي التكاليف</div>
+                <div className="text-2xl sm:text-3xl font-black text-amber-400">{totalCost.toLocaleString()} ج.م</div>
+              </div>
+
+              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
+                <div className="text-slate-400 text-xs font-bold">إجمالي الربح الصافي</div>
+                <div className="text-2xl sm:text-3xl font-black text-teal-400">{totalProfit.toLocaleString()} ج.م</div>
+              </div>
+
+              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
+                <div className="text-slate-400 text-xs font-bold">عدد الطلبات</div>
                 <div className="text-2xl sm:text-3xl font-black text-white">{totalOrdersCount} طلب</div>
               </div>
-              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg">
-                <div className="text-slate-400 text-xs font-bold mb-1">متوسط الطلب</div>
-                <div className="text-2xl sm:text-3xl font-black text-teal-400">
-                  {totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0} ج.م
-                </div>
+
+              <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-lg space-y-1">
+                <div className="text-slate-400 text-xs font-bold">متوسط الطلب</div>
+                <div className="text-2xl sm:text-3xl font-black text-sky-400">{avgOrderValue.toLocaleString()} ج.م</div>
               </div>
+
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 pt-2">
+              <h3 className="text-lg font-black text-white">قائمة الطلبات الواردة</h3>
               {filteredOrders.map((order, idx) => (
                 <div key={order.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
                   <div className="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -552,7 +567,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 3. تبويب إعدادات البيكسل برقم ID المباشر */}
+        {/* 3. تبويب إعدادات البيكسل */}
         {activeView === 'settings' && (
           <form onSubmit={handleSaveSettings} className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
             <div className="border-b border-slate-800 pb-3">
@@ -583,7 +598,6 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* رقم الـ Pixel ID المباشر */}
               <div>
                 <label className="block text-xs font-bold text-emerald-400 mb-1.5 flex items-center gap-1.5">
                   <span>⚡</span>
@@ -597,10 +611,8 @@ export default function AdminPage() {
                   placeholder="مثال: 1005710628595160"
                   className="w-full bg-slate-950 border border-emerald-500/50 focus:border-emerald-400 rounded-xl p-3.5 text-sm font-mono text-emerald-300 placeholder-slate-600 focus:outline-none"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">الرقم المكون من أرقام فقط والموجود أعلى لوحة تحكم إعلانات فيسبوك.</p>
               </div>
 
-              {/* رمز الوصول للسيرفر CAPI */}
               <div className="p-4 bg-slate-950 border border-blue-500/30 rounded-2xl space-y-2">
                 <label className="block text-xs font-black text-blue-400">
                   🛡️ رمز الوصول لـ Conversions API (السيرفر CAPI):
@@ -614,17 +626,6 @@ export default function AdminPage() {
                   className="w-full bg-[#050811] border border-blue-500/40 rounded-xl p-3 text-xs font-mono text-blue-200 placeholder-slate-600 focus:outline-none"
                 />
               </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">TikTok Pixel ID (اختياري)</label>
-                <input
-                  type="text"
-                  value={settings.tiktok_pixel_id}
-                  onChange={(e) => setSettings({ ...settings, tiktok_pixel_id: e.target.value })}
-                  placeholder="مثال: C1234567890"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
-                />
-              </div>
             </div>
 
             <div className="pt-2">
@@ -633,7 +634,7 @@ export default function AdminPage() {
                 disabled={savingSettings}
                 className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
               >
-                {savingSettings ? 'جاري الحفظ والربط...' : 'حفظ وتفعيل البيكسل 💾'}
+                {savingSettings ? 'جاري الحفظ...' : 'حفظ وتفعيل البيكسل 💾'}
               </button>
             </div>
           </form>
@@ -647,7 +648,7 @@ export default function AdminPage() {
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-xl font-black text-white">
-                {editingProduct ? '✏️ تعديل المنتج والمخزون' : '➕ إضافة منتج ومخزون جديد'}
+                {editingProduct ? '✏️️ تعديل المنتج والمخزون' : '➕ إضافة منتج ومخزون جديد'}
               </h3>
               <button onClick={() => setShowProductModal(false)} className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white font-bold">
                 ✕
@@ -691,13 +692,14 @@ export default function AdminPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-amber-400 mb-1">سعر التكلفة</label>
+                  <label className="block text-xs font-bold text-amber-400 mb-1">سعر التكلفة *</label>
                   <input
                     type="number"
+                    required
                     value={productForm.cost_price}
                     onChange={(e) => setProductForm({ ...productForm, cost_price: e.target.value })}
                     placeholder="مثال: 250"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm font-bold"
+                    className="w-full bg-slate-950 border border-amber-500/40 rounded-xl p-3 text-white text-sm font-bold"
                   />
                 </div>
 
