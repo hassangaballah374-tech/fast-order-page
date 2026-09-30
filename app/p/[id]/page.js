@@ -266,11 +266,23 @@ export default function LuxuryProductPage() {
 
     triggerParticles(e);
 
+    const eventId = `add_cart_${Date.now()}`;
+    const itemPrice = Number(product.price) || 0;
+
+    if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'AddToCart', {
+        content_name: product.name,
+        content_ids: [String(product.id)],
+        value: itemPrice * quantity,
+        currency: 'EGP',
+      }, { eventID: eventId });
+    }
+
     const newItem = {
       id: `${product.id}_${selectedColor || ''}_${selectedSize || ''}_${Date.now()}`,
       productId: product.id,
       name: product.name,
-      price: Number(product.price) || 0,
+      price: itemPrice,
       image: galleryImages[0] || '',
       color: selectedColor || null,
       size: selectedSize || null,
@@ -278,14 +290,6 @@ export default function LuxuryProductPage() {
     };
 
     setCart((prev) => [...prev, newItem]);
-
-    if (typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'AddToCart', {
-        content_name: product.name,
-        value: (Number(product.price) || 0) * quantity,
-        currency: 'EGP',
-      });
-    }
 
     setTimeout(() => {
       setIsCartOpen(true);
@@ -320,6 +324,7 @@ export default function LuxuryProductPage() {
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('track', 'InitiateCheckout', {
           content_name: product?.name,
+          content_ids: [String(product?.id)],
           value: (Number(product?.price) || 0) * quantity,
           currency: 'EGP',
         });
@@ -379,6 +384,7 @@ export default function LuxuryProductPage() {
       if (typeof window !== 'undefined' && window.fbq) {
         window.fbq('track', 'Purchase', {
           content_name: product?.name,
+          content_ids: [String(product?.id)],
           value: finalTotal,
           currency: 'EGP',
         }, { eventID: eventId });
