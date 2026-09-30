@@ -51,32 +51,44 @@ export default function SingleProductPage() {
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
 
+  // السلة المشتركة
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const hasFiredCheckout = useRef(false);
 
   const [selectedGovernorate, setSelectedGovernorate] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [currentShippingFee, setCurrentShippingFee] = useState(50);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    detailedAddress: '',
-    notes: '',
-  });
+  const [formData, setFormData] = useState({ name: '', phone: '', detailedAddress: '', notes: '' });
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('fast_order_cart');
+      if (saved) setCart(JSON.parse(saved));
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('fast_order_cart', JSON.stringify(cart));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [cart]);
 
   useEffect(() => {
     async function loadProductData() {
       setLoading(true);
       try {
-        // 1. جلب إعدادات المتجر
         const { data: sData } = await supabase.from('store_settings').select('*').limit(1).maybeSingle();
         if (sData) {
           setSettings(sData);
-          const defaultRates = sData.shipping_rates || { cairo_giza: 50 };
-          setCurrentShippingFee(defaultRates.cairo_giza || 50);
+          if (sData.shipping_rates?.cairo_giza) setCurrentShippingFee(sData.shipping_rates.cairo_giza);
         }
 
-        // 2. جلب المنتج المطلوب
         let prod = null;
         if (productId === 'legacy') {
           if (sData && sData.product_name) {
@@ -108,24 +120,8 @@ export default function SingleProductPage() {
             setSelectedSize(prod.sizes[0]);
           }
 
-          // إطلاق حدث ViewContent للبيكسل لصفحة هذا المنتج المحددة
-          if (typeof window !== 'undefined') {
-            if (window.fbq) {
-              window.fbq('track', 'ViewContent', {
-                content_name: prod.name,
-                content_ids: [prod.id],
-                value: Number(prod.price) || 0,
-                currency: 'EGP',
-              });
-            }
-            if (window.ttq) {
-              window.ttq.track('ViewContent', {
-                content_name: prod.name,
-                content_id: String(prod.id),
-                value: Number(prod.price) || 0,
-                currency: 'EGP',
-              });
-            }
+          if (typeof window !== 'undefined' && window.fbq) {
+            window.fbq('track', 'ViewContent', { content_name: prod.name, value: Number(prod.price) || 0, currency: 'EGP' });
           }
         }
       } catch (err) {
@@ -133,7 +129,6 @@ export default function SingleProductPage() {
       }
       setLoading(false);
     }
-
     loadProductData();
   }, [productId]);
 
@@ -146,24 +141,42 @@ export default function SingleProductPage() {
     setCurrentShippingFee(rate);
   };
 
+  const galleryImages = Array.isArray(product?.images) && product.images.length > 0 ? product.images : [];
+
+  const handleAddToCart = () => {
+    if (product?.show_colors && product.colors?.length > 0 && !selectedColor) {
+      alert('يرجى اختيار اللون أولاً');
+      return;
+    }
+    if (product?.show_sizes && product.sizes?.length > 0 && !selectedSize) {
+      alert('يرجى اختيار المقاس أولاً');
+      return;
+    }
+
+    const newItem = {
+      id: `${product.id}_${Date.now()}`,
+      productId: product.id,
+      name: product.name,
+      price: Number(product.price) || 0,
+      image: galleryImages[0] || '',
+      color: selectedColor || null,
+      size: selectedSize || null,
+      quantity: quantity,
+    };
+
+    setCart((prev) => [...prev, newItem]);
+    setIsCartOpen(true);
+
+    if (typeof window !== 'undefined' && window.fbq) {
+      window.fbq('track', 'AddToCart', { content_name: product.name, value: (Number(product.price) || 0) * quantity, currency: 'EGP' });
+    }
+  };
+
   const scrollToCheckout = () => {
     if (!hasFiredCheckout.current) {
       hasFiredCheckout.current = true;
-      if (typeof window !== 'undefined') {
-        if (window.fbq) {
-          window.fbq('track', 'InitiateCheckout', {
-            content_name: product?.name,
-            value: (Number(product?.price) || 0) * quantity,
-            currency: 'EGP',
-          });
-        }
-        if (window.ttq) {
-          window.ttq.track('InitiateCheckout', {
-            content_name: product?.name,
-            value: (Number(product?.price) || 0) * quantity,
-            currency: 'EGP',
-          });
-        }
+      if (typeof window !== 'undefined' && window.fbq) {
+        window.fbq('track', 'InitiateCheckout', { content_name: product?.name, value: (Number(product?.price) || 0) * quantity, currency: 'EGP' });
       }
     }
     document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
@@ -177,7 +190,6 @@ export default function SingleProductPage() {
     }
 
     setOrderLoading(true);
-
     const subtotal = (Number(product?.price) || 0) * quantity;
     const shipping = Number(currentShippingFee) || 0;
     const finalTotal = subtotal + shipping;
@@ -188,7 +200,6 @@ export default function SingleProductPage() {
     const sizeChosen = selectedSize || '-';
 
     try {
-      // 1. الحفظ السريع داخل Supabase
       const { error } = await supabase.from('orders').insert([
         {
           customer_name: formData.name,
@@ -209,29 +220,13 @@ export default function SingleProductPage() {
 
       if (error) throw error;
 
-      // 2. إظهار رسالة النجاح فوراً
       setSuccess(true);
       setOrderLoading(false);
 
-      // إطلاق حدث الشراء Purchase
-      if (typeof window !== 'undefined') {
-        if (window.fbq) {
-          window.fbq('track', 'Purchase', {
-            content_name: product?.name,
-            value: finalTotal,
-            currency: 'EGP',
-          });
-        }
-        if (window.ttq) {
-          window.ttq.track('CompletePayment', {
-            content_name: product?.name,
-            value: finalTotal,
-            currency: 'EGP',
-          });
-        }
+      if (typeof window !== 'undefined' && window.fbq) {
+        window.fbq('track', 'Purchase', { content_name: product?.name, value: finalTotal, currency: 'EGP' });
       }
 
-      // 3. إرسال لجوجل شيت في الخلفية بدون تأخير
       fetch(GOOGLE_SHEET_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -257,7 +252,7 @@ export default function SingleProductPage() {
     }
   };
 
-  const galleryImages = Array.isArray(product?.images) && product.images.length > 0 ? product.images : [];
+  const totalCartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
   if (loading) {
     return (
@@ -273,62 +268,49 @@ export default function SingleProductPage() {
   if (!product) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center gap-4 font-sans p-6 text-center" dir="rtl">
-        <span className="text-5xl">🔍</span>
-        <h2 className="text-2xl font-black">عذراً، هذا المنتج غير متوفر أو تم حذفه!</h2>
-        <Link href="/" className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-sm transition">
-          العودة لكتالوج المنتجات
-        </Link>
+        <h2 className="text-2xl font-black">المنتج غير موجود!</h2>
+        <Link href="/" className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl text-sm">العودة للكتالوج</Link>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-28 antialiased" dir="rtl">
-      {/* شريط الشحن */}
-      <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-md">
-        🚚 التوصيل لجميع محافظات مصر • الدفع عند الاستلام بعد المعاينة والفحص!
-      </div>
-
-      {/* الترويسة مع زر الرجوع للكتالوج */}
       <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 py-3.5 px-4 sticky top-0 z-40 shadow-sm">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-xs sm:text-sm font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+          <Link href="/" className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
             <span>‹</span>
             <span>كل المنتجات</span>
           </Link>
-          <h1 className="text-base sm:text-lg font-black text-white">{settings?.store_name || 'متجرنا'}</h1>
+          <button
+            onClick={() => setIsCartOpen(true)}
+            className="relative px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1.5"
+          >
+            <span>🛒</span>
+            <span>السلة</span>
+            {totalCartCount > 0 && (
+              <span className="bg-emerald-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-black">
+                {totalCartCount}
+              </span>
+            )}
+          </button>
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
-        {/* كارت عرض تفاصيل المنتج */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-7 space-y-6">
-          {/* معرض الصور */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 space-y-6 shadow-2xl">
           {galleryImages.length > 0 && (
             <div className="space-y-3">
-              <div className="relative w-full bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[300px] max-h-[480px] p-2">
-                <img
-                  src={galleryImages[currentIndex]}
-                  alt={product.name}
-                  className="w-full h-auto max-h-[460px] object-contain mx-auto transition-all"
-                />
-                {galleryImages.length > 1 && (
-                  <div className="absolute bottom-3 left-3 bg-slate-900/90 border border-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300">
-                    {currentIndex + 1} / {galleryImages.length}
-                  </div>
-                )}
+              <div className="relative w-full bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[300px] max-h-[460px] p-2">
+                <img src={galleryImages[currentIndex]} alt={product.name} className="w-full h-auto max-h-[440px] object-contain mx-auto" />
               </div>
-
               {galleryImages.length > 1 && (
-                <div className="flex gap-2.5 overflow-x-auto pb-2">
+                <div className="flex gap-2.5 overflow-x-auto pb-1">
                   {galleryImages.map((img, idx) => (
                     <button
                       key={idx}
-                      type="button"
                       onClick={() => setCurrentIndex(idx)}
-                      className={`w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 transition ${
-                        currentIndex === idx ? 'border-emerald-500 scale-105' : 'border-slate-800 opacity-60'
-                      }`}
+                      className={`w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 ${currentIndex === idx ? 'border-emerald-500' : 'border-slate-800 opacity-60'}`}
                     >
                       <img src={img} alt="" className="w-full h-full object-cover" />
                     </button>
@@ -338,14 +320,6 @@ export default function SingleProductPage() {
             </div>
           )}
 
-          {/* فيديو المنتج إن وجد */}
-          {product.video_url && (
-            <div className="rounded-2xl overflow-hidden border border-slate-800 bg-black">
-              <video src={product.video_url} controls className="w-full max-h-[420px] object-contain mx-auto" />
-            </div>
-          )}
-
-          {/* الاسم والأسعار */}
           <div className="space-y-2">
             <h2 className="text-2xl sm:text-3xl font-black text-white">{product.name}</h2>
             <div className="flex items-baseline gap-3">
@@ -356,18 +330,17 @@ export default function SingleProductPage() {
             </div>
           </div>
 
-          {/* الوصف */}
           {product.description && (
             <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800/80 text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line">
               {product.description}
             </div>
           )}
 
-          {/* اختيار اللون */}
+          {/* الألوان */}
           {product.show_colors && product.colors?.length > 0 && (
             <div className="space-y-2.5 border-t border-slate-800 pt-4">
               <span className="block text-xs sm:text-sm font-bold text-slate-300">
-                اللون المختار: <strong className="text-emerald-400">{selectedColor}</strong>
+                اللون: <strong className="text-emerald-400">{selectedColor}</strong>
               </span>
               <div className="flex flex-wrap gap-2">
                 {product.colors.map((c, idx) => (
@@ -375,11 +348,7 @@ export default function SingleProductPage() {
                     key={idx}
                     type="button"
                     onClick={() => setSelectedColor(c.name)}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-bold transition ${
-                      selectedColor === c.name
-                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300 shadow'
-                        : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700'
-                    }`}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-bold transition ${selectedColor === c.name ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300' : 'border-slate-800 bg-slate-950 text-slate-400'}`}
                   >
                     <span className="w-3.5 h-3.5 rounded-full border border-slate-700" style={{ backgroundColor: c.code }}></span>
                     <span>{c.name}</span>
@@ -389,11 +358,11 @@ export default function SingleProductPage() {
             </div>
           )}
 
-          {/* اختيار المقاس */}
+          {/* المقاسات */}
           {product.show_sizes && product.sizes?.length > 0 && (
             <div className="space-y-2.5 border-t border-slate-800 pt-4">
               <span className="block text-xs sm:text-sm font-bold text-slate-300">
-                المقاس المختار: <strong className="text-emerald-400">{selectedSize}</strong>
+                المقاس: <strong className="text-emerald-400">{selectedSize}</strong>
               </span>
               <div className="flex flex-wrap gap-2">
                 {product.sizes.map((s, idx) => (
@@ -401,11 +370,7 @@ export default function SingleProductPage() {
                     key={idx}
                     type="button"
                     onClick={() => setSelectedSize(s)}
-                    className={`min-w-[48px] px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-black transition ${
-                      selectedSize === s
-                        ? 'border-emerald-500 bg-emerald-600 text-white'
-                        : 'border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700'
-                    }`}
+                    className={`min-w-[48px] px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-black transition ${selectedSize === s ? 'border-emerald-500 bg-emerald-600 text-white' : 'border-slate-800 bg-slate-950 text-slate-400'}`}
                   >
                     {s}
                   </button>
@@ -414,41 +379,28 @@ export default function SingleProductPage() {
             </div>
           )}
 
-          {/* اختيار الكمية */}
-          <div className="flex items-center justify-between border-t border-slate-800 pt-4">
-            <span className="text-xs sm:text-sm font-bold text-slate-300">الكمية المطلوبة:</span>
-            <div className="flex items-center gap-3 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black"
-              >
-                −
-              </button>
-              <span className="text-sm font-black text-white w-6 text-center">{quantity}</span>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => q + 1)}
-                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          <div className="pt-2">
+          {/* أزرار السلة والطلب الفوري */}
+          <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-800">
             <button
               type="button"
               onClick={scrollToCheckout}
-              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-lg rounded-2xl shadow-xl shadow-emerald-900/40 transition active:scale-[0.99] flex items-center justify-center gap-2"
+              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-base rounded-2xl shadow-xl transition active:scale-[0.99] flex items-center justify-center gap-2"
             >
               <span>⚡</span>
-              <span>اطلب الآن - الدفع عند الاستلام</span>
+              <span>اطلب الآن فوراً</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold text-base rounded-2xl border border-slate-700 transition active:scale-[0.99] flex items-center justify-center gap-2"
+            >
+              <span>🛒</span>
+              <span>أضف إلى السلة</span>
             </button>
           </div>
         </div>
 
-        {/* نموذج كتابة البيانات وتأكيد الطلب السريع */}
+        {/* نموذج الشراء المباشر */}
         <div id="checkout-form" className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl scroll-mt-20">
           <div className="text-center mb-6">
             <h3 className="text-xl sm:text-2xl font-black text-white">بيانات توصيل الطلب</h3>
@@ -456,12 +408,9 @@ export default function SingleProductPage() {
           </div>
 
           {success ? (
-            <div className="p-6 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-2xl text-center space-y-3">
-              <p className="text-3xl font-black">🎉 تم تسجيل طلبك بنجاح!</p>
-              <p className="text-sm text-slate-300">سيتواصل معك فريق خدمة العملاء هاتفياً لتأكيد الشحن والتسليم.</p>
-              <Link href="/" className="inline-block mt-3 px-5 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold">
-                متابعة التسوق في المتجر
-              </Link>
+            <div className="p-6 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-2xl text-center space-y-2">
+              <p className="text-2xl font-black">🎉 تم تأكيد طلبك بنجاح!</p>
+              <p className="text-xs text-slate-300">سيتواصل معك فريق خدمة العملاء هاتفياً لتأكيد الشحن.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -525,30 +474,29 @@ export default function SingleProductPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1.5">العنوان بالتفصيل (الشارع وعلامة مميزة)</label>
+                <label className="block text-xs font-bold text-slate-400 mb-1.5">العنوان بالتفصيل</label>
                 <textarea
                   required
                   rows="2"
-                  placeholder="اسم الشارع، رقم العمارة، الشقة، أو علامة مميزة..."
+                  placeholder="الشارع، رقم العمارة، علامة مميزة..."
                   value={formData.detailedAddress}
                   onChange={(e) => setFormData({ ...formData, detailedAddress: e.target.value })}
                   className="w-full p-3.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500 text-sm"
                 ></textarea>
               </div>
 
-              {/* ملخص السعر والحسابات */}
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between text-slate-400">
-                  <span>سعر المنتج ({quantity} قطعة):</span>
-                  <span className="font-bold text-white">{Number(product.price) * quantity} ج.م</span>
+                  <span>سعر المنتج:</span>
+                  <span className="font-bold text-white">{product.price} ج.م</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
-                  <span>مصاريف الشحن ({selectedGovernorate || 'حدد المحافظة'}):</span>
+                  <span>الشحن ({selectedGovernorate || 'حدد المحافظة'}):</span>
                   <span className="font-bold text-emerald-400">{currentShippingFee} ج.م</span>
                 </div>
                 <div className="border-t border-slate-800 pt-2 flex justify-between font-black text-sm sm:text-base">
-                  <span className="text-white">المبلغ الإجمالي عند الاستلام:</span>
-                  <span className="text-emerald-400 text-xl">{(Number(product.price) * quantity) + currentShippingFee} ج.م</span>
+                  <span className="text-white">المبلغ عند الاستلام:</span>
+                  <span className="text-emerald-400 text-xl">{Number(product.price) + currentShippingFee} ج.م</span>
                 </div>
               </div>
 
