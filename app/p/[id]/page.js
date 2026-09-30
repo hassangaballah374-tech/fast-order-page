@@ -51,7 +51,7 @@ export default function SingleProductPage() {
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
 
-  // إدارة سلة المشتريات
+  // السلة
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartOrderLoading, setCartOrderLoading] = useState(false);
@@ -60,19 +60,18 @@ export default function SingleProductPage() {
 
   const hasFiredCheckout = useRef(false);
 
-  // بيانات الشحن المباشر
+  // شحن مباشر
   const [selectedGovernorate, setSelectedGovernorate] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [currentShippingFee, setCurrentShippingFee] = useState(50);
   const [formData, setFormData] = useState({ name: '', phone: '', detailedAddress: '', notes: '' });
 
-  // بيانات شحن السلة
+  // شحن السلة
   const [cartGov, setCartGov] = useState('');
   const [cartCity, setCartCity] = useState('');
   const [cartShippingFee, setCartShippingFee] = useState(50);
   const [cartForm, setCartForm] = useState({ name: '', phone: '', detailedAddress: '' });
 
-  // مزامنة السلة مع التخزين المحلي للمتصفح
   useEffect(() => {
     try {
       const saved = localStorage.getItem('fast_order_cart');
@@ -110,6 +109,7 @@ export default function SingleProductPage() {
               id: 'legacy',
               name: sData.product_name,
               price: Number(sData.product_price) || 0,
+              compare_price: Number(sData.original_price) || null,
               original_price: Number(sData.original_price) || null,
               description: sData.description || '',
               images: sData.images || (sData.image_url ? [sData.image_url] : []),
@@ -171,7 +171,6 @@ export default function SingleProductPage() {
 
   const galleryImages = Array.isArray(product?.images) && product.images.length > 0 ? product.images : [];
 
-  // دالة الإضافة إلى السلة
   const handleAddToCart = () => {
     if (product?.show_colors && product.colors?.length > 0 && !selectedColor) {
       alert('يرجى اختيار اللون أولاً');
@@ -241,7 +240,6 @@ export default function SingleProductPage() {
     document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // تأكيد الطلب المباشر
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedGovernorate) {
@@ -312,7 +310,6 @@ export default function SingleProductPage() {
     }
   };
 
-  // تأكيد طلب سلة المشتريات
   const handleCartSubmit = async (e) => {
     e.preventDefault();
     if (!cartGov) {
@@ -380,6 +377,15 @@ export default function SingleProductPage() {
     setCartOrderLoading(false);
   };
 
+  // حساب دقيق لنسبة الخصم ومبلغ التوفير
+  const currentSellingPrice = Number(product?.price) || 0;
+  const originalOldPrice = Number(product?.compare_price || product?.original_price) || 0;
+  const hasDiscount = originalOldPrice > currentSellingPrice && currentSellingPrice > 0;
+  const discountPercent = hasDiscount
+    ? Math.round(((originalOldPrice - currentSellingPrice) / originalOldPrice) * 100)
+    : 0;
+  const savedAmount = hasDiscount ? (originalOldPrice - currentSellingPrice) : 0;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center font-sans" dir="rtl">
@@ -408,7 +414,7 @@ export default function SingleProductPage() {
         🚚 التوصيل لجميع محافظات مصر • الدفع عند الاستلام بعد المعاينة والفحص!
       </div>
 
-      {/* الترويسة العلوية مع زر العودة وزر السلة */}
+      {/* الترويسة العلوية */}
       <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 py-3.5 px-4 sticky top-0 z-40 shadow-sm">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <Link href="/" className="text-xs sm:text-sm font-bold text-emerald-400 flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 hover:border-slate-700">
@@ -431,7 +437,7 @@ export default function SingleProductPage() {
         </div>
       </header>
 
-      {/* تنبيه سريع عند الإضافة للسلة */}
+      {/* إشعار الإضافة للسلة */}
       {addedPopup && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white px-5 py-2.5 rounded-2xl shadow-2xl font-bold text-xs sm:text-sm flex items-center gap-2 animate-bounce">
           <span>✅</span>
@@ -442,11 +448,20 @@ export default function SingleProductPage() {
       <main className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 space-y-6 shadow-2xl">
           
-          {/* معرض الصور */}
+          {/* معرض الصور مع شارة الخصم العلوية */}
           {galleryImages.length > 0 && (
             <div className="space-y-3">
               <div className="relative w-full bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center min-h-[300px] max-h-[460px] p-2">
                 <img src={galleryImages[currentIndex]} alt={product.name} className="w-full h-auto max-h-[440px] object-contain mx-auto" />
+                
+                {/* شارة الخصم البارزة على الصورة */}
+                {hasDiscount && (
+                  <div className="absolute top-3 right-3 bg-red-600 text-white font-black px-3 py-1.5 rounded-2xl shadow-xl flex items-center gap-1 text-xs sm:text-sm animate-pulse">
+                    <span>🔥</span>
+                    <span>خصم {discountPercent}%</span>
+                  </div>
+                )}
+
                 {galleryImages.length > 1 && (
                   <div className="absolute bottom-3 left-3 bg-slate-900/90 border border-slate-700 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300">
                     {currentIndex + 1} / {galleryImages.length}
@@ -476,13 +491,35 @@ export default function SingleProductPage() {
             </div>
           )}
 
-          {/* اسم المنتج والأسعار */}
-          <div className="space-y-2">
+          {/* اسم المنتج وقسم الأسعار ونسبة الخصم والتوفير */}
+          <div className="space-y-3">
             <h2 className="text-2xl sm:text-3xl font-black text-white">{product.name}</h2>
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-black text-emerald-400">{product.price} ج.م</span>
-              {product.original_price && (
-                <span className="text-lg line-through text-slate-500">{product.original_price} ج.م</span>
+            
+            {/* كتلة الأسعار مع شارة الخصم الصريحة */}
+            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-1">
+                <span className="text-[11px] text-slate-400 block font-bold">السعر الآن لفترة محدودة:</span>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-3xl sm:text-4xl font-black text-emerald-400">{currentSellingPrice} ج.م</span>
+                  {hasDiscount && (
+                    <span className="text-base sm:text-lg line-through text-slate-500 font-bold">
+                      {originalOldPrice} ج.م
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* بطاقات الخصم والتوفير للعميل */}
+              {hasDiscount && (
+                <div className="flex flex-col items-end gap-1.5">
+                  <span className="bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-xs sm:text-sm px-3.5 py-1.5 rounded-xl shadow-lg flex items-center gap-1">
+                    <span>⚡</span>
+                    <span>خصم {discountPercent}%</span>
+                  </span>
+                  <span className="text-[11px] text-emerald-400 font-black bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">
+                    وفرت: {savedAmount} ج.م
+                  </span>
+                </div>
               )}
             </div>
           </div>
@@ -559,9 +596,8 @@ export default function SingleProductPage() {
             </div>
           </div>
 
-          {/* ---------------- زر اطلب الآن وبجانبه زر أضف إلى السلة جنباً إلى جنب ---------------- */}
+          {/* زر اطلب الآن وزر أضف للسلة جنباً إلى جنب */}
           <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-800">
-            {/* زر اطلب الآن الرئيسي */}
             <button
               type="button"
               onClick={scrollToCheckout}
@@ -571,7 +607,6 @@ export default function SingleProductPage() {
               <span>اطلب الآن - الدفع عند الاستلام</span>
             </button>
 
-            {/* زر أضف إلى السلة بجانبه */}
             <button
               type="button"
               onClick={handleAddToCart}
@@ -674,7 +709,7 @@ export default function SingleProductPage() {
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between text-slate-400">
                   <span>سعر المنتج ({quantity} قطعة):</span>
-                  <span className="font-bold text-white">{Number(product.price) * quantity} ج.م</span>
+                  <span className="font-bold text-white">{currentSellingPrice * quantity} ج.م</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>الشحن ({selectedGovernorate || 'حدد المحافظة'}):</span>
@@ -682,7 +717,7 @@ export default function SingleProductPage() {
                 </div>
                 <div className="border-t border-slate-800 pt-2 flex justify-between font-black text-sm sm:text-base">
                   <span className="text-white">المبلغ عند الاستلام:</span>
-                  <span className="text-emerald-400 text-xl">{(Number(product.price) * quantity) + currentShippingFee} ج.م</span>
+                  <span className="text-emerald-400 text-xl">{(currentSellingPrice * quantity) + currentShippingFee} ج.م</span>
                 </div>
               </div>
 
@@ -698,7 +733,7 @@ export default function SingleProductPage() {
         </div>
       </main>
 
-      {/* دراوَر نافذة سلة المشتريات المنبثقة */}
+      {/* دراوَر السلة الجانبي */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end">
           <div className="w-full max-w-md h-full bg-slate-900 border-r border-slate-800 flex flex-col p-6 shadow-2xl overflow-y-auto">
@@ -852,7 +887,7 @@ export default function SingleProductPage() {
         </div>
       )}
 
-      {/* زر أيقونة السلة العائم أسفل الشاشة للموبايل والكمبيوتر */}
+      {/* زر السلة العائم */}
       <button
         onClick={() => { setIsCartOpen(true); setCartSuccess(false); }}
         className="fixed bottom-5 left-5 z-40 bg-emerald-600 hover:bg-emerald-500 text-white p-3.5 rounded-full shadow-2xl flex items-center justify-center transition active:scale-95 border-2 border-emerald-400/40"
