@@ -76,7 +76,6 @@ export default function LuxuryProductPage() {
   const [cartShippingFee, setCartShippingFee] = useState(50);
   const [cartForm, setCartForm] = useState({ name: '', phone: '', detailedAddress: '' });
 
-  // عداد الـ FOMO
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
@@ -96,7 +95,6 @@ export default function LuxuryProductPage() {
     };
   }, []);
 
-  // جلب السلة من المتصفح
   useEffect(() => {
     try {
       const saved = localStorage.getItem('fast_order_cart');
@@ -114,11 +112,11 @@ export default function LuxuryProductPage() {
     }
   }, [cart]);
 
-  // دالة تفعيل البيكسل الآمنة المحصنة ضد الـ undefined
-  const initFacebookPixel = (pixelId) => {
-    if (typeof window === 'undefined') return;
-    const cleanId = pixelId ? String(pixelId).trim() : '';
-    if (!cleanId || cleanId === 'undefined' || cleanId === 'null') return;
+  // دالة تفعيل جميع البيكسلات المتعددة
+  const initFacebookPixels = (pixelsString) => {
+    if (typeof window === 'undefined' || !pixelsString) return;
+    const pixels = String(pixelsString).split(',').map((p) => p.trim()).filter(Boolean);
+    if (pixels.length === 0) return;
 
     if (!window.fbq) {
       (function (f, b, e, v, n, t, s) {
@@ -140,14 +138,15 @@ export default function LuxuryProductPage() {
     }
 
     try {
-      window.fbq('init', cleanId);
+      pixels.forEach((pid) => {
+        window.fbq('init', pid);
+      });
       window.fbq('track', 'PageView');
     } catch (err) {
-      console.error('FB Pixel Init Error:', err);
+      console.error('FB Pixels Init Error:', err);
     }
   };
 
-  // جلب بيانات المنتج والبيكسل فوراً
   useEffect(() => {
     async function loadData() {
       setLoading(true);
@@ -159,8 +158,9 @@ export default function LuxuryProductPage() {
             setCurrentShippingFee(sData.shipping_rates.cairo_giza);
             setCartShippingFee(sData.shipping_rates.cairo_giza);
           }
-          if (sData.facebook_pixel_id) {
-            initFacebookPixel(sData.facebook_pixel_id);
+          const pixelsToInit = sData.facebook_pixels || sData.facebook_pixel_id;
+          if (pixelsToInit) {
+            initFacebookPixels(pixelsToInit);
           }
         }
 
@@ -197,7 +197,7 @@ export default function LuxuryProductPage() {
             setSelectedSize(prod.sizes[0]);
           }
 
-          if (typeof window !== 'undefined' && sData?.facebook_pixel_id) {
+          if (typeof window !== 'undefined' && (sData?.facebook_pixels || sData?.facebook_pixel_id)) {
             if (window.fbq) {
               window.fbq('track', 'ViewContent', {
                 content_name: prod.name,
@@ -333,7 +333,6 @@ export default function LuxuryProductPage() {
     document.getElementById('checkout-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // تأكيد الطلب المباشر مع خصم المخزون والتتبع المزدوج
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedGovernorate) {
@@ -427,7 +426,6 @@ export default function LuxuryProductPage() {
     }
   };
 
-  // تأكيد طلب السلة
   const handleCartSubmit = async (e) => {
     e.preventDefault();
     if (!cartGov) {
@@ -560,7 +558,7 @@ export default function LuxuryProductPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans pb-36 antialiased select-none" dir="rtl">
       
-      {/* طبقة البارتكلز المتحركة */}
+      {/* البارتكلز المتحركة */}
       <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
         {particles.map((p) => (
           <span
