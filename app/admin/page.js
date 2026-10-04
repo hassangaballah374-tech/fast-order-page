@@ -306,22 +306,16 @@ export default function AdminPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map((p) => {
-                const sellingPrice = Number(p.price) || 0;
-                const costPrice = Number(p.cost_price) || 0;
                 const stockCount = p.stock !== undefined ? p.stock : 20;
-                const profitMargin = sellingPrice - costPrice;
                 const productUrl = p.id === 'legacy_product' ? '/' : `/p/${p.id}`;
 
                 const pOrders = orders.filter((o) => o.product_name && o.product_name.includes(p.name));
                 const pOrdersCount = pOrders.length;
                 const pRevenue = pOrders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
-                const pProfit = pOrdersCount * profitMargin;
                 
                 const pVisits = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'visit').length;
                 const pCarts = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'add_to_cart').length;
                 const pCheckouts = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'initiate_checkout').length;
-                
-                // حساب معدل التحويل المستقل لكل منتج
                 const pConvRate = pVisits > 0 ? ((pOrdersCount / pVisits) * 100).toFixed(2) : '0.00';
 
                 return (
@@ -339,7 +333,7 @@ export default function AdminPage() {
 
                       <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
 
-                      {/* 📊 لوحة الإحصائيات المستقلة (شاملة معدل التحويل لكل منتج) */}
+                      {/* 📊 لوحة الإحصائيات المستقلة (إجمالي المبيعات + معدل التحويل) */}
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                           <span className="text-slate-400 block text-[10px]">الزيارات</span>
@@ -358,12 +352,12 @@ export default function AdminPage() {
                           <span className="text-indigo-400 font-black text-sm">{pCheckouts}</span>
                         </div>
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                          <span className="text-slate-400 block text-[10px]">معدل التحويل</span>
-                          <span className="text-sky-400 font-black text-sm">{pConvRate}%</span>
+                          <span className="text-slate-400 block text-[10px]">إجمالي المبيعات</span>
+                          <span className="text-emerald-400 font-black text-sm">{pRevenue.toLocaleString()} ج.م</span>
                         </div>
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                          <span className="text-slate-400 block text-[10px]">صافي الأرباح</span>
-                          <span className="text-teal-300 font-black text-sm">{pProfit} ج.م</span>
+                          <span className="text-slate-400 block text-[10px]">معدل التحويل</span>
+                          <span className="text-sky-400 font-black text-sm">{pConvRate}%</span>
                         </div>
                       </div>
                     </div>
@@ -388,7 +382,6 @@ export default function AdminPage() {
 
         {activeView === 'cart' && (
           <div className="space-y-6">
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
                 <div className="text-xs font-bold text-slate-400 flex items-center justify-between">
