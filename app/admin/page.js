@@ -210,6 +210,7 @@ export default function AdminPage() {
     setSavingProduct(false);
   };
 
+  // الإحصائيات الشاملة للمتجر
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
 
@@ -227,6 +228,9 @@ export default function AdminPage() {
   const initiateCheckoutCount = analytics.filter(a => a.event_type === 'initiate_checkout').length;
   const incompleteOrders = orders.filter(o => o.status === 'قيد الانتظار' || o.status === 'ملغي').length;
   const conversionRate = visitorsCount > 0 ? ((totalOrdersCount / visitorsCount) * 100).toFixed(2) : '0.00';
+  
+  // حساب معدل سعر الطلب للمتجر كاملاً (AOV)
+  const averageOrderValue = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
 
   if (loading) {
     return (
@@ -286,6 +290,7 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
 
+        {/* 1. تبويب المنتجات والمخزون مع إحصائيات كل منتج */}
         {activeView === 'products' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 p-5 rounded-3xl border border-slate-800">
@@ -315,12 +320,15 @@ export default function AdminPage() {
                 const pOrders = orders.filter((o) => o.product_name && o.product_name.includes(p.name));
                 const pOrdersCount = pOrders.length;
                 const pRevenue = pOrders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
-                const pProfit = pOrdersCount * profitMargin; // حساب صافي الأرباح لهذا المنتج
+                const pProfit = pOrdersCount * profitMargin;
                 
                 const pVisits = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'visit').length;
                 const pCarts = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'add_to_cart').length;
                 const pCheckouts = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'initiate_checkout').length;
                 const pConvRate = pVisits > 0 ? ((pOrdersCount / pVisits) * 100).toFixed(2) : '0.00';
+                
+                // حساب معدل سعر الطلب للمنتج (متوسط الطلب)
+                const pAverageOrderValue = pOrdersCount > 0 ? Math.round(pRevenue / pOrdersCount) : sellingPrice;
 
                 return (
                   <div key={p.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg flex flex-col justify-between space-y-4">
@@ -337,7 +345,7 @@ export default function AdminPage() {
 
                       <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
 
-                      {/* 📊 لوحة الإحصائيات المستقلة (الخانات السابقة كما هي + خانة صافي الأرباح مضافة معهم) */}
+                      {/* 📊 لوحة الإحصائيات المستقلة للمنتج (شاملة معدل سعر الطلب) */}
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                           <span className="text-slate-400 block text-[10px]">الزيارات</span>
@@ -363,8 +371,12 @@ export default function AdminPage() {
                           <span className="text-slate-400 block text-[10px]">معدل التحويل</span>
                           <span className="text-sky-400 font-black text-sm">{pConvRate}%</span>
                         </div>
-                        <div className="col-span-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
-                          <span className="text-slate-400 text-[10px]">صافي الأرباح للمنتج</span>
+                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                          <span className="text-slate-400 block text-[10px]">معدل سعر الطلب</span>
+                          <span className="text-amber-400 font-black text-sm">{pAverageOrderValue.toLocaleString()} ج.م</span>
+                        </div>
+                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                          <span className="text-slate-400 block text-[10px]">صافي الأرباح</span>
                           <span className="text-teal-300 font-black text-sm">{pProfit.toLocaleString()} ج.م</span>
                         </div>
                       </div>
@@ -388,9 +400,11 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* 2. تبويب السلة والطلبات (اللوحة المجمعة لكل المتجر) */}
         {activeView === 'cart' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
                 <div className="text-xs font-bold text-slate-400 flex items-center justify-between">
                   <span>إجمالي الزائرين</span>
@@ -437,6 +451,14 @@ export default function AdminPage() {
                   <span>⚡</span>
                 </div>
                 <div className="text-2xl sm:text-3xl font-black text-indigo-400">{initiateCheckoutCount}</div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
+                <div className="text-xs font-bold text-slate-400 flex items-center justify-between">
+                  <span>معدل سعر الطلب</span>
+                  <span>🏷️</span>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black text-amber-400">{averageOrderValue.toLocaleString()} ج.م</div>
               </div>
 
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
@@ -493,6 +515,7 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* 3. تبويب الإعدادات */}
         {activeView === 'settings' && (
           <form onSubmit={handleSaveSettings} className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
             <div className="border-b border-slate-800 pb-3">
@@ -556,6 +579,7 @@ export default function AdminPage() {
 
       </main>
 
+      {/* مودال المنتج */}
       {showProductModal && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-6 space-y-6 shadow-2xl">
