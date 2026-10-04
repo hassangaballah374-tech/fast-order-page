@@ -26,6 +26,9 @@ export default function AdminPage() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
+  // حالة عرض تفاصيل منتج معين (لوحة المنتج المنفصلة)
+  const [selectedProductAnalytics, setSelectedProductAnalytics] = useState(null);
+
   const [productForm, setProductForm] = useState({
     name: '', price: '', compare_price: '', cost_price: '', stock: 20,
     description: '', images: [], video_url: '', show_colors: false, colors: [], show_sizes: false, sizes: [],
@@ -204,14 +207,14 @@ export default function AdminPage() {
         if (data) setProducts((prev) => [data, ...prev]);
       }
       setShowProductModal(false);
-      alert('✅ تم حفظ المنتج بنجاح!');
+      alert('✅ تم حفظ المنتج بنجاح وتوليد لوحة التحليلات الخاصة به تلقائياً!');
     } catch (err) {
       alert('خطأ: ' + err.message);
     }
     setSavingProduct(false);
   };
 
-  // الحسابات والإحصائيات الشاملة للمتجر
+  // 📊 حسابات الإحصائيات المجمعة لكل المتجر
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
 
@@ -224,10 +227,9 @@ export default function AdminPage() {
   });
 
   const totalProfit = totalRevenue - totalCost;
-
-  const visitorsCount = analytics.filter(a => a.event_type === 'visit').length || 1240;
-  const addToCartCount = analytics.filter(a => a.event_type === 'add_to_cart').length || 312;
-  const initiateCheckoutCount = analytics.filter(a => a.event_type === 'initiate_checkout').length || 185;
+  const visitorsCount = analytics.filter(a => a.event_type === 'visit').length;
+  const addToCartCount = analytics.filter(a => a.event_type === 'add_to_cart').length;
+  const initiateCheckoutCount = analytics.filter(a => a.event_type === 'initiate_checkout').length;
   const incompleteOrders = orders.filter(o => o.status === 'قيد الانتظار' || o.status === 'ملغي').length;
   const conversionRate = visitorsCount > 0 ? ((totalOrdersCount / visitorsCount) * 100).toFixed(2) : '0.00';
 
@@ -250,7 +252,7 @@ export default function AdminPage() {
             <span className="text-2xl">⚡</span>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-white">{settings.store_name || 'LMAA STOR'}</h1>
-              <p className="text-xs text-slate-400">لوحة التحكم الشاملة وإحصائيات المتجر والبيكسلات</p>
+              <p className="text-xs text-slate-400">لوحة التحكم والتحليلات التلقائية للمنتجات</p>
             </div>
           </div>
 
@@ -289,13 +291,13 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
 
-        {/* 1. تبويب المنتجات والمخزون مع إحصائيات كل منتج (الطلبات، المبيعات، الأرباح) */}
+        {/* 1. تبويب المنتجات والمخزون مع إحصائيات مستقلة لكل منتج */}
         {activeView === 'products' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 p-5 rounded-3xl border border-slate-800">
               <div>
                 <h2 className="text-xl font-black text-white">قائمة المنتجات ومخزون القطع ({products.length})</h2>
-                <p className="text-xs text-slate-400 mt-0.5">متابعة المخزون، الأسعار، وإحصائيات الطلبات والمبيعات لكل منتج</p>
+                <p className="text-xs text-slate-400 mt-0.5">كل منتج له لوحة تحليلات مستقلة تتولد وتعمل تلقائياً فور إضافته</p>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={loadAllData} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-2xl text-xs sm:text-sm">
@@ -316,45 +318,58 @@ export default function AdminPage() {
                 const profitMargin = sellingPrice - costPrice;
                 const productUrl = p.id === 'legacy_product' ? '/' : `/p/${p.id}`;
 
-                // حساب الطلبات والمبيعات الخاصة بهذا المنتج حصرياً من جدول الطلبات
-                const productOrders = orders.filter((o) => o.product_name && o.product_name.includes(p.name));
-                const productOrdersCount = productOrders.length;
-                const productRevenue = productOrders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
-                const productTotalProfit = productOrdersCount * profitMargin;
+                // تحليلات هذا المنتج المستقلة
+                const pOrders = orders.filter((o) => o.product_name && o.product_name.includes(p.name));
+                const pOrdersCount = pOrders.length;
+                const pIncomplete = pOrders.filter(o => o.status === 'قيد الانتظار' || o.status === 'ملغي').length;
+                const pRevenue = pOrders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
+                const pProfit = pOrdersCount * profitMargin;
+                
+                const pVisits = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'visit').length;
+                const pCarts = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'add_to_cart').length;
+                const pCheckouts = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'initiate_checkout').length;
+                const pConvRate = pVisits > 0 ? ((pOrdersCount / pVisits) * 100).toFixed(2) : '0.00';
 
                 return (
                   <div key={p.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg flex flex-col justify-between space-y-4">
                     <div className="space-y-3">
                       {p.images && p.images.length > 0 ? (
-                        <div className="w-full h-48 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center p-2 relative">
+                        <div className="w-full h-44 bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center p-2">
                           <img src={p.images[0]} alt={p.name} className="w-full h-full object-contain" />
                         </div>
                       ) : (
-                        <div className="w-full h-48 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center text-slate-600 text-4xl">
+                        <div className="w-full h-44 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center text-slate-600 text-3xl">
                           📦
                         </div>
                       )}
 
                       <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
 
-                      <div className="bg-[#050811] p-3 rounded-2xl border border-slate-800 flex items-center justify-between text-xs font-bold">
-                        <span className="text-slate-400">المخزون المتبقي:</span>
-                        <span className="text-emerald-400">{stockCount} قطعة</span>
-                      </div>
-
-                      {/* إحصائيات المبيعات والطلبات الخاصة بهذا المنتج */}
-                      <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs">
-                        <div className="flex justify-between font-bold">
-                          <span className="text-slate-400">عدد الطلبات للقطعة:</span>
-                          <span className="text-sky-400 font-black">{productOrdersCount} طلب</span>
+                      {/* 📊 لوحة الإحصائيات المستقلة الخاصة بهذا المنتج فقط */}
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                          <span className="text-slate-400 block text-[10px]">الزيارات</span>
+                          <span className="text-white font-black text-sm">{pVisits}</span>
                         </div>
-                        <div className="flex justify-between font-bold">
-                          <span className="text-slate-400">إجمالي المبيعات:</span>
-                          <span className="text-emerald-400 font-black">{productRevenue.toLocaleString()} ج.م</span>
+                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                          <span className="text-slate-400 block text-[10px]">الطلبات المكتملة</span>
+                          <span className="text-emerald-400 font-black text-sm">{pOrdersCount} طلب</span>
                         </div>
-                        <div className="flex justify-between font-bold border-t border-slate-800 pt-1.5">
-                          <span className="text-slate-400">صافي ربح المنتج:</span>
-                          <span className="text-teal-300 font-black">{productTotalProfit.toLocaleString()} ج.م</span>
+                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                          <span className="text-slate-400 block text-[10px]">إضافة للسلة</span>
+                          <span className="text-teal-400 font-black text-sm">{pCarts}</span>
+                        </div>
+                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                          <span className="text-slate-400 block text-[10px]">بدء الشراء</span>
+                          <span className="text-indigo-400 font-black text-sm">{pCheckouts}</span>
+                        </div>
+                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                          <span className="text-slate-400 block text-[10px]">إجمالي المبيعات</span>
+                          <span className="text-emerald-400 font-black text-sm">{pRevenue} ج.م</span>
+                        </div>
+                        <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                          <span className="text-slate-400 block text-[10px]">صافي الأرباح</span>
+                          <span className="text-teal-300 font-black text-sm">{pProfit} ج.م</span>
                         </div>
                       </div>
                     </div>
@@ -377,15 +392,15 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 2. تبويب السلة والطلبات والإحصائيات الشاملة */}
+        {/* 2. تبويب السلة والطلبات (اللوحة المجمعة لكل المتجر) */}
         {activeView === 'cart' && (
           <div className="space-y-6">
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
                 <div className="text-xs font-bold text-slate-400 flex items-center justify-between">
-                  <span>الزائرين</span>
-                  <span>👁️</span>
+                  <span>إجمالي الزائرين</span>
+                  <span>👁️️</span>
                 </div>
                 <div className="text-2xl sm:text-3xl font-black text-white">{visitorsCount.toLocaleString()}</div>
               </div>
@@ -408,7 +423,7 @@ export default function AdminPage() {
 
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
                 <div className="text-xs font-bold text-slate-400 flex items-center justify-between">
-                  <span>معدل التحويل</span>
+                  <span>معدل التحويل العام</span>
                   <span>📈</span>
                 </div>
                 <div className="text-2xl sm:text-3xl font-black text-sky-400">{conversionRate}%</div>
@@ -484,7 +499,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 3. تبويب إعدادات البيكسلات المستقلة ورموز الـ API */}
+        {/* 3. تبويب الإعدادات */}
         {activeView === 'settings' && (
           <form onSubmit={handleSaveSettings} className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
             <div className="border-b border-slate-800 pb-3">
@@ -614,7 +629,7 @@ export default function AdminPage() {
               </button>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-                <button type="button" onClick={() => setShowProductModal(false)} className="px-5 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-sm font-bold">
+                <button type="button" onClick={() => setShowProduct`Modal`(false)} className="px-5 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-sm font-bold">
                   إلغاء
                 </button>
                 <button type="submit" disabled={savingProduct} className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold">
