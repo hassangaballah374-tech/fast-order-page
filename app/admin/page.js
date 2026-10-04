@@ -229,7 +229,7 @@ export default function AdminPage() {
   const incompleteOrders = orders.filter(o => o.status === 'قيد الانتظار' || o.status === 'ملغي').length;
   const conversionRate = visitorsCount > 0 ? ((totalOrdersCount / visitorsCount) * 100).toFixed(2) : '0.00';
   
-  // حساب معدل سعر الطلب للمتجر كاملاً (AOV)
+  // متوسط سعر الطلب الإجمالي للمتجر
   const averageOrderValue = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
 
   if (loading) {
@@ -327,7 +327,7 @@ export default function AdminPage() {
                 const pCheckouts = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'initiate_checkout').length;
                 const pConvRate = pVisits > 0 ? ((pOrdersCount / pVisits) * 100).toFixed(2) : '0.00';
                 
-                // حساب معدل سعر الطلب للمنتج (متوسط الطلب)
+                // حساب متوسط سعر الطلب لهذا المنتج
                 const pAverageOrderValue = pOrdersCount > 0 ? Math.round(pRevenue / pOrdersCount) : sellingPrice;
 
                 return (
@@ -345,7 +345,7 @@ export default function AdminPage() {
 
                       <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
 
-                      {/* 📊 لوحة الإحصائيات المستقلة للمنتج (شاملة معدل سعر الطلب) */}
+                      {/* 📊 لوحة الإحصائيات المستقلة للمنتج (شاملة متوسط سعر الطلب) */}
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                           <span className="text-slate-400 block text-[10px]">الزيارات</span>
@@ -372,7 +372,7 @@ export default function AdminPage() {
                           <span className="text-sky-400 font-black text-sm">{pConvRate}%</span>
                         </div>
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                          <span className="text-slate-400 block text-[10px]">معدل سعر الطلب</span>
+                          <span className="text-slate-400 block text-[10px]">متوسط سعر الطلب</span>
                           <span className="text-amber-400 font-black text-sm">{pAverageOrderValue.toLocaleString()} ج.م</span>
                         </div>
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
@@ -455,7 +455,7 @@ export default function AdminPage() {
 
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
                 <div className="text-xs font-bold text-slate-400 flex items-center justify-between">
-                  <span>معدل سعر الطلب</span>
+                  <span>متوسط سعر الطلب</span>
                   <span>🏷️</span>
                 </div>
                 <div className="text-2xl sm:text-3xl font-black text-amber-400">{averageOrderValue.toLocaleString()} ج.م</div>
