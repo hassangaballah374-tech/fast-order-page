@@ -51,26 +51,22 @@ export default function LuxuryProductPage() {
   const [selectedSize, setSelectedSize] = useState('');
   const [quantity, setQuantity] = useState(1);
 
-  // السلة
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartOrderLoading, setCartOrderLoading] = useState(false);
   const [cartSuccess, setCartSuccess] = useState(false);
 
-  // تفاعلات الـ FOMO والبارتكلز
   const [particles, setParticles] = useState([]);
   const [liveVisitors, setLiveVisitors] = useState(19);
   const [timeLeft, setTimeLeft] = useState({ minutes: 14, seconds: 48 });
 
   const hasFiredCheckout = useRef(false);
 
-  // الشحن المباشر
   const [selectedGovernorate, setSelectedGovernorate] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [currentShippingFee, setCurrentShippingFee] = useState(50);
   const [formData, setFormData] = useState({ name: '', phone: '', detailedAddress: '', notes: '' });
 
-  // شحن السلة
   const [cartGov, setCartGov] = useState('');
   const [cartCity, setCartCity] = useState('');
   const [cartShippingFee, setCartShippingFee] = useState(50);
@@ -112,7 +108,6 @@ export default function LuxuryProductPage() {
     }
   }, [cart]);
 
-  // دالة تفعيل جميع البيكسلات المتعددة
   const initFacebookPixels = (pixelsString) => {
     if (typeof window === 'undefined' || !pixelsString) return;
     const pixels = String(pixelsString).split(',').map((p) => p.trim()).filter(Boolean);
@@ -158,7 +153,9 @@ export default function LuxuryProductPage() {
             setCurrentShippingFee(sData.shipping_rates.cairo_giza);
             setCartShippingFee(sData.shipping_rates.cairo_giza);
           }
-          const pixelsToInit = sData.facebook_pixels || sData.facebook_pixel_id;
+          const pixelsToInit = [sData.pixel_1, sData.pixel_2, sData.pixel_3, sData.pixel_4, sData.facebook_pixel_id, sData.facebook_pixels]
+            .filter(Boolean)
+            .join(',');
           if (pixelsToInit) {
             initFacebookPixels(pixelsToInit);
           }
@@ -197,15 +194,16 @@ export default function LuxuryProductPage() {
             setSelectedSize(prod.sizes[0]);
           }
 
-          if (typeof window !== 'undefined' && (sData?.facebook_pixels || sData?.facebook_pixel_id)) {
-            if (window.fbq) {
-              window.fbq('track', 'ViewContent', {
-                content_name: prod.name,
-                content_ids: [String(prod.id)],
-                value: Number(prod.price) || 0,
-                currency: 'EGP',
-              });
-            }
+          // تسجيل زيارة المتجر في التحليلات
+          supabase.from('store_analytics').insert([{ event_type: 'visit', product_id: String(prod.id) }]).then();
+
+          if (typeof window !== 'undefined' && window.fbq) {
+            window.fbq('track', 'ViewContent', {
+              content_name: prod.name,
+              content_ids: [String(prod.id)],
+              value: Number(prod.price) || 0,
+              currency: 'EGP',
+            });
           }
         }
       } catch (err) {
@@ -266,6 +264,9 @@ export default function LuxuryProductPage() {
 
     triggerParticles(e);
 
+    // تسجيل إضافة للسلة في التحليلات
+    supabase.from('store_analytics').insert([{ event_type: 'add_to_cart', product_id: String(product.id) }]).then();
+
     const eventId = `add_cart_${Date.now()}`;
     const itemPrice = Number(product.price) || 0;
 
@@ -319,6 +320,10 @@ export default function LuxuryProductPage() {
 
   const scrollToCheckout = (e) => {
     triggerParticles(e);
+
+    // تسجيل بدء الشراء في التحليلات
+    supabase.from('store_analytics').insert([{ event_type: 'initiate_checkout', product_id: String(product.id) }]).then();
+
     if (!hasFiredCheckout.current) {
       hasFiredCheckout.current = true;
       if (typeof window !== 'undefined' && window.fbq) {
@@ -520,7 +525,6 @@ export default function LuxuryProductPage() {
     ? Math.round(((originalOldPrice - currentSellingPrice) / originalOldPrice) * 100)
     : 0;
   const savedAmount = hasDiscount ? originalOldPrice - currentSellingPrice : 0;
-
   const actualStock = product?.stock !== undefined ? product.stock : 20;
 
   const getSmartStockText = (stock) => {
@@ -558,7 +562,6 @@ export default function LuxuryProductPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800 font-sans pb-36 antialiased select-none" dir="rtl">
       
-      {/* البارتكلز المتحركة */}
       <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
         {particles.map((p) => (
           <span
@@ -576,7 +579,6 @@ export default function LuxuryProductPage() {
         ))}
       </div>
 
-      {/* شريط الإعلان */}
       <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white text-center py-2.5 px-4 text-xs sm:text-sm font-bold shadow-sm flex items-center justify-center gap-2">
         <span className="bg-white/20 text-white px-2.5 py-0.5 rounded-full text-[11px] font-black animate-pulse">
           عرض حصري
@@ -588,7 +590,6 @@ export default function LuxuryProductPage() {
         <span>للحصول على شحن سريع ومعاينة قبل الدفع! 🎁</span>
       </div>
 
-      {/* الترويسة الفاتحة الزجاجية */}
       <header className="bg-white/90 backdrop-blur-xl border-b border-slate-200/80 py-3.5 px-4 sm:px-8 sticky top-0 z-40 shadow-sm">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link
@@ -616,10 +617,8 @@ export default function LuxuryProductPage() {
 
       <main className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6">
         
-        {/* كارت المنتج الفاخر */}
         <div className="relative bg-white border border-slate-200/90 rounded-[32px] p-5 sm:p-8 space-y-6 shadow-xl shadow-slate-200/60 overflow-hidden">
           
-          {/* مؤشر الزوار والمخزون */}
           <div className="flex flex-wrap items-center justify-between gap-2.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs font-bold">
             <div className="flex items-center gap-2 text-emerald-700">
               <span className="relative flex h-2.5 w-2.5">
@@ -636,7 +635,6 @@ export default function LuxuryProductPage() {
             </div>
           </div>
 
-          {/* معرض الصور الفاتح */}
           {galleryImages.length > 0 && (
             <div className="space-y-3.5">
               <div className="relative w-full bg-slate-50 rounded-3xl overflow-hidden border border-slate-200/80 flex items-center justify-center min-h-[320px] max-h-[500px] p-3 shadow-inner group">
@@ -672,14 +670,12 @@ export default function LuxuryProductPage() {
             </div>
           )}
 
-          {/* فيديو المنتج */}
           {product.video_url && (
             <div className="rounded-3xl overflow-hidden border border-slate-200 bg-black shadow-lg">
               <video src={product.video_url} controls className="w-full max-h-[440px] object-contain mx-auto" />
             </div>
           )}
 
-          {/* الاسم والأسعار */}
           <div className="space-y-4">
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">{product.name}</h2>
             
@@ -708,14 +704,12 @@ export default function LuxuryProductPage() {
             </div>
           </div>
 
-          {/* الوصف */}
           {product.description && (
             <div className="p-4 sm:p-5 bg-slate-50/80 rounded-3xl border border-slate-200 text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-line">
               {product.description}
             </div>
           )}
 
-          {/* خيارات الألوان */}
           {product.show_colors && product.colors?.length > 0 && (
             <div className="space-y-3 border-t border-slate-100 pt-4">
               <div className="flex items-center justify-between text-xs sm:text-sm font-bold">
@@ -742,7 +736,6 @@ export default function LuxuryProductPage() {
             </div>
           )}
 
-          {/* خيارات المقاسات */}
           {product.show_sizes && product.sizes?.length > 0 && (
             <div className="space-y-3 border-t border-slate-100 pt-4">
               <div className="flex items-center justify-between text-xs sm:text-sm font-bold">
@@ -768,7 +761,6 @@ export default function LuxuryProductPage() {
             </div>
           )}
 
-          {/* الكمية */}
           <div className="flex items-center justify-between border-t border-slate-100 pt-4">
             <span className="text-xs sm:text-sm font-bold text-slate-700">الكمية المطلوبة:</span>
             <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 px-3.5 py-1.5 rounded-2xl">
@@ -788,7 +780,6 @@ export default function LuxuryProductPage() {
             </div>
           </div>
 
-          {/* ---------------- الأزرار: زر الدفع عند الاستلام مكبر وضخم ---------------- */}
           <div className="pt-3 grid grid-cols-1 sm:grid-cols-12 gap-3.5 border-t border-slate-100">
             <button
               type="button"
@@ -813,7 +804,6 @@ export default function LuxuryProductPage() {
           </div>
         </div>
 
-        {/* نموذج الشراء المباشر */}
         <div id="checkout-form" className="bg-white border border-slate-200/90 rounded-[32px] p-5 sm:p-8 shadow-xl shadow-slate-200/50 scroll-mt-20 space-y-6">
           <div className="text-center space-y-1.5">
             <h3 className="text-xl sm:text-2xl font-black text-slate-900">بيانات توصيل الطلب</h3>
@@ -930,7 +920,6 @@ export default function LuxuryProductPage() {
         </div>
       </main>
 
-      {/* دراوَر السلة الجانبي */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end">
           <div className="w-full max-w-md h-full bg-white border-r border-slate-200 flex flex-col p-6 shadow-2xl overflow-y-auto">
@@ -1078,7 +1067,6 @@ export default function LuxuryProductPage() {
         </div>
       )}
 
-      {/* الشريط السفلي اللاصق للموبايل */}
       <div className="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200 p-3 sm:hidden shadow-2xl flex items-center gap-2.5">
         <button
           onClick={scrollToCheckout}
