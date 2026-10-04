@@ -224,9 +224,7 @@ export default function AdminPage() {
   });
 
   const totalProfit = totalRevenue - totalCost;
-  const avgOrderValue = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
 
-  // إحصائيات الأحداث المستخرجة من جدول التحليلات أو الافتراضية
   const visitorsCount = analytics.filter(a => a.event_type === 'visit').length || 1240;
   const addToCartCount = analytics.filter(a => a.event_type === 'add_to_cart').length || 312;
   const initiateCheckoutCount = analytics.filter(a => a.event_type === 'initiate_checkout').length || 185;
@@ -283,7 +281,7 @@ export default function AdminPage() {
                 activeView === 'settings' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>⚙️️ الإعدادات</span>
+              <span>⚙ الإعدادات</span>
             </button>
           </div>
         </div>
@@ -291,12 +289,13 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
 
+        {/* 1. تبويب المنتجات والمخزون مع إحصائيات كل منتج (الطلبات، المبيعات، الأرباح) */}
         {activeView === 'products' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 p-5 rounded-3xl border border-slate-800">
               <div>
                 <h2 className="text-xl font-black text-white">قائمة المنتجات ومخزون القطع ({products.length})</h2>
-                <p className="text-xs text-slate-400 mt-0.5">متابعة المخزون، الأسعار، وهامش الربح لكل منتج</p>
+                <p className="text-xs text-slate-400 mt-0.5">متابعة المخزون، الأسعار، وإحصائيات الطلبات والمبيعات لكل منتج</p>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={loadAllData} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-2xl text-xs sm:text-sm">
@@ -312,11 +311,16 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map((p) => {
                 const sellingPrice = Number(p.price) || 0;
-                const comparePrice = Number(p.compare_price || p.original_price) || 0;
                 const costPrice = Number(p.cost_price) || 0;
                 const stockCount = p.stock !== undefined ? p.stock : 20;
                 const profitMargin = sellingPrice - costPrice;
                 const productUrl = p.id === 'legacy_product' ? '/' : `/p/${p.id}`;
+
+                // حساب الطلبات والمبيعات الخاصة بهذا المنتج حصرياً من جدول الطلبات
+                const productOrders = orders.filter((o) => o.product_name && o.product_name.includes(p.name));
+                const productOrdersCount = productOrders.length;
+                const productRevenue = productOrders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
+                const productTotalProfit = productOrdersCount * profitMargin;
 
                 return (
                   <div key={p.id} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-lg flex flex-col justify-between space-y-4">
@@ -338,14 +342,19 @@ export default function AdminPage() {
                         <span className="text-emerald-400">{stockCount} قطعة</span>
                       </div>
 
+                      {/* إحصائيات المبيعات والطلبات الخاصة بهذا المنتج */}
                       <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">سعر البيع:</span>
-                          <span className="text-emerald-400 font-black">{sellingPrice} ج.م</span>
+                        <div className="flex justify-between font-bold">
+                          <span className="text-slate-400">عدد الطلبات للقطعة:</span>
+                          <span className="text-sky-400 font-black">{productOrdersCount} طلب</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-slate-400">صافي الربح:</span>
-                          <span className="text-teal-400 font-black">{profitMargin} ج.م</span>
+                        <div className="flex justify-between font-bold">
+                          <span className="text-slate-400">إجمالي المبيعات:</span>
+                          <span className="text-emerald-400 font-black">{productRevenue.toLocaleString()} ج.م</span>
+                        </div>
+                        <div className="flex justify-between font-bold border-t border-slate-800 pt-1.5">
+                          <span className="text-slate-400">صافي ربح المنتج:</span>
+                          <span className="text-teal-300 font-black">{productTotalProfit.toLocaleString()} ج.م</span>
                         </div>
                       </div>
                     </div>
@@ -368,13 +377,11 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* تبويب السلة والطلبات والإحصائيات الشاملة مثل الصورة */}
+        {/* 2. تبويب السلة والطلبات والإحصائيات الشاملة */}
         {activeView === 'cart' && (
           <div className="space-y-6">
             
-            {/* 📊 بطاقات الإحصائيات الشاملة (مطابقة تماماً لصورة الشاشة المطلوبة) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
                 <div className="text-xs font-bold text-slate-400 flex items-center justify-between">
                   <span>الزائرين</span>
@@ -394,7 +401,7 @@ export default function AdminPage() {
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
                 <div className="text-xs font-bold text-slate-400 flex items-center justify-between">
                   <span>طلبات غير مكتملة</span>
-                  <span>⚠️️</span>
+                  <span>⚠</span>
                 </div>
                 <div className="text-2xl sm:text-3xl font-black text-amber-400">{incompleteOrders}</div>
               </div>
@@ -438,10 +445,8 @@ export default function AdminPage() {
                 </div>
                 <div className="text-2xl sm:text-3xl font-black text-teal-300">{totalProfit.toLocaleString()} ج.م</div>
               </div>
-
             </div>
 
-            {/* قائمة الطلبات */}
             <div className="space-y-4 pt-4">
               <h3 className="text-lg font-black text-white">قائمة الطلبات الواردة</h3>
               {filteredOrders.map((order, idx) => (
@@ -479,7 +484,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* تبويب إعدادات البيكسلات المستقلة ورموز الـ API */}
+        {/* 3. تبويب إعدادات البيكسلات المستقلة ورموز الـ API */}
         {activeView === 'settings' && (
           <form onSubmit={handleSaveSettings} className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
             <div className="border-b border-slate-800 pb-3">
