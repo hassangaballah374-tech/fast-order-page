@@ -306,12 +306,16 @@ export default function AdminPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map((p) => {
+                const sellingPrice = Number(p.price) || 0;
+                const costPrice = Number(p.cost_price) || 0;
                 const stockCount = p.stock !== undefined ? p.stock : 20;
+                const profitMargin = sellingPrice - costPrice;
                 const productUrl = p.id === 'legacy_product' ? '/' : `/p/${p.id}`;
 
                 const pOrders = orders.filter((o) => o.product_name && o.product_name.includes(p.name));
                 const pOrdersCount = pOrders.length;
                 const pRevenue = pOrders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
+                const pProfit = pOrdersCount * profitMargin; // حساب صافي الأرباح لهذا المنتج
                 
                 const pVisits = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'visit').length;
                 const pCarts = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'add_to_cart').length;
@@ -333,7 +337,7 @@ export default function AdminPage() {
 
                       <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
 
-                      {/* 📊 لوحة الإحصائيات المستقلة (إجمالي المبيعات + معدل التحويل) */}
+                      {/* 📊 لوحة الإحصائيات المستقلة (الخانات السابقة كما هي + خانة صافي الأرباح مضافة معهم) */}
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                           <span className="text-slate-400 block text-[10px]">الزيارات</span>
@@ -358,6 +362,10 @@ export default function AdminPage() {
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                           <span className="text-slate-400 block text-[10px]">معدل التحويل</span>
                           <span className="text-sky-400 font-black text-sm">{pConvRate}%</span>
+                        </div>
+                        <div className="col-span-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+                          <span className="text-slate-400 text-[10px]">صافي الأرباح للمنتج</span>
+                          <span className="text-teal-300 font-black text-sm">{pProfit.toLocaleString()} ج.م</span>
                         </div>
                       </div>
                     </div>
