@@ -26,15 +26,11 @@ export default function AdminPage() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
-  // حالة عرض تفاصيل منتج معين (لوحة المنتج المنفصلة)
-  const [selectedProductAnalytics, setSelectedProductAnalytics] = useState(null);
-
   const [productForm, setProductForm] = useState({
     name: '', price: '', compare_price: '', cost_price: '', stock: 20,
     description: '', images: [], video_url: '', show_colors: false, colors: [], show_sizes: false, sizes: [],
   });
 
-  const [uploadingMedia, setUploadingMedia] = useState(false);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [savingProduct, setSavingProduct] = useState(false);
 
@@ -214,7 +210,6 @@ export default function AdminPage() {
     setSavingProduct(false);
   };
 
-  // 📊 حسابات الإحصائيات المجمعة لكل المتجر
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
 
@@ -291,7 +286,6 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
 
-        {/* 1. تبويب المنتجات والمخزون مع إحصائيات مستقلة لكل منتج */}
         {activeView === 'products' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 p-5 rounded-3xl border border-slate-800">
@@ -318,16 +312,16 @@ export default function AdminPage() {
                 const profitMargin = sellingPrice - costPrice;
                 const productUrl = p.id === 'legacy_product' ? '/' : `/p/${p.id}`;
 
-                // تحليلات هذا المنتج المستقلة
                 const pOrders = orders.filter((o) => o.product_name && o.product_name.includes(p.name));
                 const pOrdersCount = pOrders.length;
-                const pIncomplete = pOrders.filter(o => o.status === 'قيد الانتظار' || o.status === 'ملغي').length;
                 const pRevenue = pOrders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
                 const pProfit = pOrdersCount * profitMargin;
                 
                 const pVisits = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'visit').length;
                 const pCarts = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'add_to_cart').length;
                 const pCheckouts = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'initiate_checkout').length;
+                
+                // حساب معدل التحويل المستقل لكل منتج
                 const pConvRate = pVisits > 0 ? ((pOrdersCount / pVisits) * 100).toFixed(2) : '0.00';
 
                 return (
@@ -345,7 +339,7 @@ export default function AdminPage() {
 
                       <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
 
-                      {/* 📊 لوحة الإحصائيات المستقلة الخاصة بهذا المنتج فقط */}
+                      {/* 📊 لوحة الإحصائيات المستقلة (شاملة معدل التحويل لكل منتج) */}
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                           <span className="text-slate-400 block text-[10px]">الزيارات</span>
@@ -364,8 +358,8 @@ export default function AdminPage() {
                           <span className="text-indigo-400 font-black text-sm">{pCheckouts}</span>
                         </div>
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                          <span className="text-slate-400 block text-[10px]">إجمالي المبيعات</span>
-                          <span className="text-emerald-400 font-black text-sm">{pRevenue} ج.م</span>
+                          <span className="text-slate-400 block text-[10px]">معدل التحويل</span>
+                          <span className="text-sky-400 font-black text-sm">{pConvRate}%</span>
                         </div>
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                           <span className="text-slate-400 block text-[10px]">صافي الأرباح</span>
@@ -392,7 +386,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 2. تبويب السلة والطلبات (اللوحة المجمعة لكل المتجر) */}
         {activeView === 'cart' && (
           <div className="space-y-6">
             
@@ -400,7 +393,7 @@ export default function AdminPage() {
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
                 <div className="text-xs font-bold text-slate-400 flex items-center justify-between">
                   <span>إجمالي الزائرين</span>
-                  <span>👁️️</span>
+                  <span>👁</span>
                 </div>
                 <div className="text-2xl sm:text-3xl font-black text-white">{visitorsCount.toLocaleString()}</div>
               </div>
@@ -499,7 +492,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 3. تبويب الإعدادات */}
         {activeView === 'settings' && (
           <form onSubmit={handleSaveSettings} className="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 shadow-xl space-y-6">
             <div className="border-b border-slate-800 pb-3">
@@ -563,7 +555,6 @@ export default function AdminPage() {
 
       </main>
 
-      {/* مودال المنتج */}
       {showProductModal && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full max-h-[92vh] overflow-y-auto p-6 space-y-6 shadow-2xl">
@@ -629,7 +620,7 @@ export default function AdminPage() {
               </button>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-                <button type="button" onClick={() => setShowProduct`Modal`(false)} className="px-5 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-sm font-bold">
+                <button type="button" onClick={() => setShowProductModal(false)} className="px-5 py-2.5 bg-slate-800 text-slate-300 rounded-xl text-sm font-bold">
                   إلغاء
                 </button>
                 <button type="submit" disabled={savingProduct} className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold">
