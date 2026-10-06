@@ -60,11 +60,21 @@ export default function PublicStoreCheckoutPage() {
     setLoading(true);
     try {
       if (supabase) {
-        const { data: store } = await supabase.from('store_profiles').select('*').eq('store_slug', slug).maybeSingle();
-        if (!store) return setLoading(false);
+        // 1. جلب بروفايل المتجر بالـ Slug
+        const { data: store, error: sErr } = await supabase
+          .from('store_profiles')
+          .select('*')
+          .eq('store_slug', slug)
+          .maybeSingle();
+
+        if (sErr) console.error(sErr);
+        if (!store) {
+          setLoading(false);
+          return;
+        }
         setStoreData(store);
 
-        // جلب شعار منصة NEXT ORDER الرسمي للمشتري
+        // 2. جلب شعار منصة NEXT ORDER الرسمي للمشتري
         const { data: platSettings } = await supabase.from('store_settings').select('store_logo').limit(1).maybeSingle();
         if (platSettings?.store_logo) setPlatformLogo(platSettings.store_logo);
 
@@ -78,8 +88,16 @@ export default function PublicStoreCheckoutPage() {
           setShippingRates(map);
         }
 
-        const { data: pData } = await supabase.from('products').select('*').eq('user_id', store.user_id).order('created_at', { ascending: false });
-        if (pData?.length) {
+        // 3. جلب منتجات المتجر بربط مزدوج (user_id أو store_slug) لضمان عدم اختفاء أي منتج مسجل
+        const { data: pData, error: pErr } = await supabase
+          .from('products')
+          .select('*')
+          .or(`user_id.eq.${store.user_id},store_slug.eq.${slug}`)
+          .order('created_at', { ascending: false });
+
+        if (pErr) console.error(pErr);
+
+        if (pData && pData.length > 0) {
           setProducts(pData);
           const first = pData[0];
           setSelectedProduct(first);
@@ -291,11 +309,11 @@ export default function PublicStoreCheckoutPage() {
               <img src={storeSettings.store_logo} alt="Logo" className="w-10 h-10 rounded-xl object-contain bg-white p-0.5 border border-slate-700 shadow-sm" />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-base shadow-sm">
-                {storeData.store_name?.charAt(0) || '🏪'}
+                {storeData?.store_name?.charAt(0) || '🏪'}
               </div>
             )}
             <div>
-              <h1 className="text-base font-black text-white leading-tight">{storeData.store_name}</h1>
+              <h1 className="text-base font-black text-white leading-tight">{storeData?.store_name}</h1>
               <p className="text-[11px] text-emerald-400 font-bold">بإدارة التاجر المعتمد: {storeData?.owner_name || 'التاجر'}</p>
             </div>
           </div>
@@ -320,6 +338,42 @@ export default function PublicStoreCheckoutPage() {
       </header>
 
       <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
+
+        {/* 🌟 شريط اختيار منتجات المتجر في حال وجود أكثر من منتج */}
+        {products.length > 1 && (
+          <div className="space-y-2">
+            <span className="text-xs font-bold text-slate-400">منتجات أخرى متوفرة في المتجر:</span>
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
+              {products.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    setSelectedProduct(p);
+                    setCurrentDynamicUnitPrice(Number(p.price));
+                    if (p.sizes?.length) setSelectedSize(p.sizes[0]);
+                    if (p.colors?.length) setSelectedColor(p.colors[0]);
+                    setActiveMediaIndex(0);
+                    setSelectedBundleTier(1);
+                  }}
+                  className={`flex items-center gap-2.5 p-2 pr-3 rounded-2xl border transition shrink-0 cursor-pointer ${
+                    selectedProduct?.id === p.id
+                      ? 'border-emerald-500 bg-emerald-500/10'
+                      : 'border-slate-800 bg-[#111827] opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <div className="w-9 h-9 rounded-xl bg-slate-900 overflow-hidden flex items-center justify-center shrink-0">
+                    {p.images?.[0] ? <img src={p.images[0]} className="w-full h-full object-cover" /> : '📦'}
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-bold text-white block truncate max-w-[120px]">{p.name}</span>
+                    <span className="text-[10px] text-emerald-400 font-mono font-bold">{p.price} ج.م</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {selectedProduct ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
@@ -437,7 +491,10 @@ export default function PublicStoreCheckoutPage() {
 
           </div>
         ) : (
-          <div className="text-center py-12 text-slate-500">لا توجد منتجات مسجلة في هذا المتجر حالياً.</div>
+          <div className="text-center py-16 text-slate-500 bg-[#111827] rounded-3xl border border-slate-800">
+            <span className="text-3xl block mb-2">🛍️</span>
+            <span>لا توجد منتجات مسجلة في هذا المتجر حالياً.</span>
+          </div>
         )}
       </main>
 
