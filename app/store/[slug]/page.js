@@ -7,9 +7,6 @@ export default function PublicStoreCheckoutPage() {
   const { slug } = useParams();
   const router = useRouter();
 
-  // فحص وضع السوبر أدمن لإظهار شريط الرجوع والتبديل
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState(null);
   const [storeSettings, setStoreSettings] = useState(null);
@@ -48,9 +45,6 @@ export default function PublicStoreCheckoutPage() {
   ];
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsSuperAdmin(localStorage.getItem('is_super_admin') === 'true');
-    }
     if (slug) loadStoreData();
   }, [slug]);
 
@@ -243,31 +237,30 @@ export default function PublicStoreCheckoutPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white font-sans pb-24 select-none" dir="rtl">
+    <div className="min-h-screen bg-[#0b0f19] text-white font-sans pb-24 select-none relative" dir="rtl">
       
-      {/* 👑 شريط عائم للأدمن للتبديل والرجوع من صفحة المتجر */}
-      {isSuperAdmin && (
-        <div className="bg-slate-900 border-b border-amber-500/40 text-amber-300 px-4 py-2 text-xs font-bold flex items-center justify-between sticky top-0 z-50">
-          <span className="flex items-center gap-1.5">
-            <span>👑</span>
-            <span>وضع معاينة المدير العام للمتجر: {storeData?.store_name}</span>
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg cursor-pointer"
-            >
-              لوحة التاجر
-            </button>
-            <button
-              onClick={() => router.push('/admin')}
-              className="px-3 py-1 bg-amber-500 text-black font-black rounded-lg hover:bg-amber-400 cursor-pointer"
-            >
-              ⬅ الرجوع للسوبر أدمن
-            </button>
-          </div>
+      {/* 👑 شريط عائم دائم ومحمى للأدمن للتبديل والرجوع من أي صفحة متجر */}
+      <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 bg-slate-900/95 border-2 border-amber-500/80 p-2 rounded-2xl shadow-2xl backdrop-blur-md">
+        <div className="text-[11px] font-black text-amber-400 px-2 hidden sm:block">
+          👑 وضع الإدارة
         </div>
-      )}
+        <button
+          onClick={() => router.push('/dashboard')}
+          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition cursor-pointer"
+        >
+          لوحة التاجر
+        </button>
+        <button
+          onClick={() => {
+            localStorage.setItem('is_super_admin', 'true');
+            router.push('/admin');
+          }}
+          className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-xs font-black rounded-xl shadow transition cursor-pointer flex items-center gap-1"
+        >
+          <span>⬅</span>
+          <span>الرجوع للسوبر أدمن</span>
+        </button>
+      </div>
 
       {/* الشريط الإعلاني */}
       <div className="bg-emerald-600 text-white text-[11px] font-black py-2 px-4 text-center">
