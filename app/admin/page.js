@@ -3,10 +3,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
 export default function AppGridDashboard() {
-  // 'home' تعرض شبكة الكروت الرئيسية
-  // أو تعرض القسم المختار: 'subscribers' | 'orders' | 'products' | 'analytics' | 'pixels'
+  // 'home' | 'subscribers' | 'orders' | 'products' | 'analytics' | 'pixels' | 'store_branding'
   const [activeScreen, setActiveScreen] = useState('home');
-
   const [loading, setLoading] = useState(true);
 
   // بيانات المشتركين
@@ -15,9 +13,13 @@ export default function AppGridDashboard() {
   const [durationMonths, setDurationMonths] = useState(1);
   const [paymentAmount, setPaymentAmount] = useState('');
 
-  // بيانات المتجر والبيكسل
+  // إعدادات المتجر واللوجو والبيكسلات
   const [settings, setSettings] = useState({
     store_name: '',
+    store_logo: '',
+    store_description: '',
+    support_phone: '',
+    announcement_text: '',
     pixel_1: '', token_1: '',
     pixel_2: '', token_2: '',
     pixel_3: '', token_3: '',
@@ -30,7 +32,6 @@ export default function AppGridDashboard() {
   const [products, setProducts] = useState([]);
   const [analytics, setAnalytics] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
 
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -54,6 +55,10 @@ export default function AppGridDashboard() {
         if (sData) {
           setSettings({
             store_name: sData.store_name || '',
+            store_logo: sData.store_logo || sData.logo_url || '',
+            store_description: sData.store_description || '',
+            support_phone: sData.support_phone || '',
+            announcement_text: sData.announcement_text || '',
             pixel_1: sData.pixel_1 || sData.facebook_pixel_id || '',
             token_1: sData.token_1 || sData.facebook_api_token || '',
             pixel_2: sData.pixel_2 || '', token_2: sData.token_2 || '',
@@ -77,7 +82,42 @@ export default function AppGridDashboard() {
     setLoading(false);
   }
 
-  // تفعيل المشترك
+  // حفظ الإعدادات وهوية المتجر
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const { data: existing } = await supabase.from('store_settings').select('id').limit(1).maybeSingle();
+      const targetId = existing?.id || 1;
+
+      const payload = {
+        id: targetId,
+        store_name: settings.store_name,
+        store_logo: settings.store_logo,
+        logo_url: settings.store_logo,
+        store_description: settings.store_description,
+        support_phone: settings.support_phone,
+        announcement_text: settings.announcement_text,
+        pixel_1: (settings.pixel_1 || '').trim(),
+        token_1: (settings.token_1 || '').trim(),
+        pixel_2: (settings.pixel_2 || '').trim(),
+        token_2: (settings.token_2 || '').trim(),
+        pixel_3: (settings.pixel_3 || '').trim(),
+        token_3: (settings.token_3 || '').trim(),
+        pixel_4: (settings.pixel_4 || '').trim(),
+        token_4: (settings.token_4 || '').trim(),
+      };
+
+      const { error } = await supabase.from('store_settings').upsert(payload);
+      if (error) throw error;
+
+      alert('✅ تم حفظ إعدادات وهوية المتجر بنجاح!');
+    } catch (err) {
+      alert('خطأ أثناء الحفظ: ' + err.message);
+    }
+    setSavingSettings(false);
+  };
+
   const handleActivateSubscriber = async (sub) => {
     const months = parseInt(durationMonths) || 1;
     const expiry = new Date();
@@ -103,24 +143,22 @@ export default function AppGridDashboard() {
     loadAllData();
   };
 
-  // إعدادات البيكسل
-  const handleSaveSettings = async (e) => {
-    e.preventDefault();
-    setSavingSettings(true);
-    await supabase.from('store_settings').upsert({ id: 1, ...settings });
-    alert('✅ تم حفظ الإعدادات والبيكسلات!');
-    setSavingSettings(false);
-  };
-
-  // إحصائيات
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
   const visitorsCount = analytics.filter(a => a.event_type === 'visit').length;
   const averageOrderValue = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
   const conversionRate = visitorsCount > 0 ? ((totalOrdersCount / visitorsCount) * 100).toFixed(2) : '0.00';
 
-  // الكروت المعروضة في الشاشة الرئيسية بنفس شكل وألوان وتصميم الصورة
+  // قائمة الكروت بنفس التصميم الهندسي الملون
   const gridCards = [
+    {
+      id: 'store_branding',
+      title: 'إعدادات المتجر والهوية',
+      desc: 'تغيير اسم المتجر، اللوجو، الوصف، ورقم الدعم',
+      icon: '⚙️',
+      bgClass: 'bg-gradient-to-r from-amber-500 to-orange-600',
+      badge: 'الهوية والتصميم',
+    },
     {
       id: 'subscribers',
       title: 'المشتركين والعملاء',
@@ -181,21 +219,26 @@ export default function AppGridDashboard() {
             {activeScreen !== 'home' && (
               <button
                 onClick={() => setActiveScreen('home')}
-                className="p-2.5 bg-slate-100 hover:bg-slate-200 rounded-2xl text-sm font-bold flex items-center gap-1.5 transition"
+                className="p-2.5 bg-slate-100 hover:bg-slate-200 rounded-2xl text-sm font-bold flex items-center gap-1.5 transition cursor-pointer"
               >
                 <span>⬅</span>
                 <span>الرئيسية</span>
               </button>
             )}
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900">
-                {activeScreen === 'home' ? 'لوحة التحكم الرئيسية' : gridCards.find(c => c.id === activeScreen)?.title}
-              </h1>
-              <p className="text-xs text-slate-500">منظومة إدارة المتاجر والمبيعات والتحليلات</p>
+            <div className="flex items-center gap-3">
+              {settings.store_logo && (
+                <img src={settings.store_logo} alt="Logo" className="w-10 h-10 object-contain rounded-xl border border-slate-200 bg-white" />
+              )}
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+                  {activeScreen === 'home' ? 'لوحة التحكم الرئيسية' : gridCards.find(c => c.id === activeScreen)?.title}
+                </h1>
+                <p className="text-xs text-slate-500">منظومة إدارة المتاجر والمبيعات والتحليلات</p>
+              </div>
             </div>
           </div>
 
-          <div className="text-xs font-bold text-slate-600 bg-slate-100 px-3.5 py-1.5 rounded-full border border-slate-200">
+          <div className="text-xs font-bold text-slate-700 bg-slate-100 px-4 py-2 rounded-full border border-slate-200">
             {settings.store_name || 'LMAA STOR'}
           </div>
         </div>
@@ -203,26 +246,26 @@ export default function AppGridDashboard() {
 
       <main className="max-w-6xl mx-auto p-4 sm:p-8">
 
-        {/* 🌟 1. الشاشة الرئيسية: شبكة الكروت الكبيرة الملونة (نفس الصورة تماماً) */}
+        {/* 🌟 1. الشاشة الرئيسية: شبكة الكروت الملونة */}
         {activeScreen === 'home' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {gridCards.map((card) => (
                 <div
                   key={card.id}
                   onClick={() => setActiveScreen(card.id)}
-                  className={`${card.bgClass} text-white p-6 rounded-3xl cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden flex flex-col justify-between min-h-[145px]`}
+                  className={`${card.bgClass} text-white p-6 rounded-3xl cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden flex flex-col justify-between min-h-[155px]`}
                 >
                   <div className="flex justify-between items-start">
-                    <span className="text-xs bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full font-bold">
+                    <span className="text-xs bg-white/20 backdrop-blur-md px-3 py-1 rounded-full font-bold">
                       {card.badge}
                     </span>
                     <span className="text-2xl opacity-90">{card.icon}</span>
                   </div>
 
                   <div className="space-y-1 mt-4">
-                    <h3 className="text-lg font-black tracking-wide">{card.title}</h3>
-                    <p className="text-[11px] text-white/80 line-clamp-1">{card.desc}</p>
+                    <h3 className="text-xl font-black tracking-wide">{card.title}</h3>
+                    <p className="text-xs text-white/85 line-clamp-1">{card.desc}</p>
                   </div>
                 </div>
               ))}
@@ -230,7 +273,100 @@ export default function AppGridDashboard() {
           </div>
         )}
 
-        {/* 🌟 2. شاشة المشتركين والعملاء */}
+        {/* 🌟 2. شاشة إعدادات المتجر والهوية واللوجو */}
+        {activeScreen === 'store_branding' && (
+          <form onSubmit={handleSaveSettings} className="bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6 max-w-3xl mx-auto">
+            <div className="border-b border-slate-100 pb-4">
+              <h2 className="text-lg font-black text-slate-900">هوية وتفاصيل المتجر</h2>
+              <p className="text-xs text-slate-500 mt-0.5">تعديل الاسم والشعار ومعلومات التواصل التي تظهر للزبائن</p>
+            </div>
+
+            <div className="space-y-4">
+              {/* اسم المتجر */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">اسم المتجر (Store Name) *</label>
+                <input
+                  type="text"
+                  required
+                  value={settings.store_name}
+                  onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
+                  placeholder="مثال: لقطة ستور"
+                  className="w-full border border-slate-200 rounded-2xl p-3.5 text-sm font-bold text-slate-900 focus:outline-emerald-500 bg-slate-50"
+                />
+              </div>
+
+              {/* لوجو المتجر */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">رابط لوجو المتجر (Logo URL)</label>
+                <div className="flex gap-3 items-center">
+                  <input
+                    type="url"
+                    dir="ltr"
+                    value={settings.store_logo}
+                    onChange={(e) => setSettings({ ...settings, store_logo: e.target.value })}
+                    placeholder="https://example.com/logo.png"
+                    className="flex-1 border border-slate-200 rounded-2xl p-3.5 text-xs font-mono text-slate-900 focus:outline-emerald-500 bg-slate-50"
+                  />
+                  {settings.store_logo && (
+                    <div className="w-14 h-14 rounded-2xl border border-slate-200 p-1 bg-white flex items-center justify-center shrink-0">
+                      <img src={settings.store_logo} alt="Preview" className="w-full h-full object-contain rounded-xl" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* وصف المتجر */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">وصف المتجر (يظهر أسفل الاسم وفي المشاركات)</label>
+                <textarea
+                  rows="3"
+                  value={settings.store_description}
+                  onChange={(e) => setSettings({ ...settings, store_description: e.target.value })}
+                  placeholder="أفضل المنتجات بأسعار حصرية وضمان شامل وخدمة دفع عند الاستلام..."
+                  className="w-full border border-slate-200 rounded-2xl p-3.5 text-sm text-slate-900 focus:outline-emerald-500 bg-slate-50"
+                ></textarea>
+              </div>
+
+              {/* رقم هاتف الدعم */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">رقم خدمة العملاء / واتساب الدعم</label>
+                  <input
+                    type="tel"
+                    dir="ltr"
+                    value={settings.support_phone}
+                    onChange={(e) => setSettings({ ...settings, support_phone: e.target.value })}
+                    placeholder="01xxxxxxxxx"
+                    className="w-full border border-slate-200 rounded-2xl p-3.5 text-sm font-mono text-slate-900 focus:outline-emerald-500 bg-slate-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">نص الشريط الإعلاني العلوي (اختياري)</label>
+                  <input
+                    type="text"
+                    value={settings.announcement_text}
+                    onChange={(e) => setSettings({ ...settings, announcement_text: e.target.value })}
+                    placeholder="🚚 شحن مجاني لجميع المحافظات لفترة محدودة!"
+                    className="w-full border border-slate-200 rounded-2xl p-3.5 text-sm text-slate-900 focus:outline-emerald-500 bg-slate-50"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex justify-end">
+              <button
+                type="submit"
+                disabled={savingSettings}
+                className="px-8 py-3.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-black text-sm rounded-2xl shadow-lg transition duration-200 cursor-pointer disabled:opacity-50"
+              >
+                {savingSettings ? 'جاري الحفظ...' : 'حفظ التعديلات 💾'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* 🌟 3. شاشة المشتركين والعملاء */}
         {activeScreen === 'subscribers' && (
           <div className="space-y-4">
             <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex justify-between items-center">
@@ -238,7 +374,7 @@ export default function AppGridDashboard() {
                 <h2 className="text-lg font-black">المشتركين والمتاجر ({subscribers.length})</h2>
                 <p className="text-xs text-slate-500">تفعيل المتجر فور تحويل المبلغ وتحديد عدد الأشهر</p>
               </div>
-              <button onClick={loadAllData} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">🔄 تحديث</button>
+              <button onClick={loadAllData} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold cursor-pointer">🔄 تحديث</button>
             </div>
 
             <div className="space-y-3">
@@ -267,12 +403,12 @@ export default function AppGridDashboard() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => { setEditingSub(s); setPaymentAmount(s.amount_paid || ''); }}
-                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow transition"
+                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow transition cursor-pointer"
                       >
                         تفعيل / تجديد المتجر 🚀
                       </button>
                       {isActive && (
-                        <button onClick={() => handleDeactivateSubscriber(s.id)} className="px-3 py-2.5 bg-red-100 text-red-600 rounded-xl text-xs font-bold">
+                        <button onClick={() => handleDeactivateSubscriber(s.id)} className="px-3 py-2.5 bg-red-100 text-red-600 rounded-xl text-xs font-bold cursor-pointer">
                           إيقاف
                         </button>
                       )}
@@ -284,7 +420,7 @@ export default function AppGridDashboard() {
           </div>
         )}
 
-        {/* 🌟 3. شاشة الطلبات الجديدة */}
+        {/* 🌟 4. شاشة الطلبات الجديدة */}
         {activeScreen === 'orders' && (
           <div className="space-y-4">
             <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between gap-3">
@@ -319,7 +455,7 @@ export default function AppGridDashboard() {
           </div>
         )}
 
-        {/* 🌟 4. شاشة المنتجات */}
+        {/* 🌟 5. شاشة المنتجات */}
         {activeScreen === 'products' && (
           <div className="space-y-4">
             <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex justify-between items-center">
@@ -329,7 +465,7 @@ export default function AppGridDashboard() {
               </div>
               <button
                 onClick={() => { setEditingProduct(null); setShowProductModal(true); }}
-                className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold"
+                className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold cursor-pointer"
               >
                 ➕ إضافة منتج
               </button>
@@ -352,7 +488,7 @@ export default function AppGridDashboard() {
           </div>
         )}
 
-        {/* 🌟 5. شاشة التحليلات الشاملة */}
+        {/* 🌟 6. شاشة التحليلات الشاملة */}
         {activeScreen === 'analytics' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm">
@@ -378,7 +514,7 @@ export default function AppGridDashboard() {
           </div>
         )}
 
-        {/* 🌟 6. شاشة بيكسلات فيسبوك (CAPI) */}
+        {/* 🌟 7. شاشة بيكسلات فيسبوك (CAPI) */}
         {activeScreen === 'pixels' && (
           <form onSubmit={handleSaveSettings} className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm space-y-4">
             <h2 className="text-lg font-black border-b border-slate-100 pb-3">إعدادات البيكسلات ورموز CAPI</h2>
@@ -405,7 +541,7 @@ export default function AppGridDashboard() {
                 </div>
               </div>
             ))}
-            <button type="submit" disabled={savingSettings} className="px-6 py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow">
+            <button type="submit" disabled={savingSettings} className="px-6 py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow cursor-pointer">
               حفظ الإعدادات 💾
             </button>
           </form>
@@ -413,7 +549,7 @@ export default function AppGridDashboard() {
 
       </main>
 
-      {/* مودال تفعيل المشتركين */}
+      {/* نافذة تفعيل المشتركين */}
       {editingSub && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-xl">
@@ -438,8 +574,67 @@ export default function AppGridDashboard() {
               />
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-              <button onClick={() => setEditingSub(null)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">إلغاء</button>
-              <button onClick={() => handleActivateSubscriber(editingSub)} className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">تأكيد التفعيل 🚀</button>
+              <button onClick={() => setEditingSub(null)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold cursor-pointer">إلغاء</button>
+              <button onClick={() => handleActivateSubscriber(editingSub)} className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold cursor-pointer">تأكيد التفعيل 🚀</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* نافذة إضافة المنتجات */}
+      {showProductModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full space-y-4 shadow-xl">
+            <h3 className="text-lg font-black border-b border-slate-100 pb-3">إضافة منتج جديد</h3>
+            <input
+              type="text"
+              placeholder="اسم المنتج"
+              value={productForm.name}
+              onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+              className="w-full border border-slate-200 rounded-xl p-2.5 text-sm"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                placeholder="سعر البيع"
+                value={productForm.price}
+                onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                className="border border-slate-200 rounded-xl p-2.5 text-sm font-bold"
+              />
+              <input
+                type="number"
+                placeholder="المخزون"
+                value={productForm.stock}
+                onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
+                className="border border-slate-200 rounded-xl p-2.5 text-sm"
+              />
+            </div>
+            <input
+              type="url"
+              placeholder="رابط صورة المنتج"
+              value={newImageUrl}
+              onChange={(e) => setNewImageUrl(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl p-2.5 text-sm"
+            />
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button onClick={() => setShowProductModal(false)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold cursor-pointer">إلغاء</button>
+              <button
+                onClick={async () => {
+                  if (!productForm.name || !productForm.price) return alert('يرجى كتابة الاسم والسعر');
+                  const payload = {
+                    name: productForm.name,
+                    price: Number(productForm.price),
+                    stock: Number(productForm.stock) || 20,
+                    images: newImageUrl ? [newImageUrl] : [],
+                  };
+                  await supabase.from('products').insert([payload]);
+                  setShowProductModal(false);
+                  loadAllData();
+                }}
+                className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold cursor-pointer"
+              >
+                حفظ
+              </button>
             </div>
           </div>
         </div>
