@@ -1,10 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 
 export default function PublicStoreCheckoutPage() {
   const { slug } = useParams();
+  const router = useRouter();
+
+  // فحص وضع السوبر أدمن لإظهار شريط الرجوع والتبديل
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState(null);
@@ -44,6 +48,9 @@ export default function PublicStoreCheckoutPage() {
   ];
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsSuperAdmin(localStorage.getItem('is_super_admin') === 'true');
+    }
     if (slug) loadStoreData();
   }, [slug]);
 
@@ -108,7 +115,7 @@ export default function PublicStoreCheckoutPage() {
     setCurrentDynamicUnitPrice(Number(selectedProduct.price));
   }, [selectedColor, selectedSize, selectedProduct]);
 
-  // حساب أسعار عروض الـ Upsell بناءً على السعر الحالي المختار
+  // حساب أسعار عروض الـ Upsell
   const getPricing = () => {
     const unitPrice = currentDynamicUnitPrice || Number(selectedProduct?.price || 0);
     let qty = selectedBundleTier;
@@ -127,7 +134,6 @@ export default function PublicStoreCheckoutPage() {
 
   const pricing = getPricing();
 
-  // إرسال الطلب مع التحقق من المحفظة والبلاك ليست وخصم الـ 0.05$
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
     if (!selectedProduct) return;
@@ -239,6 +245,30 @@ export default function PublicStoreCheckoutPage() {
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans pb-24 select-none" dir="rtl">
       
+      {/* 👑 شريط عائم للأدمن للتبديل والرجوع من صفحة المتجر */}
+      {isSuperAdmin && (
+        <div className="bg-slate-900 border-b border-amber-500/40 text-amber-300 px-4 py-2 text-xs font-bold flex items-center justify-between sticky top-0 z-50">
+          <span className="flex items-center gap-1.5">
+            <span>👑</span>
+            <span>وضع معاينة المدير العام للمتجر: {storeData?.store_name}</span>
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg cursor-pointer"
+            >
+              لوحة التاجر
+            </button>
+            <button
+              onClick={() => router.push('/admin')}
+              className="px-3 py-1 bg-amber-500 text-black font-black rounded-lg hover:bg-amber-400 cursor-pointer"
+            >
+              ⬅ الرجوع للسوبر أدمن
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* الشريط الإعلاني */}
       <div className="bg-emerald-600 text-white text-[11px] font-black py-2 px-4 text-center">
         {storeSettings?.announcement_text || '🚚 شحن لجميع المحافظات والدفع عند الاستلام بعد المعاينة!'}
@@ -383,7 +413,7 @@ export default function PublicStoreCheckoutPage() {
                   <select value={orderForm.governorate} onChange={(e) => setOrderForm({ ...orderForm, governorate: e.target.value })} className="bg-[#0b0f19] border border-slate-800 rounded-xl p-3 text-xs text-white">
                     {governorates.map((g, i) => <option key={i} value={g}>{g}</option>)}
                   </select>
-                  <input type="text" required placeholder="العنوان بالتفصيل" value={orderForm.address} onChange={(e) => setOrderForm({ ...orderForm, address: e.target.value })} className="bg-[#0b0f19] border border-slate-800 rounded-xl p-3 text-xs text-white" />
+                  <input type="text" required placeholder="العنوان بالتفصيل" value={orderForm.address} onChange={(e) => setOrderForm({ ...orderForm, address: e.target.value })} className="w-full bg-[#0b0f19] border border-slate-800 rounded-xl p-3 text-xs text-white" />
                 </div>
 
                 <div className="bg-[#0b0f19] p-3 rounded-xl border border-slate-800 text-xs flex justify-between font-bold">
