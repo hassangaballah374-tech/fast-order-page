@@ -12,6 +12,7 @@ export default function MerchantFullDashboard() {
   const [userId, setUserId] = useState(null);
 
   const [myStore, setMyStore] = useState(null);
+  const [platformLogo, setPlatformLogo] = useState('');
   const [exchangeRate, setExchangeRate] = useState(50.0);
 
   // إعدادات المتجر وهوية العرض والسياسات
@@ -46,7 +47,6 @@ export default function MerchantFullDashboard() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [uploadingMedia, setUploadingMedia] = useState(false);
-  const [selectedProductStats, setSelectedProductStats] = useState(null);
 
   const [productForm, setProductForm] = useState({
     name: '', price: '', original_price: '', discount_percent: '', cost_price: '', stock: 20,
@@ -55,10 +55,6 @@ export default function MerchantFullDashboard() {
     bundle_tier_2_discount: 10, bundle_tier_3_discount: 20,
     custom_pixel_id: '', custom_pixel_token: '',
   });
-
-  const [tagInputSize, setTagInputSize] = useState('');
-  const [tagInputColor, setTagInputColor] = useState('');
-  const [tagFeature, setTagFeature] = useState('');
 
   // شحن المحافظات والبلاك ليست
   const [selectedGov, setSelectedGov] = useState('القاهرة');
@@ -97,7 +93,10 @@ export default function MerchantFullDashboard() {
     const { data: sData } = await supabase.from('store_profiles').select('*').eq('user_id', uid).maybeSingle();
     if (sData) setMyStore(sData);
 
-    // 2. سعر الدولار اللحظي
+    // 2. جلب شعار منصة NEXT ORDER وسعر الصرف
+    const { data: platSettings } = await supabase.from('store_settings').select('store_logo').limit(1).maybeSingle();
+    if (platSettings?.store_logo) setPlatformLogo(platSettings.store_logo);
+
     const { data: rateData } = await supabase.from('platform_exchange_rates').select('*').eq('id', 1).single();
     if (rateData) setExchangeRate(Number(rateData.usd_to_egp) || 50.0);
 
@@ -129,7 +128,7 @@ export default function MerchantFullDashboard() {
     setLoading(false);
   }
 
-  // رفع اللوجو
+  // رفع اللوجو الخاص بالتاجر
   const handleLogoUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -278,14 +277,37 @@ export default function MerchantFullDashboard() {
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col md:flex-row select-none" dir="rtl">
       
-      {/* 🧭 الشريط الجانبي الشامل لكافة أدوات التاجر */}
+      {/* 🧭 الشريط الجانبي مع لوجو المنصة الرسمي الموحد */}
       <aside className="w-full md:w-64 bg-[#111827] border-b md:border-b-0 md:border-l border-slate-800 p-5 flex flex-col justify-between shrink-0">
         <div className="space-y-6">
-          <div className="space-y-1">
-            <span className="text-xl font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
-              NEXT ORDER
-            </span>
-            <p className="text-xs text-slate-400 font-bold truncate">متجر: {myStore?.store_name}</p>
+          
+          <div className="space-y-3 pb-2 border-b border-slate-800">
+            <div className="flex items-center gap-2.5">
+              {platformLogo ? (
+                <img src={platformLogo} alt="NEXT ORDER" className="w-9 h-9 object-contain rounded-xl bg-white p-0.5 shadow-sm" />
+              ) : (
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-black font-black flex items-center justify-center text-sm">
+                  NO
+                </div>
+              )}
+              <div>
+                <span className="text-base font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent block leading-tight">
+                  NEXT ORDER
+                </span>
+                <span className="text-[9px] bg-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.2 rounded-full border border-emerald-500/30">
+                  لوحة التاجر الشريك
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 bg-slate-900/80 p-2 rounded-xl border border-slate-800">
+              {storeSettings.store_logo ? (
+                <img src={storeSettings.store_logo} alt="Store" className="w-6 h-6 rounded-lg object-contain bg-white" />
+              ) : (
+                <span className="text-xs">🏪</span>
+              )}
+              <p className="text-xs text-slate-300 font-bold truncate">متجر: {myStore?.store_name}</p>
+            </div>
           </div>
 
           <nav className="space-y-1 text-xs font-bold">
@@ -326,14 +348,12 @@ export default function MerchantFullDashboard() {
         </div>
       </aside>
 
-      {/* 🖥️ منطقة المحتوى الرئيسية */}
+      {/* 🖥️ المحتوى */}
       <main className="flex-1 p-4 sm:p-8 space-y-6 overflow-y-auto">
 
-        {/* 🌟 1. الرئيسية والمؤشرات */}
+        {/* 1. الرئيسية والمؤشرات */}
         {activeTab === 'home' && (
           <div className="space-y-6">
-            
-            {/* كرت المحفظة السريع */}
             <div className="bg-gradient-to-r from-slate-900 to-[#111827] border-2 border-emerald-500/30 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <span className="text-xs text-slate-400 block mb-1">💳 رصيد محفظتك المسبقة (يخصم 0.05$ لكل أوردر ناجح)</span>
@@ -373,7 +393,7 @@ export default function MerchantFullDashboard() {
           </div>
         )}
 
-        {/* 🌟 2. المحفظة وسجل الخصومات (0.05$ لكل أوردر) */}
+        {/* 2. المحفظة وسجل الخصومات */}
         {activeTab === 'wallet' && (
           <div className="space-y-6 max-w-3xl">
             <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-4">
@@ -393,7 +413,7 @@ export default function MerchantFullDashboard() {
 
               <button
                 onClick={() => {
-                  const phone = '01000000000'; // رقم الإدارة
+                  const phone = storeSettings?.support_phone || '01000000000';
                   const msg = encodeURIComponent(`مرحباً، أود شحن محفظة متجري (${myStore?.store_name}) بمبلغ 5$ أو ما يعادلها بالمصري.`);
                   window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
                 }}
@@ -422,7 +442,7 @@ export default function MerchantFullDashboard() {
           </div>
         )}
 
-        {/* 🌟 3. المنتجات والمخزون (رفع وسائط ومقاسات وألوان) */}
+        {/* 3. المنتجات والمخزون */}
         {activeTab === 'products' && (
           <div className="space-y-4">
             <div className="bg-[#111827] p-5 rounded-3xl border border-slate-800 flex justify-between items-center">
@@ -491,7 +511,7 @@ export default function MerchantFullDashboard() {
           </div>
         )}
 
-        {/* 🌟 4. القوالب وصفحات الهبوط */}
+        {/* 4. القوالب وصفحات الهبوط */}
         {activeTab === 'landing_builder' && (
           <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-6 max-w-4xl">
             <h3 className="text-lg font-black">قوالب العرض وصفحات الهبوط</h3>
@@ -519,7 +539,7 @@ export default function MerchantFullDashboard() {
           </div>
         )}
 
-        {/* 🌟 5. الطلبات والشحن وتصدير الإكسيل */}
+        {/* 5. الطلبات والشحن وتصدير الإكسيل */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
             <div className="bg-[#111827] p-5 rounded-3xl border border-slate-800 flex justify-between items-center">
@@ -563,7 +583,7 @@ export default function MerchantFullDashboard() {
           </div>
         )}
 
-        {/* 🌟 6. أسعار الشحن للمحافظات */}
+        {/* 6. أسعار الشحن للمحافظات */}
         {activeTab === 'shipping' && (
           <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-4 max-w-2xl">
             <h3 className="text-lg font-black">مصفوفة أسعار الشحن بالمحافظات</h3>
@@ -577,7 +597,7 @@ export default function MerchantFullDashboard() {
           </div>
         )}
 
-        {/* 🌟 7. السياسات والشروط */}
+        {/* 7. السياسات والشروط */}
         {activeTab === 'policies' && (
           <form onSubmit={handleSaveSettings} className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-4 max-w-2xl">
             <h3 className="text-lg font-black">السياسات وروابط السوشيال</h3>
@@ -587,7 +607,7 @@ export default function MerchantFullDashboard() {
           </form>
         )}
 
-        {/* 🌟 8. البلاك ليست */}
+        {/* 8. البلاك ليست */}
         {activeTab === 'blacklist' && (
           <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-4 max-w-2xl">
             <h3 className="text-lg font-black text-rose-400">حظر الأرقام والطلبات الوهمية</h3>
@@ -606,7 +626,7 @@ export default function MerchantFullDashboard() {
           </div>
         )}
 
-        {/* 🌟 9. البيكسلات CAPI */}
+        {/* 9. البيكسلات CAPI */}
         {activeTab === 'pixels' && (
           <form onSubmit={handleSaveSettings} className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-4 max-w-2xl">
             <h3 className="text-lg font-black">إعدادات البيكسل (Facebook CAPI)</h3>
@@ -616,7 +636,7 @@ export default function MerchantFullDashboard() {
           </form>
         )}
 
-        {/* 🌟 10. إعدادات المتجر */}
+        {/* 10. إعدادات المتجر */}
         {activeTab === 'settings' && (
           <form onSubmit={handleSaveSettings} className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-4 max-w-2xl">
             <h3 className="text-lg font-black">هوية المتجر والشعار</h3>
@@ -634,7 +654,7 @@ export default function MerchantFullDashboard() {
 
       </main>
 
-      {/* مودال إضافة وتعديل منتج بكافة التفاصيل */}
+      {/* مودال إضافة وتعديل منتج */}
       {showProductModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
           <form onSubmit={handleSaveProduct} className="bg-[#111827] border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-2xl w-full my-8 space-y-4">
