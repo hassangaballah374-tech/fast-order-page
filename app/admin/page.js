@@ -14,7 +14,7 @@ export default function AppGridDashboard() {
 
   // إعدادات المتجر وهوية اللوجو
   const [settings, setSettings] = useState({
-    store_name: '',
+    store_name: 'NEXT ORDER',
     store_logo: '',
     store_description: '',
     support_phone: '',
@@ -55,7 +55,7 @@ export default function AppGridDashboard() {
         const { data: sData } = await supabase.from('store_settings').select('*').limit(1).maybeSingle();
         if (sData) {
           setSettings({
-            store_name: sData.store_name || '',
+            store_name: sData.store_name || 'NEXT ORDER',
             store_logo: sData.store_logo || sData.logo_url || '',
             store_description: sData.store_description || '',
             support_phone: sData.support_phone || '',
@@ -106,7 +106,7 @@ export default function AppGridDashboard() {
       if (error) {
         const reader = new FileReader();
         reader.onloadend = () => {
-          setSettings(prev => ({ ...prev, store_logo: reader.result }));
+          setSettings((prev) => ({ ...prev, store_logo: reader.result }));
           setUploadingLogo(false);
           alert('✅ تم تجهيز الصورة بنجاح!');
         };
@@ -119,7 +119,7 @@ export default function AppGridDashboard() {
         .getPublicUrl(filePath);
 
       if (publicUrlData?.publicUrl) {
-        setSettings(prev => ({ ...prev, store_logo: publicUrlData.publicUrl }));
+        setSettings((prev) => ({ ...prev, store_logo: publicUrlData.publicUrl }));
         alert('✅ تم رفع اللوجو بنجاح!');
       }
     } catch (err) {
@@ -190,7 +190,7 @@ export default function AppGridDashboard() {
     loadAllData();
   };
 
-  // نسخ رابط التسجيل
+  // نسخ رابط التسجيل المباشر
   const copyRegisterLink = () => {
     if (typeof window !== 'undefined') {
       const link = `${window.location.origin}/register`;
@@ -202,7 +202,7 @@ export default function AppGridDashboard() {
   // الحسابات
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
-  const visitorsCount = analytics.filter(a => a.event_type === 'visit').length;
+  const visitorsCount = analytics.filter((a) => a.event_type === 'visit').length;
   const averageOrderValue = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
   const conversionRate = visitorsCount > 0 ? ((totalOrdersCount / visitorsCount) * 100).toFixed(2) : '0.00';
 
@@ -286,16 +286,16 @@ export default function AppGridDashboard() {
                 <img src={settings.store_logo} alt="Logo" className="w-10 h-10 object-contain rounded-xl border border-slate-200 bg-white" />
               )}
               <div>
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900">
-                  {activeScreen === 'home' ? 'لوحة التحكم الرئيسية' : gridCards.find(c => c.id === activeScreen)?.title}
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-wide">
+                  {activeScreen === 'home' ? 'NEXT ORDER' : gridCards.find((c) => c.id === activeScreen)?.title}
                 </h1>
                 <p className="text-xs text-slate-500">منظومة إدارة المتاجر والمبيعات والتحليلات</p>
               </div>
             </div>
           </div>
 
-          <div className="text-xs font-bold text-slate-700 bg-slate-100 px-4 py-2 rounded-full border border-slate-200">
-            {settings.store_name || 'LMAA STOR'}
+          <div className="text-xs font-black text-slate-800 bg-slate-100 px-4 py-2 rounded-full border border-slate-200 tracking-wider">
+            {settings.store_name || 'NEXT ORDER'}
           </div>
         </div>
       </header>
@@ -370,7 +370,7 @@ export default function AppGridDashboard() {
                     {settings.store_logo && (
                       <button
                         type="button"
-                        onClick={() => setSettings(prev => ({ ...prev, store_logo: '' }))}
+                        onClick={() => setSettings((prev) => ({ ...prev, store_logo: '' }))}
                         className="text-red-500 hover:text-red-700 text-xs font-bold block"
                       >
                         🗑️ إزالة اللوجو الحالي
@@ -387,7 +387,7 @@ export default function AppGridDashboard() {
                   required
                   value={settings.store_name}
                   onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
-                  placeholder="مثال: لقطة ستور"
+                  placeholder="NEXT ORDER"
                   className="w-full border border-slate-200 rounded-2xl p-3.5 text-sm font-bold text-slate-900 focus:outline-emerald-500 bg-slate-50"
                 />
               </div>
@@ -398,7 +398,7 @@ export default function AppGridDashboard() {
                   rows="3"
                   value={settings.store_description}
                   onChange={(e) => setSettings({ ...settings, store_description: e.target.value })}
-                  placeholder="أفضل المنتجات بأسعار حصرية وضمان شامل وخدمة دفع عند الاستلام..."
+                  placeholder="منصة NEXT ORDER لتجارة المنتجات والطلبات السريعة والدفع عند الاستلام..."
                   className="w-full border border-slate-200 rounded-2xl p-3.5 text-sm text-slate-900 focus:outline-emerald-500 bg-slate-50"
                 ></textarea>
               </div>
@@ -422,7 +422,7 @@ export default function AppGridDashboard() {
                     type="text"
                     value={settings.announcement_text}
                     onChange={(e) => setSettings({ ...settings, announcement_text: e.target.value })}
-                    placeholder="🚚 شحن مجاني لجميع المحافظات لفترة محدودة!"
+                    placeholder="🚚 شحن سريع ومجاني لجميع الطلبات اليوم مع NEXT ORDER!"
                     className="w-full border border-slate-200 rounded-2xl p-3.5 text-sm text-slate-900 focus:outline-emerald-500 bg-slate-50"
                   />
                 </div>
@@ -447,8 +447,8 @@ export default function AppGridDashboard() {
           <div className="space-y-4">
             <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <h2 className="text-lg font-black">المشتركين والمتاجر ({subscribers.length})</h2>
-                <p className="text-xs text-slate-500">تفعيل المتجر فور تحويل المبلغ وتحديد عدد الأشهر</p>
+                <h2 className="text-lg font-black">المشتركين ومتاجر NEXT ORDER ({subscribers.length})</h2>
+                <p className="text-xs text-slate-500">تفعيل المتاجر فور استلام الاشتراك وتحديد مدة التفعيل</p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -457,7 +457,7 @@ export default function AppGridDashboard() {
                   className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                 >
                   <span>🔗</span>
-                  <span>نسخ رابط تسجيل العملاء</span>
+                  <span>نسخ رابط تسجيل المشتركين</span>
                 </button>
                 <button onClick={loadAllData} className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold cursor-pointer">
                   🔄 تحديث
@@ -468,7 +468,7 @@ export default function AppGridDashboard() {
             <div className="space-y-3">
               {subscribers.length === 0 ? (
                 <div className="text-center py-16 text-slate-400 font-bold bg-white border border-slate-200 rounded-3xl">
-                  لا يوجد مشتركون حالياً. انسخ الرابط أعلاه وأرسله للتجار لبدء التسجيل.
+                  لا يوجد مشتركون حالياً. انسخ الرابط أعلاه وأرسله للتجار لفتح متاجرهم على منصة NEXT ORDER.
                 </div>
               ) : (
                 subscribers.map((s) => {
