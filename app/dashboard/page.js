@@ -5,31 +5,38 @@ import { useRouter } from 'next/navigation';
 
 export default function MerchantFullDashboard() {
   const router = useRouter();
+  
+  // شاشات التنقل: 'home' | 'products' | 'orders' | 'analytics' | 'pixels' | 'store_settings'
   const [activeScreen, setActiveScreen] = useState('home');
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
 
-  // بيانات المتجر
+  // بيانات بروفايل متجر التاجر
   const [myStore, setMyStore] = useState(null);
+
+  // إعدادات وبيكسلات التاجر
   const [storeSettings, setStoreSettings] = useState({
     store_name: '',
     store_logo: '',
+    store_description: '',
     support_phone: '',
+    announcement_text: '',
     pixel_1: '', token_1: '',
     pixel_2: '', token_2: '',
+    pixel_3: '', token_3: '',
+    pixel_4: '', token_4: '',
   });
 
-  // المنتجات والطلبات والتحليلات
-  const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [analytics, setAnalytics] = useState([]);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
-  // مودال إضافة / تعديل منتج
+  // المنتجات
+  const [products, setProducts] = useState([]);
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [selectedProductStats, setSelectedProductStats] = useState(null);
 
-  // حالة نموذج المنتج
   const [productForm, setProductForm] = useState({
     name: '',
     price: '',
@@ -47,7 +54,14 @@ export default function MerchantFullDashboard() {
 
   const [tagInputSize, setTagInputSize] = useState('');
   const [tagInputColor, setTagInputColor] = useState('');
-  const [selectedProductStats, setSelectedProductStats] = useState(null);
+
+  // الطلبات
+  const [orders, setOrders] = useState([]);
+  const [orderSearch, setOrderSearch] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('all');
+
+  // التحليلات
+  const [analytics, setAnalytics] = useState([]);
 
   useEffect(() => {
     initMerchant();
@@ -69,7 +83,7 @@ export default function MerchantFullDashboard() {
     }
     setUserId(uid);
 
-    // 1. جلب بيانات المتجر
+    // 1. جلب بروفايل متجر التاجر
     const { data: storeData } = await supabase
       .from('store_profiles')
       .select('*')
@@ -78,40 +92,78 @@ export default function MerchantFullDashboard() {
 
     if (storeData) setMyStore(storeData);
 
-    // 2. جلب إعدادات التاجر والبيكسل
+    // 2. جلب إعدادات وبيكسلات التاجر
     const { data: sData } = await supabase
       .from('merchant_settings')
       .select('*')
       .eq('user_id', uid)
       .maybeSingle();
 
-    if (sData) setStoreSettings(sData);
+    if (sData) {
+      setStoreSettings({
+        store_name: sData.store_name || storeData?.store_name || '',
+        store_logo: sData.store_logo || '',
+        store_description: sData.store_description || '',
+        support_phone: sData.support_phone || storeData?.phone || '',
+        announcement_text: sData.announcement_text || '',
+        pixel_1: sData.pixel_1 || '', token_1: sData.token_1 || '',
+        pixel_2: sData.pixel_2 || '', token_2: sData.token_2 || '',
+        pixel_3: sData.pixel_3 || '', token_3: sData.token_3 || '',
+        pixel_4: sData.pixel_4 || '', token_4: sData.token_4 || '',
+      });
+    }
 
-    // 3. جلب منتجات وطلبات التاجر
-    const { data: pData } = await supabase.from('products').select('*').eq('user_id', uid).order('created_at', { ascending: false });
+    // 3. جلب منتجات هذا التاجر فقط
+    const { data: pData } = await supabase
+      .from('products')
+      .select('*')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false });
     if (pData) setProducts(pData);
 
-    const { data: oData } = await supabase.from('orders').select('*').eq('user_id', uid).order('created_at', { ascending: false });
+    // 4. جلب طلبات هذا التاجر فقط
+    const { data: oData } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false });
     if (oData) setOrders(oData);
 
-    const { data: aData } = await supabase.from('store_analytics').select('*').eq('user_id', uid);
+    // 5. جلب تحليلات هذا التاجر فقط
+    const { data: aData } = await supabase
+      .from('store_analytics')
+      .select('*')
+      .eq('user_id', uid);
     if (aData) setAnalytics(aData);
 
     setLoading(false);
   }
 
-  // رفع الصور من الجهاز
-  const handleImageUpload = async (e) => {
+  // رفع اللوجو الخاص بالمتجر
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingLogo(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setStoreSettings((prev) => ({ ...prev, store_logo: reader.result }));
+      setUploadingLogo(false);
+      alert('✅ تم اختيار صورة الشعار بنجاح!');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // رفع صور المنتج
+  const handleImageUpload = (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     setUploadingMedia(true);
-
     for (const file of files) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setProductForm(prev => ({
+        setProductForm((prev) => ({
           ...prev,
-          images: [...prev.images, reader.result]
+          images: [...prev.images, reader.result],
         }));
       };
       reader.readAsDataURL(file);
@@ -119,24 +171,23 @@ export default function MerchantFullDashboard() {
     setUploadingMedia(false);
   };
 
-  // رفع فيديو من الجهاز
-  const handleVideoUpload = async (e) => {
+  // رفع فيديو للمنتج
+  const handleVideoUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingMedia(true);
-
     const reader = new FileReader();
     reader.onloadend = () => {
-      setProductForm(prev => ({
+      setProductForm((prev) => ({
         ...prev,
-        videos: [...prev.videos, reader.result]
+        videos: [...prev.videos, reader.result],
       }));
       setUploadingMedia(false);
     };
     reader.readAsDataURL(file);
   };
 
-  // حفظ المنتج (إضافة / تعديل)
+  // حفظ المنتج (إضافة أو تعديل)
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     if (!productForm.name || !productForm.price) {
@@ -156,8 +207,8 @@ export default function MerchantFullDashboard() {
       videos: productForm.videos,
       sizes: productForm.sizes,
       colors: productForm.colors,
-      custom_pixel_id: productForm.custom_pixel_id.trim(),
-      custom_pixel_token: productForm.custom_pixel_token.trim(),
+      custom_pixel_id: (productForm.custom_pixel_id || '').trim(),
+      custom_pixel_token: (productForm.custom_pixel_token || '').trim(),
     };
 
     if (editingProductId) {
@@ -171,23 +222,90 @@ export default function MerchantFullDashboard() {
     initMerchant();
   };
 
-  // حفظ إعدادات البيكسل العامة للمتجر
-  const handleSaveStoreSettings = async (e) => {
-    e.preventDefault();
-    await supabase.from('merchant_settings').upsert({
-      user_id: userId,
-      ...storeSettings,
-    }, { onConflict: 'user_id' });
-    alert('✅ تم حفظ إعدادات البيكسل والمتجر بنجاح!');
+  // حذف منتج
+  const handleDeleteProduct = async (id, name) => {
+    if (!confirm(`هل أنت متأكد من حذف المنتج: "${name}"؟`)) return;
+    await supabase.from('products').delete().eq('id', id);
+    initMerchant();
   };
 
-  // الحسابات المالية العامة للتاجر
+  // حفظ إعدادات وبيكسلات المتجر
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const payload = {
+        user_id: userId,
+        store_name: storeSettings.store_name,
+        store_logo: storeSettings.store_logo,
+        store_description: storeSettings.store_description,
+        support_phone: storeSettings.support_phone,
+        announcement_text: storeSettings.announcement_text,
+        pixel_1: (storeSettings.pixel_1 || '').trim(),
+        token_1: (storeSettings.token_1 || '').trim(),
+        pixel_2: (storeSettings.pixel_2 || '').trim(),
+        token_2: (storeSettings.token_2 || '').trim(),
+        pixel_3: (storeSettings.pixel_3 || '').trim(),
+        token_3: (storeSettings.token_3 || '').trim(),
+        pixel_4: (storeSettings.pixel_4 || '').trim(),
+        token_4: (storeSettings.token_4 || '').trim(),
+      };
+
+      const { error } = await supabase.from('merchant_settings').upsert(payload, { onConflict: 'user_id' });
+      if (error) throw error;
+      alert('✅ تم حفظ إعدادات وهوية المتجر والبيكسلات بنجاح!');
+    } catch (err) {
+      alert('خطأ أثناء الحفظ: ' + err.message);
+    }
+    setSavingSettings(false);
+  };
+
+  // تصدير الطلبات كملف CSV لشركات الشحن
+  const exportOrdersToCSV = () => {
+    if (orders.length === 0) {
+      alert('لا توجد طلبات لتصديرها!');
+      return;
+    }
+
+    const headers = ['رقم الطلب', 'الزبون', 'الهاتف', 'المحافظة', 'العنوان', 'المنتج', 'الكمية', 'المبلغ', 'الحالة', 'التاريخ'];
+    const rows = orders.map((o, idx) => [
+      idx + 1,
+      `"${o.customer_name || ''}"`,
+      `"${o.phone || ''}"`,
+      `"${o.governorate || ''}"`,
+      `"${o.address || ''}"`,
+      `"${o.product_name || ''}"`,
+      o.quantity || 1,
+      o.total_amount || 0,
+      `"${o.status || 'جديد'}"`,
+      new Date(o.created_at).toLocaleDateString('ar-EG'),
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `${myStore?.store_slug || 'orders'}_shipments_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // نسخ رابط المتجر لمشاركته في الإعلانات
+  const copyStoreLink = () => {
+    if (typeof window !== 'undefined' && myStore?.store_slug) {
+      const link = `${window.location.origin}/store/${myStore.store_slug}`;
+      navigator.clipboard.writeText(link);
+      alert('📋 تم نسخ رابط متجرك للزبائن:\n' + link);
+    }
+  };
+
+  // العمليات الحسابية الشاملة للتاجر
   const totalSalesRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
   const totalStoreVisitors = analytics.filter(a => a.event_type === 'visit').length;
   const totalCartAdditions = products.reduce((sum, p) => sum + (p.cart_adds_count || 0), 0);
   
-  // حساب التكلفة وصافي الأرباح
   const totalCost = orders.reduce((sum, o) => {
     const itemCost = Number(o.cost_price || 0) * (o.quantity || 1);
     return sum + itemCost;
@@ -197,45 +315,65 @@ export default function MerchantFullDashboard() {
 
   const isStoreActive = myStore?.is_active && (!myStore?.subscription_ends_at || new Date(myStore.subscription_ends_at) > new Date());
 
+  // فلترة الطلبات
+  const filteredOrders = orders.filter((o) => {
+    const matchesSearch = (o.customer_name || '').toLowerCase().includes(orderSearch.toLowerCase()) ||
+                          (o.phone || '').includes(orderSearch) ||
+                          (o.governorate || '').includes(orderSearch);
+    const matchesStatus = orderStatusFilter === 'all' || o.status === orderStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   const gridCards = [
     {
       id: 'products',
-      title: 'إدارة المنتجات والمخزون',
-      desc: 'إضافة وتعديل المنتجات بالفيديو والمقاسات والألوان والبيكسل',
+      title: 'منتجاتي والمخزون',
+      desc: 'إضافة وتعديل المنتجات بالفيديوهات والمقاسات والألوان والبيكسل المخصص',
       icon: '🛍️',
-      bgClass: 'bg-gradient-to-r from-emerald-500 to-teal-600',
+      bgClass: 'bg-gradient-to-r from-teal-500 to-emerald-600',
       badge: `${products.length} منتج`,
-    },
-    {
-      id: 'analytics_detailed',
-      title: 'لوحة الأرقام والأرباح',
-      desc: 'السلة، الزوار، التحويلات، التكلفة، وصافي الأرباح',
-      icon: '📊',
-      bgClass: 'bg-gradient-to-r from-blue-600 to-indigo-600',
-      badge: `${totalNetProfit.toLocaleString()} ج.م أرباح`,
-    },
-    {
-      id: 'pixels',
-      title: 'بيكسل فيسبوك العام (CAPI)',
-      desc: 'ربط البيكسل والتوكن السري على مستوى المتجر ككل',
-      icon: '⚡',
-      bgClass: 'bg-gradient-to-r from-rose-600 to-red-600',
-      badge: 'إعدادات CAPI',
     },
     {
       id: 'orders',
       title: 'الطلبات والمبيعات',
-      desc: 'فواتير العملاء وبيانات الشحن والتوصيل المباشر',
+      desc: 'إدارة وتحديث حالات الشحن وتصدير كشوف الشحن إكسيل',
       icon: '📦',
-      bgClass: 'bg-gradient-to-r from-amber-500 to-orange-600',
+      bgClass: 'bg-gradient-to-r from-blue-600 to-indigo-600',
       badge: `${orders.length} طلب`,
+    },
+    {
+      id: 'pixels',
+      title: 'بيكسل فيسبوك العام (CAPI)',
+      desc: 'ربط ما يصل إلى 4 بيكسلات مع الرموز السرية لتعقب الإعلانات',
+      icon: '⚡',
+      bgClass: 'bg-gradient-to-r from-rose-600 to-red-600',
+      badge: 'Facebook CAPI',
+    },
+    {
+      id: 'store_settings',
+      title: 'هوية المتجر والدعم',
+      desc: 'تخصيص الشعار، الاسم، وصف المتجر، ورقم واتساب الزبائن',
+      icon: '⚙️',
+      bgClass: 'bg-gradient-to-r from-amber-500 to-orange-600',
+      badge: 'الهوية والتصميم',
+    },
+    {
+      id: 'analytics',
+      title: 'الأرباح والتحليلات المالية',
+      desc: 'تقرير مفصل بالتكلفة وصافي الأرباح ومعدلات التحويل',
+      icon: '📈',
+      bgClass: 'bg-gradient-to-r from-indigo-600 to-purple-600',
+      badge: `${totalNetProfit.toLocaleString()} ج.م صافي الربح`,
     },
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center font-sans" dir="rtl">
-        <div className="font-bold text-lg animate-pulse">جاري تحميل لوحة تحكم المتجر...</div>
+      <div className="min-h-screen bg-[#0b0f19] text-white flex items-center justify-center font-sans" dir="rtl">
+        <div className="font-bold text-lg animate-pulse flex items-center gap-3">
+          <span>🏪</span>
+          <span>جاري فتح لوحة تحكم متجرك...</span>
+        </div>
       </div>
     );
   }
@@ -243,18 +381,17 @@ export default function MerchantFullDashboard() {
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans pb-16" dir="rtl">
       
-      {/* تنبيه حالة الاشتراك */}
+      {/* شريط تنبيه حالة المتجر */}
       {!isStoreActive && (
         <div className="bg-amber-600 text-white text-xs font-black p-3 text-center flex items-center justify-center gap-2">
           <span>⏳</span>
-          <span>متجرك قيد المراجعة بانتظار سداد الاشتراك والتفعيل من الإدارة. يمكنك ضبط منتجاتك والبيكسل حالياً.</span>
+          <span>متجرك قيد المراجعة بانتظار سداد رسوم الاشتراك والتفعيل من الإدارة. يمكنك ضبط منتجاتك والبيكسل الآن.</span>
         </div>
       )}
 
-      {/* الرأس العلوي بشعار المنصة الرسمي وشعار التاجر */}
+      {/* الرأس العلوي */}
       <header className="bg-[#111827] border-b border-slate-800 px-6 py-4 sticky top-0 z-30 shadow-xl">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          
           <div className="flex items-center gap-4">
             {activeScreen !== 'home' && (
               <button
@@ -266,30 +403,31 @@ export default function MerchantFullDashboard() {
               </button>
             )}
 
-            {/* شعار منصة NEXT ORDER الرسمي */}
-            <div className="flex items-center gap-2 pl-3 border-l border-slate-700">
-              <span className="text-2xl font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
-                NEXT ORDER
-              </span>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
-                PLATFORM
-              </span>
-            </div>
+            {/* شعار منصة NEXT ORDER الرسمي وشعار التاجر */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 pl-3 border-l border-slate-700">
+                <span className="text-xl sm:text-2xl font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
+                  NEXT ORDER
+                </span>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  MERCHANT
+                </span>
+              </div>
 
-            {/* اسم متجر التاجر ورابطه */}
-            <div className="flex items-center gap-2">
-              {storeSettings.store_logo && (
-                <img src={storeSettings.store_logo} className="w-8 h-8 rounded-lg object-contain bg-white" />
-              )}
-              <div>
-                <h2 className="text-sm font-black text-white">{myStore?.store_name || 'متجري'}</h2>
-                <a
-                  href={`/store/${myStore?.store_slug}`}
-                  target="_blank"
-                  className="text-[11px] text-emerald-400 hover:underline font-mono"
-                >
-                  /store/{myStore?.store_slug} ↗
-                </a>
+              <div className="flex items-center gap-2">
+                {storeSettings.store_logo && (
+                  <img src={storeSettings.store_logo} className="w-8 h-8 rounded-lg object-contain bg-white" alt="Store Logo" />
+                )}
+                <div>
+                  <h2 className="text-sm font-black text-white">{myStore?.store_name || storeSettings.store_name}</h2>
+                  <button
+                    onClick={copyStoreLink}
+                    className="text-[11px] text-emerald-400 hover:underline font-mono flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>/store/{myStore?.store_slug}</span>
+                    <span>🔗</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -299,13 +437,12 @@ export default function MerchantFullDashboard() {
               {isStoreActive ? '🟢 متجر نشط' : '🟡 قيد المراجعة'}
             </span>
           </div>
-
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
 
-        {/* 🌟 شريط مؤشرات الأداء السريع (الأرقام والتحليلات) */}
+        {/* 🌟 شريط الأرقام والتحليلات المالية والتشغيلية */}
         <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="bg-[#111827] border border-slate-800 p-4 rounded-2xl">
             <span className="text-[11px] text-slate-400 block mb-1">🛒 السلة المتروكة</span>
@@ -324,7 +461,7 @@ export default function MerchantFullDashboard() {
             <span className="text-xl font-black text-purple-400">{conversionRate}%</span>
           </div>
           <div className="bg-[#111827] border border-slate-800 p-4 rounded-2xl">
-            <span className="text-[11px] text-slate-400 block mb-1">💸 إجمالي التكلفة</span>
+            <span className="text-[11px] text-slate-400 block mb-1">💸 تكلفة البضاعة</span>
             <span className="text-xl font-black text-rose-400">{totalCost.toLocaleString()} ج.م</span>
           </div>
           <div className="bg-[#111827] border border-slate-800 p-4 rounded-2xl bg-gradient-to-br from-emerald-950/40 to-teal-950/20">
@@ -333,9 +470,9 @@ export default function MerchantFullDashboard() {
           </div>
         </section>
 
-        {/* 🌟 شبكة الكروت الرئيسية */}
+        {/* 🌟 1. الشاشة الرئيسية: شبكة الكروت الملونة */}
         {activeScreen === 'home' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {gridCards.map((card) => (
               <div
                 key={card.id}
@@ -350,20 +487,20 @@ export default function MerchantFullDashboard() {
                 </div>
                 <div className="mt-4">
                   <h3 className="text-lg font-black tracking-wide">{card.title}</h3>
-                  <p className="text-xs text-white/80 line-clamp-1 mt-0.5">{card.desc}</p>
+                  <p className="text-xs text-white/85 line-clamp-1 mt-0.5">{card.desc}</p>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* 🌟 شاشة إدارة المنتجات (إضافة بالفيديو، مقاس، لون، بيكسل خاص) */}
+        {/* 🌟 2. شاشة إدارة المنتجات */}
         {activeScreen === 'products' && (
           <div className="space-y-4">
             <div className="bg-[#111827] p-5 rounded-3xl border border-slate-800 flex justify-between items-center">
               <div>
                 <h3 className="text-lg font-black">منتجات متجري ({products.length})</h3>
-                <p className="text-xs text-slate-400">إضافة وتعديل المنتجات بالفيديو والمقاسات والألوان والبيكسلات المستقلة</p>
+                <p className="text-xs text-slate-400">إضافة وتعديل المنتجات بالفيديو والمقاسات والألوان والبيكسل المستقل</p>
               </div>
               <button
                 onClick={() => {
@@ -386,13 +523,11 @@ export default function MerchantFullDashboard() {
 
                 return (
                   <div key={p.id} className="bg-[#111827] border border-slate-800 p-5 rounded-3xl space-y-4 hover:border-slate-700 transition">
-                    
-                    {/* وسائط المنتج (صورة / فيديو) */}
                     <div className="w-full h-44 bg-slate-900 rounded-2xl overflow-hidden relative flex items-center justify-center">
                       {p.videos && p.videos[0] ? (
                         <video src={p.videos[0]} className="w-full h-full object-cover" muted autoPlay loop />
                       ) : p.images && p.images[0] ? (
-                        <img src={p.images[0]} className="w-full h-full object-contain" />
+                        <img src={p.images[0]} className="w-full h-full object-contain" alt={p.name} />
                       ) : (
                         <span className="text-3xl text-slate-600">🛍️</span>
                       )}
@@ -414,11 +549,11 @@ export default function MerchantFullDashboard() {
                       </div>
                     </div>
 
-                    {/* مقاسات وألوان */}
                     <div className="space-y-1.5 text-[11px] text-slate-400 bg-slate-900/60 p-2.5 rounded-xl">
                       <div>المقاسات: <strong className="text-slate-200">{p.sizes?.length ? p.sizes.join(' - ') : 'افتراضي'}</strong></div>
                       <div>الألوان: <strong className="text-slate-200">{p.colors?.length ? p.colors.join(' - ') : 'افتراضي'}</strong></div>
                       <div>ربح القطعة: <strong className="text-emerald-400 font-bold">{profitPerUnit} ج.م</strong></div>
+                      <div>المخزون المتوفر: <strong className="text-white">{p.stock || 0} قطعة</strong></div>
                     </div>
 
                     {/* إحصائيات هذا المنتج الخاصة */}
@@ -437,7 +572,6 @@ export default function MerchantFullDashboard() {
                       </div>
                     </div>
 
-                    {/* أزرار الإجراءات */}
                     <div className="flex gap-2 pt-1 border-t border-slate-800">
                       <button
                         onClick={() => {
@@ -468,6 +602,12 @@ export default function MerchantFullDashboard() {
                       >
                         📊 إحصائياته
                       </button>
+                      <button
+                        onClick={() => handleDeleteProduct(p.id, p.name)}
+                        className="px-3 py-2 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                      >
+                        🗑
+                      </button>
                     </div>
 
                   </div>
@@ -477,15 +617,109 @@ export default function MerchantFullDashboard() {
           </div>
         )}
 
-        {/* 🌟 شاشة إعدادات البيكسل العام (CAPI) */}
-        {activeScreen === 'pixels' && (
-          <form onSubmit={handleSaveStoreSettings} className="bg-[#111827] border border-slate-800 p-6 rounded-3xl max-w-2xl mx-auto space-y-4">
-            <div className="border-b border-slate-800 pb-3">
-              <h3 className="text-lg font-black text-white">إعدادات بيكسل فيسبوك (CAPI) للمتجر</h3>
-              <p className="text-xs text-slate-400">اربط البيكسل والتوكن لتعقب كل حركات المتجر وإرسال أحداث الشراء فوراً لفيسبوك</p>
+        {/* 🌟 3. شاشة الطلبات والشحن */}
+        {activeScreen === 'orders' && (
+          <div className="space-y-4">
+            <div className="bg-[#111827] p-5 rounded-3xl border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div>
+                <h3 className="text-lg font-black text-white">الطلبات الواردة لمتجري ({filteredOrders.length})</h3>
+                <p className="text-xs text-slate-400">تحديث حالات الشحن، متابعة تسليم الزبائن، وتصدير كشوف الشحن</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={exportOrdersToCSV}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black shadow transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <span>📊</span>
+                  <span>تصدير إكسيل للشحن</span>
+                </button>
+                <button onClick={initMerchant} className="px-3.5 py-2 bg-slate-800 rounded-xl text-xs font-bold cursor-pointer">
+                  🔄
+                </button>
+              </div>
             </div>
 
-            {[1, 2].map((num) => (
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                placeholder="بحث باسم الزبون، الهاتف، أو المحافظة..."
+                value={orderSearch}
+                onChange={(e) => setOrderSearch(e.target.value)}
+                className="bg-[#111827] border border-slate-800 text-xs p-3 rounded-xl flex-1 text-white"
+              />
+              <select
+                value={orderStatusFilter}
+                onChange={(e) => setOrderStatusFilter(e.target.value)}
+                className="bg-[#111827] border border-slate-800 text-xs p-3 rounded-xl text-white"
+              >
+                <option value="all">كل الحالات</option>
+                <option value="جديد">جديد</option>
+                <option value="مؤكد">مؤكد</option>
+                <option value="جاري الشحن">جاري الشحن</option>
+                <option value="تم التوصيل">تم التوصيل</option>
+                <option value="مرتجع">مرتجع</option>
+                <option value="ملغي">ملغي</option>
+              </select>
+            </div>
+
+            <div className="space-y-3">
+              {filteredOrders.length === 0 ? (
+                <div className="text-center py-12 text-slate-500 font-bold bg-[#111827] border border-slate-800 rounded-3xl">
+                  لا توجد طلبات واردة حالياً. شارك رابط متجرك في إعلاناتك لبدء استقبال الطلبات!
+                </div>
+              ) : (
+                filteredOrders.map((o, idx) => (
+                  <div key={o.id} className="bg-[#111827] border border-slate-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-sm">طلب #{idx + 1} - {o.customer_name}</span>
+                        <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-slate-800 text-cyan-400">
+                          {o.status || 'جديد'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-400 flex flex-wrap gap-3">
+                        <span>الهاتف: <a href={`https://wa.me/${o.phone}`} target="_blank" className="text-emerald-400 font-mono font-bold underline" dir="ltr">{o.phone}</a></span>
+                        <span>العنوان: <strong className="text-white">{o.governorate} - {o.address}</strong></span>
+                        <span>المنتج: <strong className="text-white">{o.product_name || 'منتج عام'}</strong> (x{o.quantity || 1})</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-emerald-400 font-black text-base">{o.total_amount} ج.م</span>
+                      <select
+                        value={o.status || 'جديد'}
+                        onChange={async (e) => {
+                          const newStatus = e.target.value;
+                          await supabase.from('orders').update({ status: newStatus }).eq('id', o.id);
+                          initMerchant();
+                        }}
+                        className="bg-slate-900 border border-slate-700 text-xs p-2 rounded-xl text-white font-bold"
+                      >
+                        <option value="جديد">جديد</option>
+                        <option value="مؤكد">مؤكد</option>
+                        <option value="جاري الشحن">جاري الشحن</option>
+                        <option value="تم التوصيل">تم التوصيل</option>
+                        <option value="مرتجع">مرتجع</option>
+                        <option value="ملغي">ملغي</option>
+                      </select>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 🌟 4. شاشة إعدادات البيكسل العام (CAPI) */}
+        {activeScreen === 'pixels' && (
+          <form onSubmit={handleSaveSettings} className="bg-[#111827] border border-slate-800 p-6 sm:p-8 rounded-3xl max-w-2xl mx-auto space-y-4">
+            <div className="border-b border-slate-800 pb-3">
+              <h3 className="text-lg font-black text-white">إعدادات بيكسل فيسبوك (CAPI) لمتجرك</h3>
+              <p className="text-xs text-slate-400">اربط البيكسلات وأكواد التتبع العامة لتعقب كل حركات المتجر وإرسال أحداث الشراء فوراً لفيسبوك</p>
+            </div>
+
+            {[1, 2, 3, 4].map((num) => (
               <div key={num} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
                 <span className="text-xs font-bold text-slate-300">بيكسل فيسبوك رقم ({num})</span>
                 <input
@@ -507,27 +741,102 @@ export default function MerchantFullDashboard() {
               </div>
             ))}
 
-            <button type="submit" className="w-full py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-xl shadow-lg transition cursor-pointer">
-              حفظ إعدادات البيكسل 💾
+            <button type="submit" disabled={savingSettings} className="w-full py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-xl shadow-lg transition cursor-pointer">
+              {savingSettings ? 'جاري الحفظ...' : 'حفظ إعدادات البيكسل 💾'}
             </button>
           </form>
         )}
 
-        {/* 🌟 شاشة تفصيلية للوحة الأرقام والأرباح */}
-        {activeScreen === 'analytics_detailed' && (
+        {/* 🌟 5. شاشة هوية المتجر وتخصيصه */}
+        {activeScreen === 'store_settings' && (
+          <form onSubmit={handleSaveSettings} className="bg-[#111827] border border-slate-800 p-6 sm:p-8 rounded-3xl max-w-2xl mx-auto space-y-5">
+            <div className="border-b border-slate-800 pb-3">
+              <h3 className="text-lg font-black text-white">تخصيص وهوية متجرك</h3>
+              <p className="text-xs text-slate-400">الشعار، الاسم، والوصف الذي يظهر للزبائن في صفحة الشراء</p>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-2">شعار المتجر (اللوجو)</label>
+              <div className="flex items-center gap-4 p-4 border border-dashed border-slate-700 rounded-2xl bg-slate-900/60">
+                <div className="w-16 h-16 rounded-xl border border-slate-700 bg-white p-1 flex items-center justify-center shrink-0 overflow-hidden">
+                  {storeSettings.store_logo ? (
+                    <img src={storeSettings.store_logo} alt="Store Logo" className="w-full h-full object-contain" />
+                  ) : (
+                    <span className="text-slate-400 text-2xl">🖼️</span>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-xs text-slate-400" />
+                  <p className="text-[10px] text-slate-500">اختر صورة لوجو مربعة من جهازك</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">اسم المتجر</label>
+              <input
+                type="text"
+                value={storeSettings.store_name}
+                onChange={(e) => setStoreSettings({ ...storeSettings, store_name: e.target.value })}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">وصف المتجر (يظهر أسفل الاسم)</label>
+              <textarea
+                rows="3"
+                value={storeSettings.store_description}
+                onChange={(e) => setStoreSettings({ ...storeSettings, store_description: e.target.value })}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white"
+              ></textarea>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">رقم واتساب خدمة العملاء للزبائن</label>
+                <input
+                  type="tel"
+                  dir="ltr"
+                  value={storeSettings.support_phone}
+                  onChange={(e) => setStoreSettings({ ...storeSettings, support_phone: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-mono text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">نص الشريط الإعلاني العلوي في متجرك</label>
+                <input
+                  type="text"
+                  value={storeSettings.announcement_text}
+                  onChange={(e) => setStoreSettings({ ...storeSettings, announcement_text: e.target.value })}
+                  placeholder="🚚 شحن سريع ودفع عند الاستلام!"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white"
+                />
+              </div>
+            </div>
+
+            <button type="submit" disabled={savingSettings || uploadingLogo} className="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-white font-black text-xs rounded-xl shadow-lg transition cursor-pointer">
+              {savingSettings ? 'جاري الحفظ...' : 'حفظ هوية المتجر 💾'}
+            </button>
+          </form>
+        )}
+
+        {/* 🌟 6. شاشة التحليلات والأرباح */}
+        {activeScreen === 'analytics' && (
           <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-6">
-            <h3 className="text-lg font-black">التقرير المالي والتشغيلي للمتجر</h3>
+            <h3 className="text-lg font-black">التقرير المالي وصافي الأرباح لمتجرك</h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-5 bg-slate-900 rounded-2xl border border-slate-800">
-                <span className="text-xs text-slate-400 block mb-1">إجمالي الإيرادات (المبيعات)</span>
+                <span className="text-xs text-slate-400 block mb-1">إجمالي المبيعات المحققة</span>
                 <span className="text-2xl font-black text-emerald-400">{totalSalesRevenue.toLocaleString()} ج.م</span>
               </div>
               <div className="p-5 bg-slate-900 rounded-2xl border border-slate-800">
-                <span className="text-xs text-slate-400 block mb-1">إجمالي تكلفة البضاعة المباعة</span>
+                <span className="text-xs text-slate-400 block mb-1">إجمالي تكلفة المنتجات المباعة</span>
                 <span className="text-2xl font-black text-rose-400">{totalCost.toLocaleString()} ج.م</span>
               </div>
               <div className="p-5 bg-slate-900 rounded-2xl border border-slate-800">
-                <span className="text-xs text-slate-400 block mb-1">صافي الربح الفعلي</span>
+                <span className="text-xs text-slate-400 block mb-1">صافي أرباحك الحقيقية</span>
                 <span className="text-2xl font-black text-cyan-400">{totalNetProfit.toLocaleString()} ج.م</span>
               </div>
             </div>
@@ -536,7 +845,7 @@ export default function MerchantFullDashboard() {
 
       </main>
 
-      {/* 🌟 نافذة إضافة وتعديل المنتج المتكاملة */}
+      {/* 🌟 نافذة إضافة / تعديل منتج متكاملة */}
       {showProductModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
           <form onSubmit={handleSaveProduct} className="bg-[#111827] border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-2xl w-full my-8 space-y-5 shadow-2xl">
@@ -548,7 +857,6 @@ export default function MerchantFullDashboard() {
               <button type="button" onClick={() => setShowProductModal(false)} className="text-slate-400 hover:text-white">✕</button>
             </div>
 
-            {/* الاسم */}
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-1">اسم المنتج *</label>
               <input
@@ -556,7 +864,7 @@ export default function MerchantFullDashboard() {
                 required
                 value={productForm.name}
                 onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                placeholder="مثال: ساعة ذكية الترا ضد الماء"
+                placeholder="مثال: حذاء رياضي أصلي مريح"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white"
               />
             </div>
@@ -616,10 +924,8 @@ export default function MerchantFullDashboard() {
               </div>
             </div>
 
-            {/* رفع الصور والفيديوهات مباشرة من الجهاز */}
+            {/* رفع الصور والفيديوهات */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              {/* الصور */}
               <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
                 <label className="block text-xs font-bold text-slate-300">صور المنتج (رفع من جهازك)</label>
                 <input
@@ -632,7 +938,7 @@ export default function MerchantFullDashboard() {
                 <div className="flex gap-2 flex-wrap pt-2">
                   {productForm.images.map((img, i) => (
                     <div key={i} className="w-12 h-12 rounded-lg bg-black relative border border-slate-700 overflow-hidden">
-                      <img src={img} className="w-full h-full object-cover" />
+                      <img src={img} className="w-full h-full object-cover" alt="Thumb" />
                       <button
                         type="button"
                         onClick={() => setProductForm({ ...productForm, images: productForm.images.filter((_, idx) => idx !== i) })}
@@ -645,9 +951,8 @@ export default function MerchantFullDashboard() {
                 </div>
               </div>
 
-              {/* الفيديو */}
               <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
-                <label className="block text-xs font-bold text-slate-300">فيديو المنتج (رفع فيديو من جهازك)</label>
+                <label className="block text-xs font-bold text-slate-300">فيديو المنتج (رفع من جهازك)</label>
                 <input
                   type="file"
                   accept="video/*"
@@ -667,13 +972,10 @@ export default function MerchantFullDashboard() {
                   </div>
                 )}
               </div>
-
             </div>
 
             {/* المقاسات والألوان والمخزون */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              
-              {/* المقاسات */}
               <div>
                 <label className="block font-bold text-slate-300 mb-1">المقاسات (اكتب واضغط Enter)</label>
                 <input
@@ -699,12 +1001,11 @@ export default function MerchantFullDashboard() {
                 </div>
               </div>
 
-              {/* الألوان */}
               <div>
                 <label className="block font-bold text-slate-300 mb-1">الألوان (اكتب واضغط Enter)</label>
                 <input
                   type="text"
-                  placeholder="أسود، أبيض، كحلي..."
+                  placeholder="أسود، كحلي، أحمر..."
                   value={tagInputColor}
                   onChange={(e) => setTagInputColor(e.target.value)}
                   onKeyDown={(e) => {
@@ -725,9 +1026,8 @@ export default function MerchantFullDashboard() {
                 </div>
               </div>
 
-              {/* المخزون */}
               <div>
-                <label className="block font-bold text-slate-300 mb-1">الكمية المتوفرة بالمخزون</label>
+                <label className="block font-bold text-slate-300 mb-1">المخزون المتوفر</label>
                 <input
                   type="number"
                   value={productForm.stock}
@@ -735,12 +1035,11 @@ export default function MerchantFullDashboard() {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white font-bold"
                 />
               </div>
-
             </div>
 
-            {/* بيكسل فيسبوك مخصص لهذا المنتج فقط */}
+            {/* بيكسل خاص بهذا المنتج */}
             <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
-              <span className="text-xs font-bold text-emerald-400 block">⚡ بيكسل خاص بهذا المنتج (اختياري للإعلانات المستقلة)</span>
+              <span className="text-xs font-bold text-emerald-400 block">⚡ بيكسل مخصص لهذا المنتج (لحملات إعلانية منفصلة)</span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <input
                   type="text"
@@ -753,7 +1052,7 @@ export default function MerchantFullDashboard() {
                 <input
                   type="text"
                   dir="ltr"
-                  placeholder="Custom API Token"
+                  placeholder="Custom API Access Token"
                   value={productForm.custom_pixel_token}
                   onChange={(e) => setProductForm({ ...productForm, custom_pixel_token: e.target.value })}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs font-mono text-white"
@@ -764,7 +1063,7 @@ export default function MerchantFullDashboard() {
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
               <button type="button" onClick={() => setShowProductModal(false)} className="px-4 py-2.5 bg-slate-800 rounded-xl text-xs font-bold">إلغاء</button>
               <button type="submit" disabled={uploadingMedia} className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black cursor-pointer shadow-lg">
-                {uploadingMedia ? 'جاري رفع الملفات...' : 'حفظ المنتج وإطلاقه 🚀'}
+                {uploadingMedia ? 'جاري الرفع...' : 'حفظ المنتج وإطلاقه 🚀'}
               </button>
             </div>
 
@@ -802,7 +1101,7 @@ export default function MerchantFullDashboard() {
               </div>
             </div>
 
-            <button onClick={() => setSelectedProductStats(null)} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold">
+            <button onClick={() => setSelectedProductStats(null)} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold cursor-pointer">
               إغلاق
             </button>
           </div>
