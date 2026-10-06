@@ -281,12 +281,14 @@ export default function MerchantFullDashboard() {
     reader.readAsDataURL(file);
   };
 
+  // ✅ حفظ المنتج مع ربط الـ user_id و الـ store_slug المباشر
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     if (!productForm.name || !productForm.price) return alert('اكتب اسم المنتج وسعر البيع');
 
     const payload = {
       user_id: userId,
+      store_slug: myStore?.store_slug || '',
       name: productForm.name,
       price: Number(productForm.price),
       original_price: Number(productForm.original_price) || 0,
@@ -308,9 +310,11 @@ export default function MerchantFullDashboard() {
     };
 
     if (editingProductId) {
-      await supabase.from('products').update(payload).eq('id', editingProductId);
+      const { error } = await supabase.from('products').update(payload).eq('id', editingProductId);
+      if (error) alert('خطأ في التعديل: ' + error.message);
     } else {
-      await supabase.from('products').insert([payload]);
+      const { error } = await supabase.from('products').insert([payload]);
+      if (error) alert('خطأ في الإضافة: ' + error.message);
     }
 
     setShowProductModal(false);
@@ -496,7 +500,7 @@ export default function MerchantFullDashboard() {
         {/* 🖥️ المحتوى */}
         <main className="flex-1 p-4 sm:p-8 space-y-6 overflow-y-auto">
 
-          {/* 🌟 1. الرئيسية والمؤشرات */}
+          {/* 1. الرئيسية والمؤشرات */}
           {activeTab === 'home' && (
             <div className="space-y-6">
               <div className="bg-gradient-to-r from-slate-900 to-[#111827] border-2 border-emerald-500/30 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -558,17 +562,16 @@ export default function MerchantFullDashboard() {
             </div>
           )}
 
-          {/* 🌟 2. باقات الشحن المرن والاشتراك الشهري غير المحدود */}
+          {/* 2. باقات الشحن والاشتراك */}
           {activeTab === 'plans' && (
             <div className="space-y-8">
               <div className="border-b border-slate-800 pb-4">
                 <h3 className="text-xl font-black text-white">باقات الشحن والاشتراك</h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  اشحن محفظتك بالقدر الذي يناسبك ليُخصم 0.05$ (5 سنت) فقط لكل طلب ناجح وفقاً لسعر الصرف اللحظي، أو اشترك في الباقة الشهرية المفتوحة لطلبات غير محدودة.
+                  اشحن محفظتك بالقدر الذي يناسبك ليُخصم 0.05$ (5 سنت) فقط لكل طلب ناجح، أو اشترك في الباقة الشهرية المفتوحة لطلبات غير محدودة.
                 </p>
               </div>
 
-              {/* باقات الشحن الاستهلاكي */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">💳</span>
@@ -626,7 +629,6 @@ export default function MerchantFullDashboard() {
                 </div>
               </div>
 
-              {/* الباقة الشهرية غير المحدودة */}
               <div className="space-y-4 pt-4 border-t border-slate-800">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">👑</span>
@@ -642,7 +644,7 @@ export default function MerchantFullDashboard() {
                       </span>
                     </div>
                     <p className="text-xs text-slate-300 leading-relaxed">
-                      ادفع 50 دولار شهرياً فقط واستقبل أي عدد تريده من الطلبات بدون احتساب الـ 5 سنت لكل طلب. مناسبة للمتاجر التي تحقق مبيعات كبيرة لتوفير تكلفة العمولات الفردية.
+                      ادفع 50 دولار شهرياً واستقبل أي عدد تريده من الطلبات بدون احتساب الـ 5 سنت لكل طلب.
                     </p>
                     <div className="flex items-baseline gap-2 pt-1">
                       <span className="text-3xl font-black text-amber-400 font-mono">50$</span>
