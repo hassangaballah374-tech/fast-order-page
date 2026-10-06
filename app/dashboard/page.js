@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation';
 export default function MerchantFullDashboard() {
   const router = useRouter();
 
-  // 'home' | 'products' | 'landing_builder' | 'orders' | 'shipping' | 'my_policies' | 'platform_terms' | 'blacklist' | 'pixels' | 'wallet' | 'settings'
+  // 'home' | 'plans' | 'wallet' | 'products' | 'landing_builder' | 'orders' | 'shipping' | 'my_policies' | 'platform_terms' | 'blacklist' | 'pixels' | 'settings'
   const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
 
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [myStore, setMyStore] = useState(null);
   const [platformLogo, setPlatformLogo] = useState('');
   const [exchangeRate, setExchangeRate] = useState(50.0);
@@ -94,6 +95,9 @@ export default function MerchantFullDashboard() {
   ];
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsSuperAdmin(localStorage.getItem('is_super_admin') === 'true');
+    }
     initMerchant();
   }, []);
 
@@ -120,7 +124,7 @@ export default function MerchantFullDashboard() {
       }));
     }
 
-    // 2. جلب إعدادات وسياسات وشعار المنصة الرسمي NEXT ORDER
+    // 2. إعدادات وسياسات وشعار المنصة الرسمي
     const { data: platSettings } = await supabase.from('store_settings').select('*').limit(1).maybeSingle();
     if (platSettings) {
       if (platSettings.store_logo) setPlatformLogo(platSettings.store_logo);
@@ -173,7 +177,7 @@ export default function MerchantFullDashboard() {
     setLoading(false);
   }
 
-  // 🔄 توليد مصفوفة الألوان والمقاسات المركبة (4 × 4 = 16 خانة)
+  // 🔄 توليد مصفوفة المتغيرات المركبة (4 ألوان × 4 مقاسات = 16 خانة)
   const generateVariantsMatrix = (sizes, colors, basePrice, baseStock, currentMatrix = []) => {
     if (!sizes.length && !colors.length) return [];
     const validSizes = sizes.length ? sizes : ['افتراضي'];
@@ -376,6 +380,11 @@ export default function MerchantFullDashboard() {
   const walletUsd = Number(myStore?.wallet_balance_usd || 0);
   const remainingOrders = Math.floor(walletUsd / 0.05);
 
+  const isUnlimitedActive =
+    myStore?.plan_type === 'unlimited_monthly' &&
+    myStore?.unlimited_ends_at &&
+    new Date(myStore.unlimited_ends_at) > new Date();
+
   const filteredOrders = orders.filter(o => {
     const mSearch = (o.customer_name || '').toLowerCase().includes(orderSearch.toLowerCase()) || (o.phone || '').includes(orderSearch);
     const mStatus = orderStatusFilter === 'all' || o.status === orderStatusFilter;
@@ -447,13 +456,14 @@ export default function MerchantFullDashboard() {
             <nav className="space-y-1 text-xs font-bold">
               {[
                 { id: 'home', label: 'الرئيسية والمؤشرات', icon: '📊' },
-                { id: 'wallet', label: `المحفظة (${walletUsd.toFixed(2)}$)`, icon: '💳' },
+                { id: 'plans', label: 'باقات الشحن والاشتراك', icon: '💎' },
+                { id: 'wallet', label: isUnlimitedActive ? 'الباقة المفتوحة 👑' : `المحفظة (${walletUsd.toFixed(2)}$)`, icon: '💳' },
                 { id: 'products', label: `المنتجات والمخزون (${products.length})`, icon: '🛍️' },
                 { id: 'landing_builder', label: 'القوالب وصفحات الهبوط', icon: '🎨' },
                 { id: 'orders', label: `الطلبات والمبيعات (${orders.length})`, icon: '📦' },
                 { id: 'shipping', label: 'أسعار الشحن للمحافظات', icon: '🚚' },
                 { id: 'my_policies', label: 'سياسات وتواصل متجري', icon: '📜' },
-                { id: 'platform_terms', label: 'سياسات وشروط المنصة', icon: '🛡️️' },
+                { id: 'platform_terms', label: 'سياسات وشروط المنصة', icon: '🛡️' },
                 { id: 'blacklist', label: 'حظر الأرقام الوهمية', icon: '🚫' },
                 { id: 'pixels', label: 'البيكسلات وتتبع CAPI', icon: '⚡' },
                 { id: 'settings', label: 'هوية المتجر والدعم', icon: '⚙️' },
@@ -486,25 +496,45 @@ export default function MerchantFullDashboard() {
         {/* 🖥️ المحتوى */}
         <main className="flex-1 p-4 sm:p-8 space-y-6 overflow-y-auto">
 
-          {/* 1. الرئيسية والمؤشرات */}
+          {/* 🌟 1. الرئيسية والمؤشرات */}
           {activeTab === 'home' && (
             <div className="space-y-6">
               <div className="bg-gradient-to-r from-slate-900 to-[#111827] border-2 border-emerald-500/30 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                  <span className="text-xs text-slate-400 block mb-1">💳 رصيد محفظتك المسبقة (يخصم 0.05$ لكل أوردر ناجح)</span>
+                  <span className="text-xs text-slate-400 block mb-1">
+                    {isUnlimitedActive ? '👑 حالة الاشتراك: الباقة الشهرية المفتوحة (غير محدود)' : '💳 رصيد محفظتك المسبقة (يخصم 0.05$ لكل أوردر ناجح)'}
+                  </span>
                   <div className="flex items-baseline gap-3">
-                    <span className="text-3xl font-black text-emerald-400 font-mono">{walletUsd.toFixed(2)}$</span>
-                    <span className="text-xs text-slate-400">(~{Math.round(walletUsd * exchangeRate)} ج.م)</span>
+                    {isUnlimitedActive ? (
+                      <span className="text-2xl font-black text-amber-400">طلبات غير محدودة (0$ عمولة)</span>
+                    ) : (
+                      <>
+                        <span className="text-3xl font-black text-emerald-400 font-mono">{walletUsd.toFixed(2)}$</span>
+                        <span className="text-xs text-slate-400">(~{Math.round(walletUsd * exchangeRate)} ج.م)</span>
+                      </>
+                    )}
                   </div>
-                  <p className="text-xs text-cyan-400 mt-1">يكفيك لاستقبال حتى: <strong>{remainingOrders} أوردر قادم</strong> والرصيد المتبقي يرحل تلقائياً للشهر الجديد.</p>
+                  <p className="text-xs text-cyan-400 mt-1">
+                    {isUnlimitedActive
+                      ? `سارية حتى: ${new Date(myStore.unlimited_ends_at).toLocaleDateString('ar-EG')}`
+                      : `يكفيك لاستقبال حتى: ${remainingOrders} أوردر قادم والرصيد المتبقي يرحل تلقائياً.`}
+                  </p>
                 </div>
 
-                <button
-                  onClick={() => setActiveTab('wallet')}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-lg cursor-pointer"
-                >
-                  تفاصيل المحفظة والشحن ⚡
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveTab('plans')}
+                    className="px-4 py-2.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-xl text-xs font-black shadow-lg cursor-pointer"
+                  >
+                    💎 ترقية / شحن الباقة
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('wallet')}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-lg cursor-pointer"
+                  >
+                    تفاصيل الاستهلاك ⚡
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -528,17 +558,130 @@ export default function MerchantFullDashboard() {
             </div>
           )}
 
-          {/* 2. المحفظة وسجل الخصومات */}
+          {/* 🌟 2. باقات الشحن المرن والاشتراك الشهري غير المحدود */}
+          {activeTab === 'plans' && (
+            <div className="space-y-8">
+              <div className="border-b border-slate-800 pb-4">
+                <h3 className="text-xl font-black text-white">باقات الشحن والاشتراك</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  اشحن محفظتك بالقدر الذي يناسبك ليُخصم 0.05$ (5 سنت) فقط لكل طلب ناجح وفقاً لسعر الصرف اللحظي، أو اشترك في الباقة الشهرية المفتوحة لطلبات غير محدودة.
+                </p>
+              </div>
+
+              {/* باقات الشحن الاستهلاكي */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">💳</span>
+                  <h4 className="text-sm font-black text-emerald-400">باقات شحن الرصيد المفتوحة (خصم 5 سنت لكل أوردر)</h4>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { usd: 5, orders: 100, label: 'شحن رصيد 5$' },
+                    { usd: 25, orders: 500, label: 'شحن رصيد 25$' },
+                    { usd: 50, orders: 1000, label: 'شحن رصيد 50$', popular: true },
+                    { usd: 100, orders: 2000, label: 'شحن رصيد 100$' },
+                  ].map((tier) => (
+                    <div
+                      key={tier.usd}
+                      className={`bg-[#111827] border p-5 rounded-3xl relative flex flex-col justify-between space-y-4 ${
+                        tier.popular ? 'border-emerald-500/80 bg-gradient-to-b from-emerald-950/20 to-[#111827]' : 'border-slate-800'
+                      }`}
+                    >
+                      {tier.popular && (
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-black text-[9px] font-black px-2.5 py-0.5 rounded-full">
+                          الأكثر استخداماً
+                        </span>
+                      )}
+
+                      <div className="space-y-2">
+                        <span className="text-xs text-slate-400 font-bold block">{tier.label}</span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-black text-white font-mono">{tier.usd}$</span>
+                          <span className="text-xs text-slate-400 font-mono">(~{Math.round(tier.usd * exchangeRate)} ج.م)</span>
+                        </div>
+                        <div className="text-xs text-emerald-400 font-bold bg-emerald-500/10 p-2 rounded-xl">
+                          سعة الشحن: <strong className="text-white">{tier.orders} طلب</strong>
+                        </div>
+                        <ul className="text-[11px] text-slate-400 space-y-1.5 pt-2">
+                          <li>• خصم 0.05$ لكل طلب ناجح فقط</li>
+                          <li>• رصيد تراكمي مستمر بدون تاريخ انتهاء</li>
+                          <li>• يرحل الرصيد المتبقي دائماً</li>
+                          <li>• عدد منتجات غير محدود</li>
+                        </ul>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          const phone = storeSettings?.support_phone || '01000000000';
+                          const msg = encodeURIComponent(`مرحباً، أود شحن محفظة متجري (${myStore?.store_name}) بقيمة ${tier.usd}$ (${Math.round(tier.usd * exchangeRate)} ج.م).`);
+                          window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+                        }}
+                        className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-black transition cursor-pointer"
+                      >
+                        شحن {tier.usd}$ الآن ⚡
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* الباقة الشهرية غير المحدودة */}
+              <div className="space-y-4 pt-4 border-t border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">👑</span>
+                  <h4 className="text-sm font-black text-amber-400">الباقة الشهرية المفتوحة (بدون أي عمولة على الطلبات)</h4>
+                </div>
+
+                <div className="bg-gradient-to-r from-amber-950/30 via-[#111827] to-amber-950/20 border-2 border-amber-500/60 p-6 rounded-3xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                  <div className="space-y-2 max-w-xl">
+                    <div className="flex items-center gap-3">
+                      <h5 className="text-lg font-black text-white">اشتراك شهري غير محدود (Unlimited Monthly)</h5>
+                      <span className="bg-amber-500 text-black text-[10px] font-black px-2.5 py-0.5 rounded-full">
+                        0% عمولة على الطلبات
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      ادفع 50 دولار شهرياً فقط واستقبل أي عدد تريده من الطلبات بدون احتساب الـ 5 سنت لكل طلب. مناسبة للمتاجر التي تحقق مبيعات كبيرة لتوفير تكلفة العمولات الفردية.
+                    </p>
+                    <div className="flex items-baseline gap-2 pt-1">
+                      <span className="text-3xl font-black text-amber-400 font-mono">50$</span>
+                      <span className="text-xs text-slate-400">/ شهرياً (~{Math.round(50 * exchangeRate)} ج.م)</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      const phone = storeSettings?.support_phone || '01000000000';
+                      const msg = encodeURIComponent(`مرحباً إدارة NEXT ORDER، أود تفعيل الباقة الشهرية المفتوحة (50$ شهرياً) لمتجري (${myStore?.store_name}).`);
+                      window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+                    }}
+                    className="px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black text-xs font-black rounded-2xl shadow-xl transition cursor-pointer whitespace-nowrap"
+                  >
+                    تفعيل الباقة الشهرية المفتوحة (50$) 🚀
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. المحفظة وسجل الخصومات */}
           {activeTab === 'wallet' && (
             <div className="space-y-6 max-w-3xl">
               <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-4">
-                <h3 className="text-lg font-black text-white">إدارة المحفظة وشحن الرصيد</h3>
-                <p className="text-xs text-slate-400">تدفع 5$ كحد أدنى (أو ما يعادلها بالمصري)، ويخصم النظام 0.05$ فقط عند كل أوردر، والمتبقي يرحل للشهر الجديد.</p>
+                <h3 className="text-lg font-black text-white">إدارة المحفظة وسجل الاستهلاك</h3>
+                <p className="text-xs text-slate-400">
+                  {isUnlimitedActive
+                    ? 'أنت حالياً على الباقة الشهرية غير المحدودة. لا يتم خصم أي عمولة على الطلبات الواردة.'
+                    : 'يتم خصم 0.05$ (5 سنت) لكل طلب ناجح وفقاً لسعر صرف الدولار المعتمد لحظياً.'}
+                </p>
 
                 <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 flex justify-between items-center">
                   <div>
-                    <span className="text-xs text-slate-400 block">الرصيد المتاح للطلبات</span>
-                    <strong className="text-2xl text-emerald-400 font-mono">{walletUsd.toFixed(2)}$</strong>
+                    <span className="text-xs text-slate-400 block">حالة الحساب</span>
+                    <strong className="text-2xl text-emerald-400 font-mono">
+                      {isUnlimitedActive ? 'غير محدود (Unlimited)' : `${walletUsd.toFixed(2)}$`}
+                    </strong>
                   </div>
                   <div className="text-right">
                     <span className="text-xs text-slate-400 block">سعر الصرف المعتمد</span>
@@ -547,19 +690,15 @@ export default function MerchantFullDashboard() {
                 </div>
 
                 <button
-                  onClick={() => {
-                    const phone = storeSettings?.support_phone || '01000000000';
-                    const msg = encodeURIComponent(`مرحباً، أود شحن محفظة متجري (${myStore?.store_name}) بمبلغ 5$ أو ما يعادلها بالمصري.`);
-                    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
-                  }}
+                  onClick={() => setActiveTab('plans')}
                   className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg transition cursor-pointer"
                 >
-                  طلب شحن رصيد إضافي عبر واتساب الإدارة 🚀
+                  شحن رصيد أو ترقية الباقة 🚀
                 </button>
               </div>
 
               <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-3">
-                <h4 className="text-sm font-bold text-white">سجل الخصومات وشحن المحفظة</h4>
+                <h4 className="text-sm font-bold text-white">سجل العمليات والخصومات</h4>
                 <div className="space-y-2">
                   {transactions.map(t => (
                     <div key={t.id} className="p-3 bg-slate-900 rounded-xl flex justify-between items-center text-xs">
@@ -577,7 +716,7 @@ export default function MerchantFullDashboard() {
             </div>
           )}
 
-          {/* 3. المنتجات والمخزون ومصفوفة الـ 16 خانة */}
+          {/* 4. المنتجات والمخزون ومصفوفة الـ 16 خانة */}
           {activeTab === 'products' && (
             <div className="space-y-4">
               <div className="bg-[#111827] p-5 rounded-3xl border border-slate-800 flex justify-between items-center">
@@ -646,7 +785,7 @@ export default function MerchantFullDashboard() {
             </div>
           )}
 
-          {/* 4. القوالب وصفحات الهبوط */}
+          {/* 5. القوالب وصفحات الهبوط */}
           {activeTab === 'landing_builder' && (
             <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-6 max-w-4xl">
               <h3 className="text-lg font-black">قوالب العرض وصفحات الهبوط</h3>
@@ -674,7 +813,7 @@ export default function MerchantFullDashboard() {
             </div>
           )}
 
-          {/* 5. الطلبات والشحن وتصدير الإكسيل */}
+          {/* 6. الطلبات والشحن وتصدير الإكسيل */}
           {activeTab === 'orders' && (
             <div className="space-y-4">
               <div className="bg-[#111827] p-5 rounded-3xl border border-slate-800 flex justify-between items-center">
@@ -718,7 +857,7 @@ export default function MerchantFullDashboard() {
             </div>
           )}
 
-          {/* 6. أسعار الشحن للمحافظات */}
+          {/* 7. أسعار الشحن للمحافظات */}
           {activeTab === 'shipping' && (
             <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-4 max-w-2xl">
               <h3 className="text-lg font-black">مصفوفة أسعار الشحن بالمحافظات</h3>
@@ -732,7 +871,7 @@ export default function MerchantFullDashboard() {
             </div>
           )}
 
-          {/* 7. سياسات وتواصل متجر التاجر للزبائن */}
+          {/* 8. سياسات وتواصل متجر التاجر للزبائن */}
           {activeTab === 'my_policies' && (
             <form onSubmit={handleSaveSettings} className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-5 max-w-3xl">
               <div>
@@ -803,7 +942,7 @@ export default function MerchantFullDashboard() {
             </form>
           )}
 
-          {/* 8. سياسات وشروط منصة NEXT ORDER الرسمية */}
+          {/* 9. سياسات وشروط منصة NEXT ORDER الرسمية */}
           {activeTab === 'platform_terms' && (
             <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-5 max-w-3xl">
               <div>
@@ -844,7 +983,7 @@ export default function MerchantFullDashboard() {
             </div>
           )}
 
-          {/* 9. البلاك ليست */}
+          {/* 10. البلاك ليست */}
           {activeTab === 'blacklist' && (
             <div className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-4 max-w-2xl">
               <h3 className="text-lg font-black text-rose-400">حظر الأرقام والطلبات الوهمية</h3>
@@ -863,7 +1002,7 @@ export default function MerchantFullDashboard() {
             </div>
           )}
 
-          {/* 10. البيكسلات CAPI */}
+          {/* 11. البيكسلات CAPI */}
           {activeTab === 'pixels' && (
             <form onSubmit={handleSaveSettings} className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-4 max-w-2xl">
               <h3 className="text-lg font-black">إعدادات البيكسل (Facebook CAPI)</h3>
@@ -873,7 +1012,7 @@ export default function MerchantFullDashboard() {
             </form>
           )}
 
-          {/* 11. إعدادات المتجر وهوية التاجر */}
+          {/* 12. إعدادات المتجر وهوية التاجر */}
           {activeTab === 'settings' && (
             <form onSubmit={handleSaveSettings} className="bg-[#111827] border border-slate-800 p-6 rounded-3xl space-y-4 max-w-2xl">
               <h3 className="text-lg font-black">هوية المتجر واسم التاجر والشعار</h3>
