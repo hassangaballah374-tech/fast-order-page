@@ -6,6 +6,9 @@ export default function AdminPage() {
   const [activeView, setActiveView] = useState('products');
   const [loading, setLoading] = useState(true);
 
+  // بيانات اشتراك التاجر
+  const [storeProfile, setStoreProfile] = useState(null);
+
   const [settings, setSettings] = useState({
     store_name: '',
     pixel_1: '', token_1: '',
@@ -42,6 +45,10 @@ export default function AdminPage() {
     setLoading(true);
     try {
       if (supabase) {
+        // فحص ملف الاشتراك وحالة التفعيل للمتجر
+        const { data: profile } = await supabase.from('store_profiles').select('*').limit(1).maybeSingle();
+        if (profile) setStoreProfile(profile);
+
         const { data: sData } = await supabase.from('store_settings').select('*').limit(1).maybeSingle();
         if (sData) {
           setSettings({
@@ -203,14 +210,14 @@ export default function AdminPage() {
         if (data) setProducts((prev) => [data, ...prev]);
       }
       setShowProductModal(false);
-      alert('✅ تم حفظ المنتج بنجاح وتوليد لوحة التحليلات الخاصة به تلقائياً!');
+      alert('✅ تم حفظ المنتج بنجاح!');
     } catch (err) {
       alert('خطأ: ' + err.message);
     }
     setSavingProduct(false);
   };
 
-  // الإحصائيات الشاملة للمتجر
+  // الحسابات العامة
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
 
@@ -228,9 +235,10 @@ export default function AdminPage() {
   const initiateCheckoutCount = analytics.filter(a => a.event_type === 'initiate_checkout').length;
   const incompleteOrders = orders.filter(o => o.status === 'قيد الانتظار' || o.status === 'ملغي').length;
   const conversionRate = visitorsCount > 0 ? ((totalOrdersCount / visitorsCount) * 100).toFixed(2) : '0.00';
-  
-  // متوسط سعر الطلب الإجمالي للمتجر
   const averageOrderValue = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
+
+  // فحص حالة الاشتراك
+  const isSubscriptionActive = storeProfile?.is_active && storeProfile?.subscription_ends_at && new Date(storeProfile.subscription_ends_at) > new Date();
 
   if (loading) {
     return (
@@ -245,6 +253,26 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16" dir="rtl">
+      
+      {/* 🔔 شريط حالة الاشتراك والتفعيل البارز */}
+      {storeProfile && !isSubscriptionActive && (
+        <div className="bg-gradient-to-r from-red-600 via-amber-600 to-red-600 text-white p-3 text-center text-xs sm:text-sm font-bold shadow-lg flex items-center justify-center gap-2">
+          <span>⚠️</span>
+          <span>
+            {storeProfile.subscription_ends_at 
+              ? 'انتهت فترة اشتراك متجرك والمتجر متوقف حالياً أمام الزوار. يرجى تحويل الرسوم والتواصل مع الإدارة لتجديد التفعيل.' 
+              : 'متجرك قيد المراجعة وبانتظار التفعيل من الإدارة للبدء باستقبال الزوار.'}
+          </span>
+        </div>
+      )}
+
+      {storeProfile && isSubscriptionActive && (
+        <div className="bg-emerald-950/80 border-b border-emerald-800 text-emerald-400 p-2 text-center text-xs font-bold flex items-center justify-center gap-2">
+          <span>✨</span>
+          <span>متجرك نشط ويعمل حتى: <strong>{new Date(storeProfile.subscription_ends_at).toLocaleDateString('ar-EG')}</strong></span>
+        </div>
+      )}
+
       <header className="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-30 px-4 sm:px-8 py-4">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -296,7 +324,7 @@ export default function AdminPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 p-5 rounded-3xl border border-slate-800">
               <div>
                 <h2 className="text-xl font-black text-white">قائمة المنتجات ومخزون القطع ({products.length})</h2>
-                <p className="text-xs text-slate-400 mt-0.5">كل منتج له لوحة تحليلات مستقلة تتولد وتعمل تلقائياً فور إضافته</p>
+                <p className="text-xs text-slate-400 mt-0.5">لوحة تحليلات مستقلة لكل منتج تعمل تلقائياً فور إضافته</p>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={loadAllData} className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-2xl text-xs sm:text-sm">
@@ -326,8 +354,6 @@ export default function AdminPage() {
                 const pCarts = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'add_to_cart').length;
                 const pCheckouts = analytics.filter(a => String(a.product_id) === String(p.id) && a.event_type === 'initiate_checkout').length;
                 const pConvRate = pVisits > 0 ? ((pOrdersCount / pVisits) * 100).toFixed(2) : '0.00';
-                
-                // حساب متوسط سعر الطلب لهذا المنتج
                 const pAverageOrderValue = pOrdersCount > 0 ? Math.round(pRevenue / pOrdersCount) : sellingPrice;
 
                 return (
@@ -345,7 +371,6 @@ export default function AdminPage() {
 
                       <h3 className="font-black text-lg text-white line-clamp-1">{p.name}</h3>
 
-                      {/* 📊 لوحة الإحصائيات المستقلة للمنتج (شاملة متوسط سعر الطلب) */}
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
                           <span className="text-slate-400 block text-[10px]">الزيارات</span>
@@ -403,7 +428,6 @@ export default function AdminPage() {
         {/* 2. تبويب السلة والطلبات (اللوحة المجمعة لكل المتجر) */}
         {activeView === 'cart' && (
           <div className="space-y-6">
-            
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl shadow-xl space-y-2">
                 <div className="text-xs font-bold text-slate-400 flex items-center justify-between">
