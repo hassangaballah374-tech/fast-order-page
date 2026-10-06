@@ -9,6 +9,7 @@ export default function PublicStoreCheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState(null);
   const [storeSettings, setStoreSettings] = useState(null);
+  const [platformLogo, setPlatformLogo] = useState('');
   const [shippingRates, setShippingRates] = useState({});
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -57,6 +58,10 @@ export default function PublicStoreCheckoutPage() {
         const { data: store } = await supabase.from('store_profiles').select('*').eq('store_slug', slug).maybeSingle();
         if (!store) return setLoading(false);
         setStoreData(store);
+
+        // جلب شعار منصة NEXT ORDER الرسمي
+        const { data: platSettings } = await supabase.from('store_settings').select('store_logo').limit(1).maybeSingle();
+        if (platSettings?.store_logo) setPlatformLogo(platSettings.store_logo);
 
         const { data: sData } = await supabase.from('merchant_settings').select('*').eq('user_id', store.user_id).maybeSingle();
         if (sData) setStoreSettings(sData);
@@ -222,17 +227,42 @@ export default function PublicStoreCheckoutPage() {
         {storeSettings?.announcement_text || '🚚 شحن لجميع المحافظات والدفع عند الاستلام بعد المعاينة!'}
       </div>
 
-      {/* الترويسة */}
-      <header className="bg-[#111827] border-b border-slate-800 px-6 py-3.5 sticky top-0 z-40">
+      {/* الترويسة العلوية للزبون مع شعار المنصة الرسمي وشعار المتجر */}
+      <header className="bg-[#111827] border-b border-slate-800 px-4 sm:px-8 py-3.5 sticky top-0 z-40 backdrop-blur-md bg-opacity-95 shadow-sm">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
+          
+          {/* شعار واسم متجر التاجر */}
           <div className="flex items-center gap-3">
-            {storeSettings?.store_logo && <img src={storeSettings.store_logo} className="w-9 h-9 rounded-xl object-contain bg-white p-0.5" />}
+            {storeSettings?.store_logo ? (
+              <img src={storeSettings.store_logo} alt="Logo" className="w-10 h-10 rounded-xl object-contain bg-white p-0.5 border border-slate-700 shadow-sm" />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-base shadow-sm">
+                {storeData.store_name?.charAt(0) || '🏪'}
+              </div>
+            )}
             <div>
-              <h1 className="text-base font-black text-white">{storeData.store_name}</h1>
-              <p className="text-[10px] text-slate-400">{storeSettings?.store_description || 'أفضل جودة وضمان حقيقي'}</p>
+              <h1 className="text-base font-black text-white leading-tight">{storeData.store_name}</h1>
+              <p className="text-[11px] text-slate-400 line-clamp-1">{storeSettings?.store_description || 'أفضل المنتجات بأعلى جودة وضمان حقيقي'}</p>
             </div>
           </div>
-          <span className="text-xs font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">NEXT ORDER</span>
+
+          {/* شعار منصة NEXT ORDER الرسمي للمشتري */}
+          <div className="flex items-center gap-2 pl-1 border-r border-slate-800 pr-3">
+            <span className="text-[10px] text-slate-400 font-bold hidden sm:inline">منظومة موثقة عبر</span>
+            {platformLogo ? (
+              <img src={platformLogo} alt="NEXT ORDER" className="h-8 max-w-[100px] object-contain rounded-lg bg-white/5 p-1 border border-slate-800" />
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-emerald-400 to-teal-300 text-black font-black flex items-center justify-center text-[10px]">
+                  NO
+                </div>
+                <span className="text-xs font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
+                  NEXT ORDER
+                </span>
+              </div>
+            )}
+          </div>
+
         </div>
       </header>
 
@@ -318,6 +348,21 @@ export default function PublicStoreCheckoutPage() {
           <div className="text-center py-12 text-slate-500">لا توجد منتجات مسجلة في هذا المتجر حالياً.</div>
         )}
       </main>
+
+      {/* فوتر الثقة للمشتري */}
+      <footer className="mt-16 py-8 border-t border-slate-800/80 text-center space-y-3 bg-[#0d1322]">
+        <div className="flex items-center justify-center gap-2">
+          {platformLogo ? (
+            <img src={platformLogo} alt="NEXT ORDER" className="h-6 object-contain opacity-80" />
+          ) : (
+            <span className="text-xs font-black text-emerald-400">NEXT ORDER</span>
+          )}
+          <span className="text-xs text-slate-400 font-bold">| منصة التجارة والدفع عند الاستلام المعتمدة</span>
+        </div>
+        <p className="text-[11px] text-slate-500">
+          جميع المعاملات والشحنات مؤمنة ومحمية بالكامل • حق المعاينة والفحص متاح للعميل قبل السداد
+        </p>
+      </footer>
 
     </div>
   );
