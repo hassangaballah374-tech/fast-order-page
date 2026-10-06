@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 export default function MerchantFullDashboard() {
   const router = useRouter();
 
-  // 'home' | 'plans' | 'wallet' | 'products' | 'landing_builder' | 'orders' | 'shipping' | 'my_policies' | 'platform_terms' | 'blacklist' | 'pixels' | 'settings'
+  // التبويب النشط
   const [activeTab, setActiveTab] = useState('home');
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
@@ -16,7 +16,7 @@ export default function MerchantFullDashboard() {
   const [platformLogo, setPlatformLogo] = useState('');
   const [exchangeRate, setExchangeRate] = useState(50.0);
 
-  // سياسات منصة NEXT ORDER الرسمية الواردة من السوبر أدمن
+  // سياسات منصة NEXT ORDER الرسمية
   const [platformTerms, setPlatformTerms] = useState({
     about_us: '',
     privacy_policy: '',
@@ -59,7 +59,7 @@ export default function MerchantFullDashboard() {
   const [analytics, setAnalytics] = useState([]);
   const [transactions, setTransactions] = useState([]);
 
-  // مودال إضافة / تعديل منتج
+  // حالة إضافة / تعديل منتج
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [uploadingMedia, setUploadingMedia] = useState(false);
@@ -108,10 +108,9 @@ export default function MerchantFullDashboard() {
     uid = localStorage.getItem('merchant_user_id') || session?.user?.id || 'main_flagship_owner';
     setUserId(uid);
 
-    // 1. جلب بروفايل المتجر
+    // 1. بروفايل المتجر
     let { data: sData } = await supabase.from('store_profiles').select('*').eq('user_id', uid).maybeSingle();
     
-    // محاولة بديلة في حال لم يُعثر على التاجر بالمعرف
     if (!sData) {
       const { data: fallbackStore } = await supabase.from('store_profiles').select('*').limit(1).maybeSingle();
       if (fallbackStore) sData = fallbackStore;
@@ -126,7 +125,7 @@ export default function MerchantFullDashboard() {
       }));
     }
 
-    // 2. إعدادات وسياسات وشعار المنصة الرسمي
+    // 2. إعدادات وسياسات وشعار المنصة
     const { data: platSettings } = await supabase.from('store_settings').select('*').limit(1).maybeSingle();
     if (platSettings) {
       if (platSettings.store_logo) setPlatformLogo(platSettings.store_logo);
@@ -155,7 +154,7 @@ export default function MerchantFullDashboard() {
       }));
     }
 
-    // 5. جلب كافة منتجات هذا المتجر (سواء بربط الـ user_id أو الـ slug أو المنتجات العامة غير المرتبطة)
+    // 5. جلب كافة منتجات هذا المتجر (سواء بربط user_id أو slug أو المنتجات غير المرتبطة لضمان ظهور منتجاتك)
     const storeSlug = sData?.store_slug || 'main-store';
     const { data: pData } = await supabase
       .from('products')
@@ -206,7 +205,7 @@ export default function MerchantFullDashboard() {
     setLoading(false);
   }
 
-  // 🔄 توليد مصفوفة المتغيرات المركبة (4 ألوان × 4 مقاسات = 16 خانة)
+  // توليد مصفوفة المتغيرات المركبة
   const generateVariantsMatrix = (sizes, colors, basePrice, baseStock, currentMatrix = []) => {
     if (!sizes.length && !colors.length) return [];
     const validSizes = sizes.length ? sizes : ['افتراضي'];
@@ -434,7 +433,7 @@ export default function MerchantFullDashboard() {
   return (
     <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col select-none relative" dir="rtl">
       
-      {/* 👑 زر عائم دائم ومحمى للرجوع الفوري للسوبر أدمن */}
+      {/* زر عائم دائم للرجوع الفوري للسوبر أدمن */}
       <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 bg-slate-900/95 border-2 border-emerald-500/80 p-2 rounded-2xl shadow-2xl backdrop-blur-md">
         <button
           onClick={() => {
@@ -449,7 +448,7 @@ export default function MerchantFullDashboard() {
       </div>
 
       <div className="flex flex-col md:flex-row flex-1">
-        {/* 🧭 الشريط الجانبي */}
+        {/* الشريط الجانبي */}
         <aside className="w-full md:w-64 bg-[#111827] border-b md:border-b-0 md:border-l border-slate-800 p-5 flex flex-col justify-between shrink-0">
           <div className="space-y-6">
             
@@ -472,7 +471,6 @@ export default function MerchantFullDashboard() {
                 </div>
               </div>
 
-              {/* اسم المتجر والتاجر في الأعلى */}
               <div className="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 space-y-0.5">
                 <div className="text-xs text-white font-black truncate flex items-center gap-1.5">
                   <span>🏪</span>
@@ -525,7 +523,7 @@ export default function MerchantFullDashboard() {
           </div>
         </aside>
 
-        {/* 🖥️ المحتوى */}
+        {/* المحتوى */}
         <main className="flex-1 p-4 sm:p-8 space-y-6 overflow-y-auto">
 
           {/* 1. الرئيسية والمؤشرات */}
@@ -1087,7 +1085,7 @@ export default function MerchantFullDashboard() {
         </main>
       </div>
 
-      {/* 🌟 مودال إضافة وتعديل المنتج بمصفوفة الـ 16 خانة والتسعير الموحد */}
+      {/* مودال إضافة وتعديل المنتج */}
       {showProductModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
           <form onSubmit={handleSaveProduct} className="bg-[#111827] border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-3xl w-full my-8 space-y-4">
