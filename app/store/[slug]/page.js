@@ -138,12 +138,6 @@ export default function PublicStoreCheckoutPage() {
       return;
     }
 
-    const currentWallet = Number(storeData.wallet_balance_usd || 0);
-    if (currentWallet < 0.05) {
-      alert('عذراً، المتجر غير متاح لاستقبال الطلبات حالياً بسبب صيانة المحفظة.');
-      return;
-    }
-
     setSubmittingOrder(true);
     try {
       // 1. فحص البلاك ليست
@@ -163,7 +157,22 @@ export default function PublicStoreCheckoutPage() {
         return;
       }
 
-      // 3. إدراج الأوردر
+      // 3. التحقق من نوع الاشتراك: هل المتجر على الباقة الشهرية المفتوحة وسارية؟
+      const isUnlimitedActive = 
+        storeData.plan_type === 'unlimited_monthly' && 
+        storeData.unlimited_ends_at && 
+        new Date(storeData.unlimited_ends_at) > new Date();
+
+      const currentWallet = Number(storeData.wallet_balance_usd || 0);
+
+      // إذا لم يكن على الباقة المفتوحة، يجب ألا يقل رصيد المحفظة عن 0.05$
+      if (!isUnlimitedActive && currentWallet < 0.05) {
+        alert('عذراً، المتجر غير متاح لاستقبال الطلبات حالياً بسبب صيانة المحفظة.');
+        setSubmittingOrder(false);
+        return;
+      }
+
+      // 4. إدراج الأوردر
       const orderPayload = {
         user_id: storeData.user_id,
         customer_name: orderForm.customerName.trim(),
@@ -180,29 +189,35 @@ export default function PublicStoreCheckoutPage() {
       const { data: created, error } = await supabase.from('orders').insert([orderPayload]).select().single();
       if (error) throw error;
 
-      // 4. خصم عمولة الأوردر اللحظية (0.05$) من محفظة التاجر
-      const { data: rateData } = await supabase.from('platform_exchange_rates').select('*').eq('id', 1).single();
-      const usdRate = Number(rateData?.usd_to_egp || 50.0);
-      const feeUsd = 0.05;
-      const feeEgp = feeUsd * usdRate;
+      // 5. الخصم المالي: إذا كان استهلاك محفظة يُخصم 0.05$، وإذا كانت الباقة مفتوحة لا يُخصم أي سنت
+      if (!isUnlimitedActive) {
+        const { data: rateData } = await supabase.from('platform_exchange_rates').select('*').eq('id', 1).single();
+        const usdRate = Number(rateData?.usd_to_egp || 50.0);
+        const feeUsd = 0.05;
+        const feeEgp = feeUsd * usdRate;
 
-      const newBal = Math.max(0, currentWallet - feeUsd);
-      await supabase.from('store_profiles').update({
-        wallet_balance_usd: newBal,
-        total_orders_billed: (storeData.total_orders_billed || 0) + 1,
-        is_active: newBal >= 0.05,
-      }).eq('id', storeData.id);
+        const newBal = Math.max(0, currentWallet - feeUsd);
+        await supabase.from('store_profiles').update({
+          wallet_balance_usd: newBal,
+          total_orders_billed: (storeData.total_orders_billed || 0) + 1,
+          is_active: newBal >= 0.05,
+        }).eq('id', storeData.id);
 
-      await supabase.from('wallet_transactions').insert([{
-        user_id: storeData.user_id,
-        store_name: storeData.store_name,
-        type: 'order_fee',
-        amount_usd: feeUsd,
-        amount_egp: feeEgp,
-        usd_rate: usdRate,
-        order_id: created.id,
-        description: `عمولة طلب (${feeUsd}$ = ${feeEgp.toFixed(2)} ج.م)`,
-      }]);
+        await supabase.from('wallet_transactions').insert([{
+          user_id: storeData.user_id,
+          store_name: storeData.store_name,
+          type: 'order_fee',
+          amount_usd: feeUsd,
+          amount_egp: feeEgp,
+          usd_rate: usdRate,
+          order_id: created.id,
+          description: `عمولة طلب استهلاكي (${feeUsd}$ = ${feeEgp.toFixed(2)} ج.م)`,
+        }]);
+      } else {
+        await supabase.from('store_profiles').update({
+          total_orders_billed: (storeData.total_orders_billed || 0) + 1,
+        }).eq('id', storeData.id);
+      }
 
       setOrderSuccessData({ ...orderPayload, orderId: created?.id ? created.id.slice(0, 8).toUpperCase() : 'ORD-' + Date.now().toString().slice(-6) });
     } catch (err) {
