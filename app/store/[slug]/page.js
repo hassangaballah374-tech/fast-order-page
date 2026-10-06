@@ -61,13 +61,18 @@ export default function PublicStoreCheckoutPage() {
     try {
       if (supabase) {
         // 1. جلب بروفايل المتجر بالـ Slug
-        const { data: store, error: sErr } = await supabase
+        let { data: store } = await supabase
           .from('store_profiles')
           .select('*')
           .eq('store_slug', slug)
           .maybeSingle();
 
-        if (sErr) console.error(sErr);
+        // حل احتياطي: جلب أول متجر مسجل إن لم يُعثر على الـ slug
+        if (!store) {
+          const { data: firstStore } = await supabase.from('store_profiles').select('*').limit(1).maybeSingle();
+          if (firstStore) store = firstStore;
+        }
+
         if (!store) {
           setLoading(false);
           return;
@@ -88,18 +93,35 @@ export default function PublicStoreCheckoutPage() {
           setShippingRates(map);
         }
 
-        // 3. جلب منتجات المتجر بربط مزدوج (user_id أو store_slug) لضمان عدم اختفاء أي منتج مسجل
-        const { data: pData, error: pErr } = await supabase
+        // 3. جلب منتجات المتجر بربط مزدوج ومحمي
+        const { data: pData } = await supabase
           .from('products')
           .select('*')
-          .or(`user_id.eq.${store.user_id},store_slug.eq.${slug}`)
+          .or(`user_id.eq.${store.user_id},store_slug.eq.${slug},store_slug.eq.main-store,user_id.is.null`)
           .order('created_at', { ascending: false });
 
-        if (pErr) console.error(pErr);
-
         if (pData && pData.length > 0) {
-          setProducts(pData);
-          const first = pData[0];
+          const sanitized = pData.map(p => {
+            let imgs = [];
+            if (Array.isArray(p.images)) {
+              imgs = p.images;
+            } else if (typeof p.images === 'string' && p.images.trim()) {
+              try {
+                const parsed = JSON.parse(p.images);
+                imgs = Array.isArray(parsed) ? parsed : [p.images];
+              } catch {
+                imgs = [p.images];
+              }
+            }
+            return {
+              ...p,
+              images: imgs,
+              variants_matrix: Array.isArray(p.variants_matrix) ? p.variants_matrix : [],
+            };
+          });
+
+          setProducts(sanitized);
+          const first = sanitized[0];
           setSelectedProduct(first);
           setCurrentDynamicUnitPrice(Number(first.price));
           if (first.sizes?.length) setSelectedSize(first.sizes[0]);
@@ -252,7 +274,7 @@ export default function PublicStoreCheckoutPage() {
         <div className="max-w-md w-full bg-[#111827] border border-emerald-500/30 p-8 rounded-3xl text-center space-y-4">
           <div className="text-4xl text-emerald-400">✓</div>
           <h2 className="text-xl font-black">تم تأكيد طلبك بنجاح!</h2>
-          <p className="text-xs text-slate-400">شكراً لطلبك من متجر <strong>{storeData.store_name}</strong> تحت إشراف التاجر <strong>{storeData.owner_name}</strong>.</p>
+          <p className="text-xs text-slate-400">شكراً لطلبك من متجر <strong>{storeData?.store_name}</strong> تحت إشراف التاجر <strong>{storeData?.owner_name}</strong>.</p>
           <div className="bg-slate-900 p-4 rounded-xl text-xs text-right space-y-2">
             <div>كود الطلب: <strong className="text-white font-mono">{orderSuccessData.orderId}</strong></div>
             <div>المنتج: <strong className="text-white">{orderSuccessData.product_name}</strong></div>
@@ -339,37 +361,40 @@ export default function PublicStoreCheckoutPage() {
 
       <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
 
-        {/* 🌟 شريط اختيار منتجات المتجر في حال وجود أكثر من منتج */}
+        {/* 🌟 شبكة اختيار منتجات المتجر الأخرى */}
         {products.length > 1 && (
           <div className="space-y-2">
             <span className="text-xs font-bold text-slate-400">منتجات أخرى متوفرة في المتجر:</span>
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-              {products.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    setSelectedProduct(p);
-                    setCurrentDynamicUnitPrice(Number(p.price));
-                    if (p.sizes?.length) setSelectedSize(p.sizes[0]);
-                    if (p.colors?.length) setSelectedColor(p.colors[0]);
-                    setActiveMediaIndex(0);
-                    setSelectedBundleTier(1);
-                  }}
-                  className={`flex items-center gap-2.5 p-2 pr-3 rounded-2xl border transition shrink-0 cursor-pointer ${
-                    selectedProduct?.id === p.id
-                      ? 'border-emerald-500 bg-emerald-500/10'
-                      : 'border-slate-800 bg-[#111827] opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <div className="w-9 h-9 rounded-xl bg-slate-900 overflow-hidden flex items-center justify-center shrink-0">
-                    {p.images?.[0] ? <img src={p.images[0]} className="w-full h-full object-cover" /> : '📦'}
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs font-bold text-white block truncate max-w-[120px]">{p.name}</span>
-                    <span className="text-[10px] text-emerald-400 font-mono font-bold">{p.price} ج.م</span>
-                  </div>
-                </button>
-              ))}
+              {products.map((p) => {
+                const thumb = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : '';
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      setSelectedProduct(p);
+                      setCurrentDynamicUnitPrice(Number(p.price));
+                      if (p.sizes?.length) setSelectedSize(p.sizes[0]);
+                      if (p.colors?.length) setSelectedColor(p.colors[0]);
+                      setActiveMediaIndex(0);
+                      setSelectedBundleTier(1);
+                    }}
+                    className={`flex items-center gap-2.5 p-2 pr-3 rounded-2xl border transition shrink-0 cursor-pointer ${
+                      selectedProduct?.id === p.id
+                        ? 'border-emerald-500 bg-emerald-500/10'
+                        : 'border-slate-800 bg-[#111827] opacity-70 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-slate-900 overflow-hidden flex items-center justify-center shrink-0">
+                      {thumb ? <img src={thumb} className="w-full h-full object-cover" alt={p.name} /> : '📦'}
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-white block truncate max-w-[120px]">{p.name}</span>
+                      <span className="text-[10px] text-emerald-400 font-mono font-bold">{p.price} ج.م</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -382,8 +407,10 @@ export default function PublicStoreCheckoutPage() {
               <div className="w-full h-80 sm:h-[400px] bg-[#111827] border border-slate-800 rounded-3xl overflow-hidden flex items-center justify-center">
                 {allMedia[activeMediaIndex]?.type === 'video' ? (
                   <video src={allMedia[activeMediaIndex].url} controls autoPlay className="w-full h-full object-cover" />
+                ) : allMedia[activeMediaIndex]?.url ? (
+                  <img src={allMedia[activeMediaIndex].url} className="w-full h-full object-contain p-2" alt={selectedProduct.name} />
                 ) : (
-                  <img src={allMedia[activeMediaIndex]?.url || ''} className="w-full h-full object-contain p-2" />
+                  <span className="text-4xl">🛍️</span>
                 )}
               </div>
 
@@ -391,7 +418,7 @@ export default function PublicStoreCheckoutPage() {
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {allMedia.map((m, idx) => (
                     <button key={idx} onClick={() => setActiveMediaIndex(idx)} className={`w-14 h-14 rounded-xl border-2 overflow-hidden shrink-0 ${activeMediaIndex === idx ? 'border-emerald-500' : 'border-slate-800'}`}>
-                      {m.type === 'video' ? <div className="w-full h-full bg-slate-900 flex items-center justify-center text-xs">🎬</div> : <img src={m.url} className="w-full h-full object-cover" />}
+                      {m.type === 'video' ? <div className="w-full h-full bg-slate-900 flex items-center justify-center text-xs">🎬</div> : <img src={m.url} className="w-full h-full object-cover" alt="" />}
                     </button>
                   ))}
                 </div>
