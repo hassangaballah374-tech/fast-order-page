@@ -11,9 +11,6 @@ export default function MerchantFullDashboard() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
 
-  // حالة السوبر أدمن للرجوع والتبديل
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-
   const [myStore, setMyStore] = useState(null);
   const [platformLogo, setPlatformLogo] = useState('');
   const [exchangeRate, setExchangeRate] = useState(50.0);
@@ -97,9 +94,6 @@ export default function MerchantFullDashboard() {
   ];
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsSuperAdmin(localStorage.getItem('is_super_admin') === 'true');
-    }
     initMerchant();
   }, []);
 
@@ -397,26 +391,21 @@ export default function MerchantFullDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col select-none" dir="rtl">
+    <div className="min-h-screen bg-[#0b0f19] text-white font-sans flex flex-col select-none relative" dir="rtl">
       
-      {/* 👑 شريط الأدمن العائم للتبديل والرجوع السريع للسوبر أدمن */}
-      {isSuperAdmin && (
-        <div className="bg-gradient-to-r from-red-600 via-amber-600 to-red-600 text-white px-4 py-2 text-xs font-black flex items-center justify-between sticky top-0 z-50 shadow-lg">
-          <div className="flex items-center gap-2">
-            <span>👑</span>
-            <span>أنت في وضع معاينة المدير العام لمتجر: [{myStore?.store_name}]</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => router.push('/admin')}
-              className="px-3 py-1 bg-black/50 hover:bg-black/70 rounded-lg transition font-black border border-white/20 cursor-pointer flex items-center gap-1.5"
-            >
-              <span>⬅</span>
-              <span>العودة للوحة السوبر أدمن</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* 👑 زر عائم دائم ومحمى للرجوع الفوري للسوبر أدمن */}
+      <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 bg-slate-900/95 border-2 border-emerald-500/80 p-2 rounded-2xl shadow-2xl backdrop-blur-md">
+        <button
+          onClick={() => {
+            localStorage.setItem('is_super_admin', 'true');
+            router.push('/admin');
+          }}
+          className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black text-xs font-black rounded-xl shadow-lg transition cursor-pointer flex items-center gap-1.5"
+        >
+          <span>👑</span>
+          <span>العودة للوحة السوبر أدمن</span>
+        </button>
+      </div>
 
       <div className="flex flex-col md:flex-row flex-1">
         {/* 🧭 الشريط الجانبي */}
@@ -464,7 +453,7 @@ export default function MerchantFullDashboard() {
                 { id: 'orders', label: `الطلبات والمبيعات (${orders.length})`, icon: '📦' },
                 { id: 'shipping', label: 'أسعار الشحن للمحافظات', icon: '🚚' },
                 { id: 'my_policies', label: 'سياسات وتواصل متجري', icon: '📜' },
-                { id: 'platform_terms', label: 'سياسات وشروط المنصة', icon: '🛡️' },
+                { id: 'platform_terms', label: 'سياسات وشروط المنصة', icon: '🛡️️' },
                 { id: 'blacklist', label: 'حظر الأرقام الوهمية', icon: '🚫' },
                 { id: 'pixels', label: 'البيكسلات وتتبع CAPI', icon: '⚡' },
                 { id: 'settings', label: 'هوية المتجر والدعم', icon: '⚙️' },
