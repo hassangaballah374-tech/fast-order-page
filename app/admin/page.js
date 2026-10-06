@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
 export default function AppGridDashboard() {
-  // 'home' | 'subscribers' | 'orders' | 'products' | 'analytics' | 'pixels' | 'store_branding'
   const [activeScreen, setActiveScreen] = useState('home');
   const [loading, setLoading] = useState(true);
 
@@ -13,7 +12,7 @@ export default function AppGridDashboard() {
   const [durationMonths, setDurationMonths] = useState(1);
   const [paymentAmount, setPaymentAmount] = useState('');
 
-  // إعدادات المتجر واللوجو والبيكسلات
+  // إعدادات المتجر وهوية اللوجو
   const [settings, setSettings] = useState({
     store_name: '',
     store_logo: '',
@@ -25,6 +24,8 @@ export default function AppGridDashboard() {
     pixel_3: '', token_3: '',
     pixel_4: '', token_4: '',
   });
+
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
 
   // الطلبات والمنتجات والتحليلات
@@ -82,7 +83,56 @@ export default function AppGridDashboard() {
     setLoading(false);
   }
 
-  // حفظ الإعدادات وهوية المتجر
+  // 📤 دالة رفع ملف اللوجو مباشرة من الجهاز
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // التحقق من أن الملف صورة
+    if (!file.type.startsWith('image/')) {
+      alert('يرجى اختيار ملف صورة صالح (PNG, JPG, WEBP, SVG)');
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `logo_${Date.now()}.${fileExt}`;
+      const filePath = `logos/${fileName}`;
+
+      // محاولة الرفع إلى Supabase Storage Bucket (store-assets)
+      const { data, error } = await supabase.storage
+        .from('store-assets')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (error) {
+        // بديل تلقائي وفوري: تحويل الصورة لـ Base64 إذا لم يكن الـ Bucket مجهزاً
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setSettings(prev => ({ ...prev, store_logo: reader.result }));
+          setUploadingLogo(false);
+          alert('✅ تم تجهيز الصورة بنجاح!');
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+
+      // استخراج الرابط العام للصورة المرفوعة
+      const { data: publicUrlData } = supabase.storage
+        .from('store-assets')
+        .getPublicUrl(filePath);
+
+      if (publicUrlData?.publicUrl) {
+        setSettings(prev => ({ ...prev, store_logo: publicUrlData.publicUrl }));
+        alert('✅ تم رفع اللوجو بنجاح!');
+      }
+    } catch (err) {
+      alert('حدث خطأ أثناء رفع الصورة: ' + err.message);
+    }
+    setUploadingLogo(false);
+  };
+
+  // حفظ بيانات وإعدادات المتجر
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -111,7 +161,7 @@ export default function AppGridDashboard() {
       const { error } = await supabase.from('store_settings').upsert(payload);
       if (error) throw error;
 
-      alert('✅ تم حفظ إعدادات وهوية المتجر بنجاح!');
+      alert('✅ تم حفظ إعدادات وهوية المتجر واللوجو بنجاح!');
     } catch (err) {
       alert('خطأ أثناء الحفظ: ' + err.message);
     }
@@ -149,12 +199,11 @@ export default function AppGridDashboard() {
   const averageOrderValue = totalOrdersCount > 0 ? Math.round(totalRevenue / totalOrdersCount) : 0;
   const conversionRate = visitorsCount > 0 ? ((totalOrdersCount / visitorsCount) * 100).toFixed(2) : '0.00';
 
-  // قائمة الكروت بنفس التصميم الهندسي الملون
   const gridCards = [
     {
       id: 'store_branding',
       title: 'إعدادات المتجر والهوية',
-      desc: 'تغيير اسم المتجر، اللوجو، الوصف، ورقم الدعم',
+      desc: 'رفع لوجو المتجر، الاسم، الوصف، ورقم الدعم',
       icon: '⚙️',
       bgClass: 'bg-gradient-to-r from-amber-500 to-orange-600',
       badge: 'الهوية والتصميم',
@@ -273,15 +322,58 @@ export default function AppGridDashboard() {
           </div>
         )}
 
-        {/* 🌟 2. شاشة إعدادات المتجر والهوية واللوجو */}
+        {/* 🌟 2. شاشة إعدادات المتجر وهوية اللوجو (مع رفع الصور من الجهاز) */}
         {activeScreen === 'store_branding' && (
           <form onSubmit={handleSaveSettings} className="bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6 max-w-3xl mx-auto">
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg font-black text-slate-900">هوية وتفاصيل المتجر</h2>
-              <p className="text-xs text-slate-500 mt-0.5">تعديل الاسم والشعار ومعلومات التواصل التي تظهر للزبائن</p>
+              <p className="text-xs text-slate-500 mt-0.5">رفع لوجو المتجر، تعديل الاسم، والوصف، ومعلومات التواصل</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
+              
+              {/* قسم رفع لوجو المتجر كصورة من الجهاز */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">لوجو المتجر (شعار المتجر الرسمي)</label>
+                
+                <div className="flex flex-col sm:flex-row items-center gap-4 p-4 border border-dashed border-slate-300 bg-slate-50/70 rounded-2xl">
+                  {/* عرض معاينة الصورة الحالية */}
+                  <div className="w-20 h-20 rounded-2xl border border-slate-200 bg-white p-1.5 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                    {settings.store_logo ? (
+                      <img src={settings.store_logo} alt="Store Logo" className="w-full h-full object-contain" />
+                    ) : (
+                      <span className="text-slate-400 text-3xl">🖼️</span>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 flex-1 text-center sm:text-right">
+                    <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold cursor-pointer transition shadow">
+                      <span>📁</span>
+                      <span>{uploadingLogo ? 'جاري رفع ومعالجة الصورة...' : 'اختيار صورة اللوجو من جهازك'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        disabled={uploadingLogo}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-[11px] text-slate-500">
+                      الصيغ المدعومة: PNG, JPG, WEBP, SVG (يُفضل صورة مربعة أو بخلفية شفافة).
+                    </p>
+                    {settings.store_logo && (
+                      <button
+                        type="button"
+                        onClick={() => setSettings(prev => ({ ...prev, store_logo: '' }))}
+                        className="text-red-500 hover:text-red-700 text-xs font-bold block"
+                      >
+                        🗑️ إزالة اللوجو الحالي
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* اسم المتجر */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">اسم المتجر (Store Name) *</label>
@@ -295,29 +387,9 @@ export default function AppGridDashboard() {
                 />
               </div>
 
-              {/* لوجو المتجر */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">رابط لوجو المتجر (Logo URL)</label>
-                <div className="flex gap-3 items-center">
-                  <input
-                    type="url"
-                    dir="ltr"
-                    value={settings.store_logo}
-                    onChange={(e) => setSettings({ ...settings, store_logo: e.target.value })}
-                    placeholder="https://example.com/logo.png"
-                    className="flex-1 border border-slate-200 rounded-2xl p-3.5 text-xs font-mono text-slate-900 focus:outline-emerald-500 bg-slate-50"
-                  />
-                  {settings.store_logo && (
-                    <div className="w-14 h-14 rounded-2xl border border-slate-200 p-1 bg-white flex items-center justify-center shrink-0">
-                      <img src={settings.store_logo} alt="Preview" className="w-full h-full object-contain rounded-xl" />
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {/* وصف المتجر */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">وصف المتجر (يظهر أسفل الاسم وفي المشاركات)</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">وصف المتجر (يظهر في الترويسة ومشاركات السوشيال ميديا)</label>
                 <textarea
                   rows="3"
                   value={settings.store_description}
@@ -327,7 +399,7 @@ export default function AppGridDashboard() {
                 ></textarea>
               </div>
 
-              {/* رقم هاتف الدعم */}
+              {/* رقم هاتف الدعم والشريط الإعلاني */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">رقم خدمة العملاء / واتساب الدعم</label>
@@ -352,15 +424,16 @@ export default function AppGridDashboard() {
                   />
                 </div>
               </div>
+
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex justify-end">
               <button
                 type="submit"
-                disabled={savingSettings}
+                disabled={savingSettings || uploadingLogo}
                 className="px-8 py-3.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-black text-sm rounded-2xl shadow-lg transition duration-200 cursor-pointer disabled:opacity-50"
               >
-                {savingSettings ? 'جاري الحفظ...' : 'حفظ التعديلات 💾'}
+                {savingSettings ? 'جاري الحفظ...' : 'حفظ التعديلات واللوجو 💾'}
               </button>
             </div>
           </form>
