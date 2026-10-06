@@ -83,12 +83,11 @@ export default function AppGridDashboard() {
     setLoading(false);
   }
 
-  // 📤 دالة رفع ملف اللوجو مباشرة من الجهاز
+  // 📤 رفع اللوجو كصورة من الجهاز
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // التحقق من أن الملف صورة
     if (!file.type.startsWith('image/')) {
       alert('يرجى اختيار ملف صورة صالح (PNG, JPG, WEBP, SVG)');
       return;
@@ -100,13 +99,11 @@ export default function AppGridDashboard() {
       const fileName = `logo_${Date.now()}.${fileExt}`;
       const filePath = `logos/${fileName}`;
 
-      // محاولة الرفع إلى Supabase Storage Bucket (store-assets)
       const { data, error } = await supabase.storage
         .from('store-assets')
         .upload(filePath, file, { cacheControl: '3600', upsert: true });
 
       if (error) {
-        // بديل تلقائي وفوري: تحويل الصورة لـ Base64 إذا لم يكن الـ Bucket مجهزاً
         const reader = new FileReader();
         reader.onloadend = () => {
           setSettings(prev => ({ ...prev, store_logo: reader.result }));
@@ -117,7 +114,6 @@ export default function AppGridDashboard() {
         return;
       }
 
-      // استخراج الرابط العام للصورة المرفوعة
       const { data: publicUrlData } = supabase.storage
         .from('store-assets')
         .getPublicUrl(filePath);
@@ -132,7 +128,7 @@ export default function AppGridDashboard() {
     setUploadingLogo(false);
   };
 
-  // حفظ بيانات وإعدادات المتجر
+  // حفظ الإعدادات
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -161,13 +157,14 @@ export default function AppGridDashboard() {
       const { error } = await supabase.from('store_settings').upsert(payload);
       if (error) throw error;
 
-      alert('✅ تم حفظ إعدادات وهوية المتجر واللوجو بنجاح!');
+      alert('✅ تم حفظ إعدادات وهوية المتجر بنجاح!');
     } catch (err) {
       alert('خطأ أثناء الحفظ: ' + err.message);
     }
     setSavingSettings(false);
   };
 
+  // تفعيل المشترك
   const handleActivateSubscriber = async (sub) => {
     const months = parseInt(durationMonths) || 1;
     const expiry = new Date();
@@ -193,6 +190,16 @@ export default function AppGridDashboard() {
     loadAllData();
   };
 
+  // نسخ رابط التسجيل
+  const copyRegisterLink = () => {
+    if (typeof window !== 'undefined') {
+      const link = `${window.location.origin}/register`;
+      navigator.clipboard.writeText(link);
+      alert('📋 تم نسخ رابط تسجيل المشتركين:\n' + link);
+    }
+  };
+
+  // الحسابات
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const totalOrdersCount = orders.length;
   const visitorsCount = analytics.filter(a => a.event_type === 'visit').length;
@@ -322,12 +329,12 @@ export default function AppGridDashboard() {
           </div>
         )}
 
-        {/* 🌟 2. شاشة إعدادات المتجر وهوية اللوجو (مع رفع الصور من الجهاز) */}
+        {/* 🌟 2. شاشة إعدادات المتجر وهوية اللوجو */}
         {activeScreen === 'store_branding' && (
           <form onSubmit={handleSaveSettings} className="bg-white border border-slate-200 p-6 sm:p-8 rounded-3xl shadow-sm space-y-6 max-w-3xl mx-auto">
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg font-black text-slate-900">هوية وتفاصيل المتجر</h2>
-              <p className="text-xs text-slate-500 mt-0.5">رفع لوجو المتجر، تعديل الاسم، والوصف، ومعلومات التواصل</p>
+              <p className="text-xs text-slate-500 mt-0.5">رفع لوجو المتجر من جهازك، تعديل الاسم، والوصف، ومعلومات التواصل</p>
             </div>
 
             <div className="space-y-5">
@@ -337,7 +344,6 @@ export default function AppGridDashboard() {
                 <label className="block text-xs font-bold text-slate-700 mb-2">لوجو المتجر (شعار المتجر الرسمي)</label>
                 
                 <div className="flex flex-col sm:flex-row items-center gap-4 p-4 border border-dashed border-slate-300 bg-slate-50/70 rounded-2xl">
-                  {/* عرض معاينة الصورة الحالية */}
                   <div className="w-20 h-20 rounded-2xl border border-slate-200 bg-white p-1.5 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
                     {settings.store_logo ? (
                       <img src={settings.store_logo} alt="Store Logo" className="w-full h-full object-contain" />
@@ -374,7 +380,6 @@ export default function AppGridDashboard() {
                 </div>
               </div>
 
-              {/* اسم المتجر */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">اسم المتجر (Store Name) *</label>
                 <input
@@ -387,7 +392,6 @@ export default function AppGridDashboard() {
                 />
               </div>
 
-              {/* وصف المتجر */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">وصف المتجر (يظهر في الترويسة ومشاركات السوشيال ميديا)</label>
                 <textarea
@@ -399,7 +403,6 @@ export default function AppGridDashboard() {
                 ></textarea>
               </div>
 
-              {/* رقم هاتف الدعم والشريط الإعلاني */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">رقم خدمة العملاء / واتساب الدعم</label>
@@ -439,56 +442,74 @@ export default function AppGridDashboard() {
           </form>
         )}
 
-        {/* 🌟 3. شاشة المشتركين والعملاء */}
+        {/* 🌟 3. شاشة المشتركين والعملاء (مع زر نسخ رابط التسجيل) */}
         {activeScreen === 'subscribers' && (
           <div className="space-y-4">
-            <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex justify-between items-center">
+            <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
                 <h2 className="text-lg font-black">المشتركين والمتاجر ({subscribers.length})</h2>
                 <p className="text-xs text-slate-500">تفعيل المتجر فور تحويل المبلغ وتحديد عدد الأشهر</p>
               </div>
-              <button onClick={loadAllData} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold cursor-pointer">🔄 تحديث</button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={copyRegisterLink}
+                  className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <span>🔗</span>
+                  <span>نسخ رابط تسجيل العملاء</span>
+                </button>
+                <button onClick={loadAllData} className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-bold cursor-pointer">
+                  🔄 تحديث
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3">
-              {subscribers.map((s) => {
-                const isExpired = !s.subscription_ends_at || new Date(s.subscription_ends_at) < new Date();
-                const isActive = s.is_active && !isExpired;
+              {subscribers.length === 0 ? (
+                <div className="text-center py-16 text-slate-400 font-bold bg-white border border-slate-200 rounded-3xl">
+                  لا يوجد مشتركون حالياً. انسخ الرابط أعلاه وأرسله للتجار لبدء التسجيل.
+                </div>
+              ) : (
+                subscribers.map((s) => {
+                  const isExpired = !s.subscription_ends_at || new Date(s.subscription_ends_at) < new Date();
+                  const isActive = s.is_active && !isExpired;
 
-                return (
-                  <div key={s.id} className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="space-y-1">
+                  return (
+                    <div key={s.id} className="bg-white border border-slate-200 p-5 rounded-3xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-slate-900 text-lg">{s.store_name}</span>
+                          <span className="text-xs text-slate-400 font-mono">({s.store_slug})</span>
+                          <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
+                            {isActive ? 'نشط ويعمل' : 'معطل / غير مفعل'}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-500 flex flex-wrap gap-4 pt-1">
+                          <span>المالك: <strong className="text-slate-800">{s.owner_name}</strong></span>
+                          <span>الهاتف: <strong className="text-slate-800 font-mono" dir="ltr">{s.phone}</strong></span>
+                          <span>المسدد: <strong className="text-emerald-600 font-bold">{s.amount_paid || 0} ج.م</strong></span>
+                          <span>الانتهاء: <strong className="text-amber-600 font-mono">{s.subscription_ends_at ? new Date(s.subscription_ends_at).toLocaleDateString('ar-EG') : 'لم يفعل'}</strong></span>
+                        </div>
+                      </div>
+
                       <div className="flex items-center gap-2">
-                        <span className="font-black text-slate-900 text-lg">{s.store_name}</span>
-                        <span className="text-xs text-slate-400 font-mono">({s.store_slug})</span>
-                        <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}`}>
-                          {isActive ? 'نشط ويعمل' : 'معطل / غير مفعل'}
-                        </span>
-                      </div>
-                      <div className="text-xs text-slate-500 flex flex-wrap gap-4 pt-1">
-                        <span>المالك: <strong className="text-slate-800">{s.owner_name}</strong></span>
-                        <span>الهاتف: <strong className="text-slate-800 font-mono" dir="ltr">{s.phone}</strong></span>
-                        <span>المسدد: <strong className="text-emerald-600 font-bold">{s.amount_paid || 0} ج.م</strong></span>
-                        <span>الانتهاء: <strong className="text-amber-600 font-mono">{s.subscription_ends_at ? new Date(s.subscription_ends_at).toLocaleDateString('ar-EG') : 'لم يفعل'}</strong></span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => { setEditingSub(s); setPaymentAmount(s.amount_paid || ''); }}
-                        className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow transition cursor-pointer"
-                      >
-                        تفعيل / تجديد المتجر 🚀
-                      </button>
-                      {isActive && (
-                        <button onClick={() => handleDeactivateSubscriber(s.id)} className="px-3 py-2.5 bg-red-100 text-red-600 rounded-xl text-xs font-bold cursor-pointer">
-                          إيقاف
+                        <button
+                          onClick={() => { setEditingSub(s); setPaymentAmount(s.amount_paid || ''); }}
+                          className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow transition cursor-pointer"
+                        >
+                          تفعيل / تجديد المتجر 🚀
                         </button>
-                      )}
+                        {isActive && (
+                          <button onClick={() => handleDeactivateSubscriber(s.id)} className="px-3 py-2.5 bg-red-100 text-red-600 rounded-xl text-xs font-bold cursor-pointer">
+                            إيقاف
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         )}
