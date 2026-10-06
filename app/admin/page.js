@@ -1,510 +1,495 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useRouter } from 'next/navigation';
 
-export default function SuperAdminMasterDashboard() {
-  // شاشات التنقل: 'home' | 'pending_subscribers' | 'active_clients' | 'orders' | 'products' | 'analytics' | 'pixels' | 'store_branding'
-  const [activeScreen, setActiveScreen] = useState('home');
+export default function SuperAdminExecutiveDashboard() {
+  const router = useRouter();
+
+  // التبويبات الرئيسية في الشريط الجانبي
+  // 'overview' | 'merchants' | 'plans' | 'domains' | 'invoices' | 'broadcasts' | 'orders_feed' | 'settings'
+  const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
 
-  // المشتركون والمتاجر
-  const [subscribers, setSubscribers] = useState([]);
-  const [editingSub, setEditingSub] = useState(null);
-  const [durationMonths, setDurationMonths] = useState(1);
-  const [paymentAmount, setPaymentAmount] = useState('');
-  const [searchSubscriber, setSearchSubscriber] = useState('');
-
-  // إعدادات وهوية المنصة
-  const [settings, setSettings] = useState({
+  // بيانات المنظومة المركزية
+  const [merchants, setMerchants] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [domains, setDomains] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [broadcasts, setBroadcasts] = useState([]);
+  const [allOrders, setAllOrders] = useState([]);
+  const [platformSettings, setPlatformSettings] = useState({
     store_name: 'NEXT ORDER',
     store_logo: '',
-    store_description: '',
     support_phone: '',
     announcement_text: '',
-    pixel_1: '', token_1: '',
-    pixel_2: '', token_2: '',
-    pixel_3: '', token_3: '',
-    pixel_4: '', token_4: '',
   });
 
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [savingSettings, setSavingSettings] = useState(false);
+  // نوافذ وفلاتر التعديل
+  const [merchantSearch, setMerchantSearch] = useState('');
+  const [merchantStatusFilter, setMerchantStatusFilter] = useState('all');
+  const [editingMerchant, setEditingMerchant] = useState(null);
+  const [selectedPlanId, setSelectedPlanId] = useState('');
+  const [customAmountPaid, setCustomAmountPaid] = useState('');
 
-  // الطلبات المركزية
-  const [orders, setOrders] = useState([]);
-  const [orderSearch, setOrderSearch] = useState('');
-  const [orderStatusFilter, setOrderStatusFilter] = useState('all');
-
-  // المنتجات المركزية
-  const [products, setProducts] = useState([]);
-  const [showProductModal, setShowProductModal] = useState(false);
-  const [productForm, setProductForm] = useState({
-    name: '', price: '', cost_price: '', stock: 20, images: [],
-  });
-
-  // التحليلات العامة
-  const [analytics, setAnalytics] = useState([]);
+  // إضافة إعلان جماعي للتجار
+  const [newBroadcast, setNewBroadcast] = useState({ title: '', message: '', banner_type: 'info' });
 
   useEffect(() => {
-    loadAllMasterData();
+    loadSaaSCoreData();
   }, []);
 
-  async function loadAllMasterData() {
+  async function loadSaaSCoreData() {
     setLoading(true);
     try {
       if (supabase) {
-        // 1. جلب المشتركين
-        const { data: subData } = await supabase
-          .from('store_profiles')
-          .select('*')
-          .order('created_at', { ascending: false });
-        if (subData) setSubscribers(subData);
+        // 1. المشتركون
+        const { data: mData } = await supabase.from('store_profiles').select('*').order('created_at', { ascending: false });
+        if (mData) setMerchants(mData);
 
-        // 2. جلب إعدادات المنصة
+        // 2. باقات الاشتراك
+        const { data: pData } = await supabase.from('subscription_plans').select('*').order('price_egp', { ascending: true });
+        if (pData) setPlans(pData);
+
+        // 3. طلبات الدومينات
+        const { data: dData } = await supabase.from('custom_domain_requests').select('*').order('created_at', { ascending: false });
+        if (dData) setDomains(dData);
+
+        // 4. الفواتير
+        const { data: iData } = await supabase.from('platform_invoices').select('*').order('created_at', { ascending: false });
+        if (iData) setInvoices(iData);
+
+        // 5. الإعلانات العامة
+        const { data: bData } = await supabase.from('platform_broadcasts').select('*').order('created_at', { ascending: false });
+        if (bData) setBroadcasts(bData);
+
+        // 6. آخر الطلبات في المنصة
+        const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(50);
+        if (oData) setAllOrders(oData);
+
+        // 7. إعدادات المنصة
         const { data: sData } = await supabase.from('store_settings').select('*').limit(1).maybeSingle();
-        if (sData) {
-          setSettings({
-            store_name: sData.store_name || 'NEXT ORDER',
-            store_logo: sData.store_logo || sData.logo_url || '',
-            store_description: sData.store_description || '',
-            support_phone: sData.support_phone || '',
-            announcement_text: sData.announcement_text || '',
-            pixel_1: sData.pixel_1 || '', token_1: sData.token_1 || '',
-            pixel_2: sData.pixel_2 || '', token_2: sData.token_2 || '',
-            pixel_3: sData.pixel_3 || '', token_3: sData.token_3 || '',
-            pixel_4: sData.pixel_4 || '', token_4: sData.token_4 || '',
-          });
-        }
-
-        // 3. جلب جميع الطلبات
-        const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-        if (oData) setOrders(oData);
-
-        // 4. جلب جميع المنتجات
-        const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-        if (pData) setProducts(pData);
-
-        // 5. جلب التحليلات
-        const { data: aData } = await supabase.from('store_analytics').select('*');
-        if (aData) setAnalytics(aData);
+        if (sData) setPlatformSettings(sData);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error(err);
     }
     setLoading(false);
   }
 
-  // فرز المشتركين
-  const activeClients = subscribers.filter((s) => {
-    const isExpired = !s.subscription_ends_at || new Date(s.subscription_ends_at) < new Date();
-    return s.is_active && !isExpired && s.subscription_status !== 'suspended' && s.subscription_status !== 'disabled';
-  });
+  // 👑 ميزة السوبر أدمن الحصرية: الدخول كتاجر بنقرة واحدة (Impersonation)
+  const handleLoginAsMerchant = (merchant) => {
+    if (!merchant.user_id) return alert('هذا الحساب لا يملك معرف مستخدم صالح');
+    const confirmLogin = confirm(`هل تريد الدخول فوراً لإدارة متجر "${merchant.store_name}" بصفة التاجر؟`);
+    if (!confirmLogin) return;
 
-  const pendingSubscribers = subscribers.filter((s) => {
-    const isExpired = !s.subscription_ends_at || new Date(s.subscription_ends_at) < new Date();
-    return !s.is_active || isExpired || s.subscription_status === 'pending';
-  });
+    localStorage.setItem('merchant_user_id', merchant.user_id);
+    router.push('/dashboard');
+  };
 
-  // تفعيل أو تجديد المتجر
-  const handleActivateSubscriber = async (sub) => {
-    const months = parseInt(durationMonths) || 1;
-    const expiry = new Date();
-    expiry.setMonth(expiry.getMonth() + months);
+  // تفعيل واشتراك تاجر مع إصدار فاتورة رسمية
+  const handleActivateMerchantWithInvoice = async (e) => {
+    e.preventDefault();
+    if (!editingMerchant) return;
 
-    const payload = {
+    const chosenPlan = plans.find(p => p.id === selectedPlanId) || plans[0];
+    const durationDays = chosenPlan?.duration_days || 30;
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + durationDays);
+
+    const paidVal = Number(customAmountPaid) || Number(chosenPlan?.price_egp) || 250;
+
+    // 1. تحديث بروفايل التاجر
+    await supabase.from('store_profiles').update({
       is_active: true,
       subscription_status: 'active',
-      subscription_ends_at: expiry.toISOString(),
-      amount_paid: Number(paymentAmount) || Number(sub.amount_paid) || 0,
-    };
+      plan_id: chosenPlan?.id,
+      amount_paid: paidVal,
+      subscription_ends_at: expiryDate.toISOString(),
+    }).eq('id', editingMerchant.id);
 
-    const { error } = await supabase.from('store_profiles').update(payload).eq('id', sub.id);
-    if (!error) {
-      alert(`✅ تم تفعيل متجر (${sub.store_name}) بنجاح حتى: ${expiry.toLocaleDateString('ar-EG')}`);
-      setEditingSub(null);
-      loadAllMasterData();
-    } else {
-      alert('خطأ أثناء التفعيل: ' + error.message);
-    }
+    // 2. إصدار فاتورة في سجل الإيرادات
+    const invoiceNum = 'INV-' + Date.now().toString().slice(-8);
+    await supabase.from('platform_invoices').insert([{
+      invoice_number: invoiceNum,
+      user_id: editingMerchant.user_id,
+      store_name: editingMerchant.store_name,
+      plan_name: chosenPlan?.name || 'خطة الاشتراك القياسية',
+      amount_paid: paidVal,
+      starts_at: new Date().toISOString(),
+      ends_at: expiryDate.toISOString(),
+    }]);
+
+    alert(`✅ تم تفعيل متجر (${editingMerchant.store_name}) وإصدار الفاتورة (${invoiceNum}) بنجاح!`);
+    setEditingMerchant(null);
+    loadSaaSCoreData();
   };
 
-  // إيقاف مؤقت
-  const handleSuspendSubscriber = async (sub) => {
-    if (!confirm(`هل أنت متأكد من الإيقاف المؤقت لمتجر "${sub.store_name}"؟`)) return;
-    await supabase.from('store_profiles').update({ is_active: false, subscription_status: 'suspended' }).eq('id', sub.id);
-    loadAllMasterData();
+  // تعليق أو تعطيل التاجر
+  const handleToggleMerchantStatus = async (merchant, targetStatus) => {
+    if (!confirm(`هل أنت متأكد من تغيير حالة متجر "${merchant.store_name}" إلى [${targetStatus}]؟`)) return;
+    await supabase.from('store_profiles').update({
+      is_active: targetStatus === 'active',
+      subscription_status: targetStatus,
+    }).eq('id', merchant.id);
+    loadSaaSCoreData();
   };
 
-  // تعطيل
-  const handleDeactivateSubscriber = async (sub) => {
-    if (!confirm(`هل تريد تعطيل متجر "${sub.store_name}" بالكامل؟`)) return;
-    await supabase.from('store_profiles').update({ is_active: false, subscription_status: 'disabled' }).eq('id', sub.id);
-    loadAllMasterData();
+  // حذف شامل لحساب التاجر
+  const handleDeleteMerchantFully = async (merchant) => {
+    const confirmName = prompt(`⚠️ تحذير: اكتب اسم المتجر لحذفه نهائياً مع كافة ملفاته: "${merchant.store_name}"`);
+    if (confirmName !== merchant.store_name) return;
+
+    if (merchant.user_id) {
+      await supabase.from('products').delete().eq('user_id', merchant.user_id);
+      await supabase.from('orders').delete().eq('user_id', merchant.user_id);
+      await supabase.from('merchant_settings').delete().eq('user_id', merchant.user_id);
+      await supabase.from('shipping_rates').delete().eq('user_id', merchant.user_id);
+      await supabase.from('blacklist').delete().eq('user_id', merchant.user_id);
+      await supabase.from('custom_domain_requests').delete().eq('user_id', merchant.user_id);
+    }
+    await supabase.from('store_profiles').delete().eq('id', merchant.id);
+    alert('🗑️ تم الحذف النهائي للحساب وجميع متعلقاته.');
+    loadSaaSCoreData();
   };
 
-  // حذف نهائي شامل
-  const handleDeleteSubscriber = async (sub) => {
-    const confirmDelete = prompt(`⚠️ تحذير شديد: سيتم حذف متجر "${sub.store_name}" مع كافة منتجاته وطلباته.\nللتأكيد اكتب اسم المتجر تماماً:`);
-    if (confirmDelete !== sub.store_name) {
-      if (confirmDelete !== null) alert('الاسم غير متطابق!');
-      return;
-    }
+  // اعتماد الدومين المخصص
+  const handleVerifyDomain = async (domainObj) => {
+    await supabase.from('custom_domain_requests').update({
+      status: 'active',
+      verified_at: new Date().toISOString(),
+    }).eq('id', domainObj.id);
 
-    try {
-      if (sub.user_id) {
-        await supabase.from('products').delete().eq('user_id', sub.user_id);
-        await supabase.from('orders').delete().eq('user_id', sub.user_id);
-        await supabase.from('merchant_settings').delete().eq('user_id', sub.user_id);
-        await supabase.from('store_analytics').delete().eq('user_id', sub.user_id);
-      }
-      await supabase.from('store_profiles').delete().eq('id', sub.id);
-      alert(`🗑️ تم حذف الحساب وبياناته نهائياً.`);
-      loadAllMasterData();
-    } catch (err) {
-      alert('خطأ أثناء الحذف: ' + err.message);
-    }
+    await supabase.from('store_profiles').update({
+      custom_domain: domainObj.domain,
+    }).eq('user_id', domainObj.user_id);
+
+    alert(`✅ تم تفعيل وربط الدومين (${domainObj.domain}) بالمتجر بنجاح!`);
+    loadSaaSCoreData();
   };
 
-  // رفع اللوجو كملف
-  const handleLogoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('يرجى اختيار ملف صورة صالح (PNG, JPG, WEBP, SVG)');
-      return;
-    }
-
-    setUploadingLogo(true);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `platform_logo_${Date.now()}.${fileExt}`;
-      const filePath = `platform/${fileName}`;
-
-      const { error } = await supabase.storage
-        .from('store-assets')
-        .upload(filePath, file, { cacheControl: '3600', upsert: true });
-
-      if (error) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setSettings((prev) => ({ ...prev, store_logo: reader.result }));
-          setUploadingLogo(false);
-          alert('✅ تم تجهيز الصورة بنجاح!');
-        };
-        reader.readAsDataURL(file);
-        return;
-      }
-
-      const { data: publicUrlData } = supabase.storage
-        .from('store-assets')
-        .getPublicUrl(filePath);
-
-      if (publicUrlData?.publicUrl) {
-        setSettings((prev) => ({ ...prev, store_logo: publicUrlData.publicUrl }));
-        alert('✅ تم رفع لوجو المنصة بنجاح!');
-      }
-    } catch (err) {
-      alert('خطأ أثناء رفع الصورة: ' + err.message);
-    }
-    setUploadingLogo(false);
-  };
-
-  // حفظ إعدادات وهوية المنصة
-  const handleSaveSettings = async (e) => {
+  // إنشاء بث إعلاني جماعي لجميع التجار
+  const handleCreateBroadcast = async (e) => {
     e.preventDefault();
-    setSavingSettings(true);
-    try {
-      const payload = {
-        id: 1,
-        store_name: settings.store_name,
-        store_logo: settings.store_logo,
-        logo_url: settings.store_logo,
-        store_description: settings.store_description,
-        support_phone: settings.support_phone,
-        announcement_text: settings.announcement_text,
-        pixel_1: (settings.pixel_1 || '').trim(),
-        token_1: (settings.token_1 || '').trim(),
-        pixel_2: (settings.pixel_2 || '').trim(),
-        token_2: (settings.token_2 || '').trim(),
-        pixel_3: (settings.pixel_3 || '').trim(),
-        token_3: (settings.token_3 || '').trim(),
-        pixel_4: (settings.pixel_4 || '').trim(),
-        token_4: (settings.token_4 || '').trim(),
-      };
-
-      const { error } = await supabase.from('store_settings').upsert(payload);
-      if (error) throw error;
-      alert('✅ تم حفظ إعدادات وهوية المنصة بنجاح!');
-    } catch (err) {
-      alert('خطأ: ' + err.message);
-    }
-    setSavingSettings(false);
+    if (!newBroadcast.title || !newBroadcast.message) return;
+    await supabase.from('platform_broadcasts').insert([newBroadcast]);
+    setNewBroadcast({ title: '', message: '', banner_type: 'info' });
+    alert('📢 تم نشر الإعلان العام في لوحات تحكم كافة التجار!');
+    loadSaaSCoreData();
   };
 
-  // تصدير الطلبات كملف CSV لشركات الشحن
-  const exportOrdersToCSV = () => {
-    if (orders.length === 0) {
-      alert('لا توجد طلبات للتصدير!');
-      return;
-    }
+  // الحسابات المالية للمنصة
+  const totalPlatformRevenue = invoices.reduce((sum, inv) => sum + (Number(inv.amount_paid) || 0), 0);
+  const activeMerchantsCount = merchants.filter(m => m.is_active && m.subscription_status === 'active').length;
+  const pendingMerchantsCount = merchants.filter(m => !m.is_active || m.subscription_status === 'pending').length;
 
-    const headers = ['رقم الطلب', 'العميل', 'الهاتف', 'المحافظة', 'العنوان', 'المنتج', 'الكمية', 'المبلغ', 'الحالة', 'التاريخ'];
-    const rows = orders.map((o, idx) => [
-      idx + 1,
-      `"${o.customer_name || ''}"`,
-      `"${o.phone || ''}"`,
-      `"${o.governorate || ''}"`,
-      `"${o.address || ''}"`,
-      `"${o.product_name || ''}"`,
-      o.quantity || 1,
-      o.total_amount || 0,
-      `"${o.status || 'جديد'}"`,
-      new Date(o.created_at).toLocaleDateString('ar-EG'),
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `NextOrder_Shipment_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // نسخ رابط التسجيل المباشر
-  const copyRegisterLink = () => {
-    if (typeof window !== 'undefined') {
-      const link = `${window.location.origin}/register`;
-      navigator.clipboard.writeText(link);
-      alert('📋 تم نسخ رابط تسجيل المشتركين:\n' + link);
-    }
-  };
-
-  // العمليات الحسابية الشاملة
-  const totalStoreSales = orders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
-  const totalSubFeesCollected = subscribers.reduce((sum, s) => sum + (Number(s.amount_paid) || 0), 0);
-  const totalStoreVisitors = analytics.filter(a => a.event_type === 'visit').length;
-  const platformConversionRate = totalStoreVisitors > 0 ? ((orders.length / totalStoreVisitors) * 100).toFixed(2) : '0.00';
-
-  // فلترة الطلبات
-  const filteredOrders = orders.filter((o) => {
-    const matchesSearch = (o.customer_name || '').toLowerCase().includes(orderSearch.toLowerCase()) ||
-                          (o.phone || '').includes(orderSearch) ||
-                          (o.governorate || '').includes(orderSearch);
-    const matchesStatus = orderStatusFilter === 'all' || o.status === orderStatusFilter;
+  const filteredMerchants = merchants.filter(m => {
+    const matchesSearch = (m.store_name || '').toLowerCase().includes(merchantSearch.toLowerCase()) ||
+                          (m.owner_name || '').toLowerCase().includes(merchantSearch.toLowerCase()) ||
+                          (m.phone || '').includes(merchantSearch);
+    const matchesStatus = merchantStatusFilter === 'all' || m.subscription_status === merchantStatusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  // كروت الشاشة الرئيسية الملونة
-  const gridCards = [
-    {
-      id: 'pending_subscribers',
-      title: 'مشتركين جدد (قيد الانتظار)',
-      desc: 'بانتظار سداد رسوم الاشتراك وتأكيد التحويل (5 دولار أو ما يعادلها بالمصري)',
-      icon: '⏳',
-      bgClass: 'bg-gradient-to-r from-amber-500 to-yellow-600',
-      badge: `${pendingSubscribers.length} متجر في الانتظار`,
-    },
-    {
-      id: 'active_clients',
-      title: 'العملاء الحاليين',
-      desc: 'المتاجر المفعلة، بيانات العملاء، ومواعيد تجديد الاشتراك القادمة',
-      icon: '👥',
-      bgClass: 'bg-gradient-to-r from-emerald-500 to-teal-600',
-      badge: `${activeClients.length} عميل نشط`,
-    },
-    {
-      id: 'store_branding',
-      title: 'إعدادات المنصة والهوية',
-      desc: 'لوجو المنصة، الاسم، الوصف، ورقم الواتساب الرسمي للدعم',
-      icon: '⚙️',
-      bgClass: 'bg-gradient-to-r from-orange-500 to-rose-600',
-      badge: 'الهوية والتصميم',
-    },
-    {
-      id: 'orders',
-      title: 'كافة طلبات ومبيعات المنصة',
-      desc: 'متابعة وتحديث حالات الشحن وتصدير إكسيل لشركات الشحن',
-      icon: '📦',
-      bgClass: 'bg-gradient-to-r from-blue-600 to-indigo-600',
-      badge: `${orders.length} طلب كلي`,
-    },
-    {
-      id: 'products',
-      title: 'المنتجات والمخزون العام',
-      desc: 'استعراض كافة منتجات التجار المرفوعة ومتابعة توفر المخزون',
-      icon: '🛍️',
-      bgClass: 'bg-gradient-to-r from-teal-500 to-emerald-600',
-      badge: `${products.length} منتج مسجل`,
-    },
-    {
-      id: 'analytics',
-      title: 'التحليلات الشاملة والمالية',
-      desc: 'إجمالي المبيعات، رسوم الاشتراكات المحصلة، والتحويلات',
-      icon: '📈',
-      bgClass: 'bg-gradient-to-r from-indigo-600 to-purple-600',
-      badge: `${totalStoreSales.toLocaleString()} ج.م مبيعات`,
-    },
-    {
-      id: 'pixels',
-      title: 'بيكسلات فيسبوك (CAPI)',
-      desc: 'ربط البيكسلات ورموز التتبع العامة للمنصة',
-      icon: '⚡',
-      bgClass: 'bg-gradient-to-r from-rose-600 to-red-600',
-      badge: 'إعدادات CAPI',
-    },
-  ];
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center font-sans" dir="rtl">
-        <div className="font-bold text-lg animate-pulse flex items-center gap-3">
+      <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center font-sans" dir="rtl">
+        <div className="animate-pulse text-lg font-black flex items-center gap-3">
           <span>👑</span>
-          <span>جاري فتح لوحة السوبر أدمن (NEXT ORDER)...</span>
+          <span>جاري تحميل منظومة Super Admin المركزية...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white font-sans pb-16" dir="rtl">
+    <div className="min-h-screen bg-[#070b14] text-white font-sans flex flex-col md:flex-row select-none" dir="rtl">
       
-      {/* الرأس العلوي */}
-      <header className="bg-[#111827] border-b border-slate-800 px-6 py-4 sticky top-0 z-30 shadow-xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {activeScreen !== 'home' && (
+      {/* 🧭 الشريط الجانبي القيادي للسوبر أدمن (Super Admin Executive Sidebar) */}
+      <aside className="w-full md:w-64 bg-[#0d1322] border-b md:border-b-0 md:border-l border-slate-800 p-5 flex flex-col justify-between shrink-0">
+        <div className="space-y-6">
+          
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-black bg-gradient-to-r from-red-500 via-amber-400 to-emerald-400 bg-clip-text text-transparent">
+                NEXT ORDER
+              </span>
+              <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full font-black">
+                SUPER ADMIN
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400">إدارة البنية التحتية والاشتراكات</p>
+          </div>
+
+          <nav className="space-y-1 text-xs font-bold">
+            {[
+              { id: 'overview', label: 'الرئيسية والإحصائيات', icon: '📈' },
+              { id: 'merchants', label: `المتاجر والتجار (${merchants.length})`, icon: '🏪' },
+              { id: 'plans', label: 'خطط وباقات الاشتراك', icon: '💎' },
+              { id: 'domains', label: `الدومينات المخصصة (${domains.length})`, icon: '🌐' },
+              { id: 'invoices', label: `الفواتير والمقبوضات`, icon: '🧾' },
+              { id: 'broadcasts', label: 'الإعلانات الجماعية', icon: '📢' },
+              { id: 'orders_feed', label: 'بث الطلبات المباشر', icon: '📦' },
+              { id: 'settings', label: 'إعدادات المنصة', icon: '⚙️' },
+            ].map((nav) => (
               <button
-                onClick={() => setActiveScreen('home')}
-                className="p-2.5 bg-slate-800 hover:bg-slate-700 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                key={nav.id}
+                onClick={() => setActiveTab(nav.id)}
+                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl transition cursor-pointer ${
+                  activeTab === nav.id
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-lg'
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
+                }`}
               >
-                <span>⬅</span>
-                <span>الرئيسية</span>
+                <div className="flex items-center gap-2.5">
+                  <span>{nav.icon}</span>
+                  <span>{nav.label}</span>
+                </div>
+                {nav.id === 'merchants' && pendingMerchantsCount > 0 && (
+                  <span className="bg-amber-500 text-black text-[10px] font-black px-1.5 py-0.2 rounded-full">
+                    {pendingMerchantsCount}
+                  </span>
+                )}
               </button>
-            )}
-            <div className="flex items-center gap-3">
-              {settings.store_logo && (
-                <img src={settings.store_logo} alt="Logo" className="w-10 h-10 object-contain rounded-xl border border-slate-700 bg-white" />
-              )}
-              <div>
-                <h1 className="text-xl sm:text-2xl font-black tracking-wide text-white">
-                  {activeScreen === 'home' ? 'لوحة تحكم السوبر أدمن' : gridCards.find((c) => c.id === activeScreen)?.title}
-                </h1>
-                <p className="text-xs text-slate-400">إدارة منصة NEXT ORDER والتحكم بالمتاجر والمبيعات</p>
+            ))}
+          </nav>
+
+        </div>
+
+        <div className="pt-4 border-t border-slate-800/80 space-y-2">
+          <button
+            onClick={() => {
+              const link = `${window.location.origin}/register`;
+              navigator.clipboard.writeText(link);
+              alert('📋 تم نسخ رابط تسجيل المشتركين:\n' + link);
+            }}
+            className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span>🔗</span>
+            <span>نسخ رابط تسجيل التجار</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* 🖥️ المحتوى التنفيذي الرئيسي */}
+      <main className="flex-1 p-4 sm:p-8 overflow-y-auto space-y-6">
+        
+        {/* 1. لوحة المؤشرات المالية للمنصة (Platform Overview) */}
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-black text-white">المؤشرات الحيوية لمنصة NEXT ORDER</h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl">
+                <span className="text-xs text-slate-400 block mb-1">💰 إجمالي إيرادات الاشتراكات</span>
+                <span className="text-2xl font-black text-emerald-400">{totalPlatformRevenue.toLocaleString()} ج.م</span>
+              </div>
+              <div className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl">
+                <span className="text-xs text-slate-400 block mb-1">🟢 المتاجر النشطة والمفعلة</span>
+                <span className="text-2xl font-black text-cyan-400">{activeMerchantsCount} متجر</span>
+              </div>
+              <div className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl">
+                <span className="text-xs text-slate-400 block mb-1">⏳ متاجر بانتظار التفعيل (معلقة)</span>
+                <span className="text-2xl font-black text-amber-400">{pendingMerchantsCount} متجر</span>
+              </div>
+              <div className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl">
+                <span className="text-xs text-slate-400 block mb-1">📦 إجمالي عمليات الشراء المحققة</span>
+                <span className="text-2xl font-black text-indigo-400">{allOrders.length}+ طلب</span>
+              </div>
+            </div>
+
+            {/* آخر العمليات المباشرة */}
+            <div className="bg-[#0d1322] border border-slate-800 p-6 rounded-3xl space-y-4">
+              <h3 className="text-base font-black">أحدث فواتير الاشتراكات المحصلة</h3>
+              <div className="space-y-2">
+                {invoices.slice(0, 5).map(inv => (
+                  <div key={inv.id} className="p-3 bg-slate-900/60 rounded-xl flex justify-between items-center text-xs">
+                    <div>
+                      <strong className="text-white block">{inv.store_name}</strong>
+                      <span className="text-slate-400 font-mono">{inv.invoice_number} | {inv.plan_name}</span>
+                    </div>
+                    <div className="text-right">
+                      <strong className="text-emerald-400 block font-mono">{inv.amount_paid} ج.م</strong>
+                      <span className="text-slate-500 text-[10px]">{new Date(inv.created_at).toLocaleDateString('ar-EG')}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
+        )}
 
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded-full font-black">
-              👑 SUPER ADMIN
-            </span>
-            <div className="text-xs font-black text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-3.5 py-1.5 rounded-full font-mono">
-              {settings.store_name || 'NEXT ORDER'}
+        {/* 2. إدارة المتاجر والتجار مع ميزة الـ Impersonation */}
+        {activeTab === 'merchants' && (
+          <div className="space-y-4">
+            <div className="bg-[#0d1322] p-5 rounded-3xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+              <div>
+                <h3 className="text-lg font-black">إدارة متاجر المنصة ({filteredMerchants.length})</h3>
+                <p className="text-xs text-slate-400">تحكم كامل، دخول مباشر لحساب التاجر، وتفعيل الاشتراكات</p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="بحث باسم المتجر أو المالك أو الهاتف..."
+                  value={merchantSearch}
+                  onChange={(e) => setMerchantSearch(e.target.value)}
+                  className="bg-slate-900 border border-slate-700 text-xs p-2.5 rounded-xl w-60 text-white"
+                />
+                <select
+                  value={merchantStatusFilter}
+                  onChange={(e) => setMerchantStatusFilter(e.target.value)}
+                  className="bg-slate-900 border border-slate-700 text-xs p-2.5 rounded-xl text-white"
+                >
+                  <option value="all">كل الحالات</option>
+                  <option value="active">نشط ومفعل</option>
+                  <option value="pending">قيد الانتظار</option>
+                  <option value="suspended">موقوف مؤقتاً</option>
+                  <option value="disabled">معطل</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {filteredMerchants.map((m) => {
+                const isExpired = !m.subscription_ends_at || new Date(m.subscription_ends_at) < new Date();
+                const isActive = m.is_active && !isExpired && m.subscription_status === 'active';
+
+                return (
+                  <div key={m.id} className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl space-y-3 hover:border-slate-700 transition">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <strong className="text-base text-white">{m.store_name}</strong>
+                        <span className="text-xs text-slate-400 font-mono">({m.store_slug})</span>
+                        
+                        <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
+                          isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                        }`}>
+                          {isActive ? '🟢 نشط' : m.subscription_status === 'suspended' ? '⏸️ موقوف' : '🟡 بانتظار التفعيل'}
+                        </span>
+                      </div>
+
+                      <div className="text-xs text-slate-400">
+                        الانتهاء: <strong className="text-amber-300 font-mono">{m.subscription_ends_at ? new Date(m.subscription_ends_at).toLocaleDateString('ar-EG') : 'لم يُحدد'}</strong>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-slate-300 bg-slate-900/60 p-3 rounded-2xl">
+                      <div>صاحب المتجر: <strong className="text-white">{m.owner_name}</strong></div>
+                      <div>رقم الهاتف: <a href={`https://wa.me/${m.phone}`} target="_blank" className="text-emerald-400 font-mono underline" dir="ltr">{m.phone}</a></div>
+                      <div>المسدد: <strong className="text-emerald-400 font-bold">{m.amount_paid || 0} ج.م</strong></div>
+                      <div>الدومين: <strong className="text-cyan-400 font-mono">{m.custom_domain || 'دومين فرعي'}</strong></div>
+                    </div>
+
+                    {/* أزرار الإجراءات والـ Impersonation */}
+                    <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+                      
+                      {/* 🔑 الدخول كتاجر */}
+                      <button
+                        onClick={() => handleLoginAsMerchant(m)}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black shadow transition flex items-center gap-1.5 cursor-pointer"
+                        title="الدخول إلى متجر هذا التاجر فوراً لحل مشاكله أو ضبط إعداداته"
+                      >
+                        <span>🔑</span>
+                        <span>دخول كتاجر (Login As)</span>
+                      </button>
+
+                      {/* تفعيل / تجديد */}
+                      <button
+                        onClick={() => { setEditingMerchant(m); setCustomAmountPaid(m.amount_paid || '250'); }}
+                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                      >
+                        🚀 تفعيل / تجديد
+                      </button>
+
+                      {/* إيقاف مؤقت */}
+                      <button
+                        onClick={() => handleToggleMerchantStatus(m, m.subscription_status === 'suspended' ? 'active' : 'suspended')}
+                        className="px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-xl text-xs font-bold transition cursor-pointer"
+                      >
+                        {m.subscription_status === 'suspended' ? 'تشغيل' : 'إيقاف مؤقت'}
+                      </button>
+
+                      {/* حذف نهائي */}
+                      <button
+                        onClick={() => handleDeleteMerchantFully(m)}
+                        className="px-3 py-2 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
-      </header>
+        )}
 
-      <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
+        {/* 3. خطط وباقات الاشتراك (Plans Engine) */}
+        {activeTab === 'plans' && (
+          <div className="space-y-6 max-w-4xl">
+            <div>
+              <h3 className="text-lg font-black">خطط وباقات اشتراك منصة NEXT ORDER</h3>
+              <p className="text-xs text-slate-400">تحديد حدود المنتجات والطلبات والأسعار لكل باقة</p>
+            </div>
 
-        {/* 🌟 1. الشاشة الرئيسية: شبكة الكروت الملونة */}
-        {activeScreen === 'home' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {gridCards.map((card) => (
-                <div
-                  key={card.id}
-                  onClick={() => setActiveScreen(card.id)}
-                  className={`${card.bgClass} p-6 rounded-3xl cursor-pointer shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden flex flex-col justify-between min-h-[160px]`}
-                >
-                  <div className="flex justify-between items-start">
-                    <span className="text-xs bg-black/25 backdrop-blur-md px-3 py-1 rounded-full font-bold">
-                      {card.badge}
-                    </span>
-                    <span className="text-2xl">{card.icon}</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {plans.map((p) => (
+                <div key={p.id} className="bg-[#0d1322] border border-slate-800 p-6 rounded-3xl space-y-4 relative">
+                  <div>
+                    <h4 className="text-base font-black text-white">{p.name}</h4>
+                    <div className="text-2xl font-black text-emerald-400 mt-1 font-mono">
+                      {p.price_egp} ج.م <span className="text-xs text-slate-500 font-normal">/ {p.price_usd}$ شهرياً</span>
+                    </div>
                   </div>
 
-                  <div className="space-y-1 mt-4">
-                    <h3 className="text-xl font-black tracking-wide">{card.title}</h3>
-                    <p className="text-xs text-white/85 line-clamp-1">{card.desc}</p>
-                  </div>
+                  <ul className="text-xs text-slate-300 space-y-2 border-t border-slate-800 pt-3">
+                    <li>📦 أقصى عدد منتجات: <strong>{p.max_products}</strong></li>
+                    <li>📊 أقصى عدد أوردرات: <strong>{p.max_orders_per_month} شهرياً</strong></li>
+                    <li>🌐 ربط دومين مخصص: <strong>{p.allow_custom_domain ? '✅ متاح' : '❌ غير متاح'}</strong></li>
+                    <li>🎬 رفع فيديوهات للمنتج: <strong>{p.allow_video_uploads ? '✅ متاح' : '❌ غير متاح'}</strong></li>
+                  </ul>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* 🌟 2. شاشة المشتركين الجدد (قيد الانتظار) */}
-        {activeScreen === 'pending_subscribers' && (
-          <div className="space-y-4">
-            <div className="bg-[#111827] p-5 rounded-3xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h2 className="text-lg font-black text-amber-400 flex items-center gap-2">
-                  <span>⏳</span>
-                  <span>مشتركون جدد بانتظار التفعيل ({pendingSubscribers.length})</span>
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  المتاجر التي سجلت حديثاً وبانتظار تأكيد التحويل (5 دولار أو ما يعادلها بالمصري).
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={copyRegisterLink}
-                  className="px-3.5 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <span>🔗</span>
-                  <span>نسخ رابط التسجيل</span>
-                </button>
-                <button onClick={loadAllMasterData} className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold cursor-pointer">
-                  🔄 تحديث
-                </button>
-              </div>
+        {/* 4. الدومينات المخصصة (Custom Domains Manager) */}
+        {activeTab === 'domains' && (
+          <div className="space-y-4 max-w-4xl">
+            <div>
+              <h3 className="text-lg font-black">طلبات فحص وربط الدومينات المخصصة</h3>
+              <p className="text-xs text-slate-400">التأكد من توجيه سجلات DNS وتفعيل الدومين لمتجر التاجر</p>
             </div>
 
             <div className="space-y-3">
-              {pendingSubscribers.length === 0 ? (
-                <div className="text-center py-16 text-slate-500 font-bold bg-[#111827] border border-slate-800 rounded-3xl">
-                  🎉 رائع! لا يوجد مشتركون جدد في قائمة الانتظار حالياً.
+              {domains.length === 0 ? (
+                <div className="p-12 text-center text-slate-500 bg-[#0d1322] border border-slate-800 rounded-3xl">
+                  لا توجد طلبات دومين مخصص حالياً.
                 </div>
               ) : (
-                pendingSubscribers.map((s) => (
-                  <div key={s.id} className="bg-[#111827] border-2 border-amber-500/30 p-5 rounded-3xl space-y-4">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-white text-lg">{s.store_name}</span>
-                        <span className="text-xs text-slate-400 font-mono">({s.store_slug})</span>
-                        <span className="text-xs px-2.5 py-0.5 rounded-full font-black bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                          🟡 بانتظار التحويل المالي
-                        </span>
-                      </div>
-                      <span className="text-xs text-slate-500">تاريخ التسجيل: {new Date(s.created_at).toLocaleDateString('ar-EG')}</span>
+                domains.map((d) => (
+                  <div key={d.id} className="bg-[#0d1322] border border-slate-800 p-4 rounded-2xl flex justify-between items-center text-xs">
+                    <div>
+                      <strong className="text-cyan-400 font-mono text-sm block">{d.domain}</strong>
+                      <span className="text-slate-400">متجر: {d.store_slug} | الهدف: {d.dns_target}</span>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-slate-300 bg-slate-900/60 p-3.5 rounded-2xl">
-                      <div>اسم التاجر: <strong className="text-white">{s.owner_name}</strong></div>
-                      <div>رقم الواتساب: <a href={`https://wa.me/${s.phone}`} target="_blank" className="text-emerald-400 font-bold font-mono underline" dir="ltr">{s.phone} ↗</a></div>
-                      <div>المحافظة: <strong className="text-white">{s.governorate}</strong></div>
-                      <div>الاشتراك: <strong className="text-amber-400 font-bold">5 دولار أو ما يعادلها بالمصري</strong></div>
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-1">
-                      <button
-                        onClick={() => handleDeleteSubscriber(s)}
-                        className="px-3.5 py-2 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition cursor-pointer"
-                      >
-                        🗑 رفض وحذف
-                      </button>
-                      <button
-                        onClick={() => { setEditingSub(s); setPaymentAmount(s.amount_paid || ''); }}
-                        className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-lg transition cursor-pointer flex items-center gap-1.5"
-                      >
-                        <span>💰</span>
-                        <span>تأكيد استلام المبلغ وتفعيل المتجر 🚀</span>
-                      </button>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-0.5 rounded-full font-bold ${
+                        d.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                      }`}>
+                        {d.status === 'active' ? 'مفعل ويعمل' : 'قيد الفحص'}
+                      </span>
+                      {d.status !== 'active' && (
+                        <button
+                          onClick={() => handleVerifyDomain(d)}
+                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold cursor-pointer"
+                        >
+                          اعتماد وتفعيل الدومين ✓
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -513,493 +498,127 @@ export default function SuperAdminMasterDashboard() {
           </div>
         )}
 
-        {/* 🌟 3. شاشة العملاء الحاليين (الموافق عليهم) */}
-        {activeScreen === 'active_clients' && (
+        {/* 5. الفواتير والتحصيلات (Platform Invoices) */}
+        {activeTab === 'invoices' && (
           <div className="space-y-4">
-            <div className="bg-[#111827] p-5 rounded-3xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h2 className="text-lg font-black text-emerald-400 flex items-center gap-2">
-                  <span>👥</span>
-                  <span>العملاء الحاليين والمتاجر النشطة ({activeClients.length})</span>
-                </h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  المتاجر المفعلة رسمياً ومواعيد تجديد اشتراكاتهم القادمة.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="بحث باسم المتجر أو المالك..."
-                  value={searchSubscriber}
-                  onChange={(e) => setSearchSubscriber(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 text-xs p-2.5 rounded-xl w-56 text-white"
-                />
-                <button onClick={loadAllMasterData} className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-bold cursor-pointer">
-                  🔄 تحديث
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {activeClients.length === 0 ? (
-                <div className="text-center py-16 text-slate-500 font-bold bg-[#111827] border border-slate-800 rounded-3xl">
-                  لا يوجد عملاء مفعلون حالياً.
-                </div>
-              ) : (
-                activeClients
-                  .filter((s) => (s.store_name || '').toLowerCase().includes(searchSubscriber.toLowerCase()) || (s.owner_name || '').toLowerCase().includes(searchSubscriber.toLowerCase()))
-                  .map((s) => {
-                    const expiryDate = new Date(s.subscription_ends_at);
-                    const daysLeft = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
-
-                    return (
-                      <div key={s.id} className="bg-[#111827] border border-emerald-500/20 p-5 rounded-3xl space-y-4 hover:border-emerald-500/40 transition">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-black text-white text-lg">{s.store_name}</span>
-                            <a href={`/store/${s.store_slug}`} target="_blank" className="text-xs text-cyan-400 bg-cyan-950/60 px-2.5 py-0.5 rounded-full font-mono hover:underline">
-                              /{s.store_slug} ↗
-                            </a>
-                            <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                              🟢 متجر نشط
-                            </span>
-                          </div>
-
-                          <div className="text-xs font-black px-3 py-1 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
-                            📅 التجديد القادم: {expiryDate.toLocaleDateString('ar-EG')} ({daysLeft} يوم متبقي)
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-slate-300 bg-slate-900/60 p-3 rounded-2xl">
-                          <div>التاجر: <strong className="text-white">{s.owner_name}</strong></div>
-                          <div>الهاتف: <a href={`https://wa.me/${s.phone}`} target="_blank" className="text-emerald-400 font-bold font-mono underline" dir="ltr">{s.phone}</a></div>
-                          <div>المبلغ المحول: <strong className="text-emerald-400 font-bold">{s.amount_paid || 0} ج.م</strong></div>
-                          <div>المحافظة: <strong className="text-white">{s.governorate}</strong></div>
-                        </div>
-
-                        <div className="flex flex-wrap justify-end gap-2 pt-1">
-                          <button
-                            onClick={() => { setEditingSub(s); setPaymentAmount(s.amount_paid || ''); }}
-                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition cursor-pointer"
-                          >
-                            🔄 تجديد الاشتراك
-                          </button>
-                          <button
-                            onClick={() => handleSuspendSubscriber(s)}
-                            className="px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold transition cursor-pointer"
-                          >
-                            ⏸️ إيقاف مؤقت
-                          </button>
-                          <button
-                            onClick={() => handleDeactivateSubscriber(s)}
-                            className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
-                          >
-                            🛑 تعطيل
-                          </button>
-                          <button
-                            onClick={() => handleDeleteSubscriber(s)}
-                            className="px-3.5 py-2 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition cursor-pointer"
-                          >
-                            🗑 حذف
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-              )}
+            <h3 className="text-lg font-black">سجل المقبوضات والفواتير الصادرة</h3>
+            <div className="bg-[#0d1322] border border-slate-800 rounded-3xl overflow-hidden">
+              <table className="w-full text-right text-xs text-slate-300">
+                <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th className="p-3.5">رقم الفاتورة</th>
+                    <th className="p-3.5">المتجر</th>
+                    <th className="p-3.5">الباقة</th>
+                    <th className="p-3.5">المبلغ المحول</th>
+                    <th className="p-3.5">تاريخ الإصدار</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {invoices.map((inv) => (
+                    <tr key={inv.id} className="hover:bg-slate-900/40">
+                      <td className="p-3.5 font-mono text-cyan-400">{inv.invoice_number}</td>
+                      <td className="p-3.5 font-bold text-white">{inv.store_name}</td>
+                      <td className="p-3.5">{inv.plan_name}</td>
+                      <td className="p-3.5 text-emerald-400 font-black font-mono">{inv.amount_paid} ج.م</td>
+                      <td className="p-3.5 text-slate-400">{new Date(inv.created_at).toLocaleDateString('ar-EG')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
-        {/* 🌟 4. شاشة الطلبات المركزية وتصدير الشحن */}
-        {activeScreen === 'orders' && (
-          <div className="space-y-4">
-            <div className="bg-[#111827] p-5 rounded-3xl border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <div>
-                <h2 className="text-lg font-black text-white">إدارة طلبات المنصة ({filteredOrders.length})</h2>
-                <p className="text-xs text-slate-400">تحديث حالات الشحن وتصدير الطلبات مباشرة لشركات التوصيل</p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={exportOrdersToCSV}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black shadow transition flex items-center gap-1.5 cursor-pointer"
-                >
-                  <span>📊</span>
-                  <span>تصدير إكسيل للشحن</span>
-                </button>
-                <button onClick={loadAllMasterData} className="px-3.5 py-2 bg-slate-800 rounded-xl text-xs font-bold cursor-pointer">
-                  🔄
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
+        {/* 6. الإعلانات والتنبيهات الجماعية (Broadcasts) */}
+        {activeTab === 'broadcasts' && (
+          <div className="space-y-6 max-w-3xl">
+            <form onSubmit={handleCreateBroadcast} className="bg-[#0d1322] border border-slate-800 p-6 rounded-3xl space-y-4">
+              <h3 className="text-base font-black">إرسال إشعار / شريط تنبيهي لجميع التجار</h3>
+              
               <input
                 type="text"
-                placeholder="بحث باسم الزبون أو الهاتف أو المحافظة..."
-                value={orderSearch}
-                onChange={(e) => setOrderSearch(e.target.value)}
-                className="bg-[#111827] border border-slate-800 text-xs p-3 rounded-xl flex-1 text-white"
+                required
+                placeholder="عنوان التنبيه (مثال: تحديث أمني جديد)"
+                value={newBroadcast.title}
+                onChange={(e) => setNewBroadcast({ ...newBroadcast, title: e.target.value })}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white"
               />
-              <select
-                value={orderStatusFilter}
-                onChange={(e) => setOrderStatusFilter(e.target.value)}
-                className="bg-[#111827] border border-slate-800 text-xs p-3 rounded-xl text-white"
-              >
-                <option value="all">كل الحالات</option>
-                <option value="جديد">جديد</option>
-                <option value="مؤكد">مؤكد</option>
-                <option value="جاري الشحن">جاري الشحن</option>
-                <option value="تم التوصيل">تم التوصيل</option>
-                <option value="مرتجع">مرتجع</option>
-                <option value="ملغي">ملغي</option>
-              </select>
-            </div>
 
-            <div className="space-y-3">
-              {filteredOrders.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 font-bold bg-[#111827] border border-slate-800 rounded-3xl">
-                  لا توجد طلبات مطابقة.
-                </div>
-              ) : (
-                filteredOrders.map((o, idx) => (
-                  <div key={o.id} className="bg-[#111827] border border-slate-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-sm">طلب #{idx + 1} - {o.customer_name}</span>
-                        <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-slate-800 text-cyan-400">
-                          {o.status || 'جديد'}
-                        </span>
-                      </div>
-                      <div className="text-xs text-slate-400 flex flex-wrap gap-3">
-                        <span>الهاتف: <strong className="text-white font-mono" dir="ltr">{o.phone}</strong></span>
-                        <span>العنوان: <strong className="text-white">{o.governorate} - {o.address}</strong></span>
-                        <span>المنتج: <strong className="text-white">{o.product_name || 'منتج عام'}</strong> (x{o.quantity || 1})</span>
-                      </div>
-                    </div>
+              <textarea
+                rows="3"
+                required
+                placeholder="نص الرسالة التي ستظهر في لوحة تحكم التجار..."
+                value={newBroadcast.message}
+                onChange={(e) => setNewBroadcast({ ...newBroadcast, message: e.target.value })}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white"
+              ></textarea>
 
-                    <div className="flex items-center gap-3">
-                      <span className="text-emerald-400 font-black text-base">{o.total_amount} ج.م</span>
-                      <select
-                        value={o.status || 'جديد'}
-                        onChange={async (e) => {
-                          const newStatus = e.target.value;
-                          await supabase.from('orders').update({ status: newStatus }).eq('id', o.id);
-                          loadAllMasterData();
-                        }}
-                        className="bg-slate-900 border border-slate-700 text-xs p-2 rounded-xl text-white font-bold"
-                      >
-                        <option value="جديد">جديد</option>
-                        <option value="مؤكد">مؤكد</option>
-                        <option value="جاري الشحن">جاري الشحن</option>
-                        <option value="تم التوصيل">تم التوصيل</option>
-                        <option value="مرتجع">مرتجع</option>
-                        <option value="ملغي">ملغي</option>
-                      </select>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* 🌟 5. شاشة المنتجات العامة */}
-        {activeScreen === 'products' && (
-          <div className="space-y-4">
-            <div className="bg-[#111827] p-5 rounded-3xl border border-slate-800 flex justify-between items-center">
-              <div>
-                <h2 className="text-lg font-black">المنتجات في المنصة ({products.length})</h2>
-                <p className="text-xs text-slate-400">استعراض كافة منتجات المتاجر ومتابعة المخزون</p>
-              </div>
-              <button
-                onClick={() => {
-                  setProductForm({ name: '', price: '', cost_price: '', stock: 20, images: [] });
-                  setShowProductModal(true);
-                }}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition cursor-pointer"
-              >
-                ➕ إضافة منتج عام
+              <button type="submit" className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold cursor-pointer">
+                نشر التنبيه الآن 📢
               </button>
-            </div>
+            </form>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {products.map((p) => (
-                <div key={p.id} className="bg-[#111827] border border-slate-800 p-4 rounded-3xl space-y-3">
-                  <div className="w-full h-36 bg-slate-900 rounded-2xl flex items-center justify-center overflow-hidden">
-                    {p.images?.[0] ? <img src={p.images[0]} className="w-full h-full object-contain" /> : '📦'}
-                  </div>
-                  <h4 className="font-bold text-sm text-white line-clamp-1">{p.name}</h4>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-emerald-400 font-bold">{p.price} ج.م</span>
-                    <span className="text-slate-400">المخزون: {p.stock || 20}</span>
-                  </div>
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-slate-400">الإعلانات السابقة المنشورة:</h4>
+              {broadcasts.map((b) => (
+                <div key={b.id} className="p-3 bg-[#0d1322] border border-slate-800 rounded-2xl text-xs space-y-1">
+                  <strong className="text-white block">{b.title}</strong>
+                  <p className="text-slate-400">{b.message}</p>
                 </div>
               ))}
             </div>
           </div>
-        )}
-
-        {/* 🌟 6. شاشة التحليلات الشاملة والمالية */}
-        {activeScreen === 'analytics' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-[#111827] border border-slate-800 p-5 rounded-3xl shadow-sm">
-                <span className="text-xs text-slate-400 block mb-1">إجمالي الزوار الكلي</span>
-                <span className="text-2xl font-black text-cyan-400">{totalStoreVisitors}</span>
-              </div>
-              <div className="bg-[#111827] border border-slate-800 p-5 rounded-3xl shadow-sm">
-                <span className="text-xs text-slate-400 block mb-1">الطلبات المكتملة</span>
-                <span className="text-2xl font-black text-blue-400">{orders.length} طلب</span>
-              </div>
-              <div className="bg-[#111827] border border-slate-800 p-5 rounded-3xl shadow-sm">
-                <span className="text-xs text-slate-400 block mb-1">معدل التحويل العام</span>
-                <span className="text-2xl font-black text-purple-400">{platformConversionRate}%</span>
-              </div>
-              <div className="bg-[#111827] border border-slate-800 p-5 rounded-3xl shadow-sm">
-                <span className="text-xs text-slate-400 block mb-1">اشتراكات المنصة المحصلة</span>
-                <span className="text-2xl font-black text-amber-400">{totalSubFeesCollected.toLocaleString()} ج.م</span>
-              </div>
-              <div className="bg-[#111827] border border-slate-800 p-5 rounded-3xl shadow-sm col-span-full">
-                <span className="text-xs text-slate-400 block mb-1">إجمالي مبيعات كل المتاجر في NEXT ORDER</span>
-                <span className="text-3xl font-black text-emerald-400">{totalStoreSales.toLocaleString()} ج.م</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 🌟 7. شاشة بيكسلات فيسبوك (CAPI) */}
-        {activeScreen === 'pixels' && (
-          <form onSubmit={handleSaveSettings} className="bg-[#111827] border border-slate-800 p-6 rounded-3xl max-w-2xl mx-auto space-y-4">
-            <h2 className="text-lg font-black border-b border-slate-800 pb-3">إعدادات البيكسل العامة للمنصة</h2>
-            {[1, 2, 3, 4].map((num) => (
-              <div key={num} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
-                <span className="text-xs font-bold text-slate-300">بيكسل فيسبوك ({num})</span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    dir="ltr"
-                    value={settings[`pixel_${num}`]}
-                    onChange={(e) => setSettings({ ...settings, [`pixel_${num}`]: e.target.value })}
-                    placeholder={`Pixel ID ${num}`}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs font-mono text-white"
-                  />
-                  <input
-                    type="text"
-                    dir="ltr"
-                    value={settings[`token_${num}`]}
-                    onChange={(e) => setSettings({ ...settings, [`token_${num}`]: e.target.value })}
-                    placeholder={`API Token ${num}`}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs font-mono text-white"
-                  />
-                </div>
-              </div>
-            ))}
-            <button type="submit" disabled={savingSettings} className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow cursor-pointer">
-              حفظ البيكسلات 💾
-            </button>
-          </form>
-        )}
-
-        {/* 🌟 8. شاشة هوية المنصة وإعدادات اللوجو */}
-        {activeScreen === 'store_branding' && (
-          <form onSubmit={handleSaveSettings} className="bg-[#111827] border border-slate-800 p-6 sm:p-8 rounded-3xl max-w-3xl mx-auto space-y-6">
-            <h2 className="text-lg font-black border-b border-slate-800 pb-4">هوية منصة NEXT ORDER</h2>
-            
-            <div className="space-y-5">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-2">لوجو المنصة الرسمي</label>
-                <div className="flex flex-col sm:flex-row items-center gap-4 p-4 border border-dashed border-slate-700 rounded-2xl bg-slate-900/60">
-                  <div className="w-20 h-20 rounded-2xl border border-slate-700 bg-white p-1.5 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-                    {settings.store_logo ? (
-                      <img src={settings.store_logo} alt="Platform Logo" className="w-full h-full object-contain" />
-                    ) : (
-                      <span className="text-slate-400 text-3xl">🖼</span>
-                    )}
-                  </div>
-
-                  <div className="space-y-2 flex-1 text-center sm:text-right">
-                    <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold cursor-pointer transition shadow">
-                      <span>📁</span>
-                      <span>{uploadingLogo ? 'جاري رفع الصورة...' : 'اختيار لوجو المنصة من جهازك'}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        disabled={uploadingLogo}
-                        className="hidden"
-                      />
-                    </label>
-                    <p className="text-[11px] text-slate-500">
-                      الصيغ المدعومة: PNG, JPG, WEBP, SVG.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">اسم المنصة الرسمي *</label>
-                <input
-                  type="text"
-                  required
-                  value={settings.store_name}
-                  onChange={(e) => setSettings({ ...settings, store_name: e.target.value })}
-                  placeholder="NEXT ORDER"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-bold text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5">وصف المنصة</label>
-                <textarea
-                  rows="3"
-                  value={settings.store_description}
-                  onChange={(e) => setSettings({ ...settings, store_description: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white"
-                ></textarea>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1.5">رقم واتساب الدعم الفني العام</label>
-                  <input
-                    type="tel"
-                    dir="ltr"
-                    value={settings.support_phone}
-                    onChange={(e) => setSettings({ ...settings, support_phone: e.target.value })}
-                    placeholder="01xxxxxxxxx"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm font-mono text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1.5">نص الشريط الإعلاني العلوي</label>
-                  <input
-                    type="text"
-                    value={settings.announcement_text}
-                    onChange={(e) => setSettings({ ...settings, announcement_text: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-800 flex justify-end">
-              <button
-                type="submit"
-                disabled={savingSettings || uploadingLogo}
-                className="px-8 py-3.5 bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700 text-white font-black text-sm rounded-2xl shadow-lg transition cursor-pointer"
-              >
-                {savingSettings ? 'جاري الحفظ...' : 'حفظ هوية المنصة 💾'}
-              </button>
-            </div>
-          </form>
         )}
 
       </main>
 
-      {/* نافذة تفعيل المشتركين مع تنبيه الاشتراك */}
-      {editingSub && (
+      {/* نافذة التفعيل وتحديد الباقة وإصدار الفاتورة */}
+      {editingMerchant && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#111827] border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
-            <h3 className="text-lg font-black border-b border-slate-800 pb-3">
-              تفعيل اشتراك: {editingSub.store_name}
+          <form onSubmit={handleActivateMerchantWithInvoice} className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-4 shadow-2xl">
+            <h3 className="text-base font-black border-b border-slate-800 pb-3">
+              تفعيل اشتراك: {editingMerchant.store_name}
             </h3>
 
-            <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-xs text-amber-300 space-y-1">
-              <div className="font-bold flex items-center gap-1.5">
-                <span>⚠️</span>
-                <span>تنبيه الاشتراك:</span>
-              </div>
-              <div>قيمة الاشتراك الشهري: <strong>5 دولار أو ما يعادلها بالجنيه المصري</strong>.</div>
+            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-300">
+              قيمة الاشتراك الشهري: <strong>5 دولار أو ما يعادلها بالمصري</strong>.
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">مدة الاشتراك</label>
+              <label className="text-xs font-bold text-slate-300 block mb-1">اختر الباقة</label>
               <select
-                value={durationMonths}
-                onChange={(e) => setDurationMonths(Number(e.target.value))}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white"
+                value={selectedPlanId}
+                onChange={(e) => setSelectedPlanId(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white"
               >
-                <option value="1">شهر واحد (30 يوم)</option>
-                <option value="3">3 أشهر</option>
-                <option value="6">6 أشهر</option>
-                <option value="12">سنة كاملة (12 شهر)</option>
+                {plans.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} - ({p.price_egp} ج.م)
+                  </option>
+                ))}
               </select>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">المبلغ المحول الفعلي</label>
+              <label className="text-xs font-bold text-slate-300 block mb-1">المبلغ المحول الفعلي (ج.م)</label>
               <input
                 type="number"
-                placeholder="المبلغ المحول هنا..."
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm font-bold text-emerald-400"
+                value={customAmountPaid}
+                onChange={(e) => setCustomAmountPaid(e.target.value)}
+                placeholder="250"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-emerald-400 font-bold"
               />
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-              <button onClick={() => setEditingSub(null)} className="px-4 py-2.5 bg-slate-800 rounded-xl text-xs font-bold">
+              <button type="button" onClick={() => setEditingMerchant(null)} className="px-4 py-2 bg-slate-800 rounded-xl text-xs font-bold">
                 إلغاء
               </button>
-              <button onClick={() => handleActivateSubscriber(editingSub)} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow cursor-pointer">
-                تأكيد التفعيل وفتح المتجر 🚀
+              <button type="submit" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold">
+                تأكيد التفعيل وإصدار الفاتورة 🚀
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* نافذة إضافة منتج عام */}
-      {showProductModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#111827] border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 shadow-2xl">
-            <h3 className="text-lg font-black border-b border-slate-800 pb-3">إضافة منتج عام</h3>
-            <input
-              type="text"
-              placeholder="اسم المنتج"
-              value={productForm.name}
-              onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white"
-            />
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="number"
-                placeholder="سعر البيع"
-                value={productForm.price}
-                onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                className="bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm font-bold text-white"
-              />
-              <input
-                type="number"
-                placeholder="المخزون"
-                value={productForm.stock}
-                onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
-                className="bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm text-white"
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-              <button onClick={() => setShowProductModal(false)} className="px-4 py-2 bg-slate-800 rounded-xl text-xs font-bold">إلغاء</button>
-              <button
-                onClick={async () => {
-                  if (!productForm.name || !productForm.price) return alert('اكتب الاسم والسعر');
-                  await supabase.from('products').insert([{
-                    name: productForm.name,
-                    price: Number(productForm.price),
-                    stock: Number(productForm.stock) || 20,
-                  }]);
-                  setShowProductModal(false);
-                  loadAllMasterData();
-                }}
-                className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold"
-              >
-                حفظ
-              </button>
-            </div>
-          </div>
+          </form>
         </div>
       )}
 
