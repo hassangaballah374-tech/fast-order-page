@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 
 export default function SuperAdminDashboard() {
-  // 'home' | 'active_clients' | 'pending_subscribers' | 'orders' | 'products' | 'analytics' | 'pixels' | 'store_branding'
   const [activeScreen, setActiveScreen] = useState('home');
   const [loading, setLoading] = useState(true);
 
@@ -11,7 +10,7 @@ export default function SuperAdminDashboard() {
   const [subscribers, setSubscribers] = useState([]);
   const [editingSub, setEditingSub] = useState(null);
   const [durationMonths, setDurationMonths] = useState(1);
-  const [paymentAmount, setPaymentAmount] = useState('250'); // الحد الأدنى الافتراضي بما يعادل 5$
+  const [paymentAmount, setPaymentAmount] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
   // إعدادات المنصة والهوية
@@ -86,7 +85,7 @@ export default function SuperAdminDashboard() {
     setLoading(false);
   }
 
-  // تصنيف المشتركين: مفعلون حاليون / في انتظار التفعيل
+  // تصنيف المشتركين
   const activeClients = subscribers.filter((s) => {
     const isExpired = !s.subscription_ends_at || new Date(s.subscription_ends_at) < new Date();
     return s.is_active && !isExpired && s.subscription_status !== 'suspended' && s.subscription_status !== 'disabled';
@@ -99,15 +98,6 @@ export default function SuperAdminDashboard() {
 
   // تفعيل أو تجديد المتجر
   const handleActivateSubscriber = async (sub) => {
-    const minAmount = 250; // ما يعادل 5 دولار
-    const enteredAmount = Number(paymentAmount);
-
-    if (isNaN(enteredAmount) || enteredAmount < minAmount) {
-      if (!confirm(`⚠️ المبلغ المدخل (${enteredAmount || 0} ج.م) أقل من الحد الأدنى المقترح (5$ أي ما يعادل 250 ج.م تقريباً).\nهل تريد المتابعة وتفعيل المتجر على أي حال؟`)) {
-        return;
-      }
-    }
-
     const months = parseInt(durationMonths) || 1;
     const expiry = new Date();
     expiry.setMonth(expiry.getMonth() + months);
@@ -116,7 +106,7 @@ export default function SuperAdminDashboard() {
       is_active: true,
       subscription_status: 'active',
       subscription_ends_at: expiry.toISOString(),
-      amount_paid: enteredAmount || Number(sub.amount_paid) || 0,
+      amount_paid: Number(paymentAmount) || Number(sub.amount_paid) || 0,
     };
 
     const { error } = await supabase.from('store_profiles').update(payload).eq('id', sub.id);
@@ -129,21 +119,18 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  // إيقاف مؤقت
   const handleSuspendSubscriber = async (sub) => {
     if (!confirm(`هل أنت متأكد من الإيقاف المؤقت لمتجر "${sub.store_name}"؟`)) return;
     await supabase.from('store_profiles').update({ is_active: false, subscription_status: 'suspended' }).eq('id', sub.id);
     loadAllData();
   };
 
-  // تعطيل الحساب
   const handleDeactivateSubscriber = async (sub) => {
     if (!confirm(`هل تريد تعطيل متجر "${sub.store_name}" تماماً؟`)) return;
     await supabase.from('store_profiles').update({ is_active: false, subscription_status: 'disabled' }).eq('id', sub.id);
     loadAllData();
   };
 
-  // حذف نهائي
   const handleDeleteSubscriber = async (sub) => {
     const confirmDelete = prompt(`⚠️ تحذير: اكتب اسم المتجر للتأكيد: "${sub.store_name}"`);
     if (confirmDelete !== sub.store_name) return;
@@ -162,7 +149,6 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  // نسخ رابط التسجيل المباشر
   const copyRegisterLink = () => {
     if (typeof window !== 'undefined') {
       const link = `${window.location.origin}/register`;
@@ -171,7 +157,6 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  // رفع اللوجو
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -185,7 +170,6 @@ export default function SuperAdminDashboard() {
     reader.readAsDataURL(file);
   };
 
-  // حفظ الإعدادات
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -195,17 +179,15 @@ export default function SuperAdminDashboard() {
     setSavingSettings(false);
   };
 
-  // إحصائيات عامة
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.total_amount || o.total_price) || 0), 0);
   const visitorsCount = analytics.filter((a) => a.event_type === 'visit').length;
   const conversionRate = visitorsCount > 0 ? ((orders.length / visitorsCount) * 100).toFixed(2) : '0.00';
 
-  // كروت الشاشة الرئيسية بعد التعديل والتخصيص
   const gridCards = [
     {
       id: 'pending_subscribers',
       title: 'مشتركين جدد (قيد الانتظار)',
-      desc: 'بانتظار سداد رسوم الاشتراك وتأكيد التحويل (أقل مبلغ 5$)',
+      desc: 'بانتظار سداد رسوم الاشتراك وتأكيد التحويل (5 دولار أو ما يعادلها بالمصري)',
       icon: '⏳',
       bgClass: 'bg-gradient-to-r from-amber-500 to-yellow-600',
       badge: `${pendingSubscribers.length} في الانتظار`,
@@ -347,7 +329,7 @@ export default function SuperAdminDashboard() {
                   <span>مشتركون جدد بانتظار التفعيل ({pendingSubscribers.length})</span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  المتاجر التي سجلت حديثاً وبانتظار تأكيد التحويل المالي (الحد الأدنى: <strong>5$</strong> أو ما يعادلها <strong>~250 ج.م</strong>).
+                  المتاجر التي سجلت حديثاً وبانتظار تأكيد التحويل (5 دولار أو ما يعادلها بالمصري).
                 </p>
               </div>
 
@@ -383,7 +365,7 @@ export default function SuperAdminDashboard() {
                       <div>اسم التاجر: <strong className="text-slate-900">{s.owner_name}</strong></div>
                       <div>رقم الواتساب: <a href={`https://wa.me/${s.phone}`} target="_blank" className="text-emerald-700 font-bold font-mono underline" dir="ltr">{s.phone} ↗</a></div>
                       <div>المحافظة: <strong className="text-slate-900">{s.governorate}</strong></div>
-                      <div>الحد الأدنى المطلوب: <strong className="text-amber-700 font-bold">5$ (250 ج.م)</strong></div>
+                      <div>الاشتراك: <strong className="text-amber-800 font-bold">5 دولار أو ما يعادلها بالمصري</strong></div>
                     </div>
 
                     <div className="flex justify-end gap-2 pt-1">
@@ -394,7 +376,7 @@ export default function SuperAdminDashboard() {
                         🗑 رفض وحذف
                       </button>
                       <button
-                        onClick={() => { setEditingSub(s); setPaymentAmount('250'); }}
+                        onClick={() => { setEditingSub(s); setPaymentAmount(s.amount_paid || ''); }}
                         className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow transition cursor-pointer flex items-center gap-1.5"
                       >
                         <span>💰</span>
@@ -467,13 +449,13 @@ export default function SuperAdminDashboard() {
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl">
                           <div>التاجر: <strong className="text-slate-900">{s.owner_name}</strong></div>
                           <div>الهاتف: <a href={`https://wa.me/${s.phone}`} target="_blank" className="text-emerald-700 font-bold font-mono underline" dir="ltr">{s.phone}</a></div>
-                          <div>المبلغ المسدد: <strong className="text-emerald-600 font-bold">{s.amount_paid || 0} ج.م</strong></div>
+                          <div>المبلغ المحول: <strong className="text-emerald-600 font-bold">{s.amount_paid || 0}</strong></div>
                           <div>المحافظة: <strong className="text-slate-900">{s.governorate}</strong></div>
                         </div>
 
                         <div className="flex flex-wrap justify-end gap-2 pt-1">
                           <button
-                            onClick={() => { setEditingSub(s); setPaymentAmount(s.amount_paid || '250'); }}
+                            onClick={() => { setEditingSub(s); setPaymentAmount(s.amount_paid || ''); }}
                             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition cursor-pointer"
                           >
                             🔄 تجديد الاشتراك
@@ -646,34 +628,33 @@ export default function SuperAdminDashboard() {
               تفعيل اشتراك: {editingSub.store_name}
             </h3>
             
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 space-y-1">
-              <div className="font-bold">⚠️ ملحوظة الاشتراك:</div>
-              <div>الحد الأدنى للاشتراك هو <strong>5$</strong> (ما يعادل <strong>250 ج.م</strong> شهرياً).</div>
+            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 space-y-1">
+              <div className="font-bold flex items-center gap-1.5">
+                <span>⚠️</span>
+                <span>تنبيه الاشتراك:</span>
+              </div>
+              <div>قيمة الاشتراك الشهري: <strong>5 دولار أو ما يعادلها بالجنيه المصري</strong>.</div>
             </div>
 
             <div>
               <label className="text-xs font-bold text-slate-600 block mb-1">مدة الاشتراك</label>
               <select
                 value={durationMonths}
-                onChange={(e) => {
-                  const m = Number(e.target.value);
-                  setDurationMonths(m);
-                  setPaymentAmount(String(m * 250)); // تحديث المبلغ تلقائياً بناءً على الأشهر
-                }}
+                onChange={(e) => setDurationMonths(Number(e.target.value))}
                 className="w-full border border-slate-200 rounded-xl p-2.5 text-sm"
               >
-                <option value="1">شهر واحد (30 يوم) - 5$ (~250 ج.م)</option>
-                <option value="3">3 أشهر - 15$ (~750 ج.م)</option>
-                <option value="6">6 أشهر - 30$ (~1500 ج.م)</option>
-                <option value="12">سنة كاملة - 50$ (~2500 ج.م)</option>
+                <option value="1">شهر واحد (30 يوم)</option>
+                <option value="3">3 أشهر</option>
+                <option value="6">6 أشهر</option>
+                <option value="12">سنة كاملة (12 شهر)</option>
               </select>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-600 block mb-1">المبلغ المحول الفعلي (ج.م) *</label>
+              <label className="text-xs font-bold text-slate-600 block mb-1">المبلغ المحول الفعلي للاشتراك</label>
               <input
                 type="number"
-                min="250"
+                placeholder="اكتب المبلغ المحول هنا..."
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
                 className="w-full border border-slate-200 rounded-xl p-2.5 text-sm font-bold text-emerald-600"
