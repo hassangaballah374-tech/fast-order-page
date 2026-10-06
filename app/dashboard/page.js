@@ -105,16 +105,18 @@ export default function MerchantFullDashboard() {
     setLoading(true);
     let uid = null;
     const { data: { session } } = await supabase.auth.getSession();
-    uid = session?.user?.id || localStorage.getItem('merchant_user_id');
-
-    if (!uid) {
-      router.push('/register');
-      return;
-    }
+    uid = localStorage.getItem('merchant_user_id') || session?.user?.id || 'main_flagship_owner';
     setUserId(uid);
 
-    // 1. بروفايل المتجر
-    const { data: sData } = await supabase.from('store_profiles').select('*').eq('user_id', uid).maybeSingle();
+    // 1. جلب بروفايل المتجر
+    let { data: sData } = await supabase.from('store_profiles').select('*').eq('user_id', uid).maybeSingle();
+    
+    // محاولة بديلة في حال لم يُعثر على التاجر بالمعرف
+    if (!sData) {
+      const { data: fallbackStore } = await supabase.from('store_profiles').select('*').limit(1).maybeSingle();
+      if (fallbackStore) sData = fallbackStore;
+    }
+
     if (sData) {
       setMyStore(sData);
       setStoreSettings(prev => ({
@@ -153,21 +155,48 @@ export default function MerchantFullDashboard() {
       }));
     }
 
-    // 5. المنتجات والطلبات
-    const { data: pData } = await supabase.from('products').select('*').eq('user_id', uid).order('created_at', { ascending: false });
-    if (pData) setProducts(pData);
+    // 5. جلب كافة منتجات هذا المتجر (سواء بربط الـ user_id أو الـ slug أو المنتجات العامة غير المرتبطة)
+    const storeSlug = sData?.store_slug || 'main-store';
+    const { data: pData } = await supabase
+      .from('products')
+      .select('*')
+      .or(`user_id.eq.${uid},store_slug.eq.${storeSlug},user_id.is.null`)
+      .order('created_at', { ascending: false });
 
+    if (pData) {
+      const sanitizedProducts = pData.map(p => {
+        let imgs = [];
+        if (Array.isArray(p.images)) {
+          imgs = p.images;
+        } else if (typeof p.images === 'string' && p.images.trim()) {
+          try {
+            const parsed = JSON.parse(p.images);
+            imgs = Array.isArray(parsed) ? parsed : [p.images];
+          } catch {
+            imgs = [p.images];
+          }
+        }
+        return {
+          ...p,
+          images: imgs,
+          variants_matrix: Array.isArray(p.variants_matrix) ? p.variants_matrix : [],
+        };
+      });
+      setProducts(sanitizedProducts);
+    }
+
+    // 6. الطلبات
     const { data: oData } = await supabase.from('orders').select('*').eq('user_id', uid).order('created_at', { ascending: false });
     if (oData) setOrders(oData);
 
-    // 6. أسعار الشحن والبلاك ليست
+    // 7. أسعار الشحن والبلاك ليست
     const { data: shipData } = await supabase.from('shipping_rates').select('*').eq('user_id', uid);
     if (shipData) setShippingRates(shipData);
 
     const { data: bData } = await supabase.from('blacklist').select('*').eq('user_id', uid);
     if (bData) setBlacklist(bData);
 
-    // 7. التحليلات وسجل المحفظة
+    // 8. التحليلات وسجل المحفظة
     const { data: aData } = await supabase.from('store_analytics').select('*').eq('user_id', uid);
     if (aData) setAnalytics(aData);
 
@@ -281,14 +310,13 @@ export default function MerchantFullDashboard() {
     reader.readAsDataURL(file);
   };
 
-  // ✅ حفظ المنتج مع ربط الـ user_id و الـ store_slug المباشر
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     if (!productForm.name || !productForm.price) return alert('اكتب اسم المنتج وسعر البيع');
 
     const payload = {
       user_id: userId,
-      store_slug: myStore?.store_slug || '',
+      store_slug: myStore?.store_slug || 'main-store',
       name: productForm.name,
       price: Number(productForm.price),
       original_price: Number(productForm.original_price) || 0,
@@ -374,7 +402,7 @@ export default function MerchantFullDashboard() {
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const link = document.createElement('a');
     link.href = encodeURI(csvContent);
-    link.download = `${myStore?.store_slug}_orders.csv`;
+    link.download = `${myStore?.store_slug || 'orders'}.csv`;
     link.click();
   };
 
@@ -488,7 +516,7 @@ export default function MerchantFullDashboard() {
 
           <div className="pt-4 border-t border-slate-800">
             <a
-              href={`/store/${myStore?.store_slug}`}
+              href={`/store/${myStore?.store_slug || 'main-store'}`}
               target="_blank"
               className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-black rounded-xl flex items-center justify-center gap-1.5 transition"
             >
@@ -745,44 +773,56 @@ export default function MerchantFullDashboard() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {products.map(p => (
-                  <div key={p.id} className="bg-[#111827] border border-slate-800 p-5 rounded-3xl space-y-3">
-                    <div className="w-full h-40 bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center">
-                      {p.videos?.[0] ? (
-                        <video src={p.videos[0]} className="w-full h-full object-cover" muted autoPlay loop />
-                      ) : p.images?.[0] ? (
-                        <img src={p.images[0]} className="w-full h-full object-contain" />
-                      ) : '🛍️'}
+                {products.map(p => {
+                  const displayImg = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : '';
+                  return (
+                    <div key={p.id} className="bg-[#111827] border border-slate-800 p-5 rounded-3xl space-y-3">
+                      <div className="w-full h-40 bg-slate-900 rounded-2xl overflow-hidden flex items-center justify-center">
+                        {p.videos?.[0] ? (
+                          <video src={p.videos[0]} className="w-full h-full object-cover" muted autoPlay loop />
+                        ) : displayImg ? (
+                          <img src={displayImg} className="w-full h-full object-contain p-1" alt={p.name} />
+                        ) : (
+                          <span className="text-2xl">🛍️</span>
+                        )}
+                      </div>
+                      <h4 className="font-bold text-sm text-white truncate">{p.name}</h4>
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-emerald-400 font-bold">{p.price} ج.م</span>
+                        <span className="text-slate-400">المخزون: {p.stock || 0}</span>
+                      </div>
+                      <div className="flex gap-2 pt-2 border-t border-slate-800">
+                        <button
+                          onClick={() => {
+                            setEditingProductId(p.id);
+                            setProductForm({
+                              ...p,
+                              sizes: Array.isArray(p.sizes) ? p.sizes : [],
+                              colors: Array.isArray(p.colors) ? p.colors : [],
+                              images: Array.isArray(p.images) ? p.images : [],
+                              videos: Array.isArray(p.videos) ? p.videos : [],
+                              variants_matrix: Array.isArray(p.variants_matrix) ? p.variants_matrix : [],
+                            });
+                            setShowProductModal(true);
+                          }}
+                          className="flex-1 py-1.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold"
+                        >
+                          ✏️ تعديل
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm('حذف المنتج؟')) return;
+                            await supabase.from('products').delete().eq('id', p.id);
+                            initMerchant();
+                          }}
+                          className="px-3 py-1.5 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
-                    <h4 className="font-bold text-sm text-white truncate">{p.name}</h4>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-emerald-400 font-bold">{p.price} ج.م</span>
-                      <span className="text-slate-400">الخيارات: {p.variants_matrix?.length || 0} خانة</span>
-                    </div>
-                    <div className="flex gap-2 pt-2 border-t border-slate-800">
-                      <button
-                        onClick={() => {
-                          setEditingProductId(p.id);
-                          setProductForm(p);
-                          setShowProductModal(true);
-                        }}
-                        className="flex-1 py-1.5 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold"
-                      >
-                        ✏️ تعديل
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (!confirm('حذف المنتج؟')) return;
-                          await supabase.from('products').delete().eq('id', p.id);
-                          initMerchant();
-                        }}
-                        className="px-3 py-1.5 bg-red-500/10 text-red-400 rounded-xl text-xs font-bold"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
