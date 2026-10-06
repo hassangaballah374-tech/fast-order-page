@@ -3,201 +3,109 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useRouter } from 'next/navigation';
 
-export default function SuperAdminExecutiveDashboard() {
+export default function SuperAdminDashboard() {
   const router = useRouter();
-
-  // التبويبات الرئيسية في الشريط الجانبي
-  // 'overview' | 'merchants' | 'plans' | 'domains' | 'invoices' | 'broadcasts' | 'orders_feed' | 'settings'
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('merchants');
   const [loading, setLoading] = useState(true);
 
-  // بيانات المنظومة المركزية
   const [merchants, setMerchants] = useState([]);
-  const [plans, setPlans] = useState([]);
-  const [domains, setDomains] = useState([]);
-  const [invoices, setInvoices] = useState([]);
-  const [broadcasts, setBroadcasts] = useState([]);
-  const [allOrders, setAllOrders] = useState([]);
-  const [platformSettings, setPlatformSettings] = useState({
-    store_name: 'NEXT ORDER',
-    store_logo: '',
-    support_phone: '',
-    announcement_text: '',
-  });
+  const [transactions, setTransactions] = useState([]);
+  const [exchangeRate, setExchangeRate] = useState(50.0);
+  const [orderFeeUsd, setOrderFeeUsd] = useState(0.05);
 
-  // نوافذ وفلاتر التعديل
-  const [merchantSearch, setMerchantSearch] = useState('');
-  const [merchantStatusFilter, setMerchantStatusFilter] = useState('all');
-  const [editingMerchant, setEditingMerchant] = useState(null);
-  const [selectedPlanId, setSelectedPlanId] = useState('');
-  const [customAmountPaid, setCustomAmountPaid] = useState('');
+  // حالة نافذة شحن المحفظة
+  const [rechargeModalMerchant, setRechargeModalMerchant] = useState(null);
+  const [chargeUsd, setChargeUsd] = useState(5.0);
+  const [chargeEgp, setChargeEgp] = useState(250.0);
 
-  // إضافة إعلان جماعي للتجار
-  const [newBroadcast, setNewBroadcast] = useState({ title: '', message: '', banner_type: 'info' });
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    loadSaaSCoreData();
+    loadAdminData();
   }, []);
 
-  async function loadSaaSCoreData() {
+  async function loadAdminData() {
     setLoading(true);
     try {
-      if (supabase) {
-        // 1. المشتركون
-        const { data: mData } = await supabase.from('store_profiles').select('*').order('created_at', { ascending: false });
-        if (mData) setMerchants(mData);
-
-        // 2. باقات الاشتراك
-        const { data: pData } = await supabase.from('subscription_plans').select('*').order('price_egp', { ascending: true });
-        if (pData) setPlans(pData);
-
-        // 3. طلبات الدومينات
-        const { data: dData } = await supabase.from('custom_domain_requests').select('*').order('created_at', { ascending: false });
-        if (dData) setDomains(dData);
-
-        // 4. الفواتير
-        const { data: iData } = await supabase.from('platform_invoices').select('*').order('created_at', { ascending: false });
-        if (iData) setInvoices(iData);
-
-        // 5. الإعلانات العامة
-        const { data: bData } = await supabase.from('platform_broadcasts').select('*').order('created_at', { ascending: false });
-        if (bData) setBroadcasts(bData);
-
-        // 6. آخر الطلبات في المنصة
-        const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(50);
-        if (oData) setAllOrders(oData);
-
-        // 7. إعدادات المنصة
-        const { data: sData } = await supabase.from('store_settings').select('*').limit(1).maybeSingle();
-        if (sData) setPlatformSettings(sData);
+      // 1. جلب سعر الصرف
+      const { data: rateData } = await supabase.from('platform_exchange_rates').select('*').eq('id', 1).single();
+      if (rateData) {
+        setExchangeRate(Number(rateData.usd_to_egp) || 50.0);
+        setOrderFeeUsd(Number(rateData.order_fee_usd) || 0.05);
       }
-    } catch (err) {
-      console.error(err);
+
+      // 2. جلب المتاجر
+      const { data: mData } = await supabase.from('store_profiles').select('*').order('created_at', { ascending: false });
+      if (mData) setMerchants(mData);
+
+      // 3. جلب سجل العمليات المالية
+      const { data: tData } = await supabase.from('wallet_transactions').select('*').order('created_at', { ascending: false }).limit(100);
+      if (tData) setTransactions(tData);
+    } catch (e) {
+      console.error(e);
     }
     setLoading(false);
   }
 
-  // 👑 ميزة السوبر أدمن الحصرية: الدخول كتاجر بنقرة واحدة (Impersonation)
-  const handleLoginAsMerchant = (merchant) => {
-    if (!merchant.user_id) return alert('هذا الحساب لا يملك معرف مستخدم صالح');
-    const confirmLogin = confirm(`هل تريد الدخول فوراً لإدارة متجر "${merchant.store_name}" بصفة التاجر؟`);
-    if (!confirmLogin) return;
+  // تحديث سعر الدولار اللحظي في النظام
+  const handleUpdateExchangeRate = async () => {
+    await supabase.from('platform_exchange_rates').update({
+      usd_to_egp: Number(exchangeRate),
+      order_fee_usd: Number(orderFeeUsd),
+      updated_at: new Date().toISOString(),
+    }).eq('id', 1);
 
+    alert(`✅ تم تحديث سعر صرف الدولار إلى ${exchangeRate} ج.م وعمولة الأوردر إلى ${orderFeeUsd}$ بنجاح!`);
+    loadAdminData();
+  };
+
+  // شحن محفظة التاجر
+  const handleConfirmRecharge = async () => {
+    if (!rechargeModalMerchant) return;
+    const currentBal = Number(rechargeModalMerchant.wallet_balance_usd || 0);
+    const newBal = currentBal + Number(chargeUsd);
+
+    // 1. تحديث رصيد المتجر وتفعيله
+    await supabase.from('store_profiles').update({
+      wallet_balance_usd: newBal,
+      is_active: true,
+      subscription_status: 'active',
+      amount_paid: (Number(rechargeModalMerchant.amount_paid) || 0) + Number(chargeEgp),
+    }).eq('id', rechargeModalMerchant.id);
+
+    // 2. تسجيل معاملة إيداع
+    await supabase.from('wallet_transactions').insert([{
+      user_id: rechargeModalMerchant.user_id,
+      store_name: rechargeModalMerchant.store_name,
+      type: 'deposit',
+      amount_usd: Number(chargeUsd),
+      amount_egp: Number(chargeEgp),
+      usd_rate: Number(exchangeRate),
+      description: `شحن محفظة التاجر (${chargeUsd}$ = ${chargeEgp} ج.م)`,
+    }]);
+
+    alert(`✅ تم شحن ${chargeUsd}$ وتفعيل متجر (${rechargeModalMerchant.store_name}) بنجاح!`);
+    setRechargeModalMerchant(null);
+    loadAdminData();
+  };
+
+  // الدخول كتاجر بنقرة واحدة
+  const handleLoginAs = (merchant) => {
+    if (!merchant.user_id) return alert('لا يوجد معرف تاجر');
     localStorage.setItem('merchant_user_id', merchant.user_id);
     router.push('/dashboard');
   };
 
-  // تفعيل واشتراك تاجر مع إصدار فاتورة رسمية
-  const handleActivateMerchantWithInvoice = async (e) => {
-    e.preventDefault();
-    if (!editingMerchant) return;
-
-    const chosenPlan = plans.find(p => p.id === selectedPlanId) || plans[0];
-    const durationDays = chosenPlan?.duration_days || 30;
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + durationDays);
-
-    const paidVal = Number(customAmountPaid) || Number(chosenPlan?.price_egp) || 250;
-
-    // 1. تحديث بروفايل التاجر
-    await supabase.from('store_profiles').update({
-      is_active: true,
-      subscription_status: 'active',
-      plan_id: chosenPlan?.id,
-      amount_paid: paidVal,
-      subscription_ends_at: expiryDate.toISOString(),
-    }).eq('id', editingMerchant.id);
-
-    // 2. إصدار فاتورة في سجل الإيرادات
-    const invoiceNum = 'INV-' + Date.now().toString().slice(-8);
-    await supabase.from('platform_invoices').insert([{
-      invoice_number: invoiceNum,
-      user_id: editingMerchant.user_id,
-      store_name: editingMerchant.store_name,
-      plan_name: chosenPlan?.name || 'خطة الاشتراك القياسية',
-      amount_paid: paidVal,
-      starts_at: new Date().toISOString(),
-      ends_at: expiryDate.toISOString(),
-    }]);
-
-    alert(`✅ تم تفعيل متجر (${editingMerchant.store_name}) وإصدار الفاتورة (${invoiceNum}) بنجاح!`);
-    setEditingMerchant(null);
-    loadSaaSCoreData();
-  };
-
-  // تعليق أو تعطيل التاجر
-  const handleToggleMerchantStatus = async (merchant, targetStatus) => {
-    if (!confirm(`هل أنت متأكد من تغيير حالة متجر "${merchant.store_name}" إلى [${targetStatus}]؟`)) return;
-    await supabase.from('store_profiles').update({
-      is_active: targetStatus === 'active',
-      subscription_status: targetStatus,
-    }).eq('id', merchant.id);
-    loadSaaSCoreData();
-  };
-
-  // حذف شامل لحساب التاجر
-  const handleDeleteMerchantFully = async (merchant) => {
-    const confirmName = prompt(`⚠️ تحذير: اكتب اسم المتجر لحذفه نهائياً مع كافة ملفاته: "${merchant.store_name}"`);
-    if (confirmName !== merchant.store_name) return;
-
-    if (merchant.user_id) {
-      await supabase.from('products').delete().eq('user_id', merchant.user_id);
-      await supabase.from('orders').delete().eq('user_id', merchant.user_id);
-      await supabase.from('merchant_settings').delete().eq('user_id', merchant.user_id);
-      await supabase.from('shipping_rates').delete().eq('user_id', merchant.user_id);
-      await supabase.from('blacklist').delete().eq('user_id', merchant.user_id);
-      await supabase.from('custom_domain_requests').delete().eq('user_id', merchant.user_id);
-    }
-    await supabase.from('store_profiles').delete().eq('id', merchant.id);
-    alert('🗑️ تم الحذف النهائي للحساب وجميع متعلقاته.');
-    loadSaaSCoreData();
-  };
-
-  // اعتماد الدومين المخصص
-  const handleVerifyDomain = async (domainObj) => {
-    await supabase.from('custom_domain_requests').update({
-      status: 'active',
-      verified_at: new Date().toISOString(),
-    }).eq('id', domainObj.id);
-
-    await supabase.from('store_profiles').update({
-      custom_domain: domainObj.domain,
-    }).eq('user_id', domainObj.user_id);
-
-    alert(`✅ تم تفعيل وربط الدومين (${domainObj.domain}) بالمتجر بنجاح!`);
-    loadSaaSCoreData();
-  };
-
-  // إنشاء بث إعلاني جماعي لجميع التجار
-  const handleCreateBroadcast = async (e) => {
-    e.preventDefault();
-    if (!newBroadcast.title || !newBroadcast.message) return;
-    await supabase.from('platform_broadcasts').insert([newBroadcast]);
-    setNewBroadcast({ title: '', message: '', banner_type: 'info' });
-    alert('📢 تم نشر الإعلان العام في لوحات تحكم كافة التجار!');
-    loadSaaSCoreData();
-  };
-
-  // الحسابات المالية للمنصة
-  const totalPlatformRevenue = invoices.reduce((sum, inv) => sum + (Number(inv.amount_paid) || 0), 0);
-  const activeMerchantsCount = merchants.filter(m => m.is_active && m.subscription_status === 'active').length;
-  const pendingMerchantsCount = merchants.filter(m => !m.is_active || m.subscription_status === 'pending').length;
-
-  const filteredMerchants = merchants.filter(m => {
-    const matchesSearch = (m.store_name || '').toLowerCase().includes(merchantSearch.toLowerCase()) ||
-                          (m.owner_name || '').toLowerCase().includes(merchantSearch.toLowerCase()) ||
-                          (m.phone || '').includes(merchantSearch);
-    const matchesStatus = merchantStatusFilter === 'all' || m.subscription_status === merchantStatusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredMerchants = merchants.filter(m =>
+    (m.store_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (m.owner_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (m.phone || '').includes(searchTerm)
+  );
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center font-sans" dir="rtl">
-        <div className="animate-pulse text-lg font-black flex items-center gap-3">
-          <span>👑</span>
-          <span>جاري تحميل منظومة Super Admin المركزية...</span>
-        </div>
+        <div className="animate-pulse text-lg font-bold">جاري تحميل لوحة السوبر أدمن المالية...</div>
       </div>
     );
   }
@@ -205,155 +113,83 @@ export default function SuperAdminExecutiveDashboard() {
   return (
     <div className="min-h-screen bg-[#070b14] text-white font-sans flex flex-col md:flex-row select-none" dir="rtl">
       
-      {/* 🧭 الشريط الجانبي القيادي للسوبر أدمن (Super Admin Executive Sidebar) */}
+      {/* القائمة الجانبية */}
       <aside className="w-full md:w-64 bg-[#0d1322] border-b md:border-b-0 md:border-l border-slate-800 p-5 flex flex-col justify-between shrink-0">
         <div className="space-y-6">
-          
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-black bg-gradient-to-r from-red-500 via-amber-400 to-emerald-400 bg-clip-text text-transparent">
-                NEXT ORDER
-              </span>
-              <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full font-black">
-                SUPER ADMIN
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-400">إدارة البنية التحتية والاشتراكات</p>
+          <div>
+            <span className="text-xl font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
+              NEXT ORDER
+            </span>
+            <p className="text-[10px] text-slate-400 mt-1">نظام المحفظة & 0.05$ لكل أوردر</p>
           </div>
 
-          <nav className="space-y-1 text-xs font-bold">
-            {[
-              { id: 'overview', label: 'الرئيسية والإحصائيات', icon: '📈' },
-              { id: 'merchants', label: `المتاجر والتجار (${merchants.length})`, icon: '🏪' },
-              { id: 'plans', label: 'خطط وباقات الاشتراك', icon: '💎' },
-              { id: 'domains', label: `الدومينات المخصصة (${domains.length})`, icon: '🌐' },
-              { id: 'invoices', label: `الفواتير والمقبوضات`, icon: '🧾' },
-              { id: 'broadcasts', label: 'الإعلانات الجماعية', icon: '📢' },
-              { id: 'orders_feed', label: 'بث الطلبات المباشر', icon: '📦' },
-              { id: 'settings', label: 'إعدادات المنصة', icon: '⚙️' },
-            ].map((nav) => (
-              <button
-                key={nav.id}
-                onClick={() => setActiveTab(nav.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl transition cursor-pointer ${
-                  activeTab === nav.id
-                    ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-lg'
-                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span>{nav.icon}</span>
-                  <span>{nav.label}</span>
-                </div>
-                {nav.id === 'merchants' && pendingMerchantsCount > 0 && (
-                  <span className="bg-amber-500 text-black text-[10px] font-black px-1.5 py-0.2 rounded-full">
-                    {pendingMerchantsCount}
-                  </span>
-                )}
-              </button>
-            ))}
+          <nav className="space-y-1.5 text-xs font-bold">
+            <button
+              onClick={() => setActiveTab('merchants')}
+              className={`w-full flex items-center gap-2.5 p-3 rounded-2xl transition cursor-pointer ${
+                activeTab === 'merchants' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800'
+              }`}
+            >
+              <span>🏪</span>
+              <span>المتاجر والمحافظ ({merchants.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('rates')}
+              className={`w-full flex items-center gap-2.5 p-3 rounded-2xl transition cursor-pointer ${
+                activeTab === 'rates' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800'
+              }`}
+            >
+              <span>💱</span>
+              <span>سعر الصرف والعمولة</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('ledger')}
+              className={`w-full flex items-center gap-2.5 p-3 rounded-2xl transition cursor-pointer ${
+                activeTab === 'ledger' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800'
+              }`}
+            >
+              <span>📜</span>
+              <span>سجل الحركات والخصومات</span>
+            </button>
           </nav>
-
         </div>
 
-        <div className="pt-4 border-t border-slate-800/80 space-y-2">
-          <button
-            onClick={() => {
-              const link = `${window.location.origin}/register`;
-              navigator.clipboard.writeText(link);
-              alert('📋 تم نسخ رابط تسجيل المشتركين:\n' + link);
-            }}
-            className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <span>🔗</span>
-            <span>نسخ رابط تسجيل التجار</span>
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            const link = `${window.location.origin}/register`;
+            navigator.clipboard.writeText(link);
+            alert('📋 تم نسخ رابط تسجيل التجار:\n' + link);
+          }}
+          className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition cursor-pointer"
+        >
+          🔗 نسخ رابط التسجيل
+        </button>
       </aside>
 
-      {/* 🖥️ المحتوى التنفيذي الرئيسي */}
-      <main className="flex-1 p-4 sm:p-8 overflow-y-auto space-y-6">
-        
-        {/* 1. لوحة المؤشرات المالية للمنصة (Platform Overview) */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-black text-white">المؤشرات الحيوية لمنصة NEXT ORDER</h2>
+      {/* المحتوى الرئيسي */}
+      <main className="flex-1 p-4 sm:p-8 space-y-6 overflow-y-auto">
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl">
-                <span className="text-xs text-slate-400 block mb-1">💰 إجمالي إيرادات الاشتراكات</span>
-                <span className="text-2xl font-black text-emerald-400">{totalPlatformRevenue.toLocaleString()} ج.م</span>
-              </div>
-              <div className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl">
-                <span className="text-xs text-slate-400 block mb-1">🟢 المتاجر النشطة والمفعلة</span>
-                <span className="text-2xl font-black text-cyan-400">{activeMerchantsCount} متجر</span>
-              </div>
-              <div className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl">
-                <span className="text-xs text-slate-400 block mb-1">⏳ متاجر بانتظار التفعيل (معلقة)</span>
-                <span className="text-2xl font-black text-amber-400">{pendingMerchantsCount} متجر</span>
-              </div>
-              <div className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl">
-                <span className="text-xs text-slate-400 block mb-1">📦 إجمالي عمليات الشراء المحققة</span>
-                <span className="text-2xl font-black text-indigo-400">{allOrders.length}+ طلب</span>
-              </div>
-            </div>
-
-            {/* آخر العمليات المباشرة */}
-            <div className="bg-[#0d1322] border border-slate-800 p-6 rounded-3xl space-y-4">
-              <h3 className="text-base font-black">أحدث فواتير الاشتراكات المحصلة</h3>
-              <div className="space-y-2">
-                {invoices.slice(0, 5).map(inv => (
-                  <div key={inv.id} className="p-3 bg-slate-900/60 rounded-xl flex justify-between items-center text-xs">
-                    <div>
-                      <strong className="text-white block">{inv.store_name}</strong>
-                      <span className="text-slate-400 font-mono">{inv.invoice_number} | {inv.plan_name}</span>
-                    </div>
-                    <div className="text-right">
-                      <strong className="text-emerald-400 block font-mono">{inv.amount_paid} ج.م</strong>
-                      <span className="text-slate-500 text-[10px]">{new Date(inv.created_at).toLocaleDateString('ar-EG')}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 2. إدارة المتاجر والتجار مع ميزة الـ Impersonation */}
+        {/* 1. إدارة المتاجر والمحافظ */}
         {activeTab === 'merchants' && (
           <div className="space-y-4">
-            <div className="bg-[#0d1322] p-5 rounded-3xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <div className="bg-[#0d1322] p-5 rounded-3xl border border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <h3 className="text-lg font-black">إدارة متاجر المنصة ({filteredMerchants.length})</h3>
-                <p className="text-xs text-slate-400">تحكم كامل، دخول مباشر لحساب التاجر، وتفعيل الاشتراكات</p>
+                <h2 className="text-lg font-black text-white">إدارة محافظ المتاجر ({filteredMerchants.length})</h2>
+                <p className="text-xs text-slate-400">شحن الرصيد ومتابعة استهلاك عمولة الطلبات (0.05$ لكل أوردر)</p>
               </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="بحث باسم المتجر أو المالك أو الهاتف..."
-                  value={merchantSearch}
-                  onChange={(e) => setMerchantSearch(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 text-xs p-2.5 rounded-xl w-60 text-white"
-                />
-                <select
-                  value={merchantStatusFilter}
-                  onChange={(e) => setMerchantStatusFilter(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 text-xs p-2.5 rounded-xl text-white"
-                >
-                  <option value="all">كل الحالات</option>
-                  <option value="active">نشط ومفعل</option>
-                  <option value="pending">قيد الانتظار</option>
-                  <option value="suspended">موقوف مؤقتاً</option>
-                  <option value="disabled">معطل</option>
-                </select>
-              </div>
+              <input
+                type="text"
+                placeholder="بحث باسم المتجر أو المالك..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-slate-900 border border-slate-700 text-xs p-2.5 rounded-xl w-60 text-white"
+              />
             </div>
 
             <div className="space-y-3">
               {filteredMerchants.map((m) => {
-                const isExpired = !m.subscription_ends_at || new Date(m.subscription_ends_at) < new Date();
-                const isActive = m.is_active && !isExpired && m.subscription_status === 'active';
+                const bal = Number(m.wallet_balance_usd || 0);
+                const ordersCapacity = Math.floor(bal / 0.05);
 
                 return (
                   <div key={m.id} className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl space-y-3 hover:border-slate-700 transition">
@@ -361,61 +197,41 @@ export default function SuperAdminExecutiveDashboard() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <strong className="text-base text-white">{m.store_name}</strong>
                         <span className="text-xs text-slate-400 font-mono">({m.store_slug})</span>
-                        
                         <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
-                          isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
+                          bal > 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'
                         }`}>
-                          {isActive ? '🟢 نشط' : m.subscription_status === 'suspended' ? '⏸️ موقوف' : '🟡 بانتظار التفعيل'}
+                          {bal > 0 ? '🟢 المتجر مفعل' : '🔴 المحفظة فارغة (معلق)'}
                         </span>
                       </div>
 
                       <div className="text-xs text-slate-400">
-                        الانتهاء: <strong className="text-amber-300 font-mono">{m.subscription_ends_at ? new Date(m.subscription_ends_at).toLocaleDateString('ar-EG') : 'لم يُحدد'}</strong>
+                        المالك: <strong className="text-white">{m.owner_name}</strong> ({m.phone})
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-slate-300 bg-slate-900/60 p-3 rounded-2xl">
-                      <div>صاحب المتجر: <strong className="text-white">{m.owner_name}</strong></div>
-                      <div>رقم الهاتف: <a href={`https://wa.me/${m.phone}`} target="_blank" className="text-emerald-400 font-mono underline" dir="ltr">{m.phone}</a></div>
-                      <div>المسدد: <strong className="text-emerald-400 font-bold">{m.amount_paid || 0} ج.م</strong></div>
-                      <div>الدومين: <strong className="text-cyan-400 font-mono">{m.custom_domain || 'دومين فرعي'}</strong></div>
+                      <div>رصيد المحفظة: <strong className="text-emerald-400 font-mono font-bold">{bal.toFixed(2)}$</strong> ({Math.round(bal * exchangeRate)} ج.م)</div>
+                      <div>يكفي حتى: <strong className="text-cyan-400 font-mono font-bold">{ordersCapacity} أوردر</strong></div>
+                      <div>أوردرات مخصومة: <strong className="text-amber-400 font-mono">{m.total_orders_billed || 0}</strong></div>
+                      <div>إجمالي ما شحنه: <strong className="text-white font-mono">{m.amount_paid || 0} ج.م</strong></div>
                     </div>
 
-                    {/* أزرار الإجراءات والـ Impersonation */}
-                    <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
-                      
-                      {/* 🔑 الدخول كتاجر */}
+                    <div className="flex justify-end gap-2 pt-1">
                       <button
-                        onClick={() => handleLoginAsMerchant(m)}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black shadow transition flex items-center gap-1.5 cursor-pointer"
-                        title="الدخول إلى متجر هذا التاجر فوراً لحل مشاكله أو ضبط إعداداته"
+                        onClick={() => handleLoginAs(m)}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition cursor-pointer"
                       >
-                        <span>🔑</span>
-                        <span>دخول كتاجر (Login As)</span>
+                        🔑 دخول كتاجر
                       </button>
-
-                      {/* تفعيل / تجديد */}
                       <button
-                        onClick={() => { setEditingMerchant(m); setCustomAmountPaid(m.amount_paid || '250'); }}
-                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                        onClick={() => {
+                          setRechargeModalMerchant(m);
+                          setChargeUsd(5.0);
+                          setChargeEgp(Math.round(5.0 * exchangeRate));
+                        }}
+                        className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow-lg transition cursor-pointer"
                       >
-                        🚀 تفعيل / تجديد
-                      </button>
-
-                      {/* إيقاف مؤقت */}
-                      <button
-                        onClick={() => handleToggleMerchantStatus(m, m.subscription_status === 'suspended' ? 'active' : 'suspended')}
-                        className="px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-xl text-xs font-bold transition cursor-pointer"
-                      >
-                        {m.subscription_status === 'suspended' ? 'تشغيل' : 'إيقاف مؤقت'}
-                      </button>
-
-                      {/* حذف نهائي */}
-                      <button
-                        onClick={() => handleDeleteMerchantFully(m)}
-                        className="px-3 py-2 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition cursor-pointer"
-                      >
-                        🗑️
+                        💳 شحن المحفظة
                       </button>
                     </div>
                   </div>
@@ -425,145 +241,62 @@ export default function SuperAdminExecutiveDashboard() {
           </div>
         )}
 
-        {/* 3. خطط وباقات الاشتراك (Plans Engine) */}
-        {activeTab === 'plans' && (
-          <div className="space-y-6 max-w-4xl">
+        {/* 2. ضبط أسعار الصرف والعمولة */}
+        {activeTab === 'rates' && (
+          <div className="bg-[#0d1322] border border-slate-800 p-6 rounded-3xl max-w-xl space-y-4">
+            <h3 className="text-base font-black">ضبط سعر الصرف والعمولة اللحظية</h3>
+            <p className="text-xs text-slate-400">سعر الدولار المعتمد لتحويل الـ 5$ عند الشحن ولحساب الـ 0.05$ لكل طلب</p>
+
             <div>
-              <h3 className="text-lg font-black">خطط وباقات اشتراك منصة NEXT ORDER</h3>
-              <p className="text-xs text-slate-400">تحديد حدود المنتجات والطلبات والأسعار لكل باقة</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {plans.map((p) => (
-                <div key={p.id} className="bg-[#0d1322] border border-slate-800 p-6 rounded-3xl space-y-4 relative">
-                  <div>
-                    <h4 className="text-base font-black text-white">{p.name}</h4>
-                    <div className="text-2xl font-black text-emerald-400 mt-1 font-mono">
-                      {p.price_egp} ج.م <span className="text-xs text-slate-500 font-normal">/ {p.price_usd}$ شهرياً</span>
-                    </div>
-                  </div>
-
-                  <ul className="text-xs text-slate-300 space-y-2 border-t border-slate-800 pt-3">
-                    <li>📦 أقصى عدد منتجات: <strong>{p.max_products}</strong></li>
-                    <li>📊 أقصى عدد أوردرات: <strong>{p.max_orders_per_month} شهرياً</strong></li>
-                    <li>🌐 ربط دومين مخصص: <strong>{p.allow_custom_domain ? '✅ متاح' : '❌ غير متاح'}</strong></li>
-                    <li>🎬 رفع فيديوهات للمنتج: <strong>{p.allow_video_uploads ? '✅ متاح' : '❌ غير متاح'}</strong></li>
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* 4. الدومينات المخصصة (Custom Domains Manager) */}
-        {activeTab === 'domains' && (
-          <div className="space-y-4 max-w-4xl">
-            <div>
-              <h3 className="text-lg font-black">طلبات فحص وربط الدومينات المخصصة</h3>
-              <p className="text-xs text-slate-400">التأكد من توجيه سجلات DNS وتفعيل الدومين لمتجر التاجر</p>
-            </div>
-
-            <div className="space-y-3">
-              {domains.length === 0 ? (
-                <div className="p-12 text-center text-slate-500 bg-[#0d1322] border border-slate-800 rounded-3xl">
-                  لا توجد طلبات دومين مخصص حالياً.
-                </div>
-              ) : (
-                domains.map((d) => (
-                  <div key={d.id} className="bg-[#0d1322] border border-slate-800 p-4 rounded-2xl flex justify-between items-center text-xs">
-                    <div>
-                      <strong className="text-cyan-400 font-mono text-sm block">{d.domain}</strong>
-                      <span className="text-slate-400">متجر: {d.store_slug} | الهدف: {d.dns_target}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-0.5 rounded-full font-bold ${
-                        d.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
-                      }`}>
-                        {d.status === 'active' ? 'مفعل ويعمل' : 'قيد الفحص'}
-                      </span>
-                      {d.status !== 'active' && (
-                        <button
-                          onClick={() => handleVerifyDomain(d)}
-                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold cursor-pointer"
-                        >
-                          اعتماد وتفعيل الدومين ✓
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* 5. الفواتير والتحصيلات (Platform Invoices) */}
-        {activeTab === 'invoices' && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-black">سجل المقبوضات والفواتير الصادرة</h3>
-            <div className="bg-[#0d1322] border border-slate-800 rounded-3xl overflow-hidden">
-              <table className="w-full text-right text-xs text-slate-300">
-                <thead className="bg-slate-900/80 text-slate-400 border-b border-slate-800">
-                  <tr>
-                    <th className="p-3.5">رقم الفاتورة</th>
-                    <th className="p-3.5">المتجر</th>
-                    <th className="p-3.5">الباقة</th>
-                    <th className="p-3.5">المبلغ المحول</th>
-                    <th className="p-3.5">تاريخ الإصدار</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {invoices.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-slate-900/40">
-                      <td className="p-3.5 font-mono text-cyan-400">{inv.invoice_number}</td>
-                      <td className="p-3.5 font-bold text-white">{inv.store_name}</td>
-                      <td className="p-3.5">{inv.plan_name}</td>
-                      <td className="p-3.5 text-emerald-400 font-black font-mono">{inv.amount_paid} ج.م</td>
-                      <td className="p-3.5 text-slate-400">{new Date(inv.created_at).toLocaleDateString('ar-EG')}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* 6. الإعلانات والتنبيهات الجماعية (Broadcasts) */}
-        {activeTab === 'broadcasts' && (
-          <div className="space-y-6 max-w-3xl">
-            <form onSubmit={handleCreateBroadcast} className="bg-[#0d1322] border border-slate-800 p-6 rounded-3xl space-y-4">
-              <h3 className="text-base font-black">إرسال إشعار / شريط تنبيهي لجميع التجار</h3>
-              
+              <label className="text-xs font-bold text-slate-300 block mb-1">سعر الدولار المعتمد بالجنيه المصري (USD/EGP)</label>
               <input
-                type="text"
-                required
-                placeholder="عنوان التنبيه (مثال: تحديث أمني جديد)"
-                value={newBroadcast.title}
-                onChange={(e) => setNewBroadcast({ ...newBroadcast, title: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white"
+                type="number"
+                value={exchangeRate}
+                onChange={(e) => setExchangeRate(Number(e.target.value))}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm font-bold text-emerald-400"
               />
+            </div>
 
-              <textarea
-                rows="3"
-                required
-                placeholder="نص الرسالة التي ستظهر في لوحة تحكم التجار..."
-                value={newBroadcast.message}
-                onChange={(e) => setNewBroadcast({ ...newBroadcast, message: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white"
-              ></textarea>
+            <div>
+              <label className="text-xs font-bold text-slate-300 block mb-1">العمولة لكل طلب ناجح بالدولار ($)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={orderFeeUsd}
+                onChange={(e) => setOrderFeeUsd(Number(e.target.value))}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm font-bold text-amber-400"
+              />
+              <span className="text-[11px] text-slate-500 mt-1 block">
+                تساوي حالياً: <strong>{(orderFeeUsd * exchangeRate).toFixed(2)} جنيه مصري</strong> لكل أوردر.
+              </span>
+            </div>
 
-              <button type="submit" className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold cursor-pointer">
-                نشر التنبيه الآن 📢
-              </button>
-            </form>
+            <button
+              onClick={handleUpdateExchangeRate}
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold cursor-pointer"
+            >
+              حفظ التحديث اللحظي 💾
+            </button>
+          </div>
+        )}
 
+        {/* 3. سجل حركات المحفظة والخصومات */}
+        {activeTab === 'ledger' && (
+          <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-5 space-y-4">
+            <h3 className="text-base font-black">سجل العمليات المالية والخصومات الحية</h3>
             <div className="space-y-2">
-              <h4 className="text-xs font-bold text-slate-400">الإعلانات السابقة المنشورة:</h4>
-              {broadcasts.map((b) => (
-                <div key={b.id} className="p-3 bg-[#0d1322] border border-slate-800 rounded-2xl text-xs space-y-1">
-                  <strong className="text-white block">{b.title}</strong>
-                  <p className="text-slate-400">{b.message}</p>
+              {transactions.map((t) => (
+                <div key={t.id} className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                  <div>
+                    <strong className="text-white block">{t.store_name}</strong>
+                    <span className="text-slate-400">{t.description}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className={`font-mono font-bold block ${t.type === 'deposit' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {t.type === 'deposit' ? `+${t.amount_usd}$` : `-${t.amount_usd}$`}
+                    </span>
+                    <span className="text-[10px] text-slate-500">{new Date(t.created_at).toLocaleDateString('ar-EG')}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -572,53 +305,62 @@ export default function SuperAdminExecutiveDashboard() {
 
       </main>
 
-      {/* نافذة التفعيل وتحديد الباقة وإصدار الفاتورة */}
-      {editingMerchant && (
+      {/* نافذة شحن محفظة التاجر */}
+      {rechargeModalMerchant && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleActivateMerchantWithInvoice} className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-4 shadow-2xl">
-            <h3 className="text-base font-black border-b border-slate-800 pb-3">
-              تفعيل اشتراك: {editingMerchant.store_name}
+          <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4">
+            <h3 className="text-base font-black border-b border-slate-800 pb-2">
+              شحن محفظة: {rechargeModalMerchant.store_name}
             </h3>
 
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-300">
-              قيمة الاشتراك الشهري: <strong>5 دولار أو ما يعادلها بالمصري</strong>.
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-400">
+              الرصيد الحالي: <strong>{Number(rechargeModalMerchant.wallet_balance_usd || 0).toFixed(2)}$</strong>
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">اختر الباقة</label>
-              <select
-                value={selectedPlanId}
-                onChange={(e) => setSelectedPlanId(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white"
-              >
-                {plans.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} - ({p.price_egp} ج.م)
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <label className="font-bold text-slate-300 block mb-1">المبلغ بالدولار ($)</label>
+                <input
+                  type="number"
+                  min="5"
+                  value={chargeUsd}
+                  onChange={(e) => {
+                    const u = Number(e.target.value);
+                    setChargeUsd(u);
+                    setChargeEgp(Math.round(u * exchangeRate));
+                  }}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 font-bold text-emerald-400"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-300 block mb-1">المعادل بالمصري (ج.م)</label>
+                <input
+                  type="number"
+                  value={chargeEgp}
+                  onChange={(e) => {
+                    const eg = Number(e.target.value);
+                    setChargeEgp(eg);
+                    setChargeUsd(Number((eg / exchangeRate).toFixed(2)));
+                  }}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 font-bold text-white"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">المبلغ المحول الفعلي (ج.م)</label>
-              <input
-                type="number"
-                value={customAmountPaid}
-                onChange={(e) => setCustomAmountPaid(e.target.value)}
-                placeholder="250"
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-emerald-400 font-bold"
-              />
+            <div className="text-[11px] text-slate-400 bg-slate-900/60 p-3 rounded-xl space-y-1">
+              <div>• عمولة الأوردر الواحد: <strong>{orderFeeUsd}$</strong> (~{(orderFeeUsd * exchangeRate).toFixed(2)} ج.م).</div>
+              <div>• سعة الشحن: <strong>{Math.floor(chargeUsd / orderFeeUsd)} أوردر</strong>.</div>
+              <div>• الرصيد المتبقي بنهاية الشهر يرحل تلقائياً دون أي فقد.</div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-              <button type="button" onClick={() => setEditingMerchant(null)} className="px-4 py-2 bg-slate-800 rounded-xl text-xs font-bold">
-                إلغاء
-              </button>
-              <button type="submit" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold">
-                تأكيد التفعيل وإصدار الفاتورة 🚀
+              <button onClick={() => setRechargeModalMerchant(null)} className="px-4 py-2 bg-slate-800 rounded-xl text-xs font-bold">إلغاء</button>
+              <button onClick={handleConfirmRecharge} className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 font-black text-xs rounded-xl shadow-lg">
+                تأكيد الشحن والتفعيل 🚀
               </button>
             </div>
-          </form>
+          </div>
         </div>
       )}
 
