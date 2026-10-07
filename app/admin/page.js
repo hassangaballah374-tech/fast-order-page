@@ -27,7 +27,8 @@ export default function SuperAdminExecutiveMaster() {
 
   const [products, setProducts] = useState([]);
   const [showProductModal, setShowProductModal] = useState(false);
-  const [productForm, setProductForm] = useState({ name: '', price: '', stock: 20 });
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [productForm, setProductForm] = useState({ name: '', price: '', stock: 20, image_url: '' });
 
   const [domains, setDomains] = useState([]);
   const [plans, setPlans] = useState([]);
@@ -73,8 +74,17 @@ export default function SuperAdminExecutiveMaster() {
         const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
         if (oData) setAllOrders(oData);
 
+        // جلب المنتجات ومعالجة الصور بشكل مرن
         const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-        if (pData) setProducts(pData);
+        if (pData) {
+          const formatted = pData.map(p => {
+            let img = '';
+            if (Array.isArray(p.images) && p.images.length > 0) img = p.images[0];
+            else if (typeof p.images === 'string') img = p.images;
+            return { ...p, primary_image: img };
+          });
+          setProducts(formatted);
+        }
 
         const { data: dData } = await supabase.from('custom_domain_requests').select('*').order('created_at', { ascending: false });
         if (dData) setDomains(dData);
@@ -105,6 +115,77 @@ export default function SuperAdminExecutiveMaster() {
     localStorage.setItem('merchant_user_id', merchant.user_id);
     localStorage.setItem('is_super_admin', 'true');
     router.push('/dashboard');
+  };
+
+  // ⚡ استرداد وربط المنتجات القديمة بمتجر الأدمن الرئيسي دون الحاجة لكتابة SQL
+  const handleClaimAllProducts = async () => {
+    let targetStore = merchants[0];
+    if (!targetStore) {
+      const { data: newSt } = await supabase.from('store_profiles').insert([{
+        store_name: 'متجري الأصلي المعتمد',
+        store_slug: 'main-store',
+        owner_name: 'المدير العام',
+        phone: '01000000000',
+        wallet_balance_usd: 50.0,
+        is_active: true,
+        plan_type: 'unlimited_monthly',
+      }]).select().single();
+      targetStore = newSt;
+    }
+
+    const targetUid = targetStore?.user_id;
+    const targetSlug = targetStore?.store_slug || 'main-store';
+
+    if (!targetUid) {
+      alert('تعذر تحديد معرف المتجر المستهدف.');
+      return;
+    }
+
+    const { error } = await supabase.from('products').update({
+      user_id: targetUid,
+      store_slug: targetSlug,
+    }).neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (error) {
+      alert('خطأ أثناء ربط المنتجات: ' + error.message);
+      return;
+    }
+
+    localStorage.setItem('merchant_user_id', targetUid);
+    localStorage.setItem('is_super_admin', 'true');
+
+    alert(`✅ تم ربط جميع المنتجات بنجاح بالمتجر (${targetStore.store_name})! يمكنك الآن تعديلها كأدمن أو الدخول لإدارتها كتاجر.`);
+    loadAllMasterData();
+  };
+
+  // حفظ أو تعديل منتج من لوحة الأدمن
+  const handleSaveProductFromAdmin = async (e) => {
+    e.preventDefault();
+    if (!productForm.name || !productForm.price) return alert('يرجى كتابة الاسم والسعر');
+
+    const payload = {
+      name: productForm.name,
+      price: Number(productForm.price),
+      stock: Number(productForm.stock) || 20,
+      images: productForm.image_url ? [productForm.image_url] : [],
+    };
+
+    if (editingProduct) {
+      await supabase.from('products').update(payload).eq('id', editingProduct.id);
+      alert('✅ تم تعديل المنتج بنجاح!');
+    } else {
+      const defaultStore = merchants[0];
+      await supabase.from('products').insert([{
+        ...payload,
+        user_id: defaultStore ? defaultStore.user_id : null,
+        store_slug: defaultStore ? defaultStore.store_slug : 'main-store',
+      }]);
+      alert('✅ تم إضافة المنتج بنجاح!');
+    }
+
+    setShowProductModal(false);
+    setEditingProduct(null);
+    loadAllMasterData();
   };
 
   // شحن محفظة التاجر وتفعيل متجره
@@ -266,7 +347,7 @@ export default function SuperAdminExecutiveMaster() {
               { id: 'overview', label: 'الرئيسية والمؤشرات', icon: '📊' },
               { id: 'merchants', label: `المتاجر والتجار (${merchants.length})`, icon: '🏪', badge: pendingClients.length },
               { id: 'orders', label: `كافة الطلبات (${allOrders.length})`, icon: '📦' },
-              { id: 'products', label: `المنتجات العامة (${products.length})`, icon: '🛍️' },
+              { id: 'products', label: `المنتجات والمخزون (${products.length})`, icon: '🛍️' },
               { id: 'platform_policies', label: 'سياسات المنصة وتواصلنا', icon: '📜' },
               { id: 'rates', label: 'سعر الصرف والعمولة (0.05$)', icon: '💱' },
               { id: 'domains', label: `الدومينات المخصصة (${domains.length})`, icon: '🌐' },
@@ -298,15 +379,24 @@ export default function SuperAdminExecutiveMaster() {
           </nav>
         </div>
 
-        <button
-          onClick={() => {
-            navigator.clipboard.writeText(`${window.location.origin}/register`);
-            alert('📋 تم نسخ رابط تسجيل التجار:\n' + `${window.location.origin}/register`);
-          }}
-          className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold rounded-xl transition cursor-pointer"
-        >
-          🔗 نسخ رابط تسجيل التجار
-        </button>
+        <div className="space-y-2 pt-4 border-t border-slate-800">
+          <button
+            onClick={handleClaimAllProducts}
+            className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 text-black text-xs font-black rounded-xl shadow-lg transition cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            <span>⚡</span>
+            <span>ربط واسترداد المنتجات القديمة</span>
+          </button>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/register`);
+              alert('📋 تم نسخ رابط تسجيل التجار:\n' + `${window.location.origin}/register`);
+            }}
+            className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold rounded-xl transition cursor-pointer"
+          >
+            🔗 نسخ رابط تسجيل التجار
+          </button>
+        </div>
       </aside>
 
       {/* 🖥️ المحتوى */}
@@ -465,20 +555,78 @@ export default function SuperAdminExecutiveMaster() {
           </div>
         )}
 
-        {/* 4. المنتجات */}
+        {/* 4. المنتجات: عرض تفصيلي كامل مع إمكانية التعديل السريع للصور والأسعار والمخزون */}
         {activeTab === 'products' && (
           <div className="space-y-4">
             <div className="bg-[#0d1322] p-5 rounded-3xl border border-slate-800 flex justify-between items-center">
-              <h2 className="text-lg font-black text-white">المنتجات العامة ({products.length})</h2>
-              <button onClick={() => setShowProductModal(true)} className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">
-                ➕ إضافة منتج عام
-              </button>
+              <div>
+                <h2 className="text-lg font-black text-white">المنتجات في المنظومة ({products.length})</h2>
+                <p className="text-xs text-slate-400">إدارة، تسعير، وتعديل الصور والمخزون لكافة المنتجات</p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleClaimAllProducts}
+                  className="px-3.5 py-2 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-black cursor-pointer"
+                >
+                  ⚡ ربط المنتجات القديمة
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingProduct(null);
+                    setProductForm({ name: '', price: '', stock: 20, image_url: '' });
+                    setShowProductModal(true);
+                  }}
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  ➕ إضافة منتج جديد
+                </button>
+              </div>
             </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {products.map(p => (
-                <div key={p.id} className="p-4 bg-[#0d1322] border border-slate-800 rounded-2xl space-y-2">
-                  <h4 className="font-bold text-white text-sm">{p.name}</h4>
-                  <span className="text-emerald-400 font-bold block">{p.price} ج.م</span>
+                <div key={p.id} className="p-4 bg-[#0d1322] border border-slate-800 rounded-2xl space-y-3">
+                  <div className="w-full h-40 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center border border-slate-800">
+                    {p.primary_image ? (
+                      <img src={p.primary_image} alt={p.name} className="w-full h-full object-contain p-2" />
+                    ) : (
+                      <span className="text-3xl">📦</span>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-white text-sm truncate">{p.name}</h4>
+                    <div className="flex justify-between items-center text-xs mt-1">
+                      <span className="text-emerald-400 font-bold font-mono text-base">{p.price} ج.م</span>
+                      <span className="text-slate-400 bg-slate-900 px-2 py-0.5 rounded-lg">المخزون: {p.stock || 0}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-2 border-t border-slate-800 text-xs">
+                    <button
+                      onClick={() => {
+                        setEditingProduct(p);
+                        setProductForm({
+                          name: p.name,
+                          price: p.price,
+                          stock: p.stock || 20,
+                          image_url: p.primary_image || '',
+                        });
+                        setShowProductModal(true);
+                      }}
+                      className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-bold cursor-pointer"
+                    >
+                      تعديل ✏️
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`هل أنت متأكد من حذف المنتج: ${p.name}؟`)) return;
+                        await supabase.from('products').delete().eq('id', p.id);
+                        loadAllMasterData();
+                      }}
+                      className="px-3 py-1.5 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white rounded-lg font-bold cursor-pointer"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -610,22 +758,66 @@ export default function SuperAdminExecutiveMaster() {
         </div>
       )}
 
-      {/* نافذة إضافة منتج عام */}
+      {/* نافذة إضافة وتعديل المنتج من السوبر أدمن */}
       {showProductModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-3">
-            <h3 className="text-base font-black border-b border-slate-800 pb-2">إضافة منتج عام</h3>
-            <input type="text" placeholder="اسم المنتج" value={productForm.name} onChange={(e) => setProductForm({ ...productForm, name: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white" />
-            <input type="number" placeholder="السعر (ج.م)" value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white" />
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setShowProductModal(false)} className="px-4 py-2 bg-slate-800 rounded-xl text-xs font-bold">إلغاء</button>
-              <button onClick={async () => {
-                await supabase.from('products').insert([{ name: productForm.name, price: Number(productForm.price) }]);
-                setShowProductModal(false);
-                loadAllMasterData();
-              }} className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold">حفظ</button>
+          <form onSubmit={handleSaveProductFromAdmin} className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h3 className="text-base font-black">
+                {editingProduct ? `تعديل: ${editingProduct.name}` : 'إضافة منتج جديد'}
+              </h3>
+              <button type="button" onClick={() => setShowProductModal(false)} className="text-slate-400 hover:text-white">✕</button>
             </div>
-          </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-400 block mb-1">اسم المنتج</label>
+              <input
+                type="text"
+                required
+                value={productForm.name}
+                onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs font-bold text-slate-400 block mb-1">سعر البيع (ج.م)</label>
+                <input
+                  type="number"
+                  required
+                  value={productForm.price}
+                  onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-emerald-400 font-bold"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-400 block mb-1">المخزون المتوفر</label>
+                <input
+                  type="number"
+                  value={productForm.stock}
+                  onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-400 block mb-1">رابط صورة المنتج (URL)</label>
+              <input
+                type="url"
+                placeholder="https://..."
+                value={productForm.image_url}
+                onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white font-mono"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
+              <button type="button" onClick={() => setShowProductModal(false)} className="px-4 py-2 bg-slate-800 rounded-xl text-xs font-bold">إلغاء</button>
+              <button type="submit" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black">حفظ التعديلات ✓</button>
+            </div>
+          </form>
         </div>
       )}
 
