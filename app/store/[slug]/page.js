@@ -2,10 +2,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
+import { useApp } from '../../../context/AppContext';
 
 export default function PublicStoreCheckoutPage() {
   const { slug } = useParams();
   const router = useRouter();
+  const { lang, theme, toggleLanguage, toggleTheme } = useApp();
+  const isDark = theme === 'dark';
 
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState(null);
@@ -15,14 +18,12 @@ export default function PublicStoreCheckoutPage() {
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // اختيارات العميل
   const [selectedBundleTier, setSelectedBundleTier] = useState(1);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [currentDynamicUnitPrice, setCurrentDynamicUnitPrice] = useState(0);
 
-  // فورم الشراء
   const [orderForm, setOrderForm] = useState({
     customerName: '',
     phone: '',
@@ -33,8 +34,6 @@ export default function PublicStoreCheckoutPage() {
   const [shippingCost, setShippingCost] = useState(50);
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [orderSuccessData, setOrderSuccessData] = useState(null);
-
-  // مودال السياسات المنبثق للعميل (About / Return / Privacy / Contact)
   const [activePolicyModal, setActivePolicyModal] = useState(null);
 
   const governorates = [
@@ -60,14 +59,12 @@ export default function PublicStoreCheckoutPage() {
     setLoading(true);
     try {
       if (supabase) {
-        // 1. جلب بروفايل المتجر بالـ Slug
         let { data: store } = await supabase
           .from('store_profiles')
           .select('*')
           .eq('store_slug', slug)
           .maybeSingle();
 
-        // حل احتياطي: جلب أول متجر مسجل إن لم يُعثر على الـ slug
         if (!store) {
           const { data: firstStore } = await supabase.from('store_profiles').select('*').limit(1).maybeSingle();
           if (firstStore) store = firstStore;
@@ -79,7 +76,6 @@ export default function PublicStoreCheckoutPage() {
         }
         setStoreData(store);
 
-        // 2. جلب شعار منصة NEXT ORDER الرسمي للمشتري
         const { data: platSettings } = await supabase.from('store_settings').select('store_logo').limit(1).maybeSingle();
         if (platSettings?.store_logo) setPlatformLogo(platSettings.store_logo);
 
@@ -93,7 +89,6 @@ export default function PublicStoreCheckoutPage() {
           setShippingRates(map);
         }
 
-        // 3. جلب منتجات المتجر بربط مزدوج ومحمي
         const { data: pData } = await supabase
           .from('products')
           .select('*')
@@ -136,7 +131,6 @@ export default function PublicStoreCheckoutPage() {
     setLoading(false);
   }
 
-  // تحديث السعر الفردي بناءً على المتغير المختار من مصفوفة التاجر المركبة
   useEffect(() => {
     if (!selectedProduct) return;
     if (selectedProduct.variants_matrix?.length && selectedColor && selectedSize) {
@@ -149,7 +143,6 @@ export default function PublicStoreCheckoutPage() {
     setCurrentDynamicUnitPrice(Number(selectedProduct.price));
   }, [selectedColor, selectedSize, selectedProduct]);
 
-  // حساب أسعار عروض الـ Upsell
   const getPricing = () => {
     const unitPrice = currentDynamicUnitPrice || Number(selectedProduct?.price || 0);
     let qty = selectedBundleTier;
@@ -174,30 +167,27 @@ export default function PublicStoreCheckoutPage() {
 
     const phoneClean = orderForm.phone.trim();
     if (!/^01[0125][0-9]{8}$/.test(phoneClean)) {
-      alert('يرجى كتابة رقم هاتف مصري صحيح يبدأ بـ 01.');
+      alert(lang === 'ar' ? 'يرجى كتابة رقم هاتف مصري صحيح يبدأ بـ 01.' : 'Please enter a valid Egyptian mobile number (starts with 01)');
       return;
     }
 
     setSubmittingOrder(true);
     try {
-      // 1. فحص البلاك ليست
       const { data: blocked } = await supabase.from('blacklist').select('id').eq('user_id', storeData.user_id).eq('phone', phoneClean).maybeSingle();
       if (blocked) {
-        alert('عذراً، لا يمكن إتمام الطلب في الوقت الحالي.');
+        alert(lang === 'ar' ? 'عذراً، لا يمكن إتمام الطلب في الوقت الحالي.' : 'Sorry, order cannot be placed right now.');
         setSubmittingOrder(false);
         return;
       }
 
-      // 2. منع الطلب المكرر (خلال دقيقتين)
       const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
       const { data: recentOrder } = await supabase.from('orders').select('id').eq('user_id', storeData.user_id).eq('phone', phoneClean).gt('created_at', twoMinutesAgo).maybeSingle();
       if (recentOrder) {
-        alert('⚠️ تم تسجيل طلبك بالفعل منذ قليل! سنتواصل معك هاتفياً.');
+        alert(lang === 'ar' ? '⚠️ تم تسجيل طلبك بالفعل منذ قليل! سنتواصل معك هاتفياً.' : '⚠️ You already placed an order recently! We will contact you.');
         setSubmittingOrder(false);
         return;
       }
 
-      // 3. التحقق من نوع الاشتراك: هل المتجر على الباقة الشهرية المفتوحة وسارية؟
       const isUnlimitedActive = 
         storeData.plan_type === 'unlimited_monthly' && 
         storeData.unlimited_ends_at && 
@@ -205,14 +195,12 @@ export default function PublicStoreCheckoutPage() {
 
       const currentWallet = Number(storeData.wallet_balance_usd || 0);
 
-      // إذا لم يكن على الباقة المفتوحة، يجب ألا يقل رصيد المحفظة عن 0.05$
       if (!isUnlimitedActive && currentWallet < 0.05) {
-        alert('عذراً، المتجر غير متاح لاستقبال الطلبات حالياً بسبب صيانة المحفظة.');
+        alert(lang === 'ar' ? 'عذراً، المتجر غير متاح لاستقبال الطلبات حالياً بسبب صيانة المحفظة.' : 'Store temporarily unavailable for orders.');
         setSubmittingOrder(false);
         return;
       }
 
-      // 4. إدراج الأوردر
       const orderPayload = {
         user_id: storeData.user_id,
         customer_name: orderForm.customerName.trim(),
@@ -229,7 +217,6 @@ export default function PublicStoreCheckoutPage() {
       const { data: created, error } = await supabase.from('orders').insert([orderPayload]).select().single();
       if (error) throw error;
 
-      // 5. الخصم المالي: إذا كان استهلاك محفظة يُخصم 0.05$، وإذا كانت الباقة مفتوحة لا يُخصم أي سنت
       if (!isUnlimitedActive) {
         const { data: rateData } = await supabase.from('platform_exchange_rates').select('*').eq('id', 1).single();
         const usdRate = Number(rateData?.usd_to_egp || 50.0);
@@ -261,26 +248,32 @@ export default function PublicStoreCheckoutPage() {
 
       setOrderSuccessData({ ...orderPayload, orderId: created?.id ? created.id.slice(0, 8).toUpperCase() : 'ORD-' + Date.now().toString().slice(-6) });
     } catch (err) {
-      alert('خطأ أثناء إرسال الطلب: ' + err.message);
+      alert('Order Error: ' + err.message);
     }
     setSubmittingOrder(false);
   };
 
-  if (loading) return <div className="min-h-screen bg-[#0b0f19] text-white flex items-center justify-center font-sans">جاري فتح المتجر...</div>;
+  if (loading) return <div className={`min-h-screen flex items-center justify-center font-sans ${isDark ? 'bg-[#0b0f19] text-white' : 'bg-slate-100 text-black'}`}>{lang === 'ar' ? 'جاري فتح المتجر...' : 'Loading Storefront...'}</div>;
 
   if (orderSuccessData) {
     return (
-      <div className="min-h-screen bg-[#0b0f19] text-white flex items-center justify-center p-4 font-sans" dir="rtl">
-        <div className="max-w-md w-full bg-[#111827] border border-emerald-500/30 p-8 rounded-3xl text-center space-y-4">
+      <div className={`min-h-screen flex items-center justify-center p-4 font-sans ${isDark ? 'bg-[#0b0f19] text-white' : 'bg-slate-100 text-black'}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+        <div className={`max-w-md w-full border border-emerald-500/30 p-8 rounded-3xl text-center space-y-4 ${isDark ? 'bg-[#111827]' : 'bg-white shadow-xl'}`}>
           <div className="text-4xl text-emerald-400">✓</div>
-          <h2 className="text-xl font-black">تم تأكيد طلبك بنجاح!</h2>
-          <p className="text-xs text-slate-400">شكراً لطلبك من متجر <strong>{storeData?.store_name}</strong> تحت إشراف التاجر <strong>{storeData?.owner_name}</strong>.</p>
-          <div className="bg-slate-900 p-4 rounded-xl text-xs text-right space-y-2">
-            <div>كود الطلب: <strong className="text-white font-mono">{orderSuccessData.orderId}</strong></div>
-            <div>المنتج: <strong className="text-white">{orderSuccessData.product_name}</strong></div>
-            <div>الإجمالي عند الاستلام: <strong className="text-emerald-400 font-bold">{orderSuccessData.total_amount} ج.م</strong></div>
+          <h2 className="text-xl font-black">{lang === 'ar' ? 'تم تأكيد طلبك بنجاح!' : 'Order Placed Successfully!'}</h2>
+          <p className="text-xs text-slate-400">
+            {lang === 'ar' 
+              ? `شكراً لطلبك من متجر ${storeData?.store_name} تحت إشراف التاجر ${storeData?.owner_name}.`
+              : `Thank you for ordering from ${storeData?.store_name}.`}
+          </p>
+          <div className={`p-4 rounded-xl text-xs space-y-2 ${isDark ? 'bg-slate-900 text-slate-300' : 'bg-slate-50 text-slate-700'}`}>
+            <div>{lang === 'ar' ? 'كود الطلب:' : 'Order Code:'} <strong className="font-mono">{orderSuccessData.orderId}</strong></div>
+            <div>{lang === 'ar' ? 'المنتج:' : 'Item:'} <strong>{orderSuccessData.product_name}</strong></div>
+            <div>{lang === 'ar' ? 'الإجمالي عند الاستلام:' : 'Total COD:'} <strong className="text-emerald-400 font-bold">{orderSuccessData.total_amount} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong></div>
           </div>
-          <button onClick={() => { setOrderSuccessData(null); setSelectedBundleTier(1); }} className="w-full py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold cursor-pointer">العودة للمتجر</button>
+          <button onClick={() => { setOrderSuccessData(null); setSelectedBundleTier(1); }} className="w-full py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold cursor-pointer">
+            {lang === 'ar' ? 'العودة للمتجر' : 'Back to Store'}
+          </button>
         </div>
       </div>
     );
@@ -292,40 +285,43 @@ export default function PublicStoreCheckoutPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-white font-sans pb-24 select-none relative" dir="rtl">
+    <div className={`min-h-screen font-sans pb-24 select-none relative transition-colors ${
+      isDark ? 'bg-[#0b0f19] text-white' : 'bg-slate-100 text-slate-900'
+    }`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 👑 شريط عائم دائم ومحمى للأدمن للتبديل والرجوع من أي صفحة متجر */}
+      {/* 👑 شريط عائم دائم للأدمن للتبديل والرجوع من أي صفحة متجر */}
       <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 bg-slate-900/95 border-2 border-amber-500/80 p-2 rounded-2xl shadow-2xl backdrop-blur-md">
         <div className="text-[11px] font-black text-amber-400 px-2 hidden sm:block">
-          👑 وضع الإدارة
+          👑 {lang === 'ar' ? 'وضع الإدارة' : 'Admin Mode'}
         </div>
         <button
           onClick={() => router.push('/dashboard')}
           className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition cursor-pointer"
         >
-          لوحة التاجر
+          {lang === 'ar' ? 'لوحة التاجر' : 'Merchant Dashboard'}
         </button>
         <button
           onClick={() => {
             localStorage.setItem('is_super_admin', 'true');
             router.push('/admin');
           }}
-          className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black text-xs font-black rounded-xl shadow transition cursor-pointer flex items-center gap-1"
+          className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black text-xs font-black rounded-xl shadow transition cursor-pointer flex items-center gap-1"
         >
           <span>⬅</span>
-          <span>الرجوع للسوبر أدمن</span>
+          <span>{lang === 'ar' ? 'الرجوع للسوبر أدمن' : 'Super Admin'}</span>
         </button>
       </div>
 
       {/* الشريط الإعلاني */}
       <div className="bg-emerald-600 text-white text-[11px] font-black py-2 px-4 text-center">
-        {storeSettings?.announcement_text || '🚚 شحن لجميع المحافظات والدفع عند الاستلام بعد المعاينة!'}
+        {storeSettings?.announcement_text || (lang === 'ar' ? '🚚 شحن لجميع المحافظات والدفع عند الاستلام بعد المعاينة!' : '🚚 Fast shipping & Cash on Delivery across Egypt!')}
       </div>
 
-      {/* الترويسة العلوية للزبون مع إظهار اسم التاجر وشعار المنصة الرسمي NEXT ORDER */}
-      <header className="bg-[#111827] border-b border-slate-800 px-4 sm:px-8 py-3.5 sticky top-0 z-40 backdrop-blur-md bg-opacity-95 shadow-sm">
+      {/* الترويسة العلوية للزبون */}
+      <header className={`border-b px-4 sm:px-8 py-3.5 sticky top-0 z-40 backdrop-blur-md bg-opacity-95 shadow-sm transition-colors ${
+        isDark ? 'bg-[#111827] border-slate-800' : 'bg-white border-slate-200'
+      }`}>
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          
           <div className="flex items-center gap-3">
             {storeSettings?.store_logo ? (
               <img src={storeSettings.store_logo} alt="Logo" className="w-10 h-10 rounded-xl object-contain bg-white p-0.5 border border-slate-700 shadow-sm" />
@@ -335,36 +331,28 @@ export default function PublicStoreCheckoutPage() {
               </div>
             )}
             <div>
-              <h1 className="text-base font-black text-white leading-tight">{storeData?.store_name}</h1>
-              <p className="text-[11px] text-emerald-400 font-bold">بإدارة التاجر المعتمد: {storeData?.owner_name || 'التاجر'}</p>
+              <h1 className="text-base font-black leading-tight">{storeData?.store_name}</h1>
+              <p className="text-[11px] text-emerald-400 font-bold">{lang === 'ar' ? 'التاجر المعتمد:' : 'Certified Merchant:'} {storeData?.owner_name || 'Owner'}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pl-1 border-r border-slate-800 pr-3">
-            <span className="text-[10px] text-slate-400 font-bold hidden sm:inline">منظومة موثقة عبر</span>
-            {platformLogo ? (
-              <img src={platformLogo} alt="NEXT ORDER" className="h-8 max-w-[100px] object-contain rounded-lg bg-white/5 p-1 border border-slate-800" />
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-emerald-400 to-teal-300 text-black font-black flex items-center justify-center text-[10px]">
-                  NO
-                </div>
-                <span className="text-xs font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
-                  NEXT ORDER
-                </span>
-              </div>
-            )}
+          <div className="flex items-center gap-2">
+            <button onClick={toggleLanguage} className="px-2.5 py-1 bg-slate-800 text-white rounded-lg text-[10px] font-bold border border-slate-700">
+              🌐 {lang === 'ar' ? 'EN' : 'AR'}
+            </button>
+            <button onClick={toggleTheme} className="px-2.5 py-1 bg-slate-800 text-white rounded-lg text-[10px] font-bold border border-slate-700">
+              {isDark ? '☀️' : '🌙'}
+            </button>
           </div>
-
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
 
-        {/* 🌟 شبكة اختيار منتجات المتجر الأخرى */}
+        {/* شبكة اختيار منتجات المتجر الأخرى */}
         {products.length > 1 && (
           <div className="space-y-2">
-            <span className="text-xs font-bold text-slate-400">منتجات أخرى متوفرة في المتجر:</span>
+            <span className="text-xs font-bold text-slate-400">{lang === 'ar' ? 'منتجات أخرى متوفرة في المتجر:' : 'Other Available Products:'}</span>
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
               {products.map((p) => {
                 const thumb = Array.isArray(p.images) && p.images.length > 0 ? p.images[0] : '';
@@ -382,15 +370,15 @@ export default function PublicStoreCheckoutPage() {
                     className={`flex items-center gap-2.5 p-2 pr-3 rounded-2xl border transition shrink-0 cursor-pointer ${
                       selectedProduct?.id === p.id
                         ? 'border-emerald-500 bg-emerald-500/10'
-                        : 'border-slate-800 bg-[#111827] opacity-70 hover:opacity-100'
+                        : isDark ? 'border-slate-800 bg-[#111827] opacity-70 hover:opacity-100' : 'border-slate-200 bg-white opacity-80 hover:opacity-100 shadow-sm'
                     }`}
                   >
                     <div className="w-9 h-9 rounded-xl bg-slate-900 overflow-hidden flex items-center justify-center shrink-0">
                       {thumb ? <img src={thumb} className="w-full h-full object-cover" alt={p.name} /> : '📦'}
                     </div>
-                    <div className="text-right">
-                      <span className="text-xs font-bold text-white block truncate max-w-[120px]">{p.name}</span>
-                      <span className="text-[10px] text-emerald-400 font-mono font-bold">{p.price} ج.م</span>
+                    <div className={lang === 'ar' ? 'text-right' : 'text-left'}>
+                      <span className="text-xs font-bold block truncate max-w-[120px]">{p.name}</span>
+                      <span className="text-[10px] text-emerald-400 font-mono font-bold">{p.price} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
                     </div>
                   </button>
                 );
@@ -404,7 +392,9 @@ export default function PublicStoreCheckoutPage() {
             
             {/* المعرض */}
             <div className="lg:col-span-6 space-y-3">
-              <div className="w-full h-80 sm:h-[400px] bg-[#111827] border border-slate-800 rounded-3xl overflow-hidden flex items-center justify-center">
+              <div className={`w-full h-80 sm:h-[400px] border rounded-3xl overflow-hidden flex items-center justify-center ${
+                isDark ? 'bg-[#111827] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+              }`}>
                 {allMedia[activeMediaIndex]?.type === 'video' ? (
                   <video src={allMedia[activeMediaIndex].url} controls autoPlay className="w-full h-full object-cover" />
                 ) : allMedia[activeMediaIndex]?.url ? (
@@ -428,18 +418,18 @@ export default function PublicStoreCheckoutPage() {
             {/* تفاصيل المنتج والـ Upsell وفورم الشراء */}
             <div className="lg:col-span-6 space-y-4">
               <div>
-                <span className="text-xs text-emerald-400 font-bold block mb-1">التاجر المسؤول: {storeData?.owner_name}</span>
+                <span className="text-xs text-emerald-400 font-bold block mb-1">{lang === 'ar' ? 'التاجر المسؤول:' : 'Merchant:'} {storeData?.owner_name}</span>
                 <h2 className="text-xl font-black">{selectedProduct.name}</h2>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="text-2xl font-black text-emerald-400">{currentDynamicUnitPrice} ج.م</span>
-                  {selectedProduct.original_price > 0 && <span className="text-slate-500 line-through text-sm">{selectedProduct.original_price} ج.م</span>}
+                  <span className="text-2xl font-black text-emerald-400">{currentDynamicUnitPrice} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
+                  {selectedProduct.original_price > 0 && <span className="text-slate-500 line-through text-sm">{selectedProduct.original_price} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>}
                 </div>
               </div>
 
-              {/* اختيار اللون */}
+              {/* الألوان */}
               {selectedProduct.colors?.length > 0 && (
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1.5">اختر اللون:</label>
+                  <label className="text-xs font-bold text-slate-400 block mb-1.5">{lang === 'ar' ? 'اختر اللون:' : 'Select Color:'}</label>
                   <div className="flex gap-2">
                     {selectedProduct.colors.map((c, i) => (
                       <button
@@ -455,10 +445,10 @@ export default function PublicStoreCheckoutPage() {
                 </div>
               )}
 
-              {/* اختيار المقاس */}
+              {/* المقاسات */}
               {selectedProduct.sizes?.length > 0 && (
                 <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1.5">اختر المقاس:</label>
+                  <label className="text-xs font-bold text-slate-400 block mb-1.5">{lang === 'ar' ? 'اختر المقاس:' : 'Select Size:'}</label>
                   <div className="flex gap-2">
                     {selectedProduct.sizes.map((s, i) => (
                       <button
@@ -476,42 +466,42 @@ export default function PublicStoreCheckoutPage() {
 
               {/* عروض الكميات Upsell */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 block">اختر العرض الأفضل لك ووفر:</label>
+                <label className="text-xs font-bold text-slate-400 block">{lang === 'ar' ? 'اختر العرض الأفضل لك ووفر:' : 'Select Quantity & Save:'}</label>
                 <div className="grid grid-cols-3 gap-2">
-                  <div onClick={() => setSelectedBundleTier(1)} className={`p-3 rounded-2xl border cursor-pointer text-center ${selectedBundleTier === 1 ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-[#111827]'}`}>
-                    <span className="text-xs font-bold block">قطعة</span>
-                    <strong className="text-emerald-400 text-xs font-mono">{currentDynamicUnitPrice} ج.م</strong>
+                  <div onClick={() => setSelectedBundleTier(1)} className={`p-3 rounded-2xl border cursor-pointer text-center ${selectedBundleTier === 1 ? 'border-emerald-500 bg-emerald-500/10' : isDark ? 'border-slate-800 bg-[#111827]' : 'border-slate-200 bg-white shadow-sm'}`}>
+                    <span className="text-xs font-bold block">{lang === 'ar' ? 'قطعة' : '1 Piece'}</span>
+                    <strong className="text-emerald-400 text-xs font-mono">{currentDynamicUnitPrice} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong>
                   </div>
-                  <div onClick={() => setSelectedBundleTier(2)} className={`p-3 rounded-2xl border cursor-pointer text-center ${selectedBundleTier === 2 ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-[#111827]'}`}>
-                    <span className="text-xs font-bold block">قطعتين</span>
-                    <strong className="text-emerald-400 text-xs font-mono">{Math.round((currentDynamicUnitPrice * 2) * (1 - (selectedProduct.bundle_tier_2_discount || 10) / 100))} ج.م</strong>
+                  <div onClick={() => setSelectedBundleTier(2)} className={`p-3 rounded-2xl border cursor-pointer text-center ${selectedBundleTier === 2 ? 'border-emerald-500 bg-emerald-500/10' : isDark ? 'border-slate-800 bg-[#111827]' : 'border-slate-200 bg-white shadow-sm'}`}>
+                    <span className="text-xs font-bold block">{lang === 'ar' ? 'قطعتين' : '2 Pieces'}</span>
+                    <strong className="text-emerald-400 text-xs font-mono">{Math.round((currentDynamicUnitPrice * 2) * (1 - (selectedProduct.bundle_tier_2_discount || 10) / 100))} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong>
                   </div>
-                  <div onClick={() => setSelectedBundleTier(3)} className={`p-3 rounded-2xl border cursor-pointer text-center ${selectedBundleTier === 3 ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-[#111827]'}`}>
-                    <span className="text-xs font-bold block">3 قطع</span>
-                    <strong className="text-emerald-400 text-xs font-mono">{Math.round((currentDynamicUnitPrice * 3) * (1 - (selectedProduct.bundle_tier_3_discount || 20) / 100))} ج.م</strong>
+                  <div onClick={() => setSelectedBundleTier(3)} className={`p-3 rounded-2xl border cursor-pointer text-center ${selectedBundleTier === 3 ? 'border-emerald-500 bg-emerald-500/10' : isDark ? 'border-slate-800 bg-[#111827]' : 'border-slate-200 bg-white shadow-sm'}`}>
+                    <span className="text-xs font-bold block">{lang === 'ar' ? '3 قطع' : '3 Pieces'}</span>
+                    <strong className="text-emerald-400 text-xs font-mono">{Math.round((currentDynamicUnitPrice * 3) * (1 - (selectedProduct.bundle_tier_3_discount || 20) / 100))} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong>
                   </div>
                 </div>
               </div>
 
               {/* فورم الشراء السريع بالـ COD */}
-              <form onSubmit={handleCheckoutSubmit} className="bg-[#111827] border border-slate-800 p-5 rounded-3xl space-y-3">
-                <input type="text" required placeholder="الاسم بالكامل" value={orderForm.customerName} onChange={(e) => setOrderForm({ ...orderForm, customerName: e.target.value })} className="w-full bg-[#0b0f19] border border-slate-800 rounded-xl p-3 text-xs text-white" />
-                <input type="tel" required dir="ltr" placeholder="رقم الهاتف (للتوصيل)" value={orderForm.phone} onChange={(e) => setOrderForm({ ...orderForm, phone: e.target.value })} className="w-full bg-[#0b0f19] border border-slate-800 rounded-xl p-3 text-xs text-white font-mono" />
+              <form onSubmit={handleCheckoutSubmit} className={`border p-5 rounded-3xl space-y-3 ${isDark ? 'bg-[#111827] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <input type="text" required placeholder={lang === 'ar' ? 'الاسم بالكامل' : 'Full Name'} value={orderForm.customerName} onChange={(e) => setOrderForm({ ...orderForm, customerName: e.target.value })} className={`w-full border rounded-xl p-3 text-xs ${isDark ? 'bg-[#0b0f19] border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`} />
+                <input type="tel" required dir="ltr" placeholder={lang === 'ar' ? 'رقم الهاتف (للتوصيل)' : 'Phone Number (For Delivery)'} value={orderForm.phone} onChange={(e) => setOrderForm({ ...orderForm, phone: e.target.value })} className={`w-full border rounded-xl p-3 text-xs font-mono ${isDark ? 'bg-[#0b0f19] border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`} />
                 
                 <div className="grid grid-cols-2 gap-2">
-                  <select value={orderForm.governorate} onChange={(e) => setOrderForm({ ...orderForm, governorate: e.target.value })} className="bg-[#0b0f19] border border-slate-800 rounded-xl p-3 text-xs text-white">
+                  <select value={orderForm.governorate} onChange={(e) => setOrderForm({ ...orderForm, governorate: e.target.value })} className={`border rounded-xl p-3 text-xs ${isDark ? 'bg-[#0b0f19] border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`}>
                     {governorates.map((g, i) => <option key={i} value={g}>{g}</option>)}
                   </select>
-                  <input type="text" required placeholder="العنوان بالتفصيل" value={orderForm.address} onChange={(e) => setOrderForm({ ...orderForm, address: e.target.value })} className="w-full bg-[#0b0f19] border border-slate-800 rounded-xl p-3 text-xs text-white" />
+                  <input type="text" required placeholder={lang === 'ar' ? 'العنوان بالتفصيل' : 'Detailed Address'} value={orderForm.address} onChange={(e) => setOrderForm({ ...orderForm, address: e.target.value })} className={`w-full border rounded-xl p-3 text-xs ${isDark ? 'bg-[#0b0f19] border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`} />
                 </div>
 
-                <div className="bg-[#0b0f19] p-3 rounded-xl border border-slate-800 text-xs flex justify-between font-bold">
-                  <span>الإجمالي عند الاستلام:</span>
-                  <span className="text-emerald-400 font-mono text-sm">{pricing.finalTotal} ج.م</span>
+                <div className={`p-3 rounded-xl border text-xs flex justify-between font-bold ${isDark ? 'bg-[#0b0f19] border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                  <span>{lang === 'ar' ? 'الإجمالي عند الاستلام:' : 'Total at Delivery (COD):'}</span>
+                  <span className="text-emerald-400 font-mono text-sm">{pricing.finalTotal} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
                 </div>
 
                 <button type="submit" disabled={submittingOrder} className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm rounded-2xl shadow-xl transition cursor-pointer">
-                  {submittingOrder ? 'جاري تأكيد الطلب...' : 'تأكيد الطلب الآن 🚚'}
+                  {submittingOrder ? (lang === 'ar' ? 'جاري تأكيد الطلب...' : 'Processing...') : (lang === 'ar' ? 'تأكيد الطلب الآن 🚚' : 'Confirm Order Now 🚚')}
                 </button>
               </form>
             </div>
@@ -520,76 +510,76 @@ export default function PublicStoreCheckoutPage() {
         ) : (
           <div className="text-center py-16 text-slate-500 bg-[#111827] rounded-3xl border border-slate-800">
             <span className="text-3xl block mb-2">🛍️</span>
-            <span>لا توجد منتجات مسجلة في هذا المتجر حالياً.</span>
+            <span>{lang === 'ar' ? 'لا توجد منتجات مسجلة في هذا المتجر حالياً.' : 'No products available currently.'}</span>
           </div>
         )}
       </main>
 
-      {/* 🌟 فوتر الشفافية والسياسات وروابط التواصل للزبائن */}
-      <footer className="mt-12 border-t border-slate-800/80 bg-[#111827] p-6 max-w-4xl mx-auto rounded-3xl text-center space-y-4">
+      {/* فوتر الشفافية والسياسات */}
+      <footer className={`mt-12 border-t p-6 max-w-4xl mx-auto rounded-3xl text-center space-y-4 ${
+        isDark ? 'bg-[#111827] border-slate-800/80' : 'bg-white border-slate-200 shadow-sm'
+      }`}>
         <div className="flex flex-wrap justify-center gap-3 text-xs font-bold">
-          <button onClick={() => setActivePolicyModal('about')} className="text-slate-300 hover:text-emerald-400 cursor-pointer">
-            ℹ️ من نحن
+          <button onClick={() => setActivePolicyModal('about')} className="text-slate-400 hover:text-emerald-400 cursor-pointer">
+            ℹ️ {lang === 'ar' ? 'من نحن' : 'About Us'}
           </button>
           <span className="text-slate-700">•</span>
-          <button onClick={() => setActivePolicyModal('returns')} className="text-slate-300 hover:text-emerald-400 cursor-pointer">
-            🔄 سياسة الاستبدال والاسترجاع
+          <button onClick={() => setActivePolicyModal('returns')} className="text-slate-400 hover:text-emerald-400 cursor-pointer">
+            🔄 {lang === 'ar' ? 'سياسة الاستبدال والاسترجاع' : 'Returns & Refunds'}
           </button>
           <span className="text-slate-700">•</span>
-          <button onClick={() => setActivePolicyModal('privacy')} className="text-slate-300 hover:text-emerald-400 cursor-pointer">
-            🔒 سياسة الخصوصية
+          <button onClick={() => setActivePolicyModal('privacy')} className="text-slate-400 hover:text-emerald-400 cursor-pointer">
+            🔒 {lang === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}
           </button>
           <span className="text-slate-700">•</span>
-          <button onClick={() => setActivePolicyModal('contact')} className="text-slate-300 hover:text-emerald-400 cursor-pointer">
-            📞 تواصل معنا
+          <button onClick={() => setActivePolicyModal('contact')} className="text-slate-400 hover:text-emerald-400 cursor-pointer">
+            📞 {lang === 'ar' ? 'تواصل معنا' : 'Contact Us'}
           </button>
         </div>
 
         <p className="text-[11px] text-slate-500">
-          متجر معتمد وموثق عبر منصة <strong className="text-emerald-400">NEXT ORDER</strong> • يحق للعميل معاينة وفحص الشحنة بالكامل قبل سداد المبلغ للمندوب.
+          {lang === 'ar' 
+            ? 'متجر معتمد وموثق عبر منصة NEXT ORDER • يحق للعميل معاينة وفحص الشحنة بالكامل قبل سداد المبلغ للمندوب.'
+            : 'Verified store powered by NEXT ORDER • You can inspect items before paying COD.'}
         </p>
       </footer>
 
-      {/* 🌟 النافذة المنبثقة التفاعلية للسياسات (Policy Modal) */}
+      {/* مودال السياسات التفاعلي */}
       {activePolicyModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#111827] border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4 text-xs">
-            
+          <div className={`border rounded-3xl p-6 max-w-md w-full space-y-4 text-xs ${isDark ? 'bg-[#111827] border-slate-800 text-white' : 'bg-white border-slate-300 text-black'}`}>
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-black text-white">
-                {activePolicyModal === 'about' && 'من نحن'}
-                {activePolicyModal === 'returns' && 'سياسة الاستبدال والاسترجاع'}
-                {activePolicyModal === 'privacy' && 'سياسة الخصوصية وأمان البيانات'}
-                {activePolicyModal === 'contact' && 'بيانات التواصل الرسمية'}
+              <h3 className="text-sm font-black">
+                {activePolicyModal === 'about' && (lang === 'ar' ? 'من نحن' : 'About Us')}
+                {activePolicyModal === 'returns' && (lang === 'ar' ? 'سياسة الاستبدال والاسترجاع' : 'Return Policy')}
+                {activePolicyModal === 'privacy' && (lang === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy')}
+                {activePolicyModal === 'contact' && (lang === 'ar' ? 'بيانات التواصل' : 'Contact Details')}
               </h3>
               <button onClick={() => setActivePolicyModal(null)} className="text-slate-400 hover:text-white">✕</button>
             </div>
 
-            <div className="text-slate-300 leading-relaxed max-h-60 overflow-y-auto">
+            <div className="leading-relaxed max-h-60 overflow-y-auto">
               {activePolicyModal === 'about' && (
                 <p>{storeSettings?.about_us || 'متجر معتمد يوفر أفضل المنتجات وضمان المعاينة قبل الاستلام.'}</p>
               )}
-
               {activePolicyModal === 'returns' && (
                 <p>{storeSettings?.return_policy || 'يحق للعميل استبدال أو استرجاع المنتج خلال 14 يوماً من الاستلام.'}</p>
               )}
-
               {activePolicyModal === 'privacy' && (
                 <p>{storeSettings?.privacy_policy || 'نضمن الحفاظ على سرية أرقام الهواتف واستخدامها لغرض الشحن والتوصيل فقط.'}</p>
               )}
-
               {activePolicyModal === 'contact' && (
                 <div className="space-y-2">
-                  <div>التاجر المسؤول: <strong className="text-white">{storeData?.owner_name}</strong></div>
-                  <div>واتساب وخدمة العملاء: <strong className="text-emerald-400 font-mono" dir="ltr">{storeSettings?.support_phone || storeData?.phone}</strong></div>
-                  {storeSettings?.store_email && <div>البريد الرسمي: <strong className="text-cyan-400 font-mono">{storeSettings.store_email}</strong></div>}
-                  {storeSettings?.store_address && <div>مقر المتجر: <strong className="text-white">{storeSettings.store_address}</strong></div>}
+                  <div>{lang === 'ar' ? 'التاجر المسؤول:' : 'Owner:'} <strong>{storeData?.owner_name}</strong></div>
+                  <div>WhatsApp: <strong className="text-emerald-400 font-mono" dir="ltr">{storeSettings?.support_phone || storeData?.phone}</strong></div>
+                  {storeSettings?.store_email && <div>Email: <strong className="text-cyan-400 font-mono">{storeSettings.store_email}</strong></div>}
+                  {storeSettings?.store_address && <div>Address: <strong>{storeSettings.store_address}</strong></div>}
                 </div>
               )}
             </div>
 
             <button onClick={() => setActivePolicyModal(null)} className="w-full py-2.5 bg-slate-800 text-white rounded-xl font-bold">
-              إغلاق
+              {lang === 'ar' ? 'إغلاق' : 'Close'}
             </button>
           </div>
         </div>
