@@ -8,7 +8,6 @@ export function AppProvider({ children }) {
   const [theme, setTheme] = useState('dark'); // 'dark' | 'light'
 
   useEffect(() => {
-    // قراءة الإعدادات المحفوظة مسبقاً
     const savedLang = localStorage.getItem('app_lang') || 'ar';
     const savedTheme = localStorage.getItem('app_theme') || 'dark';
     setLang(savedLang);
@@ -19,11 +18,9 @@ export function AppProvider({ children }) {
   const applySettings = (selectedLang, selectedTheme) => {
     if (typeof document !== 'undefined') {
       const root = document.documentElement;
-      // ضبط الاتجاه واللغة
       root.setAttribute('dir', selectedLang === 'ar' ? 'rtl' : 'ltr');
       root.setAttribute('lang', selectedLang);
 
-      // ضبط كلاس الثيم
       if (selectedTheme === 'dark') {
         root.classList.add('dark');
         root.classList.remove('light');
