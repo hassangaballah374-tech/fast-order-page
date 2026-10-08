@@ -2,11 +2,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useRouter } from 'next/navigation';
+import { useApp } from '../../context/AppContext';
 
 export default function SuperAdminExecutiveMaster() {
   const router = useRouter();
+  const { lang, theme, toggleLanguage, toggleTheme } = useApp();
+  const isDark = theme === 'dark';
 
-  // 'overview' | 'merchants' | 'orders' | 'products' | 'rates' | 'domains' | 'plans' | 'invoices' | 'broadcasts' | 'platform_policies' | 'branding' | 'pixels'
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
 
@@ -36,7 +38,6 @@ export default function SuperAdminExecutiveMaster() {
   const [broadcasts, setBroadcasts] = useState([]);
   const [newBroadcast, setNewBroadcast] = useState({ title: '', message: '', banner_type: 'info' });
 
-  // هوية وسياسات المنصة الرسمية
   const [platformSettings, setPlatformSettings] = useState({
     store_name: 'NEXT ORDER',
     store_logo: '',
@@ -74,7 +75,6 @@ export default function SuperAdminExecutiveMaster() {
         const { data: oData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
         if (oData) setAllOrders(oData);
 
-        // جلب المنتجات ومعالجة الصور بشكل مرن
         const { data: pData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
         if (pData) {
           const formatted = pData.map(p => {
@@ -107,7 +107,6 @@ export default function SuperAdminExecutiveMaster() {
     setLoading(false);
   }
 
-  // 👑 ميزة السوبر أدمن الحصرية: الدخول كتاجر بنقرة واحدة وتفعيل وضع الأدمن
   const handleLoginAs = (merchant) => {
     if (!merchant.user_id) return alert('لا يوجد معرف مستخدم لهذا الحساب');
     if (!confirm(`هل تريد الدخول فوراً لإدارة متجر "${merchant.store_name}" بصفة التاجر؟`)) return;
@@ -117,7 +116,6 @@ export default function SuperAdminExecutiveMaster() {
     router.push('/dashboard');
   };
 
-  // ⚡ استرداد وربط المنتجات القديمة بمتجر الأدمن الرئيسي دون الحاجة لكتابة SQL
   const handleClaimAllProducts = async () => {
     let targetStore = merchants[0];
     if (!targetStore) {
@@ -158,7 +156,6 @@ export default function SuperAdminExecutiveMaster() {
     loadAllMasterData();
   };
 
-  // حفظ أو تعديل منتج من لوحة الأدمن
   const handleSaveProductFromAdmin = async (e) => {
     e.preventDefault();
     if (!productForm.name || !productForm.price) return alert('يرجى كتابة الاسم والسعر');
@@ -188,7 +185,6 @@ export default function SuperAdminExecutiveMaster() {
     loadAllMasterData();
   };
 
-  // شحن محفظة التاجر وتفعيل متجره
   const handleConfirmRecharge = async () => {
     if (!rechargeModalMerchant) return;
     const currentBal = Number(rechargeModalMerchant.wallet_balance_usd || 0);
@@ -216,7 +212,6 @@ export default function SuperAdminExecutiveMaster() {
     loadAllMasterData();
   };
 
-  // تغيير حالة التاجر (إيقاف مؤقت / تعطيل)
   const handleToggleMerchantStatus = async (merchant, targetStatus) => {
     if (!confirm(`هل أنت متأكد من تغيير حالة متجر "${merchant.store_name}" إلى [${targetStatus}]؟`)) return;
     await supabase.from('store_profiles').update({
@@ -226,7 +221,6 @@ export default function SuperAdminExecutiveMaster() {
     loadAllMasterData();
   };
 
-  // حذف تاجر نهائياً
   const handleDeleteMerchantFully = async (merchant) => {
     const confirmName = prompt(`⚠️ تحذير شديد: اكتب اسم المتجر للتأكيد وحذفه نهائياً: "${merchant.store_name}"`);
     if (confirmName !== merchant.store_name) return;
@@ -245,7 +239,6 @@ export default function SuperAdminExecutiveMaster() {
     loadAllMasterData();
   };
 
-  // تحديث سعر الصرف والعمولة
   const handleUpdateExchangeRate = async () => {
     await supabase.from('platform_exchange_rates').update({
       usd_to_egp: Number(exchangeRate),
@@ -256,7 +249,6 @@ export default function SuperAdminExecutiveMaster() {
     loadAllMasterData();
   };
 
-  // رفع اللوجو كملف
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -270,7 +262,6 @@ export default function SuperAdminExecutiveMaster() {
     reader.readAsDataURL(file);
   };
 
-  // حفظ هوية وسياسات المنصة الرسمية
   const handleSavePlatformSettings = async (e) => {
     e.preventDefault();
     setSavingSettings(true);
@@ -279,14 +270,13 @@ export default function SuperAdminExecutiveMaster() {
     setSavingSettings(false);
   };
 
-  // تصدير الطلبات كملف إكسيل CSV للشحن
   const exportOrdersToCSV = () => {
     if (allOrders.length === 0) return alert('لا توجد طلبات للتصدير!');
     const headers = ['رقم الطلب', 'العميل', 'الهاتف', 'المحافظة', 'العنوان', 'المنتج', 'المبلغ', 'الحالة', 'التاريخ'];
     const rows = allOrders.map((o, idx) => [
       idx + 1, `"${o.customer_name || ''}"`, `"${o.phone || ''}"`, `"${o.governorate || ''}"`,
       `"${o.address || ''}"`, `"${o.product_name || ''}"`, o.total_amount || 0, `"${o.status || 'جديد'}"`,
-      new Date(o.created_at).toLocaleDateString('ar-EG'),
+      new Date(o.created_at).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US'),
     ]);
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const link = document.createElement('a');
@@ -295,7 +285,6 @@ export default function SuperAdminExecutiveMaster() {
     link.click();
   };
 
-  // حسابات سريعة
   const totalStoreSales = allOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
   const activeClients = merchants.filter(m => (Number(m.wallet_balance_usd) >= 0.05) && m.is_active && m.subscription_status === 'active');
   const pendingClients = merchants.filter(m => (Number(m.wallet_balance_usd) < 0.05) || !m.is_active || m.subscription_status === 'pending');
@@ -318,43 +307,59 @@ export default function SuperAdminExecutiveMaster() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center font-sans" dir="rtl">
+      <div className={`min-h-screen flex items-center justify-center font-sans ${isDark ? 'bg-[#070b14] text-white' : 'bg-slate-100 text-black'}`}>
         <div className="animate-pulse text-lg font-black flex items-center gap-3">
           <span>👑</span>
-          <span>جاري فتح لوحة السوبر أدمن الشاملة (NEXT ORDER)...</span>
+          <span>{lang === 'ar' ? 'جاري فتح لوحة السوبر أدمن الشاملة...' : 'Loading Super Admin Control Panel...'}</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-white font-sans flex flex-col md:flex-row select-none" dir="rtl">
+    <div className={`min-h-screen font-sans flex flex-col md:flex-row select-none transition-colors ${
+      isDark ? 'bg-[#070b14] text-white' : 'bg-slate-100 text-slate-900'
+    }`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       
       {/* 🧭 الشريط الجانبي */}
-      <aside className="w-full md:w-64 bg-[#0d1322] border-b md:border-b-0 md:border-l border-slate-800 p-5 flex flex-col justify-between shrink-0">
+      <aside className={`w-full md:w-64 border-b md:border-b-0 p-5 flex flex-col justify-between shrink-0 transition-colors ${
+        lang === 'ar' ? 'md:border-l' : 'md:border-r'
+      } ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="space-y-6">
-          <div className="space-y-1">
-            <span className="text-xl font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
-              NEXT ORDER
-            </span>
-            <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full font-black block w-fit mt-1">
-              SUPER ADMIN
-            </span>
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xl font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent block">
+                NEXT ORDER
+              </span>
+              <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full font-black block w-fit mt-1">
+                SUPER ADMIN
+              </span>
+            </div>
+            
+            {/* أزرار التبديل السريعة في السايد بار */}
+            <div className="flex gap-1.5">
+              <button onClick={toggleLanguage} className="px-2 py-1 bg-slate-800 text-white rounded-lg text-[10px] font-bold border border-slate-700">
+                🌐 {lang === 'ar' ? 'EN' : 'AR'}
+              </button>
+              <button onClick={toggleTheme} className="px-2 py-1 bg-slate-800 text-white rounded-lg text-[10px] font-bold border border-slate-700">
+                {isDark ? '☀️' : '🌙'}
+              </button>
+            </div>
           </div>
 
           <nav className="space-y-1 text-xs font-bold">
             {[
-              { id: 'overview', label: 'الرئيسية والمؤشرات', icon: '📊' },
-              { id: 'merchants', label: `المتاجر والتجار (${merchants.length})`, icon: '🏪', badge: pendingClients.length },
-              { id: 'orders', label: `كافة الطلبات (${allOrders.length})`, icon: '📦' },
-              { id: 'products', label: `المنتجات والمخزون (${products.length})`, icon: '🛍️' },
-              { id: 'platform_policies', label: 'سياسات المنصة وتواصلنا', icon: '📜' },
-              { id: 'rates', label: 'سعر الصرف والعمولة (0.05$)', icon: '💱' },
-              { id: 'domains', label: `الدومينات المخصصة (${domains.length})`, icon: '🌐' },
-              { id: 'plans', label: 'باقات الاشتراك', icon: '💎' },
-              { id: 'invoices', label: 'سجل الحركات والمقبوضات', icon: '🧾' },
-              { id: 'broadcasts', label: 'الإعلانات الجماعية', icon: '📢' },
-              { id: 'branding', label: 'هوية المنصة واللوجو', icon: '⚙️' },
+              { id: 'overview', label: lang === 'ar' ? 'الرئيسية والمؤشرات' : 'Dashboard Overview', icon: '📊' },
+              { id: 'merchants', label: `${lang === 'ar' ? 'المتاجر والتجار' : 'Merchants & Stores'} (${merchants.length})`, icon: '🏪', badge: pendingClients.length },
+              { id: 'orders', label: `${lang === 'ar' ? 'كافة الطلبات' : 'All Orders'} (${allOrders.length})`, icon: '📦' },
+              { id: 'products', label: `${lang === 'ar' ? 'المنتجات والمخزون' : 'Products & Stock'} (${products.length})`, icon: '🛍️' },
+              { id: 'platform_policies', label: lang === 'ar' ? 'سياسات المنصة وتواصلنا' : 'Platform Policies', icon: '📜' },
+              { id: 'rates', label: lang === 'ar' ? 'سعر الصرف والعمولة' : 'Rates & Order Fee', icon: '💱' },
+              { id: 'domains', label: `${lang === 'ar' ? 'الدومينات المخصصة' : 'Custom Domains'} (${domains.length})`, icon: '🌐' },
+              { id: 'plans', label: lang === 'ar' ? 'باقات الاشتراك' : 'Subscription Plans', icon: '💎' },
+              { id: 'invoices', label: lang === 'ar' ? 'سجل الحركات المالية' : 'Wallet Transactions', icon: '🧾' },
+              { id: 'broadcasts', label: lang === 'ar' ? 'الإعلانات الجماعية' : 'Broadcasts', icon: '📢' },
+              { id: 'branding', label: lang === 'ar' ? 'هوية المنصة واللوجو' : 'Branding & Logo', icon: '⚙️' },
             ].map((nav) => (
               <button
                 key={nav.id}
@@ -362,7 +367,7 @@ export default function SuperAdminExecutiveMaster() {
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl transition cursor-pointer ${
                   activeTab === nav.id
                     ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-lg'
-                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
+                    : isDark ? 'text-slate-400 hover:bg-slate-800/60 hover:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-black'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -385,16 +390,18 @@ export default function SuperAdminExecutiveMaster() {
             className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 text-black text-xs font-black rounded-xl shadow-lg transition cursor-pointer flex items-center justify-center gap-1.5"
           >
             <span>⚡</span>
-            <span>ربط واسترداد المنتجات القديمة</span>
+            <span>{lang === 'ar' ? 'ربط واسترداد المنتجات القديمة' : 'Claim Legacy Products'}</span>
           </button>
           <button
             onClick={() => {
               navigator.clipboard.writeText(`${window.location.origin}/register`);
-              alert('📋 تم نسخ رابط تسجيل التجار:\n' + `${window.location.origin}/register`);
+              alert(lang === 'ar' ? '📋 تم نسخ رابط تسجيل التجار!' : '📋 Registration link copied!');
             }}
-            className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold rounded-xl transition cursor-pointer"
+            className={`w-full py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+              isDark ? 'bg-slate-800 hover:bg-slate-700 text-emerald-400' : 'bg-slate-200 hover:bg-slate-300 text-slate-800'
+            }`}
           >
-            🔗 نسخ رابط تسجيل التجار
+            🔗 {lang === 'ar' ? 'نسخ رابط تسجيل التجار' : 'Copy Merchant Register Link'}
           </button>
         </div>
       </aside>
@@ -405,23 +412,23 @@ export default function SuperAdminExecutiveMaster() {
         {/* 1. الرئيسية والمؤشرات */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            <h2 className="text-xl font-black text-white">نظرة عامة على أداء منصة NEXT ORDER</h2>
+            <h2 className="text-xl font-black">{lang === 'ar' ? 'نظرة عامة على أداء منصة NEXT ORDER' : 'Platform Executive Overview'}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl">
-                <span className="text-xs text-slate-400 block mb-1">🏪 إجمالي المتاجر</span>
-                <span className="text-2xl font-black text-white">{merchants.length} متجر</span>
+              <div className={`p-5 rounded-3xl border ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <span className="text-xs text-slate-400 block mb-1">🏪 {lang === 'ar' ? 'إجمالي المتاجر' : 'Total Stores'}</span>
+                <span className="text-2xl font-black">{merchants.length}</span>
               </div>
-              <div className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl">
-                <span className="text-xs text-slate-400 block mb-1">🟢 العملاء الحاليين المفعلين</span>
-                <span className="text-2xl font-black text-emerald-400">{activeClients.length} عميل</span>
+              <div className={`p-5 rounded-3xl border ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <span className="text-xs text-slate-400 block mb-1">🟢 {lang === 'ar' ? 'العملاء المفعلين' : 'Active Stores'}</span>
+                <span className="text-2xl font-black text-emerald-400">{activeClients.length}</span>
               </div>
-              <div className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl">
-                <span className="text-xs text-slate-400 block mb-1">⏳ بانتظار الشحن والتفعيل</span>
-                <span className="text-2xl font-black text-amber-400">{pendingClients.length} متجر</span>
+              <div className={`p-5 rounded-3xl border ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <span className="text-xs text-slate-400 block mb-1">⏳ {lang === 'ar' ? 'بانتظار الشحن' : 'Pending Wallet Recharge'}</span>
+                <span className="text-2xl font-black text-amber-400">{pendingClients.length}</span>
               </div>
-              <div className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl">
-                <span className="text-xs text-slate-400 block mb-1">💰 إجمالي مبيعات المتاجر</span>
-                <span className="text-2xl font-black text-emerald-400">{totalStoreSales.toLocaleString()} ج.م</span>
+              <div className={`p-5 rounded-3xl border ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <span className="text-xs text-slate-400 block mb-1">💰 {lang === 'ar' ? 'إجمالي مبيعات المتاجر' : 'Gross Sales'}</span>
+                <span className="text-2xl font-black text-emerald-400">{totalStoreSales.toLocaleString()} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
               </div>
             </div>
           </div>
@@ -430,29 +437,31 @@ export default function SuperAdminExecutiveMaster() {
         {/* 2. إدارة المتاجر */}
         {activeTab === 'merchants' && (
           <div className="space-y-4">
-            <div className="bg-[#0d1322] p-5 rounded-3xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <div className={`p-5 rounded-3xl border flex flex-col md:flex-row justify-between items-start md:items-center gap-3 ${
+              isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+            }`}>
               <div>
-                <h2 className="text-lg font-black text-white">إدارة المتاجر والمشتركين ({filteredMerchants.length})</h2>
-                <p className="text-xs text-slate-400">شحن المحافظ، الدخول بحساب التاجر، وتفعيل أو إيقاف أو حذف المتاجر</p>
+                <h2 className="text-lg font-black">{lang === 'ar' ? 'إدارة المتاجر والمشتركين' : 'Stores & Merchants'} ({filteredMerchants.length})</h2>
+                <p className="text-xs text-slate-400">{lang === 'ar' ? 'شحن المحافظ، الدخول بحساب التاجر، وتفعيل أو إيقاف أو حذف المتاجر' : 'Manage wallets, login as merchant, and toggle active status'}</p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="text"
-                  placeholder="بحث باسم المتجر أو المالك..."
+                  placeholder={lang === 'ar' ? 'بحث باسم المتجر أو المالك...' : 'Search store or owner...'}
                   value={merchantSearch}
                   onChange={(e) => setMerchantSearch(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 text-xs p-2.5 rounded-xl w-56 text-white"
+                  className={`text-xs p-2.5 rounded-xl w-56 border ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-black'}`}
                 />
                 <select
                   value={merchantFilter}
                   onChange={(e) => setMerchantFilter(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 text-xs p-2.5 rounded-xl text-white font-bold"
+                  className={`text-xs p-2.5 rounded-xl font-bold border ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-black'}`}
                 >
-                  <option value="all">كل المتاجر ({merchants.length})</option>
-                  <option value="active">المفعلين ({activeClients.length})</option>
-                  <option value="pending">بانتظار الشحن ({pendingClients.length})</option>
-                  <option value="suspended">الموقوفين</option>
+                  <option value="all">{lang === 'ar' ? 'كل المتاجر' : 'All Stores'} ({merchants.length})</option>
+                  <option value="active">{lang === 'ar' ? 'المفعلين' : 'Active'} ({activeClients.length})</option>
+                  <option value="pending">{lang === 'ar' ? 'بانتظار الشحن' : 'Pending'} ({pendingClients.length})</option>
+                  <option value="suspended">{lang === 'ar' ? 'الموقوفين' : 'Suspended'}</option>
                 </select>
               </div>
             </div>
@@ -464,30 +473,32 @@ export default function SuperAdminExecutiveMaster() {
                 const isActive = bal >= 0.05 && m.is_active && m.subscription_status === 'active';
 
                 return (
-                  <div key={m.id} className="bg-[#0d1322] border border-slate-800 p-5 rounded-3xl space-y-3 hover:border-slate-700 transition">
+                  <div key={m.id} className={`border p-5 rounded-3xl space-y-3 transition ${
+                    isDark ? 'bg-[#0d1322] border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 shadow-sm'
+                  }`}>
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-3">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <strong className="text-base text-white">{m.store_name}</strong>
+                        <strong className="text-base">{m.store_name}</strong>
                         <a href={`/store/${m.store_slug}`} target="_blank" className="text-xs text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded-lg font-mono hover:underline">
                           /{m.store_slug} ↗
                         </a>
                         <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
                           isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'
                         }`}>
-                          {isActive ? '🟢 نشط ومفعل' : m.subscription_status === 'suspended' ? '⏸️ موقوف مؤقتاً' : '🟡 بانتظار الشحن (5$)'}
+                          {isActive ? (lang === 'ar' ? '🟢 نشط ومفعل' : '🟢 Active') : m.subscription_status === 'suspended' ? (lang === 'ar' ? '⏸️ موقوف مؤقتاً' : '⏸️ Suspended') : (lang === 'ar' ? '🟡 بانتظار الشحن (5$)' : '🟡 Awaiting Deposit')}
                         </span>
                       </div>
 
                       <div className="text-xs text-slate-400">
-                        المالك: <strong className="text-white">{m.owner_name}</strong> (<a href={`https://wa.me/${m.phone}`} target="_blank" className="text-emerald-400 underline font-mono" dir="ltr">{m.phone}</a>)
+                        {lang === 'ar' ? 'المالك:' : 'Owner:'} <strong className={isDark ? 'text-white' : 'text-black'}>{m.owner_name}</strong> (<a href={`https://wa.me/${m.phone}`} target="_blank" className="text-emerald-400 underline font-mono" dir="ltr">{m.phone}</a>)
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-slate-300 bg-slate-900/60 p-3 rounded-2xl">
-                      <div>رصيد المحفظة: <strong className="text-emerald-400 font-mono font-bold">{bal.toFixed(2)}$</strong> ({Math.round(bal * exchangeRate)} ج.م)</div>
-                      <div>يكفي حتى: <strong className="text-cyan-400 font-mono font-bold">{ordersCap} أوردر</strong></div>
-                      <div>أوردرات مخصومة: <strong className="text-amber-400 font-mono">{m.total_orders_billed || 0}</strong></div>
-                      <div>إجمالي ما شحنه: <strong className="text-white font-mono">{m.amount_paid || 0} ج.م</strong></div>
+                    <div className={`grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs p-3 rounded-2xl ${isDark ? 'bg-slate-900/60 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
+                      <div>{lang === 'ar' ? 'رصيد المحفظة:' : 'Wallet:'} <strong className="text-emerald-400 font-mono font-bold">{bal.toFixed(2)}$</strong> ({Math.round(bal * exchangeRate)} {lang === 'ar' ? 'ج.م' : 'EGP'})</div>
+                      <div>{lang === 'ar' ? 'يكفي حتى:' : 'Capacity:'} <strong className="text-cyan-400 font-mono font-bold">{ordersCap} {lang === 'ar' ? 'أوردر' : 'Orders'}</strong></div>
+                      <div>{lang === 'ar' ? 'أوردرات مخصومة:' : 'Billed Orders:'} <strong className="text-amber-400 font-mono">{m.total_orders_billed || 0}</strong></div>
+                      <div>{lang === 'ar' ? 'إجمالي ما شحنه:' : 'Total Deposited:'} <strong className="font-mono">{m.amount_paid || 0} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong></div>
                     </div>
 
                     <div className="flex flex-wrap justify-end gap-2 pt-1">
@@ -496,7 +507,7 @@ export default function SuperAdminExecutiveMaster() {
                         className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
                       >
                         <span>🔑</span>
-                        <span>دخول كتاجر</span>
+                        <span>{lang === 'ar' ? 'دخول كتاجر' : 'Login as Merchant'}</span>
                       </button>
 
                       <button
@@ -508,21 +519,21 @@ export default function SuperAdminExecutiveMaster() {
                         className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black shadow transition cursor-pointer flex items-center gap-1.5"
                       >
                         <span>💳</span>
-                        <span>شحن المحفظة</span>
+                        <span>{lang === 'ar' ? 'شحن المحفظة' : 'Recharge Wallet'}</span>
                       </button>
 
                       <button
                         onClick={() => handleToggleMerchantStatus(m, m.subscription_status === 'suspended' ? 'active' : 'suspended')}
                         className="px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-xl text-xs font-bold transition cursor-pointer"
                       >
-                        {m.subscription_status === 'suspended' ? 'تشغيل' : 'إيقاف مؤقت'}
+                        {m.subscription_status === 'suspended' ? (lang === 'ar' ? 'تشغيل' : 'Activate') : (lang === 'ar' ? 'إيقاف مؤقت' : 'Suspend')}
                       </button>
 
                       <button
                         onClick={() => handleDeleteMerchantFully(m)}
                         className="px-3 py-2 bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white rounded-xl text-xs font-bold transition cursor-pointer"
                       >
-                        🗑️ حذف
+                        🗑️ {lang === 'ar' ? 'حذف' : 'Delete'}
                       </button>
                     </div>
                   </div>
@@ -535,40 +546,40 @@ export default function SuperAdminExecutiveMaster() {
         {/* 3. طلبات المنصة */}
         {activeTab === 'orders' && (
           <div className="space-y-4">
-            <div className="bg-[#0d1322] p-5 rounded-3xl border border-slate-800 flex justify-between items-center">
-              <h2 className="text-lg font-black text-white">إدارة طلبات المنصة ({filteredOrders.length})</h2>
+            <div className={`p-5 rounded-3xl border flex justify-between items-center ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200'}`}>
+              <h2 className="text-lg font-black">{lang === 'ar' ? 'إدارة طلبات المنصة' : 'Orders Management'} ({filteredOrders.length})</h2>
               <button onClick={exportOrdersToCSV} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold cursor-pointer">
-                📊 تصدير إكسيل للشحن
+                📊 {lang === 'ar' ? 'تصدير إكسيل للشحن' : 'Export Orders CSV'}
               </button>
             </div>
             <div className="space-y-2">
               {filteredOrders.map(o => (
-                <div key={o.id} className="p-4 bg-[#0d1322] border border-slate-800 rounded-2xl flex justify-between items-center text-xs">
+                <div key={o.id} className={`p-4 border rounded-2xl flex justify-between items-center text-xs ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200'}`}>
                   <div>
-                    <strong className="text-white block">{o.customer_name} ({o.phone})</strong>
+                    <strong className="block">{o.customer_name} ({o.phone})</strong>
                     <span className="text-slate-400">{o.product_name} | {o.governorate}</span>
                   </div>
-                  <strong className="text-emerald-400 font-mono text-sm">{o.total_amount} ج.م</strong>
+                  <strong className="text-emerald-400 font-mono text-sm">{o.total_amount} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* 4. المنتجات: عرض تفصيلي كامل مع إمكانية التعديل السريع للصور والأسعار والمخزون */}
+        {/* 4. المنتجات */}
         {activeTab === 'products' && (
           <div className="space-y-4">
-            <div className="bg-[#0d1322] p-5 rounded-3xl border border-slate-800 flex justify-between items-center">
+            <div className={`p-5 rounded-3xl border flex justify-between items-center ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div>
-                <h2 className="text-lg font-black text-white">المنتجات في المنظومة ({products.length})</h2>
-                <p className="text-xs text-slate-400">إدارة، تسعير، وتعديل الصور والمخزون لكافة المنتجات</p>
+                <h2 className="text-lg font-black">{lang === 'ar' ? 'المنتجات في المنظومة' : 'All Products in System'} ({products.length})</h2>
+                <p className="text-xs text-slate-400">{lang === 'ar' ? 'إدارة، تسعير، وتعديل الصور والمخزون لكافة المنتجات' : 'Direct edit for pricing, stock, and images'}</p>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={handleClaimAllProducts}
                   className="px-3.5 py-2 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-black cursor-pointer"
                 >
-                  ⚡ ربط المنتجات القديمة
+                  ⚡ {lang === 'ar' ? 'ربط المنتجات القديمة' : 'Claim Legacy Products'}
                 </button>
                 <button
                   onClick={() => {
@@ -578,14 +589,14 @@ export default function SuperAdminExecutiveMaster() {
                   }}
                   className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold cursor-pointer"
                 >
-                  ➕ إضافة منتج جديد
+                  ➕ {lang === 'ar' ? 'إضافة منتج جديد' : 'Add Product'}
                 </button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {products.map(p => (
-                <div key={p.id} className="p-4 bg-[#0d1322] border border-slate-800 rounded-2xl space-y-3">
+                <div key={p.id} className={`p-4 border rounded-2xl space-y-3 ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200'}`}>
                   <div className="w-full h-40 bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center border border-slate-800">
                     {p.primary_image ? (
                       <img src={p.primary_image} alt={p.name} className="w-full h-full object-contain p-2" />
@@ -594,10 +605,10 @@ export default function SuperAdminExecutiveMaster() {
                     )}
                   </div>
                   <div>
-                    <h4 className="font-bold text-white text-sm truncate">{p.name}</h4>
+                    <h4 className="font-bold text-sm truncate">{p.name}</h4>
                     <div className="flex justify-between items-center text-xs mt-1">
-                      <span className="text-emerald-400 font-bold font-mono text-base">{p.price} ج.م</span>
-                      <span className="text-slate-400 bg-slate-900 px-2 py-0.5 rounded-lg">المخزون: {p.stock || 0}</span>
+                      <span className="text-emerald-400 font-bold font-mono text-base">{p.price} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
+                      <span className="text-slate-400 bg-slate-800/40 px-2 py-0.5 rounded-lg">{lang === 'ar' ? 'المخزون:' : 'Stock:'} {p.stock || 0}</span>
                     </div>
                   </div>
                   <div className="flex gap-2 pt-2 border-t border-slate-800 text-xs">
@@ -612,13 +623,13 @@ export default function SuperAdminExecutiveMaster() {
                         });
                         setShowProductModal(true);
                       }}
-                      className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-bold cursor-pointer"
+                      className="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-bold cursor-pointer"
                     >
-                      تعديل ✏️
+                      {lang === 'ar' ? 'تعديل ✏️' : 'Edit ✏️'}
                     </button>
                     <button
                       onClick={async () => {
-                        if (!confirm(`هل أنت متأكد من حذف المنتج: ${p.name}؟`)) return;
+                        if (!confirm(lang === 'ar' ? `حذف المنتج: ${p.name}؟` : `Delete product: ${p.name}?`)) return;
                         await supabase.from('products').delete().eq('id', p.id);
                         loadAllMasterData();
                       }}
@@ -635,41 +646,41 @@ export default function SuperAdminExecutiveMaster() {
 
         {/* 5. سياسات المنصة الرسمية */}
         {activeTab === 'platform_policies' && (
-          <form onSubmit={handleSavePlatformSettings} className="bg-[#0d1322] border border-slate-800 p-6 rounded-3xl space-y-4 max-w-3xl">
-            <h3 className="text-base font-black text-white">مركز سياسات منصة NEXT ORDER الرسمية</h3>
+          <form onSubmit={handleSavePlatformSettings} className={`border p-6 rounded-3xl space-y-4 max-w-3xl ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <h3 className="text-base font-black">{lang === 'ar' ? 'مركز سياسات منصة NEXT ORDER الرسمية' : 'Official Platform Policies'}</h3>
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <input type="email" placeholder="بريد الدعم الرسمي" value={platformSettings.support_email} onChange={(e) => setPlatformSettings({ ...platformSettings, support_email: e.target.value })} className="bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white font-mono" />
-              <input type="text" placeholder="عنوان الإدارة" value={platformSettings.business_address} onChange={(e) => setPlatformSettings({ ...platformSettings, business_address: e.target.value })} className="bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white" />
+              <input type="email" placeholder="Official Support Email" value={platformSettings.support_email} onChange={(e) => setPlatformSettings({ ...platformSettings, support_email: e.target.value })} className={`border p-2.5 rounded-xl font-mono ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`} />
+              <input type="text" placeholder="Office Address" value={platformSettings.business_address} onChange={(e) => setPlatformSettings({ ...platformSettings, business_address: e.target.value })} className={`border p-2.5 rounded-xl ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`} />
             </div>
-            <textarea rows="3" placeholder="من نحن" value={platformSettings.about_us} onChange={(e) => setPlatformSettings({ ...platformSettings, about_us: e.target.value })} className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-xs text-white"></textarea>
-            <textarea rows="3" placeholder="سياسة الخصوصية" value={platformSettings.privacy_policy} onChange={(e) => setPlatformSettings({ ...platformSettings, privacy_policy: e.target.value })} className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-xs text-white"></textarea>
-            <textarea rows="3" placeholder="الشروط والأحكام" value={platformSettings.terms_conditions} onChange={(e) => setPlatformSettings({ ...platformSettings, terms_conditions: e.target.value })} className="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-xs text-white"></textarea>
-            <button type="submit" className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold">حفظ السياسات 💾</button>
+            <textarea rows="3" placeholder={lang === 'ar' ? 'من نحن' : 'About Us'} value={platformSettings.about_us} onChange={(e) => setPlatformSettings({ ...platformSettings, about_us: e.target.value })} className={`w-full border p-3 rounded-xl text-xs ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`}></textarea>
+            <textarea rows="3" placeholder={lang === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'} value={platformSettings.privacy_policy} onChange={(e) => setPlatformSettings({ ...platformSettings, privacy_policy: e.target.value })} className={`w-full border p-3 rounded-xl text-xs ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`}></textarea>
+            <textarea rows="3" placeholder={lang === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'} value={platformSettings.terms_conditions} onChange={(e) => setPlatformSettings({ ...platformSettings, terms_conditions: e.target.value })} className={`w-full border p-3 rounded-xl text-xs ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`}></textarea>
+            <button type="submit" className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold">{lang === 'ar' ? 'حفظ السياسات 💾' : 'Save Policies 💾'}</button>
           </form>
         )}
 
         {/* 6. سعر الصرف والعمولة */}
         {activeTab === 'rates' && (
-          <div className="bg-[#0d1322] border border-slate-800 p-6 rounded-3xl max-w-xl space-y-4">
-            <h3 className="text-base font-black text-white">سعر الصرف وعمولة الطلب اللحظية</h3>
+          <div className={`border p-6 rounded-3xl max-w-xl space-y-4 ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <h3 className="text-base font-black">{lang === 'ar' ? 'سعر الصرف وعمولة الطلب اللحظية' : 'Exchange Rate & Instant Order Fee'}</h3>
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">سعر الدولار بالجنيه (USD/EGP)</label>
-              <input type="number" value={exchangeRate} onChange={(e) => setExchangeRate(Number(e.target.value))} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm font-bold text-emerald-400" />
+              <label className="text-xs font-bold text-slate-400 block mb-1">{lang === 'ar' ? 'سعر الدولار بالجنيه (USD/EGP)' : 'USD to EGP Rate'}</label>
+              <input type="number" value={exchangeRate} onChange={(e) => setExchangeRate(Number(e.target.value))} className={`w-full border rounded-xl p-3 text-sm font-bold text-emerald-400 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-300'}`} />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-300 block mb-1">عمولة الطلب بالدولار ($)</label>
-              <input type="number" step="0.01" value={orderFeeUsd} onChange={(e) => setOrderFeeUsd(Number(e.target.value))} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm font-bold text-amber-400" />
+              <label className="text-xs font-bold text-slate-400 block mb-1">{lang === 'ar' ? 'عمولة الطلب بالدولار ($)' : 'Order Fee in USD ($)'}</label>
+              <input type="number" step="0.01" value={orderFeeUsd} onChange={(e) => setOrderFeeUsd(Number(e.target.value))} className={`w-full border rounded-xl p-3 text-sm font-bold text-amber-400 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-300'}`} />
             </div>
-            <button onClick={handleUpdateExchangeRate} className="px-6 py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold cursor-pointer">حفظ التحديث 💾</button>
+            <button onClick={handleUpdateExchangeRate} className="px-6 py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold cursor-pointer">{lang === 'ar' ? 'حفظ التحديث 💾' : 'Save Update 💾'}</button>
           </div>
         )}
 
         {/* 7. الدومينات المخصصة */}
         {activeTab === 'domains' && (
           <div className="space-y-4 max-w-3xl">
-            <h3 className="text-base font-black">الدومينات المخصصة ({domains.length})</h3>
+            <h3 className="text-base font-black">{lang === 'ar' ? 'الدومينات المخصصة' : 'Custom Domains'} ({domains.length})</h3>
             {domains.map(d => (
-              <div key={d.id} className="p-4 bg-[#0d1322] border border-slate-800 rounded-2xl flex justify-between text-xs">
+              <div key={d.id} className={`p-4 border rounded-2xl flex justify-between text-xs ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200'}`}>
                 <span className="font-mono text-cyan-400">{d.domain}</span>
                 <span className="text-emerald-400">{d.status}</span>
               </div>
@@ -681,9 +692,9 @@ export default function SuperAdminExecutiveMaster() {
         {activeTab === 'plans' && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
             {plans.map(p => (
-              <div key={p.id} className="p-5 bg-[#0d1322] border border-slate-800 rounded-3xl space-y-1">
-                <h4 className="font-bold text-white text-sm">{p.name}</h4>
-                <div className="text-emerald-400 font-bold font-mono">{p.price_egp} ج.م / شهر</div>
+              <div key={p.id} className={`p-5 border rounded-3xl space-y-1 ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200'}`}>
+                <h4 className="font-bold text-sm">{p.name}</h4>
+                <div className="text-emerald-400 font-bold font-mono">{p.price_egp} {lang === 'ar' ? 'ج.م / شهر' : 'EGP / month'}</div>
               </div>
             ))}
           </div>
@@ -692,11 +703,11 @@ export default function SuperAdminExecutiveMaster() {
         {/* 9. سجل الحركات */}
         {activeTab === 'invoices' && (
           <div className="space-y-2">
-            <h3 className="text-base font-black mb-3">سجل العمليات المالية والخصومات</h3>
+            <h3 className="text-base font-black mb-3">{lang === 'ar' ? 'سجل العمليات المالية والخصومات' : 'Transactions & Invoices'}</h3>
             {invoices.map(t => (
-              <div key={t.id} className="p-3 bg-[#0d1322] border border-slate-800 rounded-xl flex justify-between text-xs">
+              <div key={t.id} className={`p-3 border rounded-xl flex justify-between text-xs ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200'}`}>
                 <div>
-                  <strong className="text-white block">{t.store_name}</strong>
+                  <strong className="block">{t.store_name}</strong>
                   <span className="text-slate-400">{t.description}</span>
                 </div>
                 <span className={`font-mono font-bold ${t.type === 'deposit' ? 'text-emerald-400' : 'text-rose-400'}`}>
@@ -713,109 +724,109 @@ export default function SuperAdminExecutiveMaster() {
             e.preventDefault();
             await supabase.from('platform_broadcasts').insert([newBroadcast]);
             setNewBroadcast({ title: '', message: '', banner_type: 'info' });
-            alert('📢 تم نشر الإعلان العام لجميع التجار!');
+            alert(lang === 'ar' ? '📢 تم نشر الإعلان العام لجميع التجار!' : '📢 Broadcast Published!');
             loadAllMasterData();
-          }} className="bg-[#0d1322] border border-slate-800 p-6 rounded-3xl space-y-3 max-w-2xl">
-            <h3 className="text-base font-black">إرسال إعلان للوحة التجار</h3>
-            <input type="text" required placeholder="عنوان التنبيه" value={newBroadcast.title} onChange={(e) => setNewBroadcast({ ...newBroadcast, title: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white" />
-            <textarea rows="3" required placeholder="نص التنبيه..." value={newBroadcast.message} onChange={(e) => setNewBroadcast({ ...newBroadcast, message: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white"></textarea>
-            <button type="submit" className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold cursor-pointer">نشر الإعلان 📢</button>
+          }} className={`border p-6 rounded-3xl space-y-3 max-w-2xl ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <h3 className="text-base font-black">{lang === 'ar' ? 'إرسال إعلان للوحة التجار' : 'Send Platform Broadcast'}</h3>
+            <input type="text" required placeholder={lang === 'ar' ? 'عنوان التنبيه' : 'Broadcast Title'} value={newBroadcast.title} onChange={(e) => setNewBroadcast({ ...newBroadcast, title: e.target.value })} className={`w-full border rounded-xl p-2.5 text-xs ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`} />
+            <textarea rows="3" required placeholder={lang === 'ar' ? 'نص التنبيه...' : 'Message body...'} value={newBroadcast.message} onChange={(e) => setNewBroadcast({ ...newBroadcast, message: e.target.value })} className={`w-full border rounded-xl p-2.5 text-xs ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`}></textarea>
+            <button type="submit" className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold cursor-pointer">{lang === 'ar' ? 'نشر الإعلان 📢' : 'Publish Broadcast 📢'}</button>
           </form>
         )}
 
         {/* 11. هوية المنصة واللوجو */}
         {activeTab === 'branding' && (
-          <form onSubmit={handleSavePlatformSettings} className="bg-[#0d1322] border border-slate-800 p-6 rounded-3xl space-y-4 max-w-2xl">
-            <h3 className="text-base font-black border-b border-slate-800 pb-2">هوية المنصة واللوجو الرسمي</h3>
+          <form onSubmit={handleSavePlatformSettings} className={`border p-6 rounded-3xl space-y-4 max-w-2xl ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <h3 className="text-base font-black border-b border-slate-800 pb-2">{lang === 'ar' ? 'هوية المنصة واللوجو الرسمي' : 'Platform Logo & Identity'}</h3>
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-slate-900 border border-slate-700 rounded-2xl flex items-center justify-center overflow-hidden">
                 {platformSettings.store_logo ? <img src={platformSettings.store_logo} className="w-full h-full object-contain" /> : '🖼️'}
               </div>
               <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-xs text-slate-400" />
             </div>
-            <input type="text" placeholder="اسم المنصة" value={platformSettings.store_name} onChange={(e) => setPlatformSettings({ ...platformSettings, store_name: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white font-bold" />
-            <input type="tel" placeholder="واتساب الدعم العام" value={platformSettings.support_phone} onChange={(e) => setPlatformSettings({ ...platformSettings, support_phone: e.target.value })} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white font-mono" />
-            <button type="submit" disabled={savingSettings || uploadingLogo} className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold">حفظ الهوية 💾</button>
+            <input type="text" placeholder="Platform Name" value={platformSettings.store_name} onChange={(e) => setPlatformSettings({ ...platformSettings, store_name: e.target.value })} className={`w-full border rounded-xl p-2.5 text-xs font-bold ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`} />
+            <input type="tel" placeholder="WhatsApp Support Phone" value={platformSettings.support_phone} onChange={(e) => setPlatformSettings({ ...platformSettings, support_phone: e.target.value })} className={`w-full border rounded-xl p-2.5 text-xs font-mono ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`} />
+            <button type="submit" disabled={savingSettings || uploadingLogo} className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-xs font-bold">{lang === 'ar' ? 'حفظ الهوية 💾' : 'Save Identity 💾'}</button>
           </form>
         )}
 
       </main>
 
-      {/* نافذة شحن المحفظة */}
+      {/* مودال شحن المحفظة */}
       {rechargeModalMerchant && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4">
-            <h3 className="text-base font-black border-b border-slate-800 pb-2">شحن محفظة: {rechargeModalMerchant.store_name}</h3>
+          <div className={`border rounded-3xl p-6 max-w-md w-full space-y-4 ${isDark ? 'bg-[#0d1322] border-slate-800' : 'bg-white border-slate-300'}`}>
+            <h3 className="text-base font-black border-b border-slate-800 pb-2">{lang === 'ar' ? 'شحن محفظة:' : 'Recharge Wallet:'} {rechargeModalMerchant.store_name}</h3>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <input type="number" min="5" value={chargeUsd} onChange={(e) => { setChargeUsd(Number(e.target.value)); setChargeEgp(Math.round(Number(e.target.value) * exchangeRate)); }} className="bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-emerald-400 font-bold" />
-              <input type="number" value={chargeEgp} onChange={(e) => { setChargeEgp(Number(e.target.value)); setChargeUsd(Number((Number(e.target.value) / exchangeRate).toFixed(2))); }} className="bg-slate-900 border border-slate-700 p-2.5 rounded-xl text-white font-bold" />
+              <input type="number" min="5" value={chargeUsd} onChange={(e) => { setChargeUsd(Number(e.target.value)); setChargeEgp(Math.round(Number(e.target.value) * exchangeRate)); }} className={`border p-2.5 rounded-xl font-bold text-emerald-400 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-300'}`} />
+              <input type="number" value={chargeEgp} onChange={(e) => { setChargeEgp(Number(e.target.value)); setChargeUsd(Number((Number(e.target.value) / exchangeRate).toFixed(2))); }} className={`border p-2.5 rounded-xl font-bold ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-black'}`} />
             </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-              <button onClick={() => setRechargeModalMerchant(null)} className="px-4 py-2 bg-slate-800 rounded-xl text-xs font-bold">إلغاء</button>
-              <button onClick={handleConfirmRecharge} className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-black cursor-pointer">تأكيد الشحن والتفعيل 🚀</button>
+              <button onClick={() => setRechargeModalMerchant(null)} className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold">{lang === 'ar' ? 'إلغاء' : 'Cancel'}</button>
+              <button onClick={handleConfirmRecharge} className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-black cursor-pointer">{lang === 'ar' ? 'تأكيد الشحن والتفعيل 🚀' : 'Confirm Recharge 🚀'}</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* نافذة إضافة وتعديل المنتج من السوبر أدمن */}
+      {/* مودال إضافة وتعديل المنتج من السوبر أدمن */}
       {showProductModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <form onSubmit={handleSaveProductFromAdmin} className="bg-[#0d1322] border border-slate-800 rounded-3xl p-6 max-w-md w-full space-y-4">
+          <form onSubmit={handleSaveProductFromAdmin} className={`border rounded-3xl p-6 max-w-md w-full space-y-4 ${isDark ? 'bg-[#0d1322] border-slate-800 text-white' : 'bg-white border-slate-300 text-black'}`}>
             <div className="flex justify-between items-center border-b border-slate-800 pb-2">
               <h3 className="text-base font-black">
-                {editingProduct ? `تعديل: ${editingProduct.name}` : 'إضافة منتج جديد'}
+                {editingProduct ? (lang === 'ar' ? `تعديل: ${editingProduct.name}` : `Edit: ${editingProduct.name}`) : (lang === 'ar' ? 'إضافة منتج عام' : 'Add General Product')}
               </h3>
               <button type="button" onClick={() => setShowProductModal(false)} className="text-slate-400 hover:text-white">✕</button>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-400 block mb-1">اسم المنتج</label>
+              <label className="text-xs font-bold text-slate-400 block mb-1">{lang === 'ar' ? 'اسم المنتج' : 'Product Name'}</label>
               <input
                 type="text"
                 required
                 value={productForm.name}
                 onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white"
+                className={`w-full border rounded-xl p-2.5 text-xs ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-black'}`}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-xs font-bold text-slate-400 block mb-1">سعر البيع (ج.م)</label>
+                <label className="text-xs font-bold text-slate-400 block mb-1">{lang === 'ar' ? 'سعر البيع (ج.م)' : 'Price (EGP)'}</label>
                 <input
                   type="number"
                   required
                   value={productForm.price}
                   onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-emerald-400 font-bold"
+                  className={`w-full border rounded-xl p-2.5 text-xs text-emerald-400 font-bold ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-300'}`}
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-400 block mb-1">المخزون المتوفر</label>
+                <label className="text-xs font-bold text-slate-400 block mb-1">{lang === 'ar' ? 'المخزون المتوفر' : 'Stock Quantity'}</label>
                 <input
                   type="number"
                   value={productForm.stock}
                   onChange={(e) => setProductForm({ ...productForm, stock: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white"
+                  className={`w-full border rounded-xl p-2.5 text-xs ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-black'}`}
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-400 block mb-1">رابط صورة المنتج (URL)</label>
+              <label className="text-xs font-bold text-slate-400 block mb-1">{lang === 'ar' ? 'رابط صورة المنتج (URL)' : 'Product Image URL'}</label>
               <input
                 type="url"
                 placeholder="https://..."
                 value={productForm.image_url}
                 onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-white font-mono"
+                className={`w-full border rounded-xl p-2.5 text-xs font-mono ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-black'}`}
               />
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
-              <button type="button" onClick={() => setShowProductModal(false)} className="px-4 py-2 bg-slate-800 rounded-xl text-xs font-bold">إلغاء</button>
-              <button type="submit" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black">حفظ التعديلات ✓</button>
+              <button type="button" onClick={() => setShowProductModal(false)} className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold">{lang === 'ar' ? 'إلغاء' : 'Cancel'}</button>
+              <button type="submit" className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black">{lang === 'ar' ? 'حفظ التعديلات ✓' : 'Save Changes ✓'}</button>
             </div>
           </form>
         </div>
