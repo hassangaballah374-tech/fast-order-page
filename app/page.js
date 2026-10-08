@@ -11,14 +11,12 @@ export default function SpikeLandingPage() {
   const t = {
     ar: {
       brandName: 'سبايك | SPIKE',
-      brandSlogan: 'ابنِ متجرك.. وضاعف طلباتك',
       whySpike: 'لماذا سبايك؟',
       features: 'المميزات',
       pricing: 'الباقات والأسعار',
       enterprise: 'كبار التجار',
       login: 'تسجيل الدخول',
       startFree: 'ابدأ مجاناً',
-      heroTitle: 'ابنِ متجرك.. وضاعف طلباتك',
       heroSubtitle: 'المنظومة الأقوى لإدارة المتاجر الإلكترونية، الشحن، وتحصيل الدفع عند الاستلام في مصر بأعلى معدلات تأكيد وتسليم.',
       promoSubtext: 'ابدأ فترتك التجريبية مجاناً الآن بدون أي بطاقة بنكية.',
       sectionTitlePart1: 'انطلق بتجارتك',
@@ -40,14 +38,12 @@ export default function SpikeLandingPage() {
     },
     en: {
       brandName: 'SPIKE | سبايك',
-      brandSlogan: 'Build your store.. Double your orders',
       whySpike: 'Why SPIKE?',
       features: 'Features',
       pricing: 'Pricing',
       enterprise: 'Enterprise',
       login: 'Log in',
       startFree: 'Start Free',
-      heroTitle: 'Build your store.. Double your orders',
       heroSubtitle: 'The ultimate eCommerce platform built for Cash on Delivery, inventory scaling, and highest delivery rates.',
       promoSubtext: 'Start your free trial today. No credit card required.',
       sectionTitlePart1: 'Take your store',
@@ -80,7 +76,7 @@ export default function SpikeLandingPage() {
       }`}>
         <div className="flex items-center gap-8">
           <Link href="/">
-            <SpikeBrandHeader height="h-11" />
+            <SpikeBrandHeader height="h-11" showSlogan={true} />
           </Link>
 
           <div className="hidden lg:flex items-center gap-6 text-sm font-bold">
@@ -153,9 +149,18 @@ export default function SpikeLandingPage() {
 
         <div className="max-w-4xl mx-auto relative z-10 space-y-6 text-center">
           
-          {/* تم إزالة شارة النار بناءً على طلبك والاعتماد على العنوان الصريح */}
-          <h1 className="text-5xl sm:text-7xl font-black tracking-tight leading-[1.15]">
-            {t.heroTitle}
+          {/* اللوجو بشكل كبير في الشاشة */}
+          <div className="flex justify-center">
+            <img
+              src={SPIKE_LOGO_URL}
+              alt="SPIKE"
+              className="h-32 sm:h-44 w-auto object-contain rounded-3xl shadow-2xl transition-transform duration-300 hover:scale-105"
+            />
+          </div>
+
+          {/* اسم المتجر إنجليزي فقط وبدون السلوجن أو شعلة النار */}
+          <h1 className="text-5xl sm:text-7xl font-black tracking-wider font-mono text-[#0E1E38] dark:text-white uppercase">
+            SPIKE
           </h1>
 
           <p className={`text-base sm:text-lg font-medium max-w-2xl mx-auto leading-relaxed ${
@@ -164,7 +169,7 @@ export default function SpikeLandingPage() {
             {t.heroSubtitle}
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Link
               href="/register"
               className="px-8 py-3.5 bg-[#E86A53] hover:bg-[#d65942] text-white font-black text-sm rounded-xl transition shadow-xl shadow-[#E86A53]/30"
@@ -191,7 +196,7 @@ export default function SpikeLandingPage() {
         </div>
       </section>
 
-      {/* 📦 المميزات */}
+      {/* 📦 قسم المميزات */}
       <section className={`py-24 px-6 lg:px-16 transition-colors ${
         isDark ? 'bg-[#0a1527]' : 'bg-[#fffdf9]'
       }`}>
@@ -278,7 +283,7 @@ export default function SpikeLandingPage() {
       }`}>
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <SpikeBrandHeader height="h-11" />
+            <SpikeBrandHeader height="h-11" showSlogan={true} />
 
             <div className="flex flex-wrap gap-6 text-xs font-bold">
               <Link href="#" className="hover:text-[#E86A53] transition">{t.terms}</Link>
