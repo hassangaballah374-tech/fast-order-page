@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import { useApp } from '../../../context/AppContext';
-import SpikeBrandHeader from '../../../components/SpikeBrandHeader';
 
 export default function PublicStoreCheckoutPage() {
   const { slug } = useParams();
@@ -14,7 +13,7 @@ export default function PublicStoreCheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [storeData, setStoreData] = useState(null);
   const [storeSettings, setStoreSettings] = useState(null);
-  const [platformLogo, setPlatformLogo] = useState('');
+  const [platformLogo, setPlatformLogo] = useState('/spike-brand.jpg');
   const [shippingRates, setShippingRates] = useState({});
   const [products, setProducts] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -260,6 +259,9 @@ export default function PublicStoreCheckoutPage() {
     return (
       <div className={`min-h-screen flex items-center justify-center p-4 font-sans ${isDark ? 'bg-[#0E1E38] text-white' : 'bg-[#F7F4EC] text-[#0E1E38]'}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         <div className={`max-w-md w-full border border-[#E86A53]/30 p-8 rounded-3xl text-center space-y-4 ${isDark ? 'bg-[#091222]' : 'bg-white shadow-xl'}`}>
+          <div className="flex justify-center">
+            <img src="/spike-brand.jpg" alt="سبايك" className="h-14 w-auto object-contain rounded-xl shadow-md" />
+          </div>
           <div className="text-4xl text-[#E86A53]">✓</div>
           <h2 className="text-xl font-black">{lang === 'ar' ? 'تم تأكيد طلبك بنجاح!' : 'Order Placed Successfully!'}</h2>
           <p className="text-xs text-slate-400">
@@ -318,7 +320,7 @@ export default function PublicStoreCheckoutPage() {
         {storeSettings?.announcement_text || (lang === 'ar' ? '🚚 شحن لجميع المحافظات والدفع عند الاستلام بعد المعاينة!' : '🚚 Fast shipping & Cash on Delivery across Egypt!')}
       </div>
 
-      {/* الترويسة العلوية للزبون */}
+      {/* الترويسة العلوية لزبون المتجر (لوجو المتجر + لوجو منصة سبايك التوثيقي) */}
       <header className={`border-b px-4 sm:px-8 py-3.5 sticky top-0 z-40 backdrop-blur-md bg-opacity-95 shadow-sm transition-colors ${
         isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'
       }`}>
@@ -338,6 +340,12 @@ export default function PublicStoreCheckoutPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* شارة التوثيق بلوجو سبايك ليرى العميل المنصة الضامنة */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-slate-800/60 border border-slate-700/80 rounded-xl">
+              <span className="text-[10px] text-slate-400 font-bold">{lang === 'ar' ? 'موثق عبر' : 'Powered by'}</span>
+              <img src="/spike-brand.jpg" alt="سبايك" className="h-6 w-auto object-contain rounded" />
+            </div>
+
             <button onClick={toggleLanguage} className="px-2.5 py-1 bg-slate-800 text-white rounded-lg text-[10px] font-bold border border-slate-700">
               🌐 {lang === 'ar' ? 'EN' : 'AR'}
             </button>
@@ -516,10 +524,14 @@ export default function PublicStoreCheckoutPage() {
         )}
       </main>
 
-      {/* فوتر الشفافية والسياسات */}
+      {/* فوتر الشفافية والسياسات مع إظهار لوجو سبايك */}
       <footer className={`mt-12 border-t p-6 max-w-4xl mx-auto rounded-3xl text-center space-y-4 ${
         isDark ? 'bg-[#091222] border-slate-800/80' : 'bg-white border-slate-200 shadow-sm'
       }`}>
+        <div className="flex justify-center">
+          <img src="/spike-brand.jpg" alt="سبايك | SPIKE" className="h-10 w-auto object-contain rounded-lg" />
+        </div>
+
         <div className="flex flex-wrap justify-center gap-3 text-xs font-bold">
           <button onClick={() => setActivePolicyModal('about')} className="text-slate-400 hover:text-[#E86A53] cursor-pointer">
             ℹ️ {lang === 'ar' ? 'من نحن' : 'About Us'}
