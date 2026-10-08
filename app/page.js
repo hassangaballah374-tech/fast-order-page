@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '../context/AppContext';
+import SpikeBrandHeader from '../components/SpikeBrandHeader';
+import SpikeLogo from '../components/SpikeLogo';
 
 export default function SpikeLandingPage() {
   const { lang, theme, toggleLanguage, toggleTheme } = useApp();
@@ -18,7 +20,7 @@ export default function SpikeLandingPage() {
       login: 'تسجيل الدخول',
       startFree: 'ابدأ مجاناً',
       heroTitle: 'ابنِ متجرك.. وضاعف طلباتك',
-      heroSubtitle: 'المنظومة الأقوى لإدارة المتاجر الإلكترونية، الشحن، وتحصيل الدفع عند الاستلام بأعلى معدلات تأكيد وتسليم.',
+      heroSubtitle: 'المنظومة الأقوى لإدارة المتاجر الإلكترونية، الشحن، وتحصيل الدفع عند الاستلام في مصر بأعلى معدلات تأكيد وتسليم.',
       promoSubtext: 'ابدأ فترتك التجريبية مجاناً الآن بدون أي بطاقة بنكية.',
       sectionTitlePart1: 'انطلق بتجارتك',
       sectionTitlePart2: 'إلى القمة مع سبايك',
@@ -73,36 +75,13 @@ export default function SpikeLandingPage() {
       isDark ? 'bg-[#0E1E38] text-white' : 'bg-[#F7F4EC] text-[#0E1E38]'
     }`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 🧭 1. الترويسة العلوية (Navbar) */}
+      {/* 🧭 الترويسة العلوية */}
       <nav className={`sticky top-0 z-50 border-b px-6 lg:px-14 py-3.5 flex items-center justify-between backdrop-blur-md transition-colors ${
         isDark ? 'bg-[#0E1E38]/90 border-slate-800' : 'bg-[#F7F4EC]/90 border-slate-200/80 shadow-sm'
       }`}>
-        
-        {/* اللوجو واسم المتجر */}
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-3">
-            {/* أيقونة الأسهم المستوحاة من لوجو سبايك */}
-            <div className="w-10 h-10 rounded-2xl bg-[#E86A53] flex items-center justify-center p-2 shadow-lg shadow-[#E86A53]/30">
-              <svg viewBox="0 0 100 100" fill="none" className="w-full h-full text-white stroke-current stroke-[8] stroke-linecap-round stroke-linejoin-round">
-                <path d="M50 20 L50 45" />
-                <path d="M50 80 L50 55" />
-                <path d="M20 50 L45 50" />
-                <path d="M80 50 L55 50" />
-                <path d="M28 28 L45 45" />
-                <path d="M72 72 L55 55" />
-                <path d="M72 28 L55 45" />
-                <path d="M28 72 L45 55" />
-                <circle cx="50" cy="50" r="10" fill="currentColor" />
-              </svg>
-            </div>
-            <div>
-              <span className={`text-2xl font-black tracking-tight block leading-tight ${isDark ? 'text-white' : 'text-[#0E1E38]'}`}>
-                سبايك | SPIKE
-              </span>
-              <span className="text-[10px] text-[#E86A53] font-bold block">
-                {t.brandSlogan}
-              </span>
-            </div>
+          <Link href="/">
+            <SpikeBrandHeader />
           </Link>
 
           <div className="hidden lg:flex items-center gap-6 text-sm font-bold">
@@ -113,7 +92,6 @@ export default function SpikeLandingPage() {
           </div>
         </div>
 
-        {/* أدوات التحكم (لغة + مود + أزرار) */}
         <div className="flex items-center gap-3">
           <button
             onClick={toggleLanguage}
@@ -155,11 +133,10 @@ export default function SpikeLandingPage() {
         </div>
       </nav>
 
-      {/* 🚀 2. القسم الرئيسي (Hero Section) */}
+      {/* 🚀 القسم الرئيسي */}
       <section className={`relative overflow-hidden py-24 lg:py-36 px-6 lg:px-16 border-b transition-colors ${
         isDark ? 'border-slate-800' : 'border-slate-200'
       }`}>
-        {/* التدرج اللوني اللطيف المشتق من ألوان اللوجو */}
         <div 
           className="absolute inset-0 pointer-events-none opacity-40"
           style={{
@@ -176,6 +153,10 @@ export default function SpikeLandingPage() {
         />
 
         <div className="max-w-4xl mx-auto relative z-10 space-y-6 text-center">
+          <div className="flex justify-center mb-2">
+            <SpikeLogo size={90} />
+          </div>
+
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E86A53]/10 border border-[#E86A53]/30 text-[#E86A53] text-xs font-black">
             <span>🔥</span>
             <span>{t.brandSlogan}</span>
@@ -218,12 +199,11 @@ export default function SpikeLandingPage() {
         </div>
       </section>
 
-      {/* 📦 3. قسم المميزات (Take your store to the next level) */}
+      {/* 📦 المميزات */}
       <section className={`py-24 px-6 lg:px-16 transition-colors ${
         isDark ? 'bg-[#0a1527]' : 'bg-[#fffdf9]'
       }`}>
         <div className="max-w-6xl mx-auto space-y-12">
-          
           <div className="space-y-2">
             <h2 className="text-4xl sm:text-5xl font-black tracking-tight leading-tight max-w-md">
               {t.sectionTitlePart1} <br />
@@ -232,8 +212,6 @@ export default function SpikeLandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            
-            {/* كارت 1 */}
             <div className={`rounded-3xl p-6 border flex flex-col justify-between space-y-6 transition-all duration-300 hover:shadow-2xl ${
               isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
             }`}>
@@ -255,7 +233,6 @@ export default function SpikeLandingPage() {
               </div>
             </div>
 
-            {/* كارت 2 */}
             <div className={`rounded-3xl p-6 border flex flex-col justify-between space-y-6 transition-all duration-300 hover:shadow-2xl ${
               isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
             }`}>
@@ -282,7 +259,6 @@ export default function SpikeLandingPage() {
               </div>
             </div>
 
-            {/* كارت 3 */}
             <div className={`rounded-3xl p-6 border flex flex-col justify-between space-y-6 transition-all duration-300 hover:shadow-2xl ${
               isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
             }`}>
@@ -300,26 +276,17 @@ export default function SpikeLandingPage() {
                 </p>
               </div>
             </div>
-
           </div>
-
         </div>
       </section>
 
-      {/* 🖤 4. الفوتر المتناسق مع ألوان سبايك */}
+      {/* 🖤 الفوتر */}
       <footer className={`pt-16 pb-12 px-6 lg:px-16 border-t text-xs transition-colors ${
         isDark ? 'bg-[#091222] border-slate-800 text-slate-400' : 'bg-[#ede9dc] border-slate-300 text-slate-600'
       }`}>
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div>
-              <span className="text-xl font-black text-[#E86A53] block">
-                سبايك | SPIKE
-              </span>
-              <p className="text-xs font-bold mt-1">
-                {t.brandSlogan}
-              </p>
-            </div>
+            <SpikeBrandHeader />
 
             <div className="flex flex-wrap gap-6 text-xs font-bold">
               <Link href="#" className="hover:text-[#E86A53] transition">{t.terms}</Link>
