@@ -41,7 +41,7 @@ export default function SuperAdminExecutiveMaster() {
 
   const [platformSettings, setPlatformSettings] = useState({
     store_name: 'سبايك | SPIKE',
-    store_logo: '',
+    store_logo: '/spike-brand.jpg',
     support_phone: '',
     support_email: 'support@spike.shop',
     business_address: 'القاهرة، جمهورية مصر العربية',
@@ -258,7 +258,7 @@ export default function SuperAdminExecutiveMaster() {
     reader.onloadend = () => {
       setPlatformSettings(prev => ({ ...prev, store_logo: reader.result }));
       setUploadingLogo(false);
-      alert('✅ تم اختيار اللوجو بنجاح!');
+      alert('✅ تم تحديث اللوجو بنجاح!');
     };
     reader.readAsDataURL(file);
   };
@@ -328,7 +328,7 @@ export default function SuperAdminExecutiveMaster() {
       } ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="space-y-6">
           <div className="space-y-2">
-            <SpikeBrandHeader logoSize={38} />
+            <SpikeBrandHeader height="h-11" />
             <span className="text-[9px] bg-[#E86A53]/20 text-[#E86A53] border border-[#E86A53]/30 px-2 py-0.5 rounded-full font-black block w-fit">
               SUPER ADMIN MASTER
             </span>
@@ -735,7 +735,7 @@ export default function SuperAdminExecutiveMaster() {
           <form onSubmit={handleSavePlatformSettings} className={`border p-6 rounded-3xl space-y-4 max-w-2xl ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
             <h3 className="text-base font-black border-b border-slate-800 pb-2">{lang === 'ar' ? 'هوية منصة سبايك والشعار' : 'SPIKE Branding & Logo'}</h3>
             <div className="flex items-center gap-4">
-              <SpikeLogo size={60} />
+              <img src="/spike-brand.jpg" alt="SPIKE" className="h-14 w-auto object-contain rounded-xl shadow-md border border-slate-700" />
               <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-xs text-slate-400" />
             </div>
             <input type="text" placeholder="Platform Name" value={platformSettings.store_name} onChange={(e) => setPlatformSettings({ ...platformSettings, store_name: e.target.value })} className={`w-full border rounded-xl p-2.5 text-xs font-bold ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`} />
