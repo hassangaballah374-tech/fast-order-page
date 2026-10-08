@@ -1,405 +1,478 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
+import { SPIKE_LOGO_URL } from '../../components/SpikeBrandHeader';
 
-export default function AuthPage() {
+export default function SpikeRegisterAndAuthPage() {
   const router = useRouter();
-  
-  // 'register' لإنشاء متجر جديد، أو 'login' لتسجيل الدخول
-  const [mode, setMode] = useState('register');
-  const [rememberMe, setRememberMe] = useState(false);
+
+  const [isLoginMode, setIsLoginMode] = useState(false);
+  const [showTopBanner, setShowTopBanner] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
 
-  // حقول إنشاء المتجر
+  // حقول نموذج التسجيل
   const [formData, setFormData] = useState({
-    storeName: '',
     storeSlug: '',
-    ownerName: '',
+    currency: 'USD',
+    fullName: '',
     phone: '',
-    governorate: '',
-    address: '',
     email: '',
     password: '',
+    confirmPassword: '',
   });
 
-  // حقول تسجيل الدخول
-  const [loginData, setLoginData] = useState({
-    email: '',
-    password: '',
-  });
-
-  // استرجاع البيانات المحفوظة إن وُجدت
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedEmail = localStorage.getItem('nextorder_saved_email');
-      const savedPassword = localStorage.getItem('nextorder_saved_password');
-      if (savedEmail && savedPassword) {
-        setLoginData({ email: savedEmail, password: savedPassword });
-        setRememberMe(true);
-      }
-    }
-  }, []);
-
-  // إدارة حفظ أو حذف بيانات الدخول
-  const handleRememberCredentials = (email, password) => {
-    if (typeof window === 'undefined') return;
-    if (rememberMe) {
-      localStorage.setItem('nextorder_saved_email', email);
-      localStorage.setItem('nextorder_saved_password', password);
-    } else {
-      localStorage.removeItem('nextorder_saved_email');
-      localStorage.removeItem('nextorder_saved_password');
-    }
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // 1. معالجة تسجيل الدخول لتاجر مسجل مسبقاً
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setErrorMsg('');
 
     try {
-      const cleanEmail = loginData.email.trim().toLowerCase();
-      const cleanPassword = loginData.password;
+      if (isLoginMode) {
+        // تسجيل الدخول
+        if (!formData.email || !formData.password) {
+          alert('يرجى كتابة البريد الإلكتروني وكلمة المرور');
+          setLoading(false);
+          return;
+        }
 
-      // محاولة تسجيل الدخول عبر Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password: cleanPassword,
-      });
-
-      let merchantUserId = authData?.user?.id;
-
-      // إذا لم يكن الحساب مسجلاً في Auth أو حدث تقييد، نبحث عنه بريدياً في بروفايل المتاجر
-      if (authError || !merchantUserId) {
-        const { data: storeProfile } = await supabase
+        // محاولة جلب التاجر من Supabase
+        const { data: store } = await supabase
           .from('store_profiles')
-          .select('user_id')
-          .ilike('owner_name', `%${cleanEmail.split('@')[0]}%`)
-          .limit(1)
+          .select('*')
+          .eq('owner_name', formData.fullName || formData.email)
           .maybeSingle();
 
-        if (storeProfile?.user_id) {
-          merchantUserId = storeProfile.user_id;
-        } else {
-          throw new Error('البريد الإلكتروني أو كلمة المرور غير صحيحة.');
-        }
-      }
+        const uid = store?.user_id || 'merchant_' + Date.now();
+        localStorage.setItem('merchant_user_id', uid);
+        localStorage.setItem('is_super_admin', 'false');
 
-      handleRememberCredentials(cleanEmail, cleanPassword);
-      localStorage.setItem('merchant_user_id', merchantUserId);
-
-      alert('✅ أهلاً بك مجدداً! جاري فتح متجرك...');
-      router.push('/dashboard');
-    } catch (err) {
-      setErrorMsg(err.message || 'فشل تسجيل الدخول، تأكد من بياناتك');
-    }
-    setLoading(false);
-  };
-
-  // 2. معالجة إنشاء متجر جديد
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMsg('');
-
-    try {
-      const cleanEmail = formData.email.trim().toLowerCase();
-      const cleanSlug = (formData.storeSlug || formData.storeName)
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '-');
-
-      let currentUserId = null;
-
-      // إنشاء حساب المستخدم في Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password: formData.password,
-        options: {
-          data: { full_name: formData.ownerName },
-        },
-      });
-
-      if (authError && authError.message.includes('rate limit')) {
-        currentUserId = 'merchant_' + Date.now();
-      } else if (authError) {
-        throw authError;
+        alert('✅ تم تسجيل الدخول بنجاح! جاري توجيهك للوحة التحكم...');
+        router.push('/dashboard');
       } else {
-        currentUserId = authData?.user?.id || 'merchant_' + Date.now();
-      }
+        // إنشاء حساب جديد
+        if (!formData.storeSlug || !formData.fullName || !formData.phone || !formData.email || !formData.password) {
+          alert('يرجى ملء كافة الحقول المطلوبة');
+          setLoading(false);
+          return;
+        }
 
-      // حفظ بيانات المتجر الجديد
-      const { error: profileError } = await supabase.from('store_profiles').insert([
-        {
-          user_id: currentUserId,
-          store_name: formData.storeName,
+        if (formData.password !== formData.confirmPassword) {
+          alert('كلمتا المرور غير متطابقتين!');
+          setLoading(false);
+          return;
+        }
+
+        const cleanSlug = formData.storeSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+        const generatedUid = 'usr_' + Date.now().toString(36);
+
+        // إنشاء بروفايل المتجر في Supabase مع رصيد تجريبي
+        await supabase.from('store_profiles').insert([{
+          user_id: generatedUid,
+          store_name: formData.storeSlug,
           store_slug: cleanSlug,
-          owner_name: formData.ownerName,
-          phone: formData.phone,
-          governorate: formData.governorate,
-          address: formData.address,
-          is_active: false,
-          amount_paid: 0,
-        },
-      ]);
+          owner_name: formData.fullName,
+          phone: '+20' + formData.phone.replace(/^0+/, ''),
+          wallet_balance_usd: 5.0, // رصيد تجريبي افتراضي
+          is_active: true,
+          subscription_status: 'active',
+          plan_type: 'starter',
+        }]);
 
-      if (profileError) throw profileError;
+        // إعدادات المتجر الأولية
+        await supabase.from('merchant_settings').insert([{
+          user_id: generatedUid,
+          store_name: formData.storeSlug,
+          owner_name: formData.fullName,
+          store_email: formData.email,
+          support_phone: '+20' + formData.phone.replace(/^0+/, ''),
+          about_us: 'متجر معتمد يوفر أفضل المنتجات مع ضمان المعاينة قبل الاستلام.',
+        }]);
 
-      // إعداد سجل الإعدادات الأولي
-      await supabase.from('merchant_settings').upsert({
-        user_id: currentUserId,
-        store_name: formData.storeName,
-        support_phone: formData.phone,
-      }, { onConflict: 'user_id' });
+        localStorage.setItem('merchant_user_id', generatedUid);
+        localStorage.setItem('is_super_admin', 'false');
 
-      handleRememberCredentials(cleanEmail, formData.password);
-      localStorage.setItem('merchant_user_id', currentUserId);
-
-      alert('🎉 تم فتح حساب متجرك بنجاح! جاري تحويلك إلى لوحة التحكم الخاصة بك...');
-      router.push('/dashboard');
+        alert(`🎉 مرحباً بك في سبايك! تم إنشاء متجرك (${cleanSlug}.spike.shop) بنجاح.`);
+        router.push('/dashboard');
+      }
     } catch (err) {
-      setErrorMsg(err.message || 'حدث خطأ أثناء إتمام التسجيل');
+      alert('حدث خطأ: ' + (err.message || 'تعذر الاتصال بالسيرفر'));
     }
+
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 sm:p-6 font-sans select-none" dir="rtl">
-      <div className="max-w-xl w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-10 space-y-6 shadow-2xl">
-        
-        {/* الترويسة الرئيسية */}
-        <div className="text-center space-y-2">
-          <span className="text-4xl block">🏪</span>
-          <h1 className="text-2xl sm:text-3xl font-black">
-            {mode === 'register' ? 'فتح متجر إلكتروني جديد' : 'تسجيل الدخول إلى متجرك'}
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400">
-            {mode === 'register'
-              ? 'سجل بيانات متجرك الآن على NEXT ORDER وابدأ البيع فوراً'
-              : 'أدخل بيانات حسابك للمتابعة وإدارة منتجاتك وطلباتك'}
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#F8F9FA] text-[#1E293B] font-sans flex flex-col justify-between selection:bg-emerald-500 selection:text-white" dir="rtl">
 
-        {/* أزرار التبديل السريع بين إنشاء حساب وتسجيل الدخول */}
-        <div className="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
-          <button
-            type="button"
-            onClick={() => { setMode('register'); setErrorMsg(''); }}
-            className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer ${
-              mode === 'register' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            🏪 فتح متجر جديد
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode('login'); setErrorMsg(''); }}
-            className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer ${
-              mode === 'login' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            🔑 تسجيل الدخول
-          </button>
-        </div>
-
-        {/* رسائل التنبيه أو الخطأ */}
-        {errorMsg && (
-          <div className="p-3.5 bg-red-500/20 border border-red-500/40 text-red-300 rounded-2xl text-xs font-bold text-center">
-            {errorMsg}
+      {/* 🟢 1. الشريط العلوي الترويجي الأخضر */}
+      {showTopBanner && (
+        <div className="bg-[#00B050] text-white px-4 py-2.5 text-xs font-bold flex items-center justify-between transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowTopBanner(false)}
+              className="text-white/80 hover:text-white text-base leading-none cursor-pointer"
+            >
+              ✕
+            </button>
+            <Link
+              href="/"
+              className="bg-white text-[#00B050] hover:bg-slate-100 px-3 py-1 rounded-md font-black text-[11px] shadow-sm transition"
+            >
+              زيارة موقع مصر
+            </Link>
           </div>
-        )}
 
-        {/* 🌟 1. نموذج تسجيل الدخول */}
-        {mode === 'login' && (
-          <form onSubmit={handleLogin} className="space-y-4 text-xs">
-            <div>
-              <label className="block font-bold text-slate-300 mb-1.5">البريد الإلكتروني *</label>
+          <div className="text-center sm:text-right hidden sm:block">
+            <span>لدينا نسخة مخصصة لـ مصر • </span>
+            <span className="font-normal opacity-90">ننصح بالانتقال إلى الموقع المخصص لبلدك للحصول على أفضل تجربة وسرعة شحن.</span>
+          </div>
+        </div>
+      )}
+
+      {/* 🧭 2. النافبار الأبيض المتناسق */}
+      <header className="bg-white border-b border-slate-200/80 px-6 lg:px-14 py-3.5 sticky top-0 z-40 shadow-xs">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          
+          {/* الجانب الأيمن: اللوجو والروابط الرئيسية */}
+          <div className="flex items-center gap-8">
+            <Link href="/" className="flex items-center gap-2">
+              <img
+                src={SPIKE_LOGO_URL}
+                alt="SPIKE | سبايك"
+                className="h-10 w-auto object-contain rounded-lg"
+              />
+              <span className="text-xl font-black tracking-tight text-[#0E1E38]">
+                سبايك
+              </span>
+            </Link>
+
+            <nav className="hidden md:flex items-center gap-6 text-sm font-bold text-slate-700">
+              <Link href="/" className="hover:text-[#00B050] transition">الرئيسية</Link>
+              <button className="hover:text-[#00B050] transition cursor-pointer">الكورسات</button>
+              <Link href="/#pricing" className="hover:text-[#00B050] transition">الأسعار</Link>
+            </nav>
+          </div>
+
+          {/* الجانب الأيسر: محدد الدولة/اللغة وأزرار الإجراء */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 border border-slate-200 bg-slate-50 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 cursor-pointer">
+              <span>🌐</span>
+              <span>عالمي • AR</span>
+              <span className="text-[10px] text-slate-400">▼</span>
+            </div>
+
+            <button
+              onClick={() => setIsLoginMode(false)}
+              className="bg-[#00B050] hover:bg-[#009644] text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm transition whitespace-nowrap cursor-pointer"
+            >
+              اشترك مجاناً الآن
+            </button>
+
+            <button
+              onClick={() => setIsLoginMode(true)}
+              className="w-8 h-8 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              title="تسجيل الدخول"
+            >
+              👤
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* 📝 3. البطاقة المركزية لإنشاء الحساب والتسجيل */}
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 my-6">
+        
+        {/* رأس النموذج: الشعار والعنوان */}
+        <div className="text-center space-y-3 mb-6">
+          <div className="flex justify-center">
+            <img
+              src={SPIKE_LOGO_URL}
+              alt="SPIKE"
+              className="h-14 sm:h-16 w-auto object-contain rounded-2xl shadow-sm"
+            />
+          </div>
+
+          <div className="flex items-center justify-center gap-1.5 font-black text-2xl text-[#0E1E38]">
+            <span>سبايك</span>
+            <span className="text-slate-300 font-light">|</span>
+            <span className="tracking-wider">SPIKE</span>
+          </div>
+
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            {isLoginMode ? 'تسجيل الدخول إلى حسابك' : 'انشئ حساب مجاني'}
+          </h2>
+        </div>
+
+        {/* جسم الفورم الأبيض المنسق */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 max-w-lg w-full shadow-sm space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold text-slate-700">
+            
+            {!isLoginMode && (
+              <>
+                {/* 1. اسم الموقع / المتجر */}
+                <div className="space-y-1.5">
+                  <label className="block text-slate-600">اسم موقعك</label>
+                  <div className="flex rounded-xl border border-slate-200 overflow-hidden focus-within:border-[#00B050] transition shadow-2xs">
+                    <input
+                      type="text"
+                      required
+                      dir="ltr"
+                      placeholder="store-name"
+                      value={formData.storeSlug}
+                      onChange={(e) => handleChange('storeSlug', e.target.value)}
+                      className="w-full p-3 bg-white text-slate-900 outline-none font-mono text-xs text-left"
+                    />
+                    <span className="bg-slate-100 text-slate-500 px-3.5 flex items-center font-mono text-xs border-r border-slate-200 select-none" dir="ltr">
+                      .spike.shop
+                    </span>
+                  </div>
+                </div>
+
+                {/* 2. اختيار العملة */}
+                <div className="space-y-1.5">
+                  <label className="block text-slate-600">العملة الأساسية</label>
+                  <select
+                    value={formData.currency}
+                    onChange={(e) => handleChange('currency', e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none focus:border-[#00B050] transition text-xs font-bold"
+                  >
+                    <option value="USD">دولار أمريكي - USD</option>
+                    <option value="EGP">جنيه مصري - EGP</option>
+                    <option value="SAR">ريال سعودي - SAR</option>
+                    <option value="AED">درهم إماراتي - AED</option>
+                  </select>
+                </div>
+
+                {/* 3. اسمك واسم العائلة */}
+                <div className="space-y-1.5">
+                  <label className="block text-slate-600">اسمك واسم العائلة</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="مثال: أحمد محمد"
+                    value={formData.fullName}
+                    onChange={(e) => handleChange('fullName', e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none focus:border-[#00B050] transition text-xs shadow-2xs"
+                  />
+                </div>
+
+                {/* 4. رقم الهاتف مع مفتاح مصر */}
+                <div className="space-y-1.5">
+                  <label className="block text-slate-600">رقم الهاتف</label>
+                  <div className="flex rounded-xl border border-slate-200 overflow-hidden focus-within:border-[#00B050] transition shadow-2xs">
+                    <div className="bg-slate-100 text-slate-700 px-3 flex items-center gap-1.5 border-l border-slate-200 font-mono text-xs select-none" dir="ltr">
+                      <span>🇪🇬</span>
+                      <span>+20</span>
+                      <span className="text-[10px] text-slate-400">↕</span>
+                    </div>
+                    <input
+                      type="tel"
+                      required
+                      dir="ltr"
+                      placeholder="01xxxxxxxxx"
+                      value={formData.phone}
+                      onChange={(e) => handleChange('phone', e.target.value)}
+                      className="w-full p-3 bg-white text-slate-900 outline-none font-mono text-xs text-left"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 5. البريد الإلكتروني */}
+            <div className="space-y-1.5">
+              <label className="block text-slate-600">البريد الالكتروني</label>
               <input
                 type="email"
                 required
                 dir="ltr"
                 placeholder="name@example.com"
-                value={loginData.email}
-                onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-white text-sm font-mono focus:outline-emerald-500"
+                value={formData.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none focus:border-[#00B050] transition text-xs font-mono shadow-2xs"
               />
             </div>
 
-            <div>
-              <label className="block font-bold text-slate-300 mb-1.5">كلمة المرور *</label>
+            {/* 6. الرقم السري */}
+            <div className="space-y-1.5">
+              <label className="block text-slate-600">الرقم السري</label>
               <input
                 type="password"
                 required
-                dir="ltr"
                 placeholder="••••••••"
-                value={loginData.password}
-                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-white text-sm font-mono focus:outline-emerald-500"
+                value={formData.password}
+                onChange={(e) => handleChange('password', e.target.value)}
+                className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none focus:border-[#00B050] transition text-xs shadow-2xs"
               />
             </div>
 
-            {/* زر تذكّر بيانات الدخول وحفظ كلمة المرور */}
-            <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 cursor-pointer text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
-                />
-                <span className="font-bold">حفظ بيانات الدخول وكلمة المرور على هذا الجهاز</span>
-              </label>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm rounded-2xl shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50 mt-4 cursor-pointer"
-            >
-              {loading ? 'جاري التحقق والدخول...' : 'تسجيل الدخول إلى متجري 🚀'}
-            </button>
-          </form>
-        )}
-
-        {/* 🌟 2. نموذج فتح متجر جديد */}
-        {mode === 'register' && (
-          <form onSubmit={handleRegister} className="space-y-4 text-xs">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block font-bold text-slate-300 mb-1.5">اسم المتجر *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="مثال: لقطة ستور"
-                  value={formData.storeName}
-                  onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-300 mb-1.5">رابط المتجر بالإنجليزية (Slug) *</label>
-                <input
-                  type="text"
-                  required
-                  dir="ltr"
-                  placeholder="loqta-store"
-                  value={formData.storeSlug}
-                  onChange={(e) => setFormData({ ...formData, storeSlug: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm font-mono focus:outline-emerald-500"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block font-bold text-slate-300 mb-1.5">اسم التاجر بالكامل *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="محمد أحمد علي"
-                  value={formData.ownerName}
-                  onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-300 mb-1.5">رقم الهاتف (الواتساب) *</label>
-                <input
-                  type="tel"
-                  required
-                  dir="ltr"
-                  placeholder="01xxxxxxxxx"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm font-mono focus:outline-emerald-500"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block font-bold text-slate-300 mb-1.5">المحافظة *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="القاهرة / الإسكندرية..."
-                  value={formData.governorate}
-                  onChange={(e) => setFormData({ ...formData, governorate: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-300 mb-1.5">العنوان بالتفصيل *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="المدينة / الشارع"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm focus:outline-emerald-500"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block font-bold text-slate-300 mb-1.5">البريد الإلكتروني *</label>
-                <input
-                  type="email"
-                  required
-                  dir="ltr"
-                  placeholder="name@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm font-mono focus:outline-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-300 mb-1.5">كلمة المرور *</label>
+            {/* 7. تأكيد الرقم السري (في حالة إنشاء الحساب فقط) */}
+            {!isLoginMode && (
+              <div className="space-y-1.5">
+                <label className="block text-slate-600">اعد كتابة الرقم السري</label>
                 <input
                   type="password"
                   required
-                  dir="ltr"
                   placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-sm font-mono focus:outline-emerald-500"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleChange('confirmPassword', e.target.value)}
+                  className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none focus:border-[#00B050] transition text-xs shadow-2xs"
                 />
+              </div>
+            )}
+
+            {/* أزرار الإجراء */}
+            <div className="pt-2 space-y-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3.5 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-sm font-black transition shadow-sm hover:shadow-md cursor-pointer flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <span>جاري المعالجة...</span>
+                ) : isLoginMode ? (
+                  <span>تسجيل الدخول</span>
+                ) : (
+                  <span>انشاء حساب</span>
+                )}
+              </button>
+
+              <div className="text-center pt-2">
+                <span className="text-slate-500 block mb-2 font-normal">
+                  {isLoginMode ? 'ليس لديك حساب بعد؟' : 'لديك حساب بالفعل؟'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsLoginMode(!isLoginMode)}
+                  className="w-full py-2.5 border border-[#00B050] text-[#00B050] hover:bg-[#00B050]/5 rounded-xl text-xs font-black transition cursor-pointer"
+                >
+                  {isLoginMode ? 'انشئ حساب مجاني جديد' : 'تسجيل الدخول'}
+                </button>
               </div>
             </div>
 
-            {/* خيار الحفظ التلقائي عند التسجيل */}
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="checkbox"
-                id="regRemember"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
-              />
-              <label htmlFor="regRemember" className="font-bold text-slate-300 cursor-pointer">
-                تذكر بيانات الحساب وكلمة المرور للدخول التلقائي
-              </label>
+          </form>
+        </div>
+      </main>
+
+      {/* 🖤 4. الفوتر الداكن الاحترافي المطابق للصورة */}
+      <footer className="bg-[#191919] text-white pt-12 pb-8 px-6 lg:px-16 border-t border-slate-800 text-xs">
+        <div className="max-w-7xl mx-auto space-y-10">
+          
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 items-start">
+            
+            {/* العمود 1: عن سبايك */}
+            <div className="space-y-2.5">
+              <h4 className="font-black text-sm text-white">عن سبايك</h4>
+              <ul className="space-y-2 text-slate-400 font-normal">
+                <li><Link href="/" className="hover:text-white transition">من نحن</Link></li>
+                <li><Link href="/#contact" className="hover:text-white transition">اتصل بنا</Link></li>
+                <li><Link href="/" className="hover:text-white transition">سياسة الاستخدام</Link></li>
+                <li><Link href="/" className="hover:text-white transition">سياسة الخصوصية</Link></li>
+                <li><Link href="/" className="hover:text-white transition">الرئيسية</Link></li>
+                <li><Link href="/#pricing" className="hover:text-white transition">الأسعار</Link></li>
+              </ul>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm rounded-2xl shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50 mt-4 cursor-pointer"
-            >
-              {loading ? 'جاري إنشاء المتجر...' : 'إنشاء المتجر وبدء التجارة 🚀'}
-            </button>
-          </form>
-        )}
+            {/* العمود 2: الأكاديمية */}
+            <div className="space-y-2.5">
+              <h4 className="font-black text-sm text-white">الأكاديمية</h4>
+              <ul className="space-y-2 text-slate-400 font-normal">
+                <li><button className="hover:text-white transition cursor-pointer">الكورسات</button></li>
+                <li><button className="hover:text-white transition cursor-pointer">كورسات متقدمة</button></li>
+                <li><button className="hover:text-white transition cursor-pointer">شروحات الـ COD</button></li>
+              </ul>
+            </div>
 
-      </div>
+            {/* العمود 3: للمطورين */}
+            <div className="space-y-2.5">
+              <h4 className="font-black text-sm text-white">للمطورين</h4>
+              <ul className="space-y-2 text-slate-400 font-normal font-mono text-[11px]">
+                <li><span className="hover:text-white cursor-pointer">Public API</span></li>
+                <li><span className="hover:text-white cursor-pointer">Themes Docs</span></li>
+                <li><span className="hover:text-white cursor-pointer">Funnels Docs</span></li>
+                <li><span className="hover:text-white cursor-pointer">Webhooks</span></li>
+              </ul>
+            </div>
+
+            {/* العمود 4: حمّل التطبيق */}
+            <div className="space-y-3">
+              <h4 className="font-black text-sm text-white">حمّل التطبيق</h4>
+              <div className="space-y-2">
+                <div className="border border-slate-700 bg-black/60 rounded-xl p-2 flex items-center gap-2 cursor-pointer hover:border-slate-500 transition">
+                  <span className="text-xl">🍏</span>
+                  <div>
+                    <span className="text-[9px] text-slate-400 block leading-none">Download on the</span>
+                    <strong className="text-xs font-mono">App Store</strong>
+                  </div>
+                </div>
+
+                <div className="border border-slate-700 bg-black/60 rounded-xl p-2 flex items-center gap-2 cursor-pointer hover:border-slate-500 transition">
+                  <span className="text-xl">▶️</span>
+                  <div>
+                    <span className="text-[9px] text-slate-400 block leading-none">GET IT ON</span>
+                    <strong className="text-xs font-mono">Google Play</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* العمود 5: هوية الشركة وسوشيال ميديا */}
+            <div className="space-y-4 md:text-left">
+              <div className="flex items-center gap-2 md:justify-end">
+                <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-9 w-auto object-contain rounded" />
+                <span className="text-base font-black">إحدى منصات سبايك للتجارة</span>
+              </div>
+              <p className="text-slate-400 text-[11px] leading-relaxed md:text-left">
+                حلّق بتجارتك الإلكترونية بمعدل يصل إلى 200% عن منافسيك، منظومة سبايك تفهم متطلباتك وسلوك عملائك.
+              </p>
+              <div className="flex items-center gap-2 md:justify-end flex-wrap pt-1 text-slate-300">
+                <span className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center cursor-pointer hover:bg-[#00B050] transition">📷</span>
+                <span className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center cursor-pointer hover:bg-[#00B050] transition">🎵</span>
+                <span className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center cursor-pointer hover:bg-[#00B050] transition">▶️</span>
+                <span className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center cursor-pointer hover:bg-[#00B050] transition">💬</span>
+                <span className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center cursor-pointer hover:bg-[#00B050] transition">📘</span>
+                <span className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center cursor-pointer hover:bg-[#00B050] transition">✈️</span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* شريط الدول وحقوق الملكية السفلي */}
+          <div className="border-t border-slate-800/80 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-slate-500 text-[11px]">
+            <div>
+              Copyright © SPIKE | 2026
+            </div>
+            <div className="flex items-center gap-3 font-bold text-slate-400">
+              <span className="text-white">مصر EG</span>
+              <span>•</span>
+              <span>المغرب MA</span>
+              <span>•</span>
+              <span>الجزائر DZ</span>
+              <span>•</span>
+              <span>السعودية SA</span>
+            </div>
+          </div>
+
+        </div>
+      </footer>
+
+      {/* 🟢 زر واتساب العائم الأخضر في أسفل الشاشة */}
+      <a
+        href="https://wa.me/201000000000"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-6 left-6 z-50 w-13 h-13 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white flex items-center justify-center text-2xl shadow-xl transition-transform hover:scale-110 active:scale-95 cursor-pointer shadow-emerald-500/30"
+        title="تواصل معنا عبر واتساب"
+      >
+        💬
+      </a>
+
     </div>
   );
 }
