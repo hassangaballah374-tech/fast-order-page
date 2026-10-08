@@ -8,19 +8,17 @@ import { SPIKE_LOGO_URL } from '../../components/SpikeBrandHeader';
 
 export default function SpikeRegisterAndAuthPage() {
   const router = useRouter();
-  const { lang, toggleLanguage } = useApp?.() || { lang: 'ar', toggleLanguage: () => {} };
+  const { lang, theme, toggleLanguage, toggleTheme, isDark } = useApp();
   const isAr = lang === 'ar';
 
   const [isLoginMode, setIsLoginMode] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // نصوص اللغتين
   const t = {
     ar: {
       brand: 'سبايك',
       home: 'الرئيسية',
       pricing: 'الأسعار',
-      langBtn: 'عالمي • AR',
       subscribeBtn: 'اشترك مجاناً الآن',
       loginTitle: 'تسجيل الدخول إلى حسابك',
       registerTitle: 'انشئ حساب مجاني',
@@ -49,7 +47,6 @@ export default function SpikeRegisterAndAuthPage() {
       brand: 'SPIKE',
       home: 'Home',
       pricing: 'Pricing',
-      langBtn: 'Global • EN',
       subscribeBtn: 'Start Free Now',
       loginTitle: 'Sign In to Your Account',
       registerTitle: 'Create Free Account',
@@ -76,7 +73,6 @@ export default function SpikeRegisterAndAuthPage() {
     },
   }[lang || 'ar'];
 
-  // حقول نموذج التسجيل
   const [formData, setFormData] = useState({
     storeSlug: '',
     currency: 'USD',
@@ -167,12 +163,16 @@ export default function SpikeRegisterAndAuthPage() {
 
   return (
     <div 
-      className="min-h-screen bg-[#F8F9FA] text-[#1E293B] font-sans flex flex-col justify-between selection:bg-emerald-500 selection:text-white transition-colors duration-200" 
+      className={`min-h-screen font-sans flex flex-col justify-between transition-colors duration-300 ${
+        isDark ? 'bg-[#0E1E38] text-white' : 'bg-[#F8F9FA] text-[#1E293B]'
+      }`} 
       dir={isAr ? 'rtl' : 'ltr'}
     >
 
-      {/* 🧭 1. النافبار مع زر اللغة الفعال */}
-      <header className="bg-white border-b border-slate-200/80 px-6 lg:px-14 py-3.5 sticky top-0 z-40 shadow-xs">
+      {/* 🧭 النافبار مع زر المود وزر اللغة مباشرين */}
+      <header className={`border-b px-6 lg:px-14 py-3.5 sticky top-0 z-40 backdrop-blur-md transition-colors ${
+        isDark ? 'bg-[#091222]/90 border-slate-800' : 'bg-white/95 border-slate-200 shadow-xs'
+      }`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           
           <div className="flex items-center gap-8">
@@ -180,29 +180,46 @@ export default function SpikeRegisterAndAuthPage() {
               <img
                 src={SPIKE_LOGO_URL}
                 alt="SPIKE | سبايك"
-                className="h-10 w-auto object-contain rounded-lg"
+                className="h-10 w-auto object-contain rounded-lg shadow-xs"
               />
-              <span className="text-xl font-black tracking-tight text-[#0E1E38]">
+              <span className={`text-xl font-black tracking-tight ${isDark ? 'text-[#F7F4EC]' : 'text-[#0E1E38]'}`}>
                 {t.brand}
               </span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-6 text-sm font-bold text-slate-700">
+            <nav className="hidden md:flex items-center gap-6 text-sm font-bold">
               <Link href="/" className="hover:text-[#00B050] transition">{t.home}</Link>
               <Link href="/#pricing" className="hover:text-[#00B050] transition">{t.pricing}</Link>
             </nav>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* زر تبديل اللغة التفاعلي */}
+          <div className="flex items-center gap-2.5">
+            {/* 🌐 زر تبديل اللغة المباشر */}
             <button
               type="button"
               onClick={toggleLanguage}
-              className="flex items-center gap-1.5 border border-slate-200 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 transition cursor-pointer select-none"
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                isDark 
+                  ? 'border-slate-700 bg-slate-800 text-white hover:bg-slate-700' 
+                  : 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100'
+              }`}
             >
               <span>🌐</span>
-              <span>{t.langBtn}</span>
-              <span className="text-[10px] text-slate-400">↕</span>
+              <span>{isAr ? 'English' : 'العربية'}</span>
+            </button>
+
+            {/* 🌙 / ☀️ زر تبديل المود المباشر */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                isDark 
+                  ? 'border-slate-700 bg-slate-800 text-amber-300 hover:bg-slate-700' 
+                  : 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100'
+              }`}
+            >
+              <span>{isDark ? '☀️' : '🌙'}</span>
+              <span>{isDark ? (isAr ? 'نهاري' : 'Light') : (isAr ? 'ليلي' : 'Dark')}</span>
             </button>
 
             <button
@@ -216,7 +233,9 @@ export default function SpikeRegisterAndAuthPage() {
             <button
               type="button"
               onClick={() => setIsLoginMode(true)}
-              className="w-8 h-8 rounded-xl border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              className={`w-8 h-8 rounded-xl border flex items-center justify-center transition cursor-pointer ${
+                isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-100'
+              }`}
               title={t.submitLogin}
             >
               👤
@@ -225,7 +244,7 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </header>
 
-      {/* 📝 2. البطاقة المركزية */}
+      {/* 📝 نموذج التسجيل والدخول مع دعم المود الليلي والنهاري */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 my-6">
         
         <div className="text-center space-y-3 mb-6">
@@ -233,29 +252,33 @@ export default function SpikeRegisterAndAuthPage() {
             <img
               src={SPIKE_LOGO_URL}
               alt="SPIKE"
-              className="h-14 sm:h-16 w-auto object-contain rounded-2xl shadow-sm"
+              className="h-14 sm:h-16 w-auto object-contain rounded-2xl shadow-md"
             />
           </div>
 
-          <div className="flex items-center justify-center gap-1.5 font-black text-2xl text-[#0E1E38]">
-            <span>سبايك</span>
-            <span className="text-slate-300 font-light">|</span>
-            <span className="tracking-wider">SPIKE</span>
+          <div className="flex items-center justify-center gap-1.5 font-black text-2xl">
+            <span style={{ color: isDark ? '#F7F4EC' : '#0E1E38' }}>سبايك</span>
+            <span className="text-slate-400 font-light">|</span>
+            <span style={{ color: isDark ? '#F7F4EC' : '#0E1E38' }} className="tracking-wider">SPIKE</span>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
             {isLoginMode ? t.loginTitle : t.registerTitle}
           </h2>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 max-w-lg w-full shadow-sm space-y-5">
-          <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold text-slate-700">
+        <div className={`border rounded-3xl p-6 sm:p-10 max-w-lg w-full shadow-md space-y-5 transition-colors ${
+          isDark ? 'bg-[#091222] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'
+        }`}>
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
             
             {!isLoginMode && (
               <>
                 <div className="space-y-1.5">
-                  <label className="block text-slate-600">{t.storeNameLabel}</label>
-                  <div className="flex rounded-xl border border-slate-200 overflow-hidden focus-within:border-[#00B050] transition shadow-2xs">
+                  <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.storeNameLabel}</label>
+                  <div className={`flex rounded-xl border overflow-hidden transition ${
+                    isDark ? 'border-slate-700 bg-slate-900 focus-within:border-[#00B050]' : 'border-slate-200 bg-white focus-within:border-[#00B050]'
+                  }`}>
                     <input
                       type="text"
                       required
@@ -263,20 +286,24 @@ export default function SpikeRegisterAndAuthPage() {
                       placeholder="store-name"
                       value={formData.storeSlug}
                       onChange={(e) => handleChange('storeSlug', e.target.value)}
-                      className="w-full p-3 bg-white text-slate-900 outline-none font-mono text-xs text-left"
+                      className={`w-full p-3 outline-none font-mono text-xs text-left bg-transparent ${isDark ? 'text-white' : 'text-slate-900'}`}
                     />
-                    <span className="bg-slate-100 text-slate-500 px-3.5 flex items-center font-mono text-xs border-r border-slate-200 select-none" dir="ltr">
+                    <span className={`px-3.5 flex items-center font-mono text-xs select-none ${
+                      isDark ? 'bg-slate-800 text-slate-400 border-r border-slate-700' : 'bg-slate-100 text-slate-500 border-r border-slate-200'
+                    }`} dir="ltr">
                       .spike.shop
                     </span>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-slate-600">{t.currencyLabel}</label>
+                  <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.currencyLabel}</label>
                   <select
                     value={formData.currency}
                     onChange={(e) => handleChange('currency', e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-800 outline-none focus:border-[#00B050] transition text-xs font-bold"
+                    className={`w-full p-3 rounded-xl border outline-none text-xs font-bold transition ${
+                      isDark ? 'bg-slate-900 border-slate-700 text-white focus:border-[#00B050]' : 'bg-white border-slate-200 text-slate-800 focus:border-[#00B050]'
+                    }`}
                   >
                     <option value="USD">{isAr ? 'دولار أمريكي - USD' : 'US Dollar - USD'}</option>
                     <option value="EGP">{isAr ? 'جنيه مصري - EGP' : 'Egyptian Pound - EGP'}</option>
@@ -286,21 +313,27 @@ export default function SpikeRegisterAndAuthPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-slate-600">{t.nameLabel}</label>
+                  <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.nameLabel}</label>
                   <input
                     type="text"
                     required
                     placeholder={isAr ? 'مثال: أحمد محمد' : 'e.g. John Doe'}
                     value={formData.fullName}
                     onChange={(e) => handleChange('fullName', e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none focus:border-[#00B050] transition text-xs shadow-2xs"
+                    className={`w-full p-3 rounded-xl border outline-none text-xs transition ${
+                      isDark ? 'bg-slate-900 border-slate-700 text-white focus:border-[#00B050]' : 'bg-white border-slate-200 text-slate-900 focus:border-[#00B050]'
+                    }`}
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-slate-600">{t.phoneLabel}</label>
-                  <div className="flex rounded-xl border border-slate-200 overflow-hidden focus-within:border-[#00B050] transition shadow-2xs">
-                    <div className="bg-slate-100 text-slate-700 px-3 flex items-center gap-1.5 border-l border-slate-200 font-mono text-xs select-none" dir="ltr">
+                  <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.phoneLabel}</label>
+                  <div className={`flex rounded-xl border overflow-hidden transition ${
+                    isDark ? 'border-slate-700 bg-slate-900 focus-within:border-[#00B050]' : 'border-slate-200 bg-white focus-within:border-[#00B050]'
+                  }`}>
+                    <div className={`px-3 flex items-center gap-1.5 font-mono text-xs select-none ${
+                      isDark ? 'bg-slate-800 text-slate-300 border-l border-slate-700' : 'bg-slate-100 text-slate-700 border-l border-slate-200'
+                    }`} dir="ltr">
                       <span>🇪🇬</span>
                       <span>+20</span>
                       <span className="text-[10px] text-slate-400">↕</span>
@@ -312,7 +345,7 @@ export default function SpikeRegisterAndAuthPage() {
                       placeholder="01xxxxxxxxx"
                       value={formData.phone}
                       onChange={(e) => handleChange('phone', e.target.value)}
-                      className="w-full p-3 bg-white text-slate-900 outline-none font-mono text-xs text-left"
+                      className={`w-full p-3 outline-none font-mono text-xs text-left bg-transparent ${isDark ? 'text-white' : 'text-slate-900'}`}
                     />
                   </div>
                 </div>
@@ -320,7 +353,7 @@ export default function SpikeRegisterAndAuthPage() {
             )}
 
             <div className="space-y-1.5">
-              <label className="block text-slate-600">{t.emailLabel}</label>
+              <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.emailLabel}</label>
               <input
                 type="email"
                 required
@@ -328,32 +361,38 @@ export default function SpikeRegisterAndAuthPage() {
                 placeholder="name@example.com"
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
-                className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none focus:border-[#00B050] transition text-xs font-mono shadow-2xs"
+                className={`w-full p-3 rounded-xl border outline-none text-xs font-mono transition ${
+                  isDark ? 'bg-slate-900 border-slate-700 text-white focus:border-[#00B050]' : 'bg-white border-slate-200 text-slate-900 focus:border-[#00B050]'
+                }`}
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-slate-600">{t.passLabel}</label>
+              <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.passLabel}</label>
               <input
                 type="password"
                 required
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={(e) => handleChange('password', e.target.value)}
-                className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none focus:border-[#00B050] transition text-xs shadow-2xs"
+                className={`w-full p-3 rounded-xl border outline-none text-xs transition ${
+                  isDark ? 'bg-slate-900 border-slate-700 text-white focus:border-[#00B050]' : 'bg-white border-slate-200 text-slate-900 focus:border-[#00B050]'
+                }`}
               />
             </div>
 
             {!isLoginMode && (
               <div className="space-y-1.5">
-                <label className="block text-slate-600">{t.confirmPassLabel}</label>
+                <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.confirmPassLabel}</label>
                 <input
                   type="password"
                   required
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-200 bg-white text-slate-900 outline-none focus:border-[#00B050] transition text-xs shadow-2xs"
+                  className={`w-full p-3 rounded-xl border outline-none text-xs transition ${
+                    isDark ? 'bg-slate-900 border-slate-700 text-white focus:border-[#00B050]' : 'bg-white border-slate-200 text-slate-900 focus:border-[#00B050]'
+                  }`}
                 />
               </div>
             )}
@@ -368,13 +407,13 @@ export default function SpikeRegisterAndAuthPage() {
               </button>
 
               <div className="text-center pt-2">
-                <span className="text-slate-500 block mb-2 font-normal">
+                <span className="text-slate-400 block mb-2 font-normal">
                   {isLoginMode ? t.noAccount : t.hasAccount}
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsLoginMode(!isLoginMode)}
-                  className="w-full py-2.5 border border-[#00B050] text-[#00B050] hover:bg-[#00B050]/5 rounded-xl text-xs font-black transition cursor-pointer"
+                  className="w-full py-2.5 border border-[#00B050] text-[#00B050] hover:bg-[#00B050]/10 rounded-xl text-xs font-black transition cursor-pointer"
                 >
                   {isLoginMode ? t.switchRegister : t.switchLogin}
                 </button>
@@ -385,7 +424,7 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </main>
 
-      {/* 🖤 3. الفوتر */}
+      {/* 🖤 الفوتر */}
       <footer className="bg-[#191919] text-white pt-12 pb-8 px-6 lg:px-16 border-t border-slate-800 text-xs">
         <div className="max-w-7xl mx-auto space-y-10">
           
@@ -461,6 +500,7 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </footer>
 
+      {/* 🟢 زر واتساب العائم */}
       <a
         href="https://wa.me/201000000000"
         target="_blank"
