@@ -2,8 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useApp } from '../context/AppContext';
-import SpikeBrandHeader from '../components/SpikeBrandHeader';
-import SpikeLogo from '../components/SpikeLogo';
+import SpikeBrandHeader, { SPIKE_LOGO_URL } from '../components/SpikeBrandHeader';
 
 export default function SpikeLandingPage() {
   const { lang, theme, toggleLanguage, toggleTheme } = useApp();
@@ -75,13 +74,13 @@ export default function SpikeLandingPage() {
       isDark ? 'bg-[#0E1E38] text-white' : 'bg-[#F7F4EC] text-[#0E1E38]'
     }`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 🧭 الترويسة العلوية */}
+      {/* 🧭 الترويسة العلوية (Header) */}
       <nav className={`sticky top-0 z-50 border-b px-6 lg:px-14 py-3.5 flex items-center justify-between backdrop-blur-md transition-colors ${
         isDark ? 'bg-[#0E1E38]/90 border-slate-800' : 'bg-[#F7F4EC]/90 border-slate-200/80 shadow-sm'
       }`}>
         <div className="flex items-center gap-8">
           <Link href="/">
-            <SpikeBrandHeader />
+            <SpikeBrandHeader height="h-11" />
           </Link>
 
           <div className="hidden lg:flex items-center gap-6 text-sm font-bold">
@@ -133,8 +132,8 @@ export default function SpikeLandingPage() {
         </div>
       </nav>
 
-      {/* 🚀 القسم الرئيسي */}
-      <section className={`relative overflow-hidden py-24 lg:py-36 px-6 lg:px-16 border-b transition-colors ${
+      {/* 🚀 القسم الرئيسي (Hero Section) */}
+      <section className={`relative overflow-hidden py-20 lg:py-28 px-6 lg:px-16 border-b transition-colors ${
         isDark ? 'border-slate-800' : 'border-slate-200'
       }`}>
         <div 
@@ -153,20 +152,13 @@ export default function SpikeLandingPage() {
         />
 
         <div className="max-w-4xl mx-auto relative z-10 space-y-6 text-center">
-          <div className="flex justify-center mb-2">
-            <SpikeLogo size={90} />
-          </div>
-
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#E86A53]/10 border border-[#E86A53]/30 text-[#E86A53] text-xs font-black">
-            <span>🔥</span>
-            <span>{t.brandSlogan}</span>
-          </div>
-
+          
+          {/* تم إزالة شارة النار بناءً على طلبك والاعتماد على العنوان الصريح */}
           <h1 className="text-5xl sm:text-7xl font-black tracking-tight leading-[1.15]">
             {t.heroTitle}
           </h1>
 
-          <p className={`text-lg sm:text-xl font-medium max-w-2xl mx-auto leading-relaxed ${
+          <p className={`text-base sm:text-lg font-medium max-w-2xl mx-auto leading-relaxed ${
             isDark ? 'text-slate-300' : 'text-slate-700'
           }`}>
             {t.heroSubtitle}
@@ -286,7 +278,7 @@ export default function SpikeLandingPage() {
       }`}>
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <SpikeBrandHeader />
+            <SpikeBrandHeader height="h-11" />
 
             <div className="flex flex-wrap gap-6 text-xs font-bold">
               <Link href="#" className="hover:text-[#E86A53] transition">{t.terms}</Link>
