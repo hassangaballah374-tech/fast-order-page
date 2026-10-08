@@ -8,7 +8,7 @@ export default function SpikeLandingPage() {
   const { lang, theme, toggleLanguage, toggleTheme } = useApp();
   const isDark = theme === 'dark';
 
-  // أنيميشن كتابة كلمة SPIKE حرفاً بحرف عند فتح الصفحة
+  // أنيميشن كتابة كلمة SPIKE حرفاً بحرف
   const fullBrandText = 'SPIKE';
   const [typedText, setTypedText] = useState('');
   const [isTypingDone, setIsTypingDone] = useState(false);
@@ -25,7 +25,7 @@ export default function SpikeLandingPage() {
         clearInterval(interval);
         setIsTypingDone(true);
       }
-    }, 180);
+    }, 170);
 
     return () => clearInterval(interval);
   }, []);
@@ -38,9 +38,9 @@ export default function SpikeLandingPage() {
       pricing: 'الباقات والأسعار',
       enterprise: 'كبار التجار',
       login: 'تسجيل الدخول',
-      startFree: 'ابدأ مجاناً',
+      startFree: 'ابدأ مجاناً الآن 🚀',
       heroSubtitle: 'المنظومة الأقوى لإدارة المتاجر الإلكترونية، الشحن، وتحصيل الدفع عند الاستلام في مصر بأعلى معدلات تأكيد وتسليم.',
-      promoSubtext: 'ابدأ فترتك التجريبية مجاناً الآن بدون أي بطاقة بنكية.',
+      promoSubtext: 'ابدأ فترتك التجريبية مجاناً الآن بدون أي بطاقة بنكية • إعداد متجرك في أقل من دقيقة.',
       sectionTitlePart1: 'انطلق بتجارتك',
       sectionTitlePart2: 'إلى القمة مع سبايك',
       card1Title: 'منظومة تجارة شاملة',
@@ -65,9 +65,9 @@ export default function SpikeLandingPage() {
       pricing: 'Pricing',
       enterprise: 'Enterprise',
       login: 'Log in',
-      startFree: 'Start Free',
+      startFree: 'Start Free Now 🚀',
       heroSubtitle: 'The ultimate eCommerce platform built for Cash on Delivery, inventory scaling, and highest delivery rates.',
-      promoSubtext: 'Start your free trial today. No credit card required.',
+      promoSubtext: 'Start your free trial today. No credit card required • Launch in under a minute.',
       sectionTitlePart1: 'Take your store',
       sectionTitlePart2: 'to the next level',
       card1Title: 'All-in-One E-Commerce',
@@ -92,7 +92,7 @@ export default function SpikeLandingPage() {
       isDark ? 'bg-[#0E1E38] text-white' : 'bg-[#F7F4EC] text-[#0E1E38]'
     }`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 🧭 الترويسة العلوية (Header) */}
+      {/* 🧭 الترويسة العلوية */}
       <nav className={`sticky top-0 z-50 border-b px-6 lg:px-14 py-3.5 flex items-center justify-between backdrop-blur-md transition-colors ${
         isDark ? 'bg-[#0E1E38]/90 border-slate-800' : 'bg-[#F7F4EC]/90 border-slate-200/80 shadow-sm'
       }`}>
@@ -150,76 +150,106 @@ export default function SpikeLandingPage() {
         </div>
       </nav>
 
-      {/* 🚀 القسم الرئيسي (Hero Section) */}
-      <section className={`relative overflow-hidden py-16 lg:py-24 px-6 lg:px-16 border-b transition-colors ${
+      {/* 🚀 القسم الرئيسي (Hero Section) مع موشن جرافيك حي كامل وأزرار ضخمة */}
+      <section className={`relative overflow-hidden py-20 lg:py-28 px-6 lg:px-16 border-b transition-colors ${
         isDark ? 'border-slate-800' : 'border-slate-200'
       }`}>
-        <div 
-          className="absolute inset-0 pointer-events-none opacity-40"
-          style={{
-            background: isDark
-              ? `
-                radial-gradient(circle at 15% 85%, rgba(232, 106, 83, 0.25) 0%, transparent 50%),
-                radial-gradient(circle at 85% 15%, rgba(14, 30, 56, 0.9) 0%, transparent 60%)
-              `
-              : `
-                radial-gradient(circle at 15% 85%, rgba(232, 106, 83, 0.20) 0%, transparent 50%),
-                radial-gradient(circle at 85% 15%, rgba(247, 244, 236, 0.8) 0%, transparent 60%)
-              `,
-          }}
-        />
-
-        <div className="max-w-5xl mx-auto relative z-10 space-y-6 text-center">
+        
+        {/* 🎬 مؤثرات الموشن جرافيك في الخلفية (Motion Graphic Canvas) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* دوائر وتوهجات مدارية حية تنبض وتتمدد */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] sm:w-[900px] h-[650px] sm:h-[900px] rounded-full border border-[#E86A53]/15 animate-ping opacity-25" style={{ animationDuration: '6s' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] sm:w-[600px] h-[420px] sm:h-[600px] rounded-full border border-orange-400/20 animate-pulse" style={{ animationDuration: '4s' }} />
           
-          {/* اللوجو بشكل كبير في منتصف الشاشة */}
-          <div className="flex justify-center">
+          {/* التدرج اللوني المحيطي */}
+          <div 
+            className="absolute inset-0 opacity-60"
+            style={{
+              background: isDark
+                ? `
+                  radial-gradient(circle at 50% 45%, rgba(232, 106, 83, 0.28) 0%, transparent 65%),
+                  radial-gradient(circle at 15% 85%, rgba(232, 106, 83, 0.20) 0%, transparent 45%),
+                  radial-gradient(circle at 85% 15%, rgba(14, 30, 56, 0.95) 0%, transparent 60%)
+                `
+                : `
+                  radial-gradient(circle at 50% 45%, rgba(232, 106, 83, 0.22) 0%, transparent 65%),
+                  radial-gradient(circle at 15% 85%, rgba(232, 106, 83, 0.15) 0%, transparent 45%),
+                  radial-gradient(circle at 85% 15%, rgba(247, 244, 236, 0.9) 0%, transparent 60%)
+                `,
+            }}
+          />
+
+          {/* أيقونات طافية تفاعلية تعبر عن مضاعفة الطلبات (Floating Motion Cards) */}
+          <div className="hidden md:flex absolute top-16 right-[12%] animate-bounce items-center gap-2 px-4 py-2 rounded-2xl bg-white/80 dark:bg-[#0E1E38]/80 backdrop-blur-md border border-[#E86A53]/30 shadow-2xl" style={{ animationDuration: '4s' }}>
+            <span className="text-xl">📈</span>
+            <div className="text-right">
+              <span className="block text-[11px] font-black text-emerald-500">+250% مبيعات</span>
+              <span className="block text-[9px] text-slate-400">تأكيد فوري للطلبات</span>
+            </div>
+          </div>
+
+          <div className="hidden md:flex absolute bottom-24 left-[10%] animate-bounce items-center gap-2 px-4 py-2 rounded-2xl bg-white/80 dark:bg-[#0E1E38]/80 backdrop-blur-md border border-emerald-500/30 shadow-2xl" style={{ animationDuration: '5s' }}>
+            <span className="text-xl">🚚</span>
+            <div className="text-right">
+              <span className="block text-[11px] font-black text-[#E86A53]">شحن وتسليم COD</span>
+              <span className="block text-[9px] text-slate-400">تغطية 24 محافظة</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-5xl mx-auto relative z-10 space-y-7 text-center">
+          
+          {/* اللوجو المركزي مع هالة ضوئية متوهجة تنبض بالحركة */}
+          <div className="relative inline-flex items-center justify-center">
+            <div className="absolute -inset-4 bg-gradient-to-r from-[#E86A53] via-orange-400 to-[#E86A53] rounded-full blur-2xl opacity-40 animate-pulse" />
             <img
               src={SPIKE_LOGO_URL}
               alt="SPIKE Logo"
-              className="h-28 sm:h-40 w-auto object-contain rounded-3xl shadow-2xl transition-transform duration-500 hover:scale-105"
+              className="relative h-32 sm:h-44 w-auto object-contain rounded-3xl shadow-2xl transition-transform duration-500 hover:scale-110 cursor-pointer"
             />
           </div>
 
-          {/* كلمة SPIKE تأخذ نصف عرض الشاشة بأنيميشن الكتابة التفاعلية وفونت كريتيف */}
-          <div className="w-full flex items-center justify-center my-2">
+          {/* كلمة SPIKE عملاقة بأنيميشن كتابة حي متبوعة بمؤشر ينبض */}
+          <div className="w-full flex items-center justify-center my-1">
             <div className="relative inline-flex items-center justify-center">
-              <h1 className="text-6xl sm:text-8xl lg:text-9xl font-black italic tracking-widest uppercase select-none transition-all duration-300 font-sans bg-gradient-to-r from-[#E86A53] via-orange-400 to-[#E86A53] bg-clip-text text-transparent drop-shadow-[0_10px_35px_rgba(232,106,83,0.35)]">
+              <h1 className="text-6xl sm:text-8xl lg:text-9xl font-black italic tracking-widest uppercase select-none transition-all duration-300 font-sans bg-gradient-to-r from-[#E86A53] via-orange-400 to-[#E86A53] bg-clip-text text-transparent drop-shadow-[0_12px_40px_rgba(232,106,83,0.40)]">
                 {typedText}
               </h1>
 
-              {/* مؤشر وميض احترافي ينبض أثناء الكتابة ويختفي بعد الانتهاء */}
               {!isTypingDone && (
                 <span className="inline-block w-2.5 sm:w-4 h-14 sm:h-24 bg-[#E86A53] ml-2 animate-pulse rounded-full" />
               )}
             </div>
           </div>
 
-          <p className={`text-base sm:text-xl font-medium max-w-2xl mx-auto leading-relaxed ${
+          <p className={`text-lg sm:text-2xl font-medium max-w-3xl mx-auto leading-relaxed ${
             isDark ? 'text-slate-300' : 'text-slate-700'
           }`}>
             {t.heroSubtitle}
           </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+          {/* 🌟 أزرار الإجراء الضخمة والملفتة (High-Impact Giant CTAs) */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-5 pt-4">
             <Link
               href="/register"
-              className="px-8 py-3.5 bg-[#E86A53] hover:bg-[#d65942] text-white font-black text-sm rounded-xl transition shadow-xl shadow-[#E86A53]/30"
+              className="w-full sm:w-auto px-10 sm:px-14 py-5 sm:py-6 bg-gradient-to-r from-[#E86A53] via-orange-500 to-[#E86A53] hover:from-[#d65942] hover:to-[#E86A53] text-white font-black text-lg sm:text-xl rounded-2xl transition-all duration-300 shadow-[0_15px_40px_rgba(232,106,83,0.55)] hover:shadow-[0_20px_50px_rgba(232,106,83,0.75)] hover:-translate-y-1 active:translate-y-0 text-center tracking-wide"
             >
               {t.startFree}
             </Link>
+
             <Link
               href="/register"
-              className={`px-8 py-3.5 border-2 font-bold text-sm rounded-xl transition ${
+              className={`w-full sm:w-auto px-10 sm:px-14 py-5 sm:py-6 border-3 font-black text-lg sm:text-xl rounded-2xl transition-all duration-300 hover:-translate-y-1 active:translate-y-0 text-center ${
                 isDark 
-                  ? 'border-white/20 hover:bg-white/10 text-white' 
-                  : 'border-[#0E1E38]/20 hover:bg-[#0E1E38]/5 text-[#0E1E38]'
+                  ? 'border-white/30 hover:border-white hover:bg-white/10 text-white' 
+                  : 'border-[#0E1E38]/30 hover:border-[#0E1E38] hover:bg-[#0E1E38]/5 text-[#0E1E38]'
               }`}
             >
               {t.login}
             </Link>
           </div>
 
-          <p className={`text-xs font-medium pt-2 ${
+          <p className={`text-xs sm:text-sm font-semibold pt-2 ${
             isDark ? 'text-slate-400' : 'text-slate-500'
           }`}>
             {t.promoSubtext}
