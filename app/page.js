@@ -38,9 +38,10 @@ export default function SpikeLandingPage() {
       pricing: 'الباقات والأسعار',
       enterprise: 'كبار التجار',
       login: 'تسجيل الدخول',
-      startFree: 'ابدأ مجاناً الآن 🚀',
+      startFree: 'ابدأ مجاناً الآن',
       heroSubtitle: 'المنظومة الأقوى لإدارة المتاجر الإلكترونية، الشحن، وتحصيل الدفع عند الاستلام في مصر بأعلى معدلات تأكيد وتسليم.',
       promoSubtext: 'ابدأ فترتك التجريبية مجاناً الآن بدون أي بطاقة بنكية • إعداد متجرك في أقل من دقيقة.',
+      liveBadge: 'النظام معتمد ونشط • معدل تسليم قياسي في المحافظات',
       sectionTitlePart1: 'انطلق بتجارتك',
       sectionTitlePart2: 'إلى القمة مع سبايك',
       card1Title: 'منظومة تجارة شاملة',
@@ -65,9 +66,10 @@ export default function SpikeLandingPage() {
       pricing: 'Pricing',
       enterprise: 'Enterprise',
       login: 'Log in',
-      startFree: 'Start Free Now 🚀',
+      startFree: 'Start Free Now',
       heroSubtitle: 'The ultimate eCommerce platform built for Cash on Delivery, inventory scaling, and highest delivery rates.',
       promoSubtext: 'Start your free trial today. No credit card required • Launch in under a minute.',
+      liveBadge: 'Verified & Live • Industry-leading COD delivery rate',
       sectionTitlePart1: 'Take your store',
       sectionTitlePart2: 'to the next level',
       card1Title: 'All-in-One E-Commerce',
@@ -150,63 +152,75 @@ export default function SpikeLandingPage() {
         </div>
       </nav>
 
-      {/* 🚀 القسم الرئيسي (Hero Section) مع موشن جرافيك حي كامل وأزرار ضخمة */}
-      <section className={`relative overflow-hidden py-20 lg:py-28 px-6 lg:px-16 border-b transition-colors ${
+      {/* 🚀 القسم الرئيسي (Hero Section) مع موشن جرافيك وتطعيمات أخضر فاتح راقية */}
+      <section className={`relative overflow-hidden py-16 lg:py-24 px-6 lg:px-16 border-b transition-colors ${
         isDark ? 'border-slate-800' : 'border-slate-200'
       }`}>
         
         {/* 🎬 مؤثرات الموشن جرافيك في الخلفية (Motion Graphic Canvas) */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {/* دوائر وتوهجات مدارية حية تنبض وتتمدد */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] sm:w-[900px] h-[650px] sm:h-[900px] rounded-full border border-[#E86A53]/15 animate-ping opacity-25" style={{ animationDuration: '6s' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] sm:w-[600px] h-[420px] sm:h-[600px] rounded-full border border-orange-400/20 animate-pulse" style={{ animationDuration: '4s' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] sm:w-[900px] h-[650px] sm:h-[900px] rounded-full border border-[#E86A53]/15 animate-ping opacity-20" style={{ animationDuration: '6s' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] sm:w-[600px] h-[420px] sm:h-[600px] rounded-full border border-emerald-400/20 animate-pulse" style={{ animationDuration: '4s' }} />
           
+          {/* لمسة هالة خضراء فاتحة محيطية راقية في الخلفية */}
+          <div className="absolute top-[20%] right-[15%] w-72 h-72 bg-emerald-400/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s' }} />
+          <div className="absolute bottom-[10%] left-[15%] w-80 h-80 bg-teal-300/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '7s' }} />
+
           {/* التدرج اللوني المحيطي */}
           <div 
             className="absolute inset-0 opacity-60"
             style={{
               background: isDark
                 ? `
-                  radial-gradient(circle at 50% 45%, rgba(232, 106, 83, 0.28) 0%, transparent 65%),
-                  radial-gradient(circle at 15% 85%, rgba(232, 106, 83, 0.20) 0%, transparent 45%),
+                  radial-gradient(circle at 50% 45%, rgba(232, 106, 83, 0.25) 0%, transparent 65%),
+                  radial-gradient(circle at 20% 80%, rgba(16, 185, 129, 0.12) 0%, transparent 45%),
                   radial-gradient(circle at 85% 15%, rgba(14, 30, 56, 0.95) 0%, transparent 60%)
                 `
                 : `
-                  radial-gradient(circle at 50% 45%, rgba(232, 106, 83, 0.22) 0%, transparent 65%),
-                  radial-gradient(circle at 15% 85%, rgba(232, 106, 83, 0.15) 0%, transparent 45%),
+                  radial-gradient(circle at 50% 45%, rgba(232, 106, 83, 0.18) 0%, transparent 65%),
+                  radial-gradient(circle at 20% 80%, rgba(16, 185, 129, 0.12) 0%, transparent 45%),
                   radial-gradient(circle at 85% 15%, rgba(247, 244, 236, 0.9) 0%, transparent 60%)
                 `,
             }}
           />
 
-          {/* أيقونات طافية تفاعلية تعبر عن مضاعفة الطلبات (Floating Motion Cards) */}
-          <div className="hidden md:flex absolute top-16 right-[12%] animate-bounce items-center gap-2 px-4 py-2 rounded-2xl bg-white/80 dark:bg-[#0E1E38]/80 backdrop-blur-md border border-[#E86A53]/30 shadow-2xl" style={{ animationDuration: '4s' }}>
-            <span className="text-xl">📈</span>
+          {/* أيقونات طافية تفاعلية مطعمة بالأخضر الفاتح الراقي */}
+          <div className="hidden md:flex absolute top-16 right-[10%] animate-bounce items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white/90 dark:bg-[#0E1E38]/90 backdrop-blur-md border border-emerald-400/40 shadow-xl shadow-emerald-500/10" style={{ animationDuration: '4.5s' }}>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
             <div className="text-right">
-              <span className="block text-[11px] font-black text-emerald-500">+250% مبيعات</span>
-              <span className="block text-[9px] text-slate-400">تأكيد فوري للطلبات</span>
+              <span className="block text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">+99.4% نجاح التسليم</span>
+              <span className="block text-[9px] text-slate-500">أعلى معدل COD مؤكد</span>
             </div>
           </div>
 
-          <div className="hidden md:flex absolute bottom-24 left-[10%] animate-bounce items-center gap-2 px-4 py-2 rounded-2xl bg-white/80 dark:bg-[#0E1E38]/80 backdrop-blur-md border border-emerald-500/30 shadow-2xl" style={{ animationDuration: '5s' }}>
-            <span className="text-xl">🚚</span>
+          <div className="hidden md:flex absolute bottom-20 left-[10%] animate-bounce items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-white/90 dark:bg-[#0E1E38]/90 backdrop-blur-md border border-emerald-400/30 shadow-xl shadow-emerald-500/10" style={{ animationDuration: '5.5s' }}>
+            <span className="text-base">⚡</span>
             <div className="text-right">
-              <span className="block text-[11px] font-black text-[#E86A53]">شحن وتسليم COD</span>
-              <span className="block text-[9px] text-slate-400">تغطية 24 محافظة</span>
+              <span className="block text-xs font-black text-[#E86A53]">ربط CAPI فوري</span>
+              <span className="block text-[9px] text-emerald-600 dark:text-emerald-400 font-bold">بدون فقدان أي داتا</span>
             </div>
           </div>
         </div>
 
         <div className="max-w-5xl mx-auto relative z-10 space-y-7 text-center">
           
-          {/* اللوجو المركزي مع هالة ضوئية متوهجة تنبض بالحركة */}
-          <div className="relative inline-flex items-center justify-center">
-            <div className="absolute -inset-4 bg-gradient-to-r from-[#E86A53] via-orange-400 to-[#E86A53] rounded-full blur-2xl opacity-40 animate-pulse" />
-            <img
-              src={SPIKE_LOGO_URL}
-              alt="SPIKE Logo"
-              className="relative h-32 sm:h-44 w-auto object-contain rounded-3xl shadow-2xl transition-transform duration-500 hover:scale-110 cursor-pointer"
-            />
+          {/* شارة التوثيق الحية بالأخضر الفاتح الشيك */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-black backdrop-blur-sm shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>{t.liveBadge}</span>
+          </div>
+
+          {/* اللوجو المركزي مع هالة ضوئية متوهجة */}
+          <div className="flex justify-center">
+            <div className="relative inline-flex items-center justify-center">
+              <div className="absolute -inset-4 bg-gradient-to-r from-[#E86A53] via-emerald-400 to-[#E86A53] rounded-full blur-2xl opacity-35 animate-pulse" />
+              <img
+                src={SPIKE_LOGO_URL}
+                alt="SPIKE Logo"
+                className="relative h-32 sm:h-44 w-auto object-contain rounded-3xl shadow-2xl transition-transform duration-500 hover:scale-110 cursor-pointer"
+              />
+            </div>
           </div>
 
           {/* كلمة SPIKE عملاقة بأنيميشن كتابة حي متبوعة بمؤشر ينبض */}
@@ -228,11 +242,11 @@ export default function SpikeLandingPage() {
             {t.heroSubtitle}
           </p>
 
-          {/* 🌟 أزرار الإجراء الضخمة والملفتة (High-Impact Giant CTAs) */}
+          {/* 🌟 أزرار الإجراء الضخمة والمطورة بدون صاروخ مع حواف وتأثير أخضر ناعم */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5 pt-4">
             <Link
               href="/register"
-              className="w-full sm:w-auto px-10 sm:px-14 py-5 sm:py-6 bg-gradient-to-r from-[#E86A53] via-orange-500 to-[#E86A53] hover:from-[#d65942] hover:to-[#E86A53] text-white font-black text-lg sm:text-xl rounded-2xl transition-all duration-300 shadow-[0_15px_40px_rgba(232,106,83,0.55)] hover:shadow-[0_20px_50px_rgba(232,106,83,0.75)] hover:-translate-y-1 active:translate-y-0 text-center tracking-wide"
+              className="w-full sm:w-auto px-10 sm:px-14 py-5 sm:py-6 bg-gradient-to-r from-[#E86A53] via-orange-500 to-[#E86A53] hover:from-[#d65942] hover:to-[#E86A53] text-white font-black text-lg sm:text-xl rounded-2xl transition-all duration-300 shadow-[0_15px_40px_rgba(232,106,83,0.50)] hover:shadow-[0_20px_50px_rgba(16,185,129,0.45)] hover:-translate-y-1 active:translate-y-0 text-center tracking-wide ring-1 ring-emerald-400/30"
             >
               {t.startFree}
             </Link>
@@ -241,8 +255,8 @@ export default function SpikeLandingPage() {
               href="/register"
               className={`w-full sm:w-auto px-10 sm:px-14 py-5 sm:py-6 border-3 font-black text-lg sm:text-xl rounded-2xl transition-all duration-300 hover:-translate-y-1 active:translate-y-0 text-center ${
                 isDark 
-                  ? 'border-white/30 hover:border-white hover:bg-white/10 text-white' 
-                  : 'border-[#0E1E38]/30 hover:border-[#0E1E38] hover:bg-[#0E1E38]/5 text-[#0E1E38]'
+                  ? 'border-white/30 hover:border-emerald-400 hover:bg-emerald-500/10 text-white' 
+                  : 'border-[#0E1E38]/30 hover:border-emerald-600 hover:bg-emerald-50 text-[#0E1E38]'
               }`}
             >
               {t.login}
@@ -278,8 +292,9 @@ export default function SpikeLandingPage() {
                   <div className="w-24 h-32 bg-[#E86A53]/20 border border-[#E86A53]/40 rounded-xl shadow-lg flex items-center justify-center text-3xl">
                     🛍️
                   </div>
-                  <div className="absolute right-4 bottom-4 bg-[#E86A53] text-white px-3 py-1 rounded-lg text-xs font-black shadow-md">
-                    +150% طلبات
+                  <div className="absolute right-4 bottom-4 bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs font-black shadow-md flex items-center gap-1">
+                    <span className="text-[10px]">●</span>
+                    <span>+150% طلبات</span>
                   </div>
                 </div>
               </div>
@@ -298,7 +313,7 @@ export default function SpikeLandingPage() {
                 <div className="bg-white text-[#0E1E38] rounded-2xl p-4 w-4/5 shadow-2xl space-y-2 text-xs">
                   <div className="flex items-center justify-between border-b pb-2">
                     <span className="font-bold">شراء سريع (COD)</span>
-                    <span className="text-emerald-600 font-bold">✓ مؤكد</span>
+                    <span className="text-emerald-500 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">✓ مؤكد بنجاح</span>
                   </div>
                   <div className="flex justify-between text-[11px]">
                     <span className="text-slate-500">{t.subtotal}</span>
