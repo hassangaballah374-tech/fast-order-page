@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import { useApp } from '../../../context/AppContext';
+import SpikeBrandHeader from '../../../components/SpikeBrandHeader';
 
 export default function PublicStoreCheckoutPage() {
   const { slug } = useParams();
@@ -253,13 +254,13 @@ export default function PublicStoreCheckoutPage() {
     setSubmittingOrder(false);
   };
 
-  if (loading) return <div className={`min-h-screen flex items-center justify-center font-sans ${isDark ? 'bg-[#0b0f19] text-white' : 'bg-slate-100 text-black'}`}>{lang === 'ar' ? 'جاري فتح المتجر...' : 'Loading Storefront...'}</div>;
+  if (loading) return <div className={`min-h-screen flex items-center justify-center font-sans ${isDark ? 'bg-[#0E1E38] text-white' : 'bg-[#F7F4EC] text-[#0E1E38]'}`}>{lang === 'ar' ? 'جاري فتح المتجر...' : 'Loading Storefront...'}</div>;
 
   if (orderSuccessData) {
     return (
-      <div className={`min-h-screen flex items-center justify-center p-4 font-sans ${isDark ? 'bg-[#0b0f19] text-white' : 'bg-slate-100 text-black'}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-        <div className={`max-w-md w-full border border-emerald-500/30 p-8 rounded-3xl text-center space-y-4 ${isDark ? 'bg-[#111827]' : 'bg-white shadow-xl'}`}>
-          <div className="text-4xl text-emerald-400">✓</div>
+      <div className={`min-h-screen flex items-center justify-center p-4 font-sans ${isDark ? 'bg-[#0E1E38] text-white' : 'bg-[#F7F4EC] text-[#0E1E38]'}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+        <div className={`max-w-md w-full border border-[#E86A53]/30 p-8 rounded-3xl text-center space-y-4 ${isDark ? 'bg-[#091222]' : 'bg-white shadow-xl'}`}>
+          <div className="text-4xl text-[#E86A53]">✓</div>
           <h2 className="text-xl font-black">{lang === 'ar' ? 'تم تأكيد طلبك بنجاح!' : 'Order Placed Successfully!'}</h2>
           <p className="text-xs text-slate-400">
             {lang === 'ar' 
@@ -269,9 +270,9 @@ export default function PublicStoreCheckoutPage() {
           <div className={`p-4 rounded-xl text-xs space-y-2 ${isDark ? 'bg-slate-900 text-slate-300' : 'bg-slate-50 text-slate-700'}`}>
             <div>{lang === 'ar' ? 'كود الطلب:' : 'Order Code:'} <strong className="font-mono">{orderSuccessData.orderId}</strong></div>
             <div>{lang === 'ar' ? 'المنتج:' : 'Item:'} <strong>{orderSuccessData.product_name}</strong></div>
-            <div>{lang === 'ar' ? 'الإجمالي عند الاستلام:' : 'Total COD:'} <strong className="text-emerald-400 font-bold">{orderSuccessData.total_amount} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong></div>
+            <div>{lang === 'ar' ? 'الإجمالي عند الاستلام:' : 'Total COD:'} <strong className="text-[#E86A53] font-bold">{orderSuccessData.total_amount} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong></div>
           </div>
-          <button onClick={() => { setOrderSuccessData(null); setSelectedBundleTier(1); }} className="w-full py-3 bg-emerald-600 text-white rounded-xl text-xs font-bold cursor-pointer">
+          <button onClick={() => { setOrderSuccessData(null); setSelectedBundleTier(1); }} className="w-full py-3 bg-[#E86A53] hover:bg-[#d65942] text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-[#E86A53]/30">
             {lang === 'ar' ? 'العودة للمتجر' : 'Back to Store'}
           </button>
         </div>
@@ -286,12 +287,12 @@ export default function PublicStoreCheckoutPage() {
 
   return (
     <div className={`min-h-screen font-sans pb-24 select-none relative transition-colors ${
-      isDark ? 'bg-[#0b0f19] text-white' : 'bg-slate-100 text-slate-900'
+      isDark ? 'bg-[#0E1E38] text-white' : 'bg-[#F7F4EC] text-[#0E1E38]'
     }`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 👑 شريط عائم دائم للأدمن للتبديل والرجوع من أي صفحة متجر */}
-      <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 bg-slate-900/95 border-2 border-amber-500/80 p-2 rounded-2xl shadow-2xl backdrop-blur-md">
-        <div className="text-[11px] font-black text-amber-400 px-2 hidden sm:block">
+      {/* 👑 شريط عائم دائم للأدمن */}
+      <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 bg-slate-900/95 border-2 border-[#E86A53] p-2 rounded-2xl shadow-2xl backdrop-blur-md">
+        <div className="text-[11px] font-black text-[#E86A53] px-2 hidden sm:block">
           👑 {lang === 'ar' ? 'وضع الإدارة' : 'Admin Mode'}
         </div>
         <button
@@ -305,7 +306,7 @@ export default function PublicStoreCheckoutPage() {
             localStorage.setItem('is_super_admin', 'true');
             router.push('/admin');
           }}
-          className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black text-xs font-black rounded-xl shadow transition cursor-pointer flex items-center gap-1"
+          className="px-3.5 py-1.5 bg-gradient-to-r from-[#E86A53] to-amber-500 hover:from-[#d65942] text-white text-xs font-black rounded-xl shadow transition cursor-pointer flex items-center gap-1"
         >
           <span>⬅</span>
           <span>{lang === 'ar' ? 'الرجوع للسوبر أدمن' : 'Super Admin'}</span>
@@ -313,30 +314,30 @@ export default function PublicStoreCheckoutPage() {
       </div>
 
       {/* الشريط الإعلاني */}
-      <div className="bg-emerald-600 text-white text-[11px] font-black py-2 px-4 text-center">
+      <div className="bg-[#E86A53] text-white text-[11px] font-black py-2 px-4 text-center">
         {storeSettings?.announcement_text || (lang === 'ar' ? '🚚 شحن لجميع المحافظات والدفع عند الاستلام بعد المعاينة!' : '🚚 Fast shipping & Cash on Delivery across Egypt!')}
       </div>
 
       {/* الترويسة العلوية للزبون */}
       <header className={`border-b px-4 sm:px-8 py-3.5 sticky top-0 z-40 backdrop-blur-md bg-opacity-95 shadow-sm transition-colors ${
-        isDark ? 'bg-[#111827] border-slate-800' : 'bg-white border-slate-200'
+        isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'
       }`}>
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             {storeSettings?.store_logo ? (
               <img src={storeSettings.store_logo} alt="Logo" className="w-10 h-10 rounded-xl object-contain bg-white p-0.5 border border-slate-700 shadow-sm" />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-base shadow-sm">
+              <div className="w-10 h-10 rounded-xl bg-[#E86A53] text-white flex items-center justify-center font-black text-base shadow-sm">
                 {storeData?.store_name?.charAt(0) || '🏪'}
               </div>
             )}
             <div>
               <h1 className="text-base font-black leading-tight">{storeData?.store_name}</h1>
-              <p className="text-[11px] text-emerald-400 font-bold">{lang === 'ar' ? 'التاجر المعتمد:' : 'Certified Merchant:'} {storeData?.owner_name || 'Owner'}</p>
+              <p className="text-[11px] text-[#E86A53] font-bold">{lang === 'ar' ? 'التاجر المعتمد:' : 'Certified Merchant:'} {storeData?.owner_name || 'Owner'}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button onClick={toggleLanguage} className="px-2.5 py-1 bg-slate-800 text-white rounded-lg text-[10px] font-bold border border-slate-700">
               🌐 {lang === 'ar' ? 'EN' : 'AR'}
             </button>
@@ -369,8 +370,8 @@ export default function PublicStoreCheckoutPage() {
                     }}
                     className={`flex items-center gap-2.5 p-2 pr-3 rounded-2xl border transition shrink-0 cursor-pointer ${
                       selectedProduct?.id === p.id
-                        ? 'border-emerald-500 bg-emerald-500/10'
-                        : isDark ? 'border-slate-800 bg-[#111827] opacity-70 hover:opacity-100' : 'border-slate-200 bg-white opacity-80 hover:opacity-100 shadow-sm'
+                        ? 'border-[#E86A53] bg-[#E86A53]/10'
+                        : isDark ? 'border-slate-800 bg-[#091222] opacity-70 hover:opacity-100' : 'border-slate-200 bg-white opacity-80 hover:opacity-100 shadow-sm'
                     }`}
                   >
                     <div className="w-9 h-9 rounded-xl bg-slate-900 overflow-hidden flex items-center justify-center shrink-0">
@@ -378,7 +379,7 @@ export default function PublicStoreCheckoutPage() {
                     </div>
                     <div className={lang === 'ar' ? 'text-right' : 'text-left'}>
                       <span className="text-xs font-bold block truncate max-w-[120px]">{p.name}</span>
-                      <span className="text-[10px] text-emerald-400 font-mono font-bold">{p.price} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
+                      <span className="text-[10px] text-[#E86A53] font-mono font-bold">{p.price} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
                     </div>
                   </button>
                 );
@@ -393,7 +394,7 @@ export default function PublicStoreCheckoutPage() {
             {/* المعرض */}
             <div className="lg:col-span-6 space-y-3">
               <div className={`w-full h-80 sm:h-[400px] border rounded-3xl overflow-hidden flex items-center justify-center ${
-                isDark ? 'bg-[#111827] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+                isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
               }`}>
                 {allMedia[activeMediaIndex]?.type === 'video' ? (
                   <video src={allMedia[activeMediaIndex].url} controls autoPlay className="w-full h-full object-cover" />
@@ -407,7 +408,7 @@ export default function PublicStoreCheckoutPage() {
               {allMedia.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {allMedia.map((m, idx) => (
-                    <button key={idx} onClick={() => setActiveMediaIndex(idx)} className={`w-14 h-14 rounded-xl border-2 overflow-hidden shrink-0 ${activeMediaIndex === idx ? 'border-emerald-500' : 'border-slate-800'}`}>
+                    <button key={idx} onClick={() => setActiveMediaIndex(idx)} className={`w-14 h-14 rounded-xl border-2 overflow-hidden shrink-0 ${activeMediaIndex === idx ? 'border-[#E86A53]' : 'border-slate-800'}`}>
                       {m.type === 'video' ? <div className="w-full h-full bg-slate-900 flex items-center justify-center text-xs">🎬</div> : <img src={m.url} className="w-full h-full object-cover" alt="" />}
                     </button>
                   ))}
@@ -418,10 +419,10 @@ export default function PublicStoreCheckoutPage() {
             {/* تفاصيل المنتج والـ Upsell وفورم الشراء */}
             <div className="lg:col-span-6 space-y-4">
               <div>
-                <span className="text-xs text-emerald-400 font-bold block mb-1">{lang === 'ar' ? 'التاجر المسؤول:' : 'Merchant:'} {storeData?.owner_name}</span>
+                <span className="text-xs text-[#E86A53] font-bold block mb-1">{lang === 'ar' ? 'التاجر المسؤول:' : 'Merchant:'} {storeData?.owner_name}</span>
                 <h2 className="text-xl font-black">{selectedProduct.name}</h2>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="text-2xl font-black text-emerald-400">{currentDynamicUnitPrice} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
+                  <span className="text-2xl font-black text-[#E86A53]">{currentDynamicUnitPrice} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
                   {selectedProduct.original_price > 0 && <span className="text-slate-500 line-through text-sm">{selectedProduct.original_price} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>}
                 </div>
               </div>
@@ -436,7 +437,7 @@ export default function PublicStoreCheckoutPage() {
                         key={i}
                         type="button"
                         onClick={() => setSelectedColor(c)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${selectedColor === c ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-slate-800 text-slate-300'}`}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${selectedColor === c ? 'bg-[#E86A53] border-[#E86A53] text-white' : 'border-slate-800 text-slate-300'}`}
                       >
                         {c}
                       </button>
@@ -455,7 +456,7 @@ export default function PublicStoreCheckoutPage() {
                         key={i}
                         type="button"
                         onClick={() => setSelectedSize(s)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${selectedSize === s ? 'bg-emerald-600 border-emerald-500 text-white' : 'border-slate-800 text-slate-300'}`}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${selectedSize === s ? 'bg-[#E86A53] border-[#E86A53] text-white' : 'border-slate-800 text-slate-300'}`}
                       >
                         {s}
                       </button>
@@ -468,39 +469,39 @@ export default function PublicStoreCheckoutPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-400 block">{lang === 'ar' ? 'اختر العرض الأفضل لك ووفر:' : 'Select Quantity & Save:'}</label>
                 <div className="grid grid-cols-3 gap-2">
-                  <div onClick={() => setSelectedBundleTier(1)} className={`p-3 rounded-2xl border cursor-pointer text-center ${selectedBundleTier === 1 ? 'border-emerald-500 bg-emerald-500/10' : isDark ? 'border-slate-800 bg-[#111827]' : 'border-slate-200 bg-white shadow-sm'}`}>
+                  <div onClick={() => setSelectedBundleTier(1)} className={`p-3 rounded-2xl border cursor-pointer text-center ${selectedBundleTier === 1 ? 'border-[#E86A53] bg-[#E86A53]/10' : isDark ? 'border-slate-800 bg-[#091222]' : 'border-slate-200 bg-white shadow-sm'}`}>
                     <span className="text-xs font-bold block">{lang === 'ar' ? 'قطعة' : '1 Piece'}</span>
-                    <strong className="text-emerald-400 text-xs font-mono">{currentDynamicUnitPrice} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong>
+                    <strong className="text-[#E86A53] text-xs font-mono">{currentDynamicUnitPrice} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong>
                   </div>
-                  <div onClick={() => setSelectedBundleTier(2)} className={`p-3 rounded-2xl border cursor-pointer text-center ${selectedBundleTier === 2 ? 'border-emerald-500 bg-emerald-500/10' : isDark ? 'border-slate-800 bg-[#111827]' : 'border-slate-200 bg-white shadow-sm'}`}>
+                  <div onClick={() => setSelectedBundleTier(2)} className={`p-3 rounded-2xl border cursor-pointer text-center ${selectedBundleTier === 2 ? 'border-[#E86A53] bg-[#E86A53]/10' : isDark ? 'border-slate-800 bg-[#091222]' : 'border-slate-200 bg-white shadow-sm'}`}>
                     <span className="text-xs font-bold block">{lang === 'ar' ? 'قطعتين' : '2 Pieces'}</span>
-                    <strong className="text-emerald-400 text-xs font-mono">{Math.round((currentDynamicUnitPrice * 2) * (1 - (selectedProduct.bundle_tier_2_discount || 10) / 100))} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong>
+                    <strong className="text-[#E86A53] text-xs font-mono">{Math.round((currentDynamicUnitPrice * 2) * (1 - (selectedProduct.bundle_tier_2_discount || 10) / 100))} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong>
                   </div>
-                  <div onClick={() => setSelectedBundleTier(3)} className={`p-3 rounded-2xl border cursor-pointer text-center ${selectedBundleTier === 3 ? 'border-emerald-500 bg-emerald-500/10' : isDark ? 'border-slate-800 bg-[#111827]' : 'border-slate-200 bg-white shadow-sm'}`}>
+                  <div onClick={() => setSelectedBundleTier(3)} className={`p-3 rounded-2xl border cursor-pointer text-center ${selectedBundleTier === 3 ? 'border-[#E86A53] bg-[#E86A53]/10' : isDark ? 'border-slate-800 bg-[#091222]' : 'border-slate-200 bg-white shadow-sm'}`}>
                     <span className="text-xs font-bold block">{lang === 'ar' ? '3 قطع' : '3 Pieces'}</span>
-                    <strong className="text-emerald-400 text-xs font-mono">{Math.round((currentDynamicUnitPrice * 3) * (1 - (selectedProduct.bundle_tier_3_discount || 20) / 100))} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong>
+                    <strong className="text-[#E86A53] text-xs font-mono">{Math.round((currentDynamicUnitPrice * 3) * (1 - (selectedProduct.bundle_tier_3_discount || 20) / 100))} {lang === 'ar' ? 'ج.م' : 'EGP'}</strong>
                   </div>
                 </div>
               </div>
 
               {/* فورم الشراء السريع بالـ COD */}
-              <form onSubmit={handleCheckoutSubmit} className={`border p-5 rounded-3xl space-y-3 ${isDark ? 'bg-[#111827] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                <input type="text" required placeholder={lang === 'ar' ? 'الاسم بالكامل' : 'Full Name'} value={orderForm.customerName} onChange={(e) => setOrderForm({ ...orderForm, customerName: e.target.value })} className={`w-full border rounded-xl p-3 text-xs ${isDark ? 'bg-[#0b0f19] border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`} />
-                <input type="tel" required dir="ltr" placeholder={lang === 'ar' ? 'رقم الهاتف (للتوصيل)' : 'Phone Number (For Delivery)'} value={orderForm.phone} onChange={(e) => setOrderForm({ ...orderForm, phone: e.target.value })} className={`w-full border rounded-xl p-3 text-xs font-mono ${isDark ? 'bg-[#0b0f19] border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`} />
+              <form onSubmit={handleCheckoutSubmit} className={`border p-5 rounded-3xl space-y-3 ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <input type="text" required placeholder={lang === 'ar' ? 'الاسم بالكامل' : 'Full Name'} value={orderForm.customerName} onChange={(e) => setOrderForm({ ...orderForm, customerName: e.target.value })} className={`w-full border rounded-xl p-3 text-xs ${isDark ? 'bg-black/60 border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`} />
+                <input type="tel" required dir="ltr" placeholder={lang === 'ar' ? 'رقم الهاتف (للتوصيل)' : 'Phone Number (For Delivery)'} value={orderForm.phone} onChange={(e) => setOrderForm({ ...orderForm, phone: e.target.value })} className={`w-full border rounded-xl p-3 text-xs font-mono ${isDark ? 'bg-black/60 border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`} />
                 
                 <div className="grid grid-cols-2 gap-2">
-                  <select value={orderForm.governorate} onChange={(e) => setOrderForm({ ...orderForm, governorate: e.target.value })} className={`border rounded-xl p-3 text-xs ${isDark ? 'bg-[#0b0f19] border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`}>
+                  <select value={orderForm.governorate} onChange={(e) => setOrderForm({ ...orderForm, governorate: e.target.value })} className={`border rounded-xl p-3 text-xs ${isDark ? 'bg-black/60 border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`}>
                     {governorates.map((g, i) => <option key={i} value={g}>{g}</option>)}
                   </select>
-                  <input type="text" required placeholder={lang === 'ar' ? 'العنوان بالتفصيل' : 'Detailed Address'} value={orderForm.address} onChange={(e) => setOrderForm({ ...orderForm, address: e.target.value })} className={`w-full border rounded-xl p-3 text-xs ${isDark ? 'bg-[#0b0f19] border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`} />
+                  <input type="text" required placeholder={lang === 'ar' ? 'العنوان بالتفصيل' : 'Detailed Address'} value={orderForm.address} onChange={(e) => setOrderForm({ ...orderForm, address: e.target.value })} className={`w-full border rounded-xl p-3 text-xs ${isDark ? 'bg-black/60 border-slate-800 text-white' : 'bg-slate-50 border-slate-300'}`} />
                 </div>
 
-                <div className={`p-3 rounded-xl border text-xs flex justify-between font-bold ${isDark ? 'bg-[#0b0f19] border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                <div className={`p-3 rounded-xl border text-xs flex justify-between font-bold ${isDark ? 'bg-black/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                   <span>{lang === 'ar' ? 'الإجمالي عند الاستلام:' : 'Total at Delivery (COD):'}</span>
-                  <span className="text-emerald-400 font-mono text-sm">{pricing.finalTotal} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
+                  <span className="text-[#E86A53] font-mono text-sm">{pricing.finalTotal} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
                 </div>
 
-                <button type="submit" disabled={submittingOrder} className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm rounded-2xl shadow-xl transition cursor-pointer">
+                <button type="submit" disabled={submittingOrder} className="w-full py-3.5 bg-[#E86A53] hover:bg-[#d65942] text-white font-black text-sm rounded-2xl shadow-xl shadow-[#E86A53]/30 transition cursor-pointer">
                   {submittingOrder ? (lang === 'ar' ? 'جاري تأكيد الطلب...' : 'Processing...') : (lang === 'ar' ? 'تأكيد الطلب الآن 🚚' : 'Confirm Order Now 🚚')}
                 </button>
               </form>
@@ -508,7 +509,7 @@ export default function PublicStoreCheckoutPage() {
 
           </div>
         ) : (
-          <div className="text-center py-16 text-slate-500 bg-[#111827] rounded-3xl border border-slate-800">
+          <div className="text-center py-16 text-slate-500 bg-[#091222] rounded-3xl border border-slate-800">
             <span className="text-3xl block mb-2">🛍️</span>
             <span>{lang === 'ar' ? 'لا توجد منتجات مسجلة في هذا المتجر حالياً.' : 'No products available currently.'}</span>
           </div>
@@ -517,37 +518,37 @@ export default function PublicStoreCheckoutPage() {
 
       {/* فوتر الشفافية والسياسات */}
       <footer className={`mt-12 border-t p-6 max-w-4xl mx-auto rounded-3xl text-center space-y-4 ${
-        isDark ? 'bg-[#111827] border-slate-800/80' : 'bg-white border-slate-200 shadow-sm'
+        isDark ? 'bg-[#091222] border-slate-800/80' : 'bg-white border-slate-200 shadow-sm'
       }`}>
         <div className="flex flex-wrap justify-center gap-3 text-xs font-bold">
-          <button onClick={() => setActivePolicyModal('about')} className="text-slate-400 hover:text-emerald-400 cursor-pointer">
+          <button onClick={() => setActivePolicyModal('about')} className="text-slate-400 hover:text-[#E86A53] cursor-pointer">
             ℹ️ {lang === 'ar' ? 'من نحن' : 'About Us'}
           </button>
           <span className="text-slate-700">•</span>
-          <button onClick={() => setActivePolicyModal('returns')} className="text-slate-400 hover:text-emerald-400 cursor-pointer">
+          <button onClick={() => setActivePolicyModal('returns')} className="text-slate-400 hover:text-[#E86A53] cursor-pointer">
             🔄 {lang === 'ar' ? 'سياسة الاستبدال والاسترجاع' : 'Returns & Refunds'}
           </button>
           <span className="text-slate-700">•</span>
-          <button onClick={() => setActivePolicyModal('privacy')} className="text-slate-400 hover:text-emerald-400 cursor-pointer">
+          <button onClick={() => setActivePolicyModal('privacy')} className="text-slate-400 hover:text-[#E86A53] cursor-pointer">
             🔒 {lang === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}
           </button>
           <span className="text-slate-700">•</span>
-          <button onClick={() => setActivePolicyModal('contact')} className="text-slate-400 hover:text-emerald-400 cursor-pointer">
+          <button onClick={() => setActivePolicyModal('contact')} className="text-slate-400 hover:text-[#E86A53] cursor-pointer">
             📞 {lang === 'ar' ? 'تواصل معنا' : 'Contact Us'}
           </button>
         </div>
 
         <p className="text-[11px] text-slate-500">
           {lang === 'ar' 
-            ? 'متجر معتمد وموثق عبر منصة NEXT ORDER • يحق للعميل معاينة وفحص الشحنة بالكامل قبل سداد المبلغ للمندوب.'
-            : 'Verified store powered by NEXT ORDER • You can inspect items before paying COD.'}
+            ? 'متجر معتمد وموثق عبر منصة سبايك | SPIKE • يحق للعميل معاينة وفحص الشحنة بالكامل قبل سداد المبلغ للمندوب.'
+            : 'Verified store powered by SPIKE • You can inspect items before paying COD.'}
         </p>
       </footer>
 
       {/* مودال السياسات التفاعلي */}
       {activePolicyModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className={`border rounded-3xl p-6 max-w-md w-full space-y-4 text-xs ${isDark ? 'bg-[#111827] border-slate-800 text-white' : 'bg-white border-slate-300 text-black'}`}>
+          <div className={`border rounded-3xl p-6 max-w-md w-full space-y-4 text-xs ${isDark ? 'bg-[#091222] border-slate-800 text-white' : 'bg-white border-slate-300 text-black'}`}>
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h3 className="text-sm font-black">
                 {activePolicyModal === 'about' && (lang === 'ar' ? 'من نحن' : 'About Us')}
@@ -571,7 +572,7 @@ export default function PublicStoreCheckoutPage() {
               {activePolicyModal === 'contact' && (
                 <div className="space-y-2">
                   <div>{lang === 'ar' ? 'التاجر المسؤول:' : 'Owner:'} <strong>{storeData?.owner_name}</strong></div>
-                  <div>WhatsApp: <strong className="text-emerald-400 font-mono" dir="ltr">{storeSettings?.support_phone || storeData?.phone}</strong></div>
+                  <div>WhatsApp: <strong className="text-[#E86A53] font-mono" dir="ltr">{storeSettings?.support_phone || storeData?.phone}</strong></div>
                   {storeSettings?.store_email && <div>Email: <strong className="text-cyan-400 font-mono">{storeSettings.store_email}</strong></div>}
                   {storeSettings?.store_address && <div>Address: <strong>{storeSettings.store_address}</strong></div>}
                 </div>
