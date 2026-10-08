@@ -1,5 +1,6 @@
 import './globals.css';
 import { AppProvider } from '../context/AppContext';
+import MobileViewportWrapper from '../components/MobileViewportWrapper';
 
 export const metadata = {
   title: 'سبايك | SPIKE - ابنِ متجرك.. وضاعف طلباتك',
@@ -11,7 +12,9 @@ export default function RootLayout({ children }) {
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <body className="antialiased transition-colors duration-200">
         <AppProvider>
-          {children}
+          <MobileViewportWrapper>
+            {children}
+          </MobileViewportWrapper>
         </AppProvider>
       </body>
     </html>
