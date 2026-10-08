@@ -9,7 +9,6 @@ export default function SpikeRegisterAndAuthPage() {
   const router = useRouter();
 
   const [isLoginMode, setIsLoginMode] = useState(false);
-  const [showTopBanner, setShowTopBanner] = useState(true);
   const [loading, setLoading] = useState(false);
 
   // حقول نموذج التسجيل
@@ -109,36 +108,11 @@ export default function SpikeRegisterAndAuthPage() {
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#1E293B] font-sans flex flex-col justify-between selection:bg-emerald-500 selection:text-white" dir="rtl">
 
-      {/* 🟢 1. الشريط العلوي الترويجي الأخضر */}
-      {showTopBanner && (
-        <div className="bg-[#00B050] text-white px-4 py-2.5 text-xs font-bold flex items-center justify-between transition-all duration-300">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowTopBanner(false)}
-              className="text-white/80 hover:text-white text-base leading-none cursor-pointer"
-            >
-              ✕
-            </button>
-            <Link
-              href="/"
-              className="bg-white text-[#00B050] hover:bg-slate-100 px-3 py-1 rounded-md font-black text-[11px] shadow-sm transition"
-            >
-              زيارة موقع مصر
-            </Link>
-          </div>
-
-          <div className="text-center sm:text-right hidden sm:block">
-            <span>لدينا نسخة مخصصة لـ مصر • </span>
-            <span className="font-normal opacity-90">ننصح بالانتقال إلى الموقع المخصص لبلدك للحصول على أفضل تجربة وسرعة شحن.</span>
-          </div>
-        </div>
-      )}
-
-      {/* 🧭 2. النافبار الأبيض المتناسق */}
+      {/* 🧭 1. النافبار الأبيض المباشر (تم حذف الكورسات) */}
       <header className="bg-white border-b border-slate-200/80 px-6 lg:px-14 py-3.5 sticky top-0 z-40 shadow-xs">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           
-          {/* الجانب الأيمن: اللوجو والروابط الرئيسية */}
+          {/* الجانب الأيمن: اللوجو والروابط الرئيسية بدون الكورسات */}
           <div className="flex items-center gap-8">
             <Link href="/" className="flex items-center gap-2">
               <img
@@ -153,7 +127,6 @@ export default function SpikeRegisterAndAuthPage() {
 
             <nav className="hidden md:flex items-center gap-6 text-sm font-bold text-slate-700">
               <Link href="/" className="hover:text-[#00B050] transition">الرئيسية</Link>
-              <button className="hover:text-[#00B050] transition cursor-pointer">الكورسات</button>
               <Link href="/#pricing" className="hover:text-[#00B050] transition">الأسعار</Link>
             </nav>
           </div>
@@ -184,7 +157,7 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </header>
 
-      {/* 📝 3. البطاقة المركزية لإنشاء الحساب والتسجيل */}
+      {/* 📝 2. البطاقة المركزية لإنشاء الحساب والتسجيل */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 my-6">
         
         {/* رأس النموذج: الشعار والعنوان */}
@@ -360,7 +333,7 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </main>
 
-      {/* 🖤 4. الفوتر الداكن الاحترافي المطابق للصورة */}
+      {/* 🖤 3. الفوتر الداكن الاحترافي */}
       <footer className="bg-[#191919] text-white pt-12 pb-8 px-6 lg:px-16 border-t border-slate-800 text-xs">
         <div className="max-w-7xl mx-auto space-y-10">
           
