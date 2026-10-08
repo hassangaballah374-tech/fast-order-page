@@ -16,7 +16,7 @@ export default function MerchantFullDashboard() {
 
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [myStore, setMyStore] = useState(null);
-  const [platformLogo, setPlatformLogo] = useState('');
+  const [platformLogo, setPlatformLogo] = useState('/spike-brand.jpg');
   const [exchangeRate, setExchangeRate] = useState(50.0);
 
   const [platformTerms, setPlatformTerms] = useState({
@@ -447,7 +447,22 @@ export default function MerchantFullDashboard() {
             
             <div className="space-y-3 pb-3 border-b border-slate-800">
               <div className="flex items-center justify-between">
-                <SpikeBrandHeader logoSize={34} />
+                <div className="flex items-center gap-2.5">
+                  <img
+                    src="/spike-brand.jpg"
+                    alt="سبايك"
+                    className="h-10 w-auto object-contain rounded-lg shadow-sm border border-slate-700"
+                  />
+                  <div>
+                    <span className="text-sm font-black text-[#E86A53] block leading-tight">
+                      سبايك | SPIKE
+                    </span>
+                    <span className="text-[9px] bg-[#E86A53]/20 text-[#E86A53] font-bold px-1.5 py-0.2 rounded-full border border-[#E86A53]/30">
+                      {lang === 'ar' ? 'لوحة التاجر الشريك' : 'Merchant Partner'}
+                    </span>
+                  </div>
+                </div>
+
                 <div className="flex gap-1">
                   <button onClick={toggleLanguage} className="px-2 py-1 bg-slate-800 text-white rounded-lg text-[10px] font-bold border border-slate-700">
                     🌐 {lang === 'ar' ? 'EN' : 'AR'}
