@@ -7,62 +7,71 @@ const AppContext = createContext();
 export function AppProvider({ children }) {
   const [lang, setLang] = useState('ar');
   const [theme, setTheme] = useState('light');
-  const [isMounted, setIsMounted] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // 1. قراءة التفضيلات المحفوظة عند فتح الموقع
   useEffect(() => {
     try {
       const savedLang = localStorage.getItem('spike_lang') || 'ar';
       const savedTheme = localStorage.getItem('spike_theme') || 'light';
+      const savedMobile = localStorage.getItem('spike_mobile_view') === 'true';
+      
       setLang(savedLang);
       setTheme(savedTheme);
-
-      // تطبيق الاتجاه والمظهر على الـ HTML الأساسي فوراً
-      applyThemeAndLang(savedTheme, savedLang);
+      setIsMobileView(savedMobile);
+      syncDom(savedTheme, savedLang);
     } catch (e) {
       console.error(e);
     }
-    setIsMounted(true);
+    setMounted(true);
   }, []);
 
-  const applyThemeAndLang = (currentTheme, currentLang) => {
+  const syncDom = (currentTheme, currentLang) => {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
 
-    // ضبط الوضع الليلي/النهاري على جذر الموقع
     if (currentTheme === 'dark') {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
 
-    // ضبط اتجاه ولغة الصفحة عالمياً
     root.setAttribute('lang', currentLang);
     root.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
   };
 
-  // 2. دالة تبديل اللغة مع الحفظ الدائم
   const toggleLanguage = () => {
     const nextLang = lang === 'ar' ? 'en' : 'ar';
     setLang(nextLang);
     try {
       localStorage.setItem('spike_lang', nextLang);
-      applyThemeAndLang(theme, nextLang);
+      syncDom(theme, nextLang);
     } catch (e) {
       console.error(e);
     }
   };
 
-  // 3. دالة تبديل المود (ليلي / نهاري) مع الحفظ الدائم
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
     try {
       localStorage.setItem('spike_theme', nextTheme);
-      applyThemeAndLang(nextTheme, lang);
+      syncDom(nextTheme, lang);
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const toggleMobileView = () => {
+    setIsMobileView(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('spike_mobile_view', String(next));
+      } catch (e) {
+        console.error(e);
+      }
+      return next;
+    });
   };
 
   return (
@@ -73,9 +82,10 @@ export function AppProvider({ children }) {
         toggleLanguage,
         toggleTheme,
         isDark: theme === 'dark',
+        isMobileView,
+        toggleMobileView,
       }}
     >
-      {/* تجنب الوميض أثناء القراءة من LocalStorage */}
       <div className={theme === 'dark' ? 'dark' : ''} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
         {children}
       </div>
@@ -84,15 +94,17 @@ export function AppProvider({ children }) {
 }
 
 export function useApp() {
-  const context = useContext(AppContext);
-  if (!context) {
+  const ctx = useContext(AppContext);
+  if (!ctx) {
     return {
       lang: 'ar',
       theme: 'light',
       isDark: false,
+      isMobileView: false,
       toggleLanguage: () => {},
       toggleTheme: () => {},
+      toggleMobileView: () => {},
     };
   }
-  return context;
+  return ctx;
 }
