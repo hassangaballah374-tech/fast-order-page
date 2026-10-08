@@ -19,11 +19,11 @@ export default function SpikeBrandHeader({
         loading="eager"
       />
 
-      {/* الاسم وتحته السلوجن مباشرة */}
+      {/* الاسم وتحته السلوجن مع وضوح اللون البيج في الوضع الليلي */}
       <div className="flex flex-col justify-center leading-tight">
-        <div className="flex items-center gap-1.5 font-black text-xl tracking-tight text-[#0E1E38] dark:text-white">
+        <div className="flex items-center gap-1.5 font-black text-xl tracking-tight text-[#0E1E38] dark:text-[#F7F4EC]">
           <span>سبايك</span>
-          <span className="font-light text-slate-400 text-lg">|</span>
+          <span className="font-light text-slate-400 dark:text-slate-500 text-lg">|</span>
           <span className="tracking-wider">SPIKE</span>
         </div>
 
