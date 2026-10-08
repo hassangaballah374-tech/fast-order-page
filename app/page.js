@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '../context/AppContext';
 import SpikeBrandHeader, { SPIKE_LOGO_URL } from '../components/SpikeBrandHeader';
@@ -7,6 +7,28 @@ import SpikeBrandHeader, { SPIKE_LOGO_URL } from '../components/SpikeBrandHeader
 export default function SpikeLandingPage() {
   const { lang, theme, toggleLanguage, toggleTheme } = useApp();
   const isDark = theme === 'dark';
+
+  // أنيميشن كتابة كلمة SPIKE حرفاً بحرف عند فتح الصفحة
+  const fullBrandText = 'SPIKE';
+  const [typedText, setTypedText] = useState('');
+  const [isTypingDone, setIsTypingDone] = useState(false);
+
+  useEffect(() => {
+    let index = 0;
+    setTypedText('');
+    setIsTypingDone(false);
+
+    const interval = setInterval(() => {
+      index++;
+      setTypedText(fullBrandText.slice(0, index));
+      if (index >= fullBrandText.length) {
+        clearInterval(interval);
+        setIsTypingDone(true);
+      }
+    }, 180);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const t = {
     ar: {
@@ -129,7 +151,7 @@ export default function SpikeLandingPage() {
       </nav>
 
       {/* 🚀 القسم الرئيسي (Hero Section) */}
-      <section className={`relative overflow-hidden py-20 lg:py-28 px-6 lg:px-16 border-b transition-colors ${
+      <section className={`relative overflow-hidden py-16 lg:py-24 px-6 lg:px-16 border-b transition-colors ${
         isDark ? 'border-slate-800' : 'border-slate-200'
       }`}>
         <div 
@@ -147,23 +169,32 @@ export default function SpikeLandingPage() {
           }}
         />
 
-        <div className="max-w-4xl mx-auto relative z-10 space-y-6 text-center">
+        <div className="max-w-5xl mx-auto relative z-10 space-y-6 text-center">
           
-          {/* اللوجو بشكل كبير في الشاشة */}
+          {/* اللوجو بشكل كبير في منتصف الشاشة */}
           <div className="flex justify-center">
             <img
               src={SPIKE_LOGO_URL}
-              alt="SPIKE"
-              className="h-32 sm:h-44 w-auto object-contain rounded-3xl shadow-2xl transition-transform duration-300 hover:scale-105"
+              alt="SPIKE Logo"
+              className="h-28 sm:h-40 w-auto object-contain rounded-3xl shadow-2xl transition-transform duration-500 hover:scale-105"
             />
           </div>
 
-          {/* اسم المتجر إنجليزي فقط وبدون السلوجن أو شعلة النار */}
-          <h1 className="text-5xl sm:text-7xl font-black tracking-wider font-mono text-[#0E1E38] dark:text-white uppercase">
-            SPIKE
-          </h1>
+          {/* كلمة SPIKE تأخذ نصف عرض الشاشة بأنيميشن الكتابة التفاعلية وفونت كريتيف */}
+          <div className="w-full flex items-center justify-center my-2">
+            <div className="relative inline-flex items-center justify-center">
+              <h1 className="text-6xl sm:text-8xl lg:text-9xl font-black italic tracking-widest uppercase select-none transition-all duration-300 font-sans bg-gradient-to-r from-[#E86A53] via-orange-400 to-[#E86A53] bg-clip-text text-transparent drop-shadow-[0_10px_35px_rgba(232,106,83,0.35)]">
+                {typedText}
+              </h1>
 
-          <p className={`text-base sm:text-lg font-medium max-w-2xl mx-auto leading-relaxed ${
+              {/* مؤشر وميض احترافي ينبض أثناء الكتابة ويختفي بعد الانتهاء */}
+              {!isTypingDone && (
+                <span className="inline-block w-2.5 sm:w-4 h-14 sm:h-24 bg-[#E86A53] ml-2 animate-pulse rounded-full" />
+              )}
+            </div>
+          </div>
+
+          <p className={`text-base sm:text-xl font-medium max-w-2xl mx-auto leading-relaxed ${
             isDark ? 'text-slate-300' : 'text-slate-700'
           }`}>
             {t.heroSubtitle}
