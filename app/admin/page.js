@@ -12,9 +12,7 @@ export default function SpikeSuperAdminDashboard() {
   const { lang, theme, toggleLanguage, toggleTheme, isDark, isMobileView, toggleMobileView } = useApp();
   const isAr = lang === 'ar';
 
-  // حالة فتح/إغلاق الشريط الجانبي
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -342,47 +340,52 @@ export default function SpikeSuperAdminDashboard() {
 
   return (
     <div 
-      className={`min-h-screen font-sans flex relative overflow-x-hidden transition-colors duration-200 select-none ${
+      className={`min-h-screen font-sans flex transition-colors duration-200 select-none ${
         isDark ? 'bg-[#0B132B] text-slate-100' : 'bg-[#F4F6F9] text-slate-800'
       }`} 
       dir={isAr ? 'rtl' : 'ltr'}
     >
 
-      {/* 🌑 الخلفية المعتمة: عند النقر في أي مكان خارج الشريط يغلقه فوراً */}
+      {/* 🌑 تعتيم الخلفية (Backdrop) - يظهر فقط على الموبايل عندما يفتح المستخدم القائمة */}
       {sidebarOpen && (
         <div 
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 bg-black/50 z-40 backdrop-blur-xs transition-opacity animate-in fade-in"
-          title="انقر للإغلاق"
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-xs transition-opacity"
         />
       )}
 
-      {/* 🚀 الشريط الجانبي المتحرك (Drawer Sidebar) */}
-      <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 border-r border-l flex flex-col justify-between shadow-2xl transition-transform duration-300 ease-in-out ${
+      {/* 🚀 الشريط الجانبي:
+          - على الموبايل: Drawer منزلق (Fixed + Transform)
+          - على الكمبيوتر/اللاب: ثابت في مكانه الطبيعي (Static + w-72) بدون إخفاء
+      */}
+      <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-all duration-300 ease-in-out lg:static lg:z-10 lg:translate-x-0 ${
         sidebarOpen 
-          ? 'translate-x-0' 
+          ? 'translate-x-0 shadow-2xl' 
           : isAr ? 'translate-x-full' : '-translate-x-full'
       } ${
         isDark 
           ? 'bg-[#0E1E38] border-slate-800 text-white' 
-          : 'bg-white border-slate-200/90 text-slate-800'
+          : 'bg-white border-slate-200/90 text-slate-800 shadow-sm'
       }`}>
         
-        {/* رأس الشريط الجانبي: الشعار + زر الإغلاق ✕ */}
-        <div className={`p-4 border-b space-y-3 ${isDark ? 'border-slate-800' : 'border-slate-200/80'}`}>
+        {/* رأس الشريط الجانبي */}
+        <div className={`p-4 sm:p-5 border-b space-y-3.5 ${isDark ? 'border-slate-800' : 'border-slate-200/80'}`}>
           <div className="flex items-center justify-between">
-            {/* زر الإغلاق المباشر */}
+            {/* زر الإغلاق: يظهر في الموبايل فقط */}
             <button
               onClick={() => setSidebarOpen(false)}
-              className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-slate-800 transition cursor-pointer"
-              title="إغلاق القائمة"
+              className="lg:hidden w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               ✕
             </button>
 
+            <span className="hidden lg:inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-500 border border-rose-500/20">
+              Admin
+            </span>
+
             <Link href="/" className="flex items-center gap-2">
               <div className="text-right">
-                <div className="flex items-center gap-1 font-black text-base leading-tight">
+                <div className="flex items-center gap-1 font-black text-base sm:text-lg leading-tight">
                   <span className={isDark ? 'text-[#F7F4EC]' : 'text-[#0E1E38]'}>سبايك</span>
                   <span className="text-slate-400 font-light">|</span>
                   <span className="font-mono text-xs tracking-wider text-[#E86A53]">SPIKE</span>
@@ -392,19 +395,19 @@ export default function SpikeSuperAdminDashboard() {
               <img
                 src={SPIKE_LOGO_URL}
                 alt="SPIKE"
-                className="h-8 w-auto object-contain rounded-lg shadow-xs"
+                className="h-8 sm:h-9 w-auto object-contain rounded-lg shadow-xs"
               />
             </Link>
           </div>
 
-          {/* أزرار التحكم باللغة والمود داخل السايد بار أيضاً */}
+          {/* أزرار التحكم بالمظهر واللغة في السايد بار */}
           <div className={`p-1 rounded-xl flex items-center gap-1 border ${
             isDark ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-slate-100/90'
           }`}>
             <button
               type="button"
               onClick={toggleTheme}
-              className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95 ${
+              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95 ${
                 isDark ? 'hover:bg-slate-800 text-amber-300' : 'hover:bg-white text-slate-700 shadow-2xs'
               }`}
             >
@@ -415,7 +418,7 @@ export default function SpikeSuperAdminDashboard() {
             <button
               type="button"
               onClick={toggleLanguage}
-              className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95 ${
+              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95 ${
                 isDark ? 'hover:bg-slate-800 text-slate-200' : 'hover:bg-white text-slate-700 shadow-2xs'
               }`}
             >
@@ -425,7 +428,7 @@ export default function SpikeSuperAdminDashboard() {
           </div>
         </div>
 
-        {/* عناصر القائمة الجانبية: تغلق الشريط تلقائياً عند الضغط للتصفح المريح */}
+        {/* عناصر القائمة الجانبية */}
         <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
@@ -435,7 +438,7 @@ export default function SpikeSuperAdminDashboard() {
                 type="button"
                 onClick={() => {
                   setActiveTab(item.id);
-                  setSidebarOpen(false); // إغلاق تلقائي عند اختيار القسم
+                  setSidebarOpen(false); // يغلق في الموبايل ويبقى ثابتاً في اللاب
                 }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
                   isActive
@@ -495,21 +498,20 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       </aside>
 
-      {/* 📊 المحتوى الرئيسي للداشبورد */}
+      {/* 📊 المحتوى الرئيسي */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         
-        {/* الترويسة العلوية: بها زر الهامبرجر (3 شرط ☰) لفتح الشريط */}
+        {/* الترويسة العلوية */}
         <header className={`px-4 sm:px-8 py-4 border-b flex items-center justify-between backdrop-blur-md sticky top-0 z-30 transition-colors ${
           isDark ? 'bg-[#0B132B]/95 border-slate-800' : 'bg-[#F4F6F9]/95 border-slate-200/80 shadow-xs'
         }`}>
           
-          {/* الجانب الأيمن (في RTL): زر 3 شرط + عنوان الصفحة */}
           <div className="flex items-center gap-3">
-            {/* ☰ زر الثلاث شرط لفتح وإغلاق السايد بار */}
+            {/* زر الثلاث شرط (☰): يظهر فقط على الموبايل والشاشات الصغيرة ويختفي تلقائياً في شاشات اللاب توب (lg:hidden) */}
             <button
               type="button"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className={`w-10 h-10 rounded-xl border flex items-center justify-center text-lg font-bold transition active:scale-95 cursor-pointer shadow-xs ${
+              onClick={() => setSidebarOpen(true)}
+              className={`lg:hidden w-9 h-9 rounded-xl border flex items-center justify-center text-lg font-bold transition active:scale-95 cursor-pointer shadow-xs ${
                 isDark 
                   ? 'border-slate-700 bg-slate-800 text-white hover:bg-slate-700' 
                   : 'border-slate-200 bg-white text-slate-800 hover:bg-slate-100'
@@ -521,7 +523,7 @@ export default function SpikeSuperAdminDashboard() {
 
             <div>
               <div className="flex items-center gap-2">
-                <span className={`text-lg sm:text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <span className={`text-base sm:text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   {t.overviewTitle}
                 </span>
                 <span className="hidden sm:inline-block text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
@@ -532,7 +534,6 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           </div>
 
-          {/* الجانب الأيسر (في RTL): أزرار الإجراء السريع + زر محاكاة الموبايل */}
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setNewStoreModal(true)}
@@ -572,7 +573,7 @@ export default function SpikeSuperAdminDashboard() {
           </div>
         </header>
 
-        {/* عرض المحتوى الفعلي بحسب التبويب النشط */}
+        {/* جسم الصفحة النشط */}
         <div className="p-4 sm:p-8 space-y-6">
 
           {activeTab === 'overview' && (
@@ -977,7 +978,7 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       </main>
 
-      {/* مودال إنشاء متجر جديد */}
+      {/* المودالات الإدارية */}
       {newStoreModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
@@ -1040,7 +1041,6 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       )}
 
-      {/* مودال إضافة منتج جديد */}
       {newProductModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
