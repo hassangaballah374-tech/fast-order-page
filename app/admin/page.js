@@ -12,6 +12,9 @@ export default function SpikeSuperAdminDashboard() {
   const { lang, theme, toggleLanguage, toggleTheme, isDark, isMobileView, toggleMobileView } = useApp();
   const isAr = lang === 'ar';
 
+  // حالة فتح/إغلاق الشريط الجانبي
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -46,7 +49,6 @@ export default function SpikeSuperAdminDashboard() {
   });
 
   const [broadcastMessage, setBroadcastMessage] = useState('');
-  const [broadcastType, setBroadcastType] = useState('info');
 
   const t = {
     ar: {
@@ -340,35 +342,218 @@ export default function SpikeSuperAdminDashboard() {
 
   return (
     <div 
-      className={`min-h-screen font-sans flex transition-colors duration-200 select-none ${
+      className={`min-h-screen font-sans flex relative overflow-x-hidden transition-colors duration-200 select-none ${
         isDark ? 'bg-[#0B132B] text-slate-100' : 'bg-[#F4F6F9] text-slate-800'
       }`} 
       dir={isAr ? 'rtl' : 'ltr'}
     >
+
+      {/* 🌑 الخلفية المعتمة: عند النقر في أي مكان خارج الشريط يغلقه فوراً */}
+      {sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/50 z-40 backdrop-blur-xs transition-opacity animate-in fade-in"
+          title="انقر للإغلاق"
+        />
+      )}
+
+      {/* 🚀 الشريط الجانبي المتحرك (Drawer Sidebar) */}
+      <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 border-r border-l flex flex-col justify-between shadow-2xl transition-transform duration-300 ease-in-out ${
+        sidebarOpen 
+          ? 'translate-x-0' 
+          : isAr ? 'translate-x-full' : '-translate-x-full'
+      } ${
+        isDark 
+          ? 'bg-[#0E1E38] border-slate-800 text-white' 
+          : 'bg-white border-slate-200/90 text-slate-800'
+      }`}>
+        
+        {/* رأس الشريط الجانبي: الشعار + زر الإغلاق ✕ */}
+        <div className={`p-4 border-b space-y-3 ${isDark ? 'border-slate-800' : 'border-slate-200/80'}`}>
+          <div className="flex items-center justify-between">
+            {/* زر الإغلاق المباشر */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-slate-800 transition cursor-pointer"
+              title="إغلاق القائمة"
+            >
+              ✕
+            </button>
+
+            <Link href="/" className="flex items-center gap-2">
+              <div className="text-right">
+                <div className="flex items-center gap-1 font-black text-base leading-tight">
+                  <span className={isDark ? 'text-[#F7F4EC]' : 'text-[#0E1E38]'}>سبايك</span>
+                  <span className="text-slate-400 font-light">|</span>
+                  <span className="font-mono text-xs tracking-wider text-[#E86A53]">SPIKE</span>
+                </div>
+                <span className="text-[9px] text-slate-400 block font-medium">ابنِ متجرك.. وضاعف طلباتك</span>
+              </div>
+              <img
+                src={SPIKE_LOGO_URL}
+                alt="SPIKE"
+                className="h-8 w-auto object-contain rounded-lg shadow-xs"
+              />
+            </Link>
+          </div>
+
+          {/* أزرار التحكم باللغة والمود داخل السايد بار أيضاً */}
+          <div className={`p-1 rounded-xl flex items-center gap-1 border ${
+            isDark ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-slate-100/90'
+          }`}>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95 ${
+                isDark ? 'hover:bg-slate-800 text-amber-300' : 'hover:bg-white text-slate-700 shadow-2xs'
+              }`}
+            >
+              <span>{isDark ? '☀️' : '🌙'}</span>
+              <span className="text-[11px]">{isDark ? 'نهاري' : 'ليلي'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95 ${
+                isDark ? 'hover:bg-slate-800 text-slate-200' : 'hover:bg-white text-slate-700 shadow-2xs'
+              }`}
+            >
+              <span>🌐</span>
+              <span className="text-[11px] font-mono">{isAr ? 'EN' : 'العربية'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* عناصر القائمة الجانبية: تغلق الشريط تلقائياً عند الضغط للتصفح المريح */}
+        <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
+          {navItems.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setSidebarOpen(false); // إغلاق تلقائي عند اختيار القسم
+                }}
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
+                  isActive
+                    ? 'bg-gradient-to-l from-[#E86A53] to-orange-500 text-white shadow-md shadow-[#E86A53]/25 font-black'
+                    : isDark
+                    ? 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">{item.icon}</span>
+                  <span>{item.title}</span>
+                </div>
+
+                {item.count !== null && (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold transition ${
+                    isActive
+                      ? 'bg-white/20 text-white'
+                      : isDark
+                      ? 'bg-slate-800 text-slate-400'
+                      : 'bg-slate-200 text-slate-600'
+                  }`}>
+                    {item.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* تذييل السايد بار */}
+        <div className={`p-4 border-t flex items-center justify-between ${
+          isDark ? 'border-slate-800' : 'border-slate-200/80'
+        }`}>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('merchant_user_id');
+              localStorage.removeItem('is_super_admin');
+              router.push('/register');
+            }}
+            className="text-slate-400 hover:text-rose-500 text-base p-1 transition cursor-pointer" 
+            title="تسجيل الخروج"
+          >
+            🚪
+          </button>
+          <div className="flex items-center gap-2.5 text-right">
+            <div className="leading-tight">
+              <span className={`text-xs font-bold block ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                {t.adminRole}
+              </span>
+              <span className="text-[10px] text-slate-400 block font-mono">admin@spike.shop</span>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#E86A53] to-orange-400 flex items-center justify-center text-white text-xs font-black shadow-xs">
+              S
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* 📊 المحتوى الرئيسي للداشبورد */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className={`px-8 py-5 border-b flex items-center justify-between backdrop-blur-md sticky top-0 z-30 transition-colors ${
+        
+        {/* الترويسة العلوية: بها زر الهامبرجر (3 شرط ☰) لفتح الشريط */}
+        <header className={`px-4 sm:px-8 py-4 border-b flex items-center justify-between backdrop-blur-md sticky top-0 z-30 transition-colors ${
           isDark ? 'bg-[#0B132B]/95 border-slate-800' : 'bg-[#F4F6F9]/95 border-slate-200/80 shadow-xs'
         }`}>
-          <div className="flex items-center gap-2.5">
+          
+          {/* الجانب الأيمن (في RTL): زر 3 شرط + عنوان الصفحة */}
+          <div className="flex items-center gap-3">
+            {/* ☰ زر الثلاث شرط لفتح وإغلاق السايد بار */}
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className={`w-10 h-10 rounded-xl border flex items-center justify-center text-lg font-bold transition active:scale-95 cursor-pointer shadow-xs ${
+                isDark 
+                  ? 'border-slate-700 bg-slate-800 text-white hover:bg-slate-700' 
+                  : 'border-slate-200 bg-white text-slate-800 hover:bg-slate-100'
+              }`}
+              title="فتح القائمة الجانبية"
+            >
+              ☰
+            </button>
+
+            <div>
+              <div className="flex items-center gap-2">
+                <span className={`text-lg sm:text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  {t.overviewTitle}
+                </span>
+                <span className="hidden sm:inline-block text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                  {t.dashboard}
+                </span>
+              </div>
+              <p className="hidden sm:block text-[11px] text-slate-500 dark:text-slate-400">{t.overviewSubtitle}</p>
+            </div>
+          </div>
+
+          {/* الجانب الأيسر (في RTL): أزرار الإجراء السريع + زر محاكاة الموبايل */}
+          <div className="flex items-center gap-2">
             <button 
               onClick={() => setNewStoreModal(true)}
-              className="px-4 py-2 rounded-xl bg-[#00B050] hover:bg-[#009644] text-white text-xs font-black shadow-sm transition cursor-pointer flex items-center gap-1.5 active:scale-95"
+              className="px-3 sm:px-4 py-2 rounded-xl bg-[#00B050] hover:bg-[#009644] text-white text-xs font-black shadow-sm transition cursor-pointer flex items-center gap-1 active:scale-95"
             >
               <span>+</span>
-              <span>{t.addStore}</span>
+              <span className="hidden sm:inline">{t.addStore}</span>
+              <span className="sm:hidden">متجر</span>
             </button>
 
             <button 
               onClick={fetchAllData}
               disabled={refreshing}
-              className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+              className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1 transition cursor-pointer ${
                 isDark 
                   ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700' 
                   : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-2xs'
               }`}
+              title="تحديث البيانات"
             >
               <span className={refreshing ? 'animate-spin' : ''}>🔄</span>
-              <span>{refreshing ? '...' : t.refreshData}</span>
             </button>
 
             <button
@@ -385,24 +570,14 @@ export default function SpikeSuperAdminDashboard() {
               {isMobileView ? '💻' : '📱'}
             </button>
           </div>
-
-          <div className={isAr ? 'text-right' : 'text-left'}>
-            <div className={`flex items-center gap-2.5 ${isAr ? 'justify-start' : 'justify-end'}`}>
-              <span className={`text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                {t.overviewTitle}
-              </span>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                {t.dashboard}
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{t.overviewSubtitle}</p>
-          </div>
         </header>
 
-        <div className="p-8 space-y-6">
+        {/* عرض المحتوى الفعلي بحسب التبويب النشط */}
+        <div className="p-4 sm:p-8 space-y-6">
+
           {activeTab === 'overview' && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                 {statCards.map((stat, i) => (
                   <div
                     key={i}
@@ -441,7 +616,7 @@ export default function SpikeSuperAdminDashboard() {
                 ))}
               </div>
 
-              <div className={`p-8 rounded-3xl border transition-colors ${
+              <div className={`p-6 sm:p-8 rounded-3xl border transition-colors ${
                 isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200/90 shadow-xs'
               }`}>
                 <div className="flex justify-between items-center mb-6">
@@ -496,7 +671,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {activeTab === 'merchants' && (
-            <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-lg font-black">{isAr ? 'قائمة المتاجر والتجار' : 'Stores & Merchants'} ({stores.length})</h3>
@@ -570,7 +745,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {activeTab === 'orders' && (
-            <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-lg font-black">{isAr ? 'كافة طلبات المنصة' : 'All Platform Orders'} ({orders.length})</h3>
@@ -631,7 +806,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {activeTab === 'inventory' && (
-            <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-lg font-black">{isAr ? 'المنتجات والمخزون' : 'Products & Inventory'} ({products.length})</h3>
@@ -670,7 +845,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {activeTab === 'rates' && (
-            <div className={`p-8 rounded-2xl border max-w-2xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-6 sm:p-8 rounded-2xl border max-w-2xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-2">{isAr ? 'إعدادات سعر الصرف والعمولات المالية' : 'Exchange Rates & Fees'}</h3>
               <p className="text-xs text-slate-400 mb-6">يتم تطبيق هذه الإعدادات لحظياً على حسابات جميع المتاجر وسحب الأرباح.</p>
               
@@ -777,7 +952,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {activeTab === 'broadcast' && (
-            <div className={`p-8 rounded-2xl border max-w-xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-6 sm:p-8 rounded-2xl border max-w-xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-2">إرسال تنبيه جماعي لجميع التجار</h3>
               <p className="text-xs text-slate-400 mb-4">يظهر التنبيه داخل لوحة تحكم كل التجار المسجلين في المنصة فوراً.</p>
               <textarea
@@ -802,131 +977,7 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       </main>
 
-      <aside className={`w-72 shrink-0 border-r flex flex-col justify-between transition-colors duration-200 ${
-        isDark 
-          ? 'bg-[#0E1E38] border-slate-800 text-white' 
-          : 'bg-white border-slate-200/90 text-slate-800 shadow-sm'
-      }`}>
-        <div className={`p-5 border-b space-y-4 ${isDark ? 'border-slate-800' : 'border-slate-200/80'}`}>
-          <div className="flex items-center justify-between">
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-500 border border-rose-500/20">
-              Admin
-            </span>
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="text-right">
-                <div className="flex items-center gap-1.5 font-black text-lg leading-tight tracking-tight">
-                  <span className={isDark ? 'text-[#F7F4EC]' : 'text-[#0E1E38]'}>سبايك</span>
-                  <span className="text-slate-400 font-light">|</span>
-                  <span className="font-mono text-xs tracking-wider text-[#E86A53]">SPIKE</span>
-                </div>
-                <span className="text-[10px] text-slate-400 block font-medium">ابنِ متجرك.. وضاعف طلباتك</span>
-              </div>
-              <img
-                src={SPIKE_LOGO_URL}
-                alt="SPIKE"
-                className="h-9 w-auto object-contain rounded-xl shadow-xs"
-              />
-            </Link>
-          </div>
-
-          <div className={`p-1 rounded-xl flex items-center gap-1.5 border ${
-            isDark ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-slate-100/90'
-          }`}>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
-                isDark 
-                  ? 'hover:bg-slate-800 text-amber-300' 
-                  : 'hover:bg-white text-slate-700 shadow-2xs'
-              }`}
-              title={isDark ? 'تفعيل الوضع النهاري' : 'تفعيل الوضع الليلي'}
-            >
-              <span>{isDark ? '☀️' : '🌙'}</span>
-              <span className="text-[11px]">{isDark ? 'نهاري' : 'ليلي'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={toggleLanguage}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
-                isDark 
-                  ? 'hover:bg-slate-800 text-slate-200' 
-                  : 'hover:bg-white text-slate-700 shadow-2xs'
-              }`}
-              title="تغيير اللغة"
-            >
-              <span>🌐</span>
-              <span className="text-[11px] font-mono">{isAr ? 'EN' : 'العربية'}</span>
-            </button>
-          </div>
-        </div>
-
-        <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
-                  isActive
-                    ? 'bg-gradient-to-l from-[#E86A53] to-orange-500 text-white shadow-md shadow-[#E86A53]/25 font-black'
-                    : isDark
-                    ? 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-base">{item.icon}</span>
-                  <span>{item.title}</span>
-                </div>
-
-                {item.count !== null && (
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold transition ${
-                    isActive
-                      ? 'bg-white/20 text-white'
-                      : isDark
-                      ? 'bg-slate-800 text-slate-400'
-                      : 'bg-slate-200 text-slate-600'
-                  }`}>
-                    {item.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        <div className={`p-4 border-t flex items-center justify-between ${
-          isDark ? 'border-slate-800' : 'border-slate-200/80'
-        }`}>
-          <button 
-            onClick={() => {
-              localStorage.removeItem('merchant_user_id');
-              localStorage.removeItem('is_super_admin');
-              router.push('/register');
-            }}
-            className="text-slate-400 hover:text-rose-500 text-base p-1 transition cursor-pointer" 
-            title="تسجيل الخروج"
-          >
-            🚪
-          </button>
-          <div className="flex items-center gap-2.5 text-right">
-            <div className="leading-tight">
-              <span className={`text-xs font-bold block ${isDark ? 'text-white' : 'text-slate-800'}`}>
-                {t.adminRole}
-              </span>
-              <span className="text-[10px] text-slate-400 block font-mono">admin@spike.shop</span>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#E86A53] to-orange-400 flex items-center justify-center text-white text-xs font-black shadow-xs">
-              S
-            </div>
-          </div>
-        </div>
-      </aside>
-
+      {/* مودال إنشاء متجر جديد */}
       {newStoreModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
@@ -972,7 +1023,7 @@ export default function SpikeSuperAdminDashboard() {
                 />
               </div>
               <div>
-                <label className="block mb-1">الرصيد التجريبي الأولي ($)</label>
+                <label className="block mb-1">الرصيد الأولي ($)</label>
                 <input
                   type="number"
                   value={newStoreData.initial_wallet}
@@ -981,14 +1032,15 @@ export default function SpikeSuperAdminDashboard() {
                 />
               </div>
               <div className="flex gap-2 pt-3">
-                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold">إنشاء المتجر</button>
-                <button type="button" onClick={() => setNewStoreModal(false)} className="px-4 py-2.5 border rounded-xl">إلغاء</button>
+                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إنشاء المتجر</button>
+                <button type="button" onClick={() => setNewStoreModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">إلغاء</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
+      {/* مودال إضافة منتج جديد */}
       {newProductModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
@@ -1015,7 +1067,7 @@ export default function SpikeSuperAdminDashboard() {
                 />
               </div>
               <div>
-                <label className="block mb-1">سعر التكلفة والتوريد (ج.م)</label>
+                <label className="block mb-1">سعر التكلفة (ج.م)</label>
                 <input
                   type="number"
                   value={newProductData.cost_price}
@@ -1033,8 +1085,8 @@ export default function SpikeSuperAdminDashboard() {
                 />
               </div>
               <div className="flex gap-2 pt-3">
-                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold">إضافة المنتج</button>
-                <button type="button" onClick={() => setNewProductModal(false)} className="px-4 py-2.5 border rounded-xl">إلغاء</button>
+                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إضافة المنتج</button>
+                <button type="button" onClick={() => setNewProductModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">إلغاء</button>
               </div>
             </form>
           </div>
