@@ -19,7 +19,7 @@ export default function SpikeRegisterAndAuthPage() {
       brand: 'سبايك',
       home: 'الرئيسية',
       pricing: 'الأسعار',
-      subscribeBtn: 'اشترك مجاناً الآن',
+      subscribeBtn: 'اشترك الآن',
       loginTitle: 'تسجيل الدخول إلى حسابك',
       registerTitle: 'انشئ حساب مجاني',
       storeNameLabel: 'اسم موقعك',
@@ -47,7 +47,7 @@ export default function SpikeRegisterAndAuthPage() {
       brand: 'SPIKE',
       home: 'Home',
       pricing: 'Pricing',
-      subscribeBtn: 'Start Free Now',
+      subscribeBtn: 'Start Free',
       loginTitle: 'Sign In to Your Account',
       registerTitle: 'Create Free Account',
       storeNameLabel: 'Your Store Name',
@@ -163,78 +163,75 @@ export default function SpikeRegisterAndAuthPage() {
 
   return (
     <div 
-      className={`min-h-screen font-sans flex flex-col justify-between transition-colors duration-300 ${
-        isDark ? 'bg-[#0E1E38] text-white' : 'bg-[#F8F9FA] text-[#1E293B]'
+      className={`min-h-screen font-sans flex flex-col justify-between selection:bg-emerald-500 selection:text-white transition-colors duration-200 overflow-x-hidden ${
+        isDark ? 'bg-[#0B132B] text-slate-100' : 'bg-[#F4F6F9] text-slate-800'
       }`} 
       dir={isAr ? 'rtl' : 'ltr'}
     >
 
-      {/* 🧭 النافبار مع زر المود وزر اللغة مباشرين */}
-      <header className={`border-b px-6 lg:px-14 py-3.5 sticky top-0 z-40 backdrop-blur-md transition-colors ${
-        isDark ? 'bg-[#091222]/90 border-slate-800' : 'bg-white/95 border-slate-200 shadow-xs'
+      {/* 🧭 1. النافبار المخصص بالكامل للموبايل والشاشات الكبيرة */}
+      <header className={`px-4 sm:px-8 py-3 border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${
+        isDark ? 'bg-[#091222]/95 border-slate-800' : 'bg-white/95 border-slate-200/90 shadow-2xs'
       }`}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
           
-          <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2">
-              <img
-                src={SPIKE_LOGO_URL}
-                alt="SPIKE | سبايك"
-                className="h-10 w-auto object-contain rounded-lg shadow-xs"
-              />
-              <span className={`text-xl font-black tracking-tight ${isDark ? 'text-[#F7F4EC]' : 'text-[#0E1E38]'}`}>
-                {t.brand}
-              </span>
-            </Link>
+          {/* الشعار واسم المنصة */}
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            <img
+              src={SPIKE_LOGO_URL}
+              alt="SPIKE"
+              className="h-8 w-auto object-contain rounded-lg shadow-xs"
+            />
+            <span className={`text-lg font-black tracking-tight ${isDark ? 'text-white' : 'text-[#0E1E38]'}`}>
+              {t.brand}
+            </span>
+          </Link>
 
-            <nav className="hidden md:flex items-center gap-6 text-sm font-bold">
-              <Link href="/" className="hover:text-[#00B050] transition">{t.home}</Link>
-              <Link href="/#pricing" className="hover:text-[#00B050] transition">{t.pricing}</Link>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            {/* 🌐 زر تبديل اللغة المباشر */}
+          {/* أدوات التحكم المدمجة بنعومة بدون أي تكسير */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
+            {/* زر اللغة للموبايل */}
             <button
               type="button"
               onClick={toggleLanguage}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+              className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition cursor-pointer shrink-0 ${
                 isDark 
-                  ? 'border-slate-700 bg-slate-800 text-white hover:bg-slate-700' 
-                  : 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100'
+                  ? 'border-slate-700 bg-slate-800 text-slate-200' 
+                  : 'border-slate-200 bg-slate-50 text-slate-700'
               }`}
             >
               <span>🌐</span>
-              <span>{isAr ? 'English' : 'العربية'}</span>
+              <span className="font-mono">{isAr ? 'EN' : 'عربي'}</span>
             </button>
 
-            {/* 🌙 / ☀️ زر تبديل المود المباشر */}
+            {/* زر المود للموبايل */}
             <button
               type="button"
               onClick={toggleTheme}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+              className={`w-8 h-8 rounded-lg border flex items-center justify-center text-xs transition cursor-pointer shrink-0 ${
                 isDark 
-                  ? 'border-slate-700 bg-slate-800 text-amber-300 hover:bg-slate-700' 
-                  : 'border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100'
+                  ? 'border-slate-700 bg-slate-800 text-amber-300' 
+                  : 'border-slate-200 bg-slate-50 text-slate-700'
               }`}
+              title={isDark ? 'الوضع النهاري' : 'الوضع الليلي'}
             >
-              <span>{isDark ? '☀️' : '🌙'}</span>
-              <span>{isDark ? (isAr ? 'نهاري' : 'Light') : (isAr ? 'ليلي' : 'Dark')}</span>
+              {isDark ? '☀️' : '🌙'}
             </button>
 
+            {/* زر الإجراء الأخضر المختصر على الموبايل */}
             <button
               type="button"
               onClick={() => setIsLoginMode(false)}
-              className="bg-[#00B050] hover:bg-[#009644] text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm transition whitespace-nowrap cursor-pointer"
+              className="bg-[#00B050] hover:bg-[#009644] text-white px-3 sm:px-4 py-1.5 rounded-lg text-xs font-black shadow-xs transition shrink-0 cursor-pointer"
             >
               {t.subscribeBtn}
             </button>
 
+            {/* زر الحساب / الدخول */}
             <button
               type="button"
               onClick={() => setIsLoginMode(true)}
-              className={`w-8 h-8 rounded-xl border flex items-center justify-center transition cursor-pointer ${
-                isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-100'
+              className={`w-8 h-8 rounded-lg border flex items-center justify-center text-xs transition shrink-0 cursor-pointer ${
+                isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'
               }`}
               title={t.submitLogin}
             >
@@ -244,65 +241,70 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </header>
 
-      {/* 📝 نموذج التسجيل والدخول مع دعم المود الليلي والنهاري */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 my-6">
+      {/* 📝 2. البطاقة المركزية مصممة خصيصاً للموبايل */}
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-10 w-full max-w-lg mx-auto">
         
-        <div className="text-center space-y-3 mb-6">
+        {/* اللوجو والعنوان */}
+        <div className="text-center space-y-2 mb-5">
           <div className="flex justify-center">
             <img
               src={SPIKE_LOGO_URL}
               alt="SPIKE"
-              className="h-14 sm:h-16 w-auto object-contain rounded-2xl shadow-md"
+              className="h-14 w-auto object-contain rounded-2xl shadow-sm"
             />
           </div>
 
-          <div className="flex items-center justify-center gap-1.5 font-black text-2xl">
-            <span style={{ color: isDark ? '#F7F4EC' : '#0E1E38' }}>سبايك</span>
+          <div className="flex items-center justify-center gap-1.5 font-black text-xl">
+            <span className={isDark ? 'text-white' : 'text-[#0E1E38]'}>سبايك</span>
             <span className="text-slate-400 font-light">|</span>
-            <span style={{ color: isDark ? '#F7F4EC' : '#0E1E38' }} className="tracking-wider">SPIKE</span>
+            <span className="text-[#E86A53] font-mono tracking-wider">SPIKE</span>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+          <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
             {isLoginMode ? t.loginTitle : t.registerTitle}
           </h2>
         </div>
 
-        <div className={`border rounded-3xl p-6 sm:p-10 max-w-lg w-full shadow-md space-y-5 transition-colors ${
-          isDark ? 'bg-[#091222] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'
+        {/* جسم الفورم مع وضوح عالي ومسافات لمس مريحة */}
+        <div className={`w-full rounded-2xl border p-5 sm:p-8 shadow-sm transition-colors ${
+          isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'
         }`}>
           <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
             
             {!isLoginMode && (
               <>
+                {/* 1. اسم الموقع (Store Slug) مضبوط الاتجاه 100% */}
                 <div className="space-y-1.5">
-                  <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.storeNameLabel}</label>
-                  <div className={`flex rounded-xl border overflow-hidden transition ${
-                    isDark ? 'border-slate-700 bg-slate-900 focus-within:border-[#00B050]' : 'border-slate-200 bg-white focus-within:border-[#00B050]'
-                  }`}>
+                  <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.storeNameLabel}</label>
+                  <div className={`flex items-stretch rounded-xl border overflow-hidden transition-all ${
+                    isDark ? 'border-slate-700 bg-slate-900 focus-within:border-[#00B050]' : 'border-slate-300 bg-slate-50 focus-within:border-[#00B050] focus-within:bg-white'
+                  }`} dir="ltr">
                     <input
                       type="text"
                       required
-                      dir="ltr"
                       placeholder="store-name"
                       value={formData.storeSlug}
                       onChange={(e) => handleChange('storeSlug', e.target.value)}
-                      className={`w-full p-3 outline-none font-mono text-xs text-left bg-transparent ${isDark ? 'text-white' : 'text-slate-900'}`}
+                      className={`flex-1 p-3 outline-none font-mono text-xs text-left bg-transparent ${
+                        isDark ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'
+                      }`}
                     />
-                    <span className={`px-3.5 flex items-center font-mono text-xs select-none ${
-                      isDark ? 'bg-slate-800 text-slate-400 border-r border-slate-700' : 'bg-slate-100 text-slate-500 border-r border-slate-200'
-                    }`} dir="ltr">
+                    <span className={`px-3 flex items-center font-mono text-xs select-none border-l ${
+                      isDark ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-200 text-slate-600 border-slate-300'
+                    }`}>
                       .spike.shop
                     </span>
                   </div>
                 </div>
 
+                {/* 2. اختيار العملة */}
                 <div className="space-y-1.5">
-                  <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.currencyLabel}</label>
+                  <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.currencyLabel}</label>
                   <select
                     value={formData.currency}
                     onChange={(e) => handleChange('currency', e.target.value)}
-                    className={`w-full p-3 rounded-xl border outline-none text-xs font-bold transition ${
-                      isDark ? 'bg-slate-900 border-slate-700 text-white focus:border-[#00B050]' : 'bg-white border-slate-200 text-slate-800 focus:border-[#00B050]'
+                    className={`w-full p-3 rounded-xl border outline-none text-xs font-bold transition-all ${
+                      isDark ? 'bg-slate-900 border-slate-700 text-white focus:border-[#00B050]' : 'bg-slate-50 border-slate-300 text-slate-800 focus:border-[#00B050] focus:bg-white'
                     }`}
                   >
                     <option value="USD">{isAr ? 'دولار أمريكي - USD' : 'US Dollar - USD'}</option>
@@ -312,48 +314,51 @@ export default function SpikeRegisterAndAuthPage() {
                   </select>
                 </div>
 
+                {/* 3. اسمك واسم العائلة */}
                 <div className="space-y-1.5">
-                  <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.nameLabel}</label>
+                  <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.nameLabel}</label>
                   <input
                     type="text"
                     required
                     placeholder={isAr ? 'مثال: أحمد محمد' : 'e.g. John Doe'}
                     value={formData.fullName}
                     onChange={(e) => handleChange('fullName', e.target.value)}
-                    className={`w-full p-3 rounded-xl border outline-none text-xs transition ${
-                      isDark ? 'bg-slate-900 border-slate-700 text-white focus:border-[#00B050]' : 'bg-white border-slate-200 text-slate-900 focus:border-[#00B050]'
+                    className={`w-full p-3 rounded-xl border outline-none text-xs transition-all ${
+                      isDark ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-500 focus:border-[#00B050]' : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-[#00B050] focus:bg-white'
                     }`}
                   />
                 </div>
 
+                {/* 4. رقم الهاتف مع مفتاح مصر معزول ونظيف */}
                 <div className="space-y-1.5">
-                  <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.phoneLabel}</label>
-                  <div className={`flex rounded-xl border overflow-hidden transition ${
-                    isDark ? 'border-slate-700 bg-slate-900 focus-within:border-[#00B050]' : 'border-slate-200 bg-white focus-within:border-[#00B050]'
-                  }`}>
-                    <div className={`px-3 flex items-center gap-1.5 font-mono text-xs select-none ${
-                      isDark ? 'bg-slate-800 text-slate-300 border-l border-slate-700' : 'bg-slate-100 text-slate-700 border-l border-slate-200'
-                    }`} dir="ltr">
+                  <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.phoneLabel}</label>
+                  <div className={`flex items-stretch rounded-xl border overflow-hidden transition-all ${
+                    isDark ? 'border-slate-700 bg-slate-900 focus-within:border-[#00B050]' : 'border-slate-300 bg-slate-50 focus-within:border-[#00B050] focus-within:bg-white'
+                  }`} dir="ltr">
+                    <div className={`px-3 flex items-center gap-1.5 font-mono text-xs select-none border-r ${
+                      isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-200 text-slate-700 border-slate-300'
+                    }`}>
                       <span>🇪🇬</span>
                       <span>+20</span>
-                      <span className="text-[10px] text-slate-400">↕</span>
                     </div>
                     <input
                       type="tel"
                       required
-                      dir="ltr"
                       placeholder="01xxxxxxxxx"
                       value={formData.phone}
                       onChange={(e) => handleChange('phone', e.target.value)}
-                      className={`w-full p-3 outline-none font-mono text-xs text-left bg-transparent ${isDark ? 'text-white' : 'text-slate-900'}`}
+                      className={`flex-1 p-3 outline-none font-mono text-xs text-left bg-transparent ${
+                        isDark ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'
+                      }`}
                     />
                   </div>
                 </div>
               </>
             )}
 
+            {/* 5. البريد الإلكتروني */}
             <div className="space-y-1.5">
-              <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.emailLabel}</label>
+              <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.emailLabel}</label>
               <input
                 type="email"
                 required
@@ -361,59 +366,62 @@ export default function SpikeRegisterAndAuthPage() {
                 placeholder="name@example.com"
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
-                className={`w-full p-3 rounded-xl border outline-none text-xs font-mono transition ${
-                  isDark ? 'bg-slate-900 border-slate-700 text-white focus:border-[#00B050]' : 'bg-white border-slate-200 text-slate-900 focus:border-[#00B050]'
+                className={`w-full p-3 rounded-xl border outline-none text-xs font-mono text-left transition-all ${
+                  isDark ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-500 focus:border-[#00B050]' : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-[#00B050] focus:bg-white'
                 }`}
               />
             </div>
 
+            {/* 6. الرقم السري */}
             <div className="space-y-1.5">
-              <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.passLabel}</label>
+              <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.passLabel}</label>
               <input
                 type="password"
                 required
                 placeholder="••••••••"
                 value={formData.password}
                 onChange={(e) => handleChange('password', e.target.value)}
-                className={`w-full p-3 rounded-xl border outline-none text-xs transition ${
-                  isDark ? 'bg-slate-900 border-slate-700 text-white focus:border-[#00B050]' : 'bg-white border-slate-200 text-slate-900 focus:border-[#00B050]'
+                className={`w-full p-3 rounded-xl border outline-none text-xs transition-all ${
+                  isDark ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-500 focus:border-[#00B050]' : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-[#00B050] focus:bg-white'
                 }`}
               />
             </div>
 
+            {/* 7. تأكيد الرقم السري */}
             {!isLoginMode && (
               <div className="space-y-1.5">
-                <label className={isDark ? 'text-slate-300' : 'text-slate-600'}>{t.confirmPassLabel}</label>
+                <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.confirmPassLabel}</label>
                 <input
                   type="password"
                   required
                   placeholder="••••••••"
                   value={formData.confirmPassword}
                   onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                  className={`w-full p-3 rounded-xl border outline-none text-xs transition ${
-                    isDark ? 'bg-slate-900 border-slate-700 text-white focus:border-[#00B050]' : 'bg-white border-slate-200 text-slate-900 focus:border-[#00B050]'
+                  className={`w-full p-3 rounded-xl border outline-none text-xs transition-all ${
+                    isDark ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-500 focus:border-[#00B050]' : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-[#00B050] focus:bg-white'
                   }`}
                 />
               </div>
             )}
 
-            <div className="pt-2 space-y-3">
+            {/* أزرار الإجراء بارتفاع مريح للمس */}
+            <div className="pt-3 space-y-3">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-sm font-black transition shadow-sm hover:shadow-md cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-sm font-black transition-all shadow-sm active:scale-98 cursor-pointer flex items-center justify-center gap-2"
               >
                 {loading ? t.processing : isLoginMode ? t.submitLogin : t.submitRegister}
               </button>
 
-              <div className="text-center pt-2">
-                <span className="text-slate-400 block mb-2 font-normal">
+              <div className="text-center pt-1">
+                <span className="text-slate-400 text-xs block mb-2 font-normal">
                   {isLoginMode ? t.noAccount : t.hasAccount}
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsLoginMode(!isLoginMode)}
-                  className="w-full py-2.5 border border-[#00B050] text-[#00B050] hover:bg-[#00B050]/10 rounded-xl text-xs font-black transition cursor-pointer"
+                  className="w-full py-2.5 border-2 border-[#00B050] text-[#00B050] hover:bg-[#00B050]/10 rounded-xl text-xs font-black transition cursor-pointer"
                 >
                   {isLoginMode ? t.switchRegister : t.switchLogin}
                 </button>
@@ -424,69 +432,58 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </main>
 
-      {/* 🖤 الفوتر */}
-      <footer className="bg-[#191919] text-white pt-12 pb-8 px-6 lg:px-16 border-t border-slate-800 text-xs">
-        <div className="max-w-7xl mx-auto space-y-10">
+      {/* 🖤 3. فوتر متناسق لا يتداخل على الموبايل */}
+      <footer className="bg-[#121824] text-white pt-8 pb-6 px-4 sm:px-8 border-t border-slate-800 text-xs">
+        <div className="max-w-6xl mx-auto space-y-6">
           
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 items-start">
-            <div className="space-y-2.5">
-              <h4 className="font-black text-sm text-white">{t.aboutTitle}</h4>
-              <ul className="space-y-2 text-slate-400 font-normal">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 items-start">
+            <div className="space-y-2">
+              <h4 className="font-black text-xs text-white">{t.aboutTitle}</h4>
+              <ul className="space-y-1.5 text-slate-400 text-[11px]">
                 <li><Link href="/" className="hover:text-white transition">{t.home}</Link></li>
                 <li><Link href="/#pricing" className="hover:text-white transition">{t.pricing}</Link></li>
               </ul>
             </div>
 
-            <div className="space-y-2.5">
-              <h4 className="font-black text-sm text-white">{t.academyTitle}</h4>
-              <ul className="space-y-2 text-slate-400 font-normal">
-                <li><button className="hover:text-white transition cursor-pointer">{isAr ? 'شروحات COD' : 'COD Tutorials'}</button></li>
+            <div className="space-y-2">
+              <h4 className="font-black text-xs text-white">{t.academyTitle}</h4>
+              <ul className="space-y-1.5 text-slate-400 text-[11px]">
+                <li><span className="hover:text-white transition cursor-pointer">شروحات COD</span></li>
               </ul>
             </div>
 
-            <div className="space-y-2.5">
-              <h4 className="font-black text-sm text-white">{t.devsTitle}</h4>
-              <ul className="space-y-2 text-slate-400 font-normal font-mono text-[11px]">
+            <div className="space-y-2">
+              <h4 className="font-black text-xs text-white">{t.devsTitle}</h4>
+              <ul className="space-y-1.5 text-slate-400 text-[11px] font-mono">
                 <li><span className="hover:text-white cursor-pointer">Public API</span></li>
                 <li><span className="hover:text-white cursor-pointer">Webhooks</span></li>
               </ul>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="font-black text-sm text-white">{t.appTitle}</h4>
-              <div className="space-y-2">
-                <div className="border border-slate-700 bg-black/60 rounded-xl p-2 flex items-center gap-2 cursor-pointer hover:border-slate-500 transition">
-                  <span className="text-xl">🍏</span>
+            <div className="space-y-2">
+              <h4 className="font-black text-xs text-white">{t.appTitle}</h4>
+              <div className="space-y-1.5">
+                <div className="border border-slate-700 bg-black/40 rounded-lg p-1.5 flex items-center gap-2 cursor-pointer">
+                  <span className="text-base">🍏</span>
                   <div>
-                    <span className="text-[9px] text-slate-400 block leading-none">Download on the</span>
-                    <strong className="text-xs font-mono">App Store</strong>
+                    <span className="text-[8px] text-slate-400 block leading-none">Download on</span>
+                    <strong className="text-[10px] font-mono">App Store</strong>
                   </div>
                 </div>
-
-                <div className="border border-slate-700 bg-black/60 rounded-xl p-2 flex items-center gap-2 cursor-pointer hover:border-slate-500 transition">
-                  <span className="text-xl">▶️</span>
+                <div className="border border-slate-700 bg-black/40 rounded-lg p-1.5 flex items-center gap-2 cursor-pointer">
+                  <span className="text-base">▶️</span>
                   <div>
-                    <span className="text-[9px] text-slate-400 block leading-none">GET IT ON</span>
-                    <strong className="text-xs font-mono">Google Play</strong>
+                    <span className="text-[8px] text-slate-400 block leading-none">GET IT ON</span>
+                    <strong className="text-[10px] font-mono">Google Play</strong>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="space-y-4 md:text-left">
-              <div className="flex items-center gap-2 md:justify-end">
-                <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-9 w-auto object-contain rounded" />
-                <span className="text-base font-black">{isAr ? 'منصة سبايك للتجارة' : 'SPIKE Commerce Platform'}</span>
-              </div>
-              <p className="text-slate-400 text-[11px] leading-relaxed md:text-left">
-                {t.aboutDesc}
-              </p>
             </div>
           </div>
 
-          <div className="border-t border-slate-800/80 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-slate-500 text-[11px]">
+          <div className="border-t border-slate-800/80 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-slate-500 text-[10px]">
             <div>{t.rights}</div>
-            <div className="flex items-center gap-3 font-bold text-slate-400">
+            <div className="flex items-center gap-2 font-bold text-slate-400">
               <span className="text-white">EG</span>
               <span>•</span>
               <span>MA</span>
@@ -505,7 +502,7 @@ export default function SpikeRegisterAndAuthPage() {
         href="https://wa.me/201000000000"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 left-6 z-50 w-13 h-13 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white flex items-center justify-center text-2xl shadow-xl transition-transform hover:scale-110 active:scale-95 cursor-pointer shadow-emerald-500/30"
+        className="fixed bottom-4 left-4 z-50 w-11 h-11 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white flex items-center justify-center text-xl shadow-xl transition-transform active:scale-90 cursor-pointer"
         title="WhatsApp Support"
       >
         💬
