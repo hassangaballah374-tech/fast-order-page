@@ -7,6 +7,8 @@ import { supabase } from '../../lib/supabase';
 import { useApp } from '../../context/AppContext';
 import { SPIKE_LOGO_URL } from '../../components/SpikeBrandHeader';
 
+const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
+
 export default function SpikeSuperAdminDashboard() {
   const router = useRouter();
   const { lang, theme, toggleLanguage, toggleTheme, isDark, isMobileView, toggleMobileView } = useApp();
@@ -17,16 +19,23 @@ export default function SpikeSuperAdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // صلاحيات المستخدم الحالي
+  const [currentAdminRole, setCurrentAdminRole] = useState(null);
+  const [currentPermissions, setCurrentPermissions] = useState({});
+
+  // بيانات النظام
   const [stores, setStores] = useState([]);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [domains, setDomains] = useState([]);
+  const [adminUsers, setAdminUsers] = useState([]);
   
   const [exchangeRate, setExchangeRate] = useState(50.0);
   const [platformCommission, setPlatformCommission] = useState(2.5);
   const [withdrawThreshold, setWithdrawThreshold] = useState(100);
 
+  // المودالات
   const [newStoreModal, setNewStoreModal] = useState(false);
   const [newStoreData, setNewStoreData] = useState({
     store_name: '',
@@ -44,6 +53,19 @@ export default function SpikeSuperAdminDashboard() {
     cost_price: '',
     stock: 100,
     store_id: ''
+  });
+
+  const [newAdminModal, setNewAdminModal] = useState(false);
+  const [newAdminData, setNewAdminData] = useState({
+    email: '',
+    name: '',
+    role: 'admin',
+    permissions: {
+      manage_stores: true,
+      manage_orders: true,
+      manage_finance: false,
+      manage_admins: false
+    }
   });
 
   const [broadcastMessage, setBroadcastMessage] = useState('');
@@ -74,6 +96,7 @@ export default function SpikeSuperAdminDashboard() {
       navPlans: 'باقات الاشتراك',
       navLogs: 'سجل الحركات',
       navBroadcast: 'الإعلانات الجماعية',
+      navAdmins: 'فريق الإدارة والصلاحيات',
       ordersCount: 'أوردر',
       activeStatus: 'نشط',
       save: 'حفظ التعديلات',
@@ -104,12 +127,55 @@ export default function SpikeSuperAdminDashboard() {
       navPlans: 'Subscription Plans',
       navLogs: 'Audit Logs',
       navBroadcast: 'Broadcast Announcements',
+      navAdmins: 'Admin Team & Roles',
       ordersCount: 'orders',
       activeStatus: 'Active',
       save: 'Save Changes',
       cancel: 'Cancel'
     }
   }[lang || 'ar'];
+
+  // التحقق الأمني من صلاحية الدخول للداشبورد
+  useEffect(() => {
+    const verifyAdminAccess = async () => {
+      const storedEmail = (localStorage.getItem('user_email') || '').toLowerCase().trim();
+
+      // السماح المباشر للمالك الأساسي
+      if (storedEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
+        setCurrentAdminRole('super_admin');
+        setCurrentPermissions({
+          manage_stores: true,
+          manage_orders: true,
+          manage_finance: true,
+          manage_admins: true
+        });
+        fetchAllData();
+        return;
+      }
+
+      // فحص المشرفين في قاعدة البيانات
+      if (storedEmail) {
+        const { data, error } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('email', storedEmail)
+          .maybeSingle();
+
+        if (data && !error) {
+          setCurrentAdminRole(data.role);
+          setCurrentPermissions(data.permissions || {});
+          fetchAllData();
+          return;
+        }
+      }
+
+      // طرد أي مستخدم أو تاجر غير مصرح له
+      alert(isAr ? '⛔ عذراً، هذه الصفحة مخصصة لإدارة منصة سبايك فقط.' : 'Access Denied: Admins Only.');
+      router.push('/register');
+    };
+
+    verifyAdminAccess();
+  }, []);
 
   const fetchAllData = async () => {
     setRefreshing(true);
@@ -145,6 +211,12 @@ export default function SpikeSuperAdminDashboard() {
         .order('created_at', { ascending: false });
       if (domainsData) setDomains(domainsData);
 
+      const { data: adminsData } = await supabase
+        .from('admin_users')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (adminsData) setAdminUsers(adminsData);
+
       const { data: settingsData } = await supabase
         .from('platform_settings')
         .select('*')
@@ -161,10 +233,6 @@ export default function SpikeSuperAdminDashboard() {
       setRefreshing(false);
     }
   };
-
-  useEffect(() => {
-    fetchAllData();
-  }, []);
 
   const handleCreateStore = async (e) => {
     e.preventDefault();
@@ -261,6 +329,46 @@ export default function SpikeSuperAdminDashboard() {
     }
   };
 
+  const handleCreateAdmin = async (e) => {
+    e.preventDefault();
+    if (!newAdminData.email) return;
+
+    const cleanEmail = newAdminData.email.trim().toLowerCase();
+    const { error } = await supabase.from('admin_users').insert([{
+      email: cleanEmail,
+      name: newAdminData.name.trim() || 'مشرف جديد',
+      role: newAdminData.role,
+      permissions: newAdminData.permissions
+    }]);
+
+    if (!error) {
+      alert(isAr ? '✅ تمت إضافة المشرف وتعيين الصلاحيات بنجاح' : 'Admin created successfully');
+      setNewAdminModal(false);
+      setNewAdminData({
+        email: '',
+        name: '',
+        role: 'admin',
+        permissions: { manage_stores: true, manage_orders: true, manage_finance: false, manage_admins: false }
+      });
+      fetchAllData();
+    } else {
+      alert(error.message);
+    }
+  };
+
+  const handleDeleteAdmin = async (id, email) => {
+    if (email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+      alert(isAr ? '⚠️ لا يمكن حذف حساب المالك الأساسي للنظام!' : 'Primary Super Admin cannot be deleted!');
+      return;
+    }
+    if (!confirm(isAr ? `هل أنت متأكد من إلغاء صلاحيات المسؤول ${email}؟` : `Revoke access for ${email}?`)) return;
+
+    const { error } = await supabase.from('admin_users').delete().eq('id', id);
+    if (!error) {
+      setAdminUsers(prev => prev.filter(a => a.id !== id));
+    }
+  };
+
   const handleSavePlatformSettings = async () => {
     const { error } = await supabase.from('platform_settings').upsert({
       id: 1,
@@ -287,7 +395,7 @@ export default function SpikeSuperAdminDashboard() {
     { id: 'merchants', title: t.navStores, icon: '🏬', count: totalStoresCount },
     { id: 'orders', title: t.navOrders, icon: '📦', count: orders.length },
     { id: 'inventory', title: t.navInventory, icon: '🏷️', count: products.length },
-    { id: 'policies', title: t.navPolicies, icon: '📜', count: null },
+    { id: 'admins', title: t.navAdmins, icon: '🛡️', count: adminUsers.length + 1 },
     { id: 'rates', title: t.navRates, icon: '💱', count: null },
     { id: 'domains', title: t.navDomains, icon: '🌐', count: domains.length },
     { id: 'plans', title: t.navPlans, icon: '💎', count: null },
@@ -340,13 +448,12 @@ export default function SpikeSuperAdminDashboard() {
 
   return (
     <div 
-      className={`min-h-screen font-sans flex transition-colors duration-200 select-none ${
+      className={`min-h-screen font-sans flex relative overflow-x-hidden transition-colors duration-200 select-none ${
         isDark ? 'bg-[#0B132B] text-slate-100' : 'bg-[#F4F6F9] text-slate-800'
       }`} 
       dir={isAr ? 'rtl' : 'ltr'}
     >
-
-      {/* 🌑 تعتيم الخلفية (Backdrop) - يظهر فقط على الموبايل عندما يفتح المستخدم القائمة */}
+      {/* 🌑 تعتيم الموبايل عند فتح القائمة */}
       {sidebarOpen && (
         <div 
           onClick={() => setSidebarOpen(false)}
@@ -354,10 +461,7 @@ export default function SpikeSuperAdminDashboard() {
         />
       )}
 
-      {/* 🚀 الشريط الجانبي:
-          - على الموبايل: Drawer منزلق (Fixed + Transform)
-          - على الكمبيوتر/اللاب: ثابت في مكانه الطبيعي (Static + w-72) بدون إخفاء
-      */}
+      {/* 🚀 السايد بار: ثابت في اللاب ومنزلق في الموبايل */}
       <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-all duration-300 ease-in-out lg:static lg:z-10 lg:translate-x-0 ${
         sidebarOpen 
           ? 'translate-x-0 shadow-2xl' 
@@ -368,10 +472,8 @@ export default function SpikeSuperAdminDashboard() {
           : 'bg-white border-slate-200/90 text-slate-800 shadow-sm'
       }`}>
         
-        {/* رأس الشريط الجانبي */}
         <div className={`p-4 sm:p-5 border-b space-y-3.5 ${isDark ? 'border-slate-800' : 'border-slate-200/80'}`}>
           <div className="flex items-center justify-between">
-            {/* زر الإغلاق: يظهر في الموبايل فقط */}
             <button
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-slate-800 transition cursor-pointer"
@@ -380,7 +482,7 @@ export default function SpikeSuperAdminDashboard() {
             </button>
 
             <span className="hidden lg:inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-500 border border-rose-500/20">
-              Admin
+              {currentAdminRole === 'super_admin' ? 'Super Admin' : 'Admin'}
             </span>
 
             <Link href="/" className="flex items-center gap-2">
@@ -400,7 +502,6 @@ export default function SpikeSuperAdminDashboard() {
             </Link>
           </div>
 
-          {/* أزرار التحكم بالمظهر واللغة في السايد بار */}
           <div className={`p-1 rounded-xl flex items-center gap-1 border ${
             isDark ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-slate-100/90'
           }`}>
@@ -428,7 +529,6 @@ export default function SpikeSuperAdminDashboard() {
           </div>
         </div>
 
-        {/* عناصر القائمة الجانبية */}
         <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
@@ -438,7 +538,7 @@ export default function SpikeSuperAdminDashboard() {
                 type="button"
                 onClick={() => {
                   setActiveTab(item.id);
-                  setSidebarOpen(false); // يغلق في الموبايل ويبقى ثابتاً في اللاب
+                  setSidebarOpen(false);
                 }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
                   isActive
@@ -469,12 +569,12 @@ export default function SpikeSuperAdminDashboard() {
           })}
         </nav>
 
-        {/* تذييل السايد بار */}
         <div className={`p-4 border-t flex items-center justify-between ${
           isDark ? 'border-slate-800' : 'border-slate-200/80'
         }`}>
           <button 
             onClick={() => {
+              localStorage.removeItem('user_email');
               localStorage.removeItem('merchant_user_id');
               localStorage.removeItem('is_super_admin');
               router.push('/register');
@@ -489,7 +589,7 @@ export default function SpikeSuperAdminDashboard() {
               <span className={`text-xs font-bold block ${isDark ? 'text-white' : 'text-slate-800'}`}>
                 {t.adminRole}
               </span>
-              <span className="text-[10px] text-slate-400 block font-mono">admin@spike.shop</span>
+              <span className="text-[10px] text-slate-400 block font-mono">{SUPER_ADMIN_EMAIL}</span>
             </div>
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#E86A53] to-orange-400 flex items-center justify-center text-white text-xs font-black shadow-xs">
               S
@@ -498,16 +598,12 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       </aside>
 
-      {/* 📊 المحتوى الرئيسي */}
+      {/* 📊 منطقة المحتوى الرئيسية */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        
-        {/* الترويسة العلوية */}
         <header className={`px-4 sm:px-8 py-4 border-b flex items-center justify-between backdrop-blur-md sticky top-0 z-30 transition-colors ${
           isDark ? 'bg-[#0B132B]/95 border-slate-800' : 'bg-[#F4F6F9]/95 border-slate-200/80 shadow-xs'
         }`}>
-          
           <div className="flex items-center gap-3">
-            {/* زر الثلاث شرط (☰): يظهر فقط على الموبايل والشاشات الصغيرة ويختفي تلقائياً في شاشات اللاب توب (lg:hidden) */}
             <button
               type="button"
               onClick={() => setSidebarOpen(true)}
@@ -516,7 +612,7 @@ export default function SpikeSuperAdminDashboard() {
                   ? 'border-slate-700 bg-slate-800 text-white hover:bg-slate-700' 
                   : 'border-slate-200 bg-white text-slate-800 hover:bg-slate-100'
               }`}
-              title="فتح القائمة الجانبية"
+              title="القائمة"
             >
               ☰
             </button>
@@ -573,9 +669,9 @@ export default function SpikeSuperAdminDashboard() {
           </div>
         </header>
 
-        {/* جسم الصفحة النشط */}
         <div className="p-4 sm:p-8 space-y-6">
 
+          {/* تبويب الرئيسية والمؤشرات */}
           {activeTab === 'overview' && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
@@ -671,6 +767,86 @@ export default function SpikeSuperAdminDashboard() {
             </>
           )}
 
+          {/* تبويب فريق الإدارة والصلاحيات */}
+          {activeTab === 'admins' && (
+            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-lg font-black">{isAr ? 'فريق إدارة منصة سبايك' : 'Platform Admins & Roles'}</h3>
+                  <p className="text-xs text-slate-400">الحسابات المصرح لها حصرياً بالدخول والتحكم في الداشبورد</p>
+                </div>
+                <button
+                  onClick={() => setNewAdminModal(true)}
+                  className="px-4 py-2 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  + إضافة مشرف جديد
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400">
+                      <th className="p-3 text-right">المسؤول</th>
+                      <th className="p-3 text-right">البريد الإلكتروني</th>
+                      <th className="p-3 text-right">الرتبة</th>
+                      <th className="p-3 text-right">الصلاحيات الممنوحة</th>
+                      <th className="p-3 text-center">الإجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* حساب المالك الأساسي دائماً في القمة ومحمى */}
+                    <tr className="border-b border-slate-100 dark:border-slate-800/50 bg-emerald-500/5">
+                      <td className="p-3 font-black text-emerald-600 dark:text-emerald-400">حسن حسني (المالك)</td>
+                      <td className="p-3 font-mono font-bold" dir="ltr">{SUPER_ADMIN_EMAIL}</td>
+                      <td className="p-3">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                          Super Admin Master
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">تحكم كامل ومطلق بكافة أقسام المنظومة</span>
+                      </td>
+                      <td className="p-3 text-center text-slate-400 text-[10px]">
+                        🔒 محمي بالنظام
+                      </td>
+                    </tr>
+
+                    {/* المشرفون المعينون من قاعدة البيانات */}
+                    {adminUsers.map((user) => (
+                      <tr key={user.id} className="border-b border-slate-100 dark:border-slate-800/50">
+                        <td className="p-3 font-bold">{user.name}</td>
+                        <td className="p-3 font-mono" dir="ltr">{user.email}</td>
+                        <td className="p-3">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex flex-wrap gap-1 text-[10px]">
+                            {user.permissions?.manage_stores && <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">المتاجر</span>}
+                            {user.permissions?.manage_orders && <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">الطلبات</span>}
+                            {user.permissions?.manage_finance && <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">المالية</span>}
+                            {user.permissions?.manage_admins && <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">الأدمن</span>}
+                          </div>
+                        </td>
+                        <td className="p-3 text-center">
+                          <button
+                            onClick={() => handleDeleteAdmin(user.id, user.email)}
+                            className="text-rose-500 hover:text-rose-600 font-bold text-xs cursor-pointer"
+                          >
+                            إلغاء الصلاحية
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* تبويب المتاجر والتجار */}
           {activeTab === 'merchants' && (
             <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
@@ -723,7 +899,7 @@ export default function SpikeSuperAdminDashboard() {
                         <td className="p-3 text-center space-x-2">
                           <button
                             onClick={() => handleUpdateWallet(s.id, s.wallet_balance_usd || 0)}
-                            className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded text-[11px] font-bold"
+                            className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded text-[11px] font-bold cursor-pointer"
                           >
                             شحن/خصم
                           </button>
@@ -732,7 +908,7 @@ export default function SpikeSuperAdminDashboard() {
                               localStorage.setItem('merchant_user_id', s.user_id);
                               router.push('/dashboard');
                             }}
-                            className="px-2 py-1 bg-[#00B050]/10 text-[#00B050] rounded text-[11px] font-bold"
+                            className="px-2 py-1 bg-[#00B050]/10 text-[#00B050] rounded text-[11px] font-bold cursor-pointer"
                           >
                             دخول كتاجر ↗
                           </button>
@@ -745,6 +921,7 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           )}
 
+          {/* تبويب كافة الطلبات */}
           {activeTab === 'orders' && (
             <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
@@ -752,7 +929,7 @@ export default function SpikeSuperAdminDashboard() {
                   <h3 className="text-lg font-black">{isAr ? 'كافة طلبات المنصة' : 'All Platform Orders'} ({orders.length})</h3>
                   <p className="text-xs text-slate-400">تحديث وتأكيد طلبات الدفع عند الاستلام والشحن</p>
                 </div>
-                <button onClick={fetchAllData} className="px-3 py-1.5 border rounded-lg text-xs font-bold">تحديث</button>
+                <button onClick={fetchAllData} className="px-3 py-1.5 border rounded-lg text-xs font-bold cursor-pointer">تحديث</button>
               </div>
 
               {orders.length === 0 ? (
@@ -806,6 +983,7 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           )}
 
+          {/* تبويب المنتجات والمخزون */}
           {activeTab === 'inventory' && (
             <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
@@ -815,7 +993,7 @@ export default function SpikeSuperAdminDashboard() {
                 </div>
                 <button
                   onClick={() => setNewProductModal(true)}
-                  className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold"
+                  className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer"
                 >
                   + إضافة منتج جديد
                 </button>
@@ -845,6 +1023,7 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           )}
 
+          {/* تبويب سعر الصرف والعمولة */}
           {activeTab === 'rates' && (
             <div className={`p-6 sm:p-8 rounded-2xl border max-w-2xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-2">{isAr ? 'إعدادات سعر الصرف والعمولات المالية' : 'Exchange Rates & Fees'}</h3>
@@ -893,6 +1072,7 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           )}
 
+          {/* تبويب الدومينات */}
           {activeTab === 'domains' && (
             <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-2">{isAr ? 'إدارة الدومينات المخصصة والربط' : 'Custom Domains & DNS'}</h3>
@@ -914,6 +1094,7 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           )}
 
+          {/* تبويب الباقات */}
           {activeTab === 'plans' && (
             <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-4">باقات الاشتراك المتاحة</h3>
@@ -934,6 +1115,7 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           )}
 
+          {/* تبويب سجل الحركات */}
           {activeTab === 'audit' && (
             <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-4">سجل الحركات الإدارية (Audit Logs)</h3>
@@ -952,6 +1134,7 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           )}
 
+          {/* تبويب الإعلانات الجماعية */}
           {activeTab === 'broadcast' && (
             <div className={`p-6 sm:p-8 rounded-2xl border max-w-xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-2">إرسال تنبيه جماعي لجميع التجار</h3>
@@ -969,7 +1152,7 @@ export default function SpikeSuperAdminDashboard() {
                   alert('✅ تم إرسال التنبيه الجماعي بنجاح');
                   setBroadcastMessage('');
                 }}
-                className="px-5 py-2.5 bg-[#00B050] text-white rounded-xl text-xs font-bold"
+                className="px-5 py-2.5 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer"
               >
                 إرسال الإعلان الآن
               </button>
@@ -978,7 +1161,7 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       </main>
 
-      {/* المودالات الإدارية */}
+      {/* مودال إنشاء متجر جديد */}
       {newStoreModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
@@ -1041,6 +1224,7 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       )}
 
+      {/* مودال إضافة منتج جديد */}
       {newProductModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
@@ -1087,6 +1271,103 @@ export default function SpikeSuperAdminDashboard() {
               <div className="flex gap-2 pt-3">
                 <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إضافة المنتج</button>
                 <button type="button" onClick={() => setNewProductModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* مودال إضافة مشرف جديد وتحديد الصلاحيات */}
+      {newAdminModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+            <h3 className="text-base font-black mb-4">إضافة مشرف وتحديد الصلاحيات</h3>
+            <form onSubmit={handleCreateAdmin} className="space-y-4 text-xs font-bold">
+              <div>
+                <label className="block mb-1">اسم المشرف</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="مثال: أحمد علي"
+                  value={newAdminData.name}
+                  onChange={(e) => setNewAdminData({ ...newAdminData, name: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#00B050]"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1">البريد الإلكتروني المعتمد</label>
+                <input
+                  type="email"
+                  required
+                  dir="ltr"
+                  placeholder="admin@example.com"
+                  value={newAdminData.email}
+                  onChange={(e) => setNewAdminData({ ...newAdminData, email: e.target.value })}
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-2">تحديد الصلاحيات المسموح بها:</label>
+                <div className="space-y-2 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newAdminData.permissions.manage_stores}
+                      onChange={(e) => setNewAdminData({
+                        ...newAdminData,
+                        permissions: { ...newAdminData.permissions, manage_stores: e.target.checked }
+                      })}
+                    />
+                    <span>إدارة المتاجر (تفعيل، تعطيل، تعديل الأرصدة)</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newAdminData.permissions.manage_orders}
+                      onChange={(e) => setNewAdminData({
+                        ...newAdminData,
+                        permissions: { ...newAdminData.permissions, manage_orders: e.target.checked }
+                      })}
+                    />
+                    <span>إدارة ومتابعة طلبات الشحن</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newAdminData.permissions.manage_finance}
+                      onChange={(e) => setNewAdminData({
+                        ...newAdminData,
+                        permissions: { ...newAdminData.permissions, manage_finance: e.target.checked }
+                      })}
+                    />
+                    <span>إعدادات المالية، العمولة، وسعر الصرف</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={newAdminData.permissions.manage_admins}
+                      onChange={(e) => setNewAdminData({
+                        ...newAdminData,
+                        permissions: { ...newAdminData.permissions, manage_admins: e.target.checked }
+                      })}
+                    />
+                    <span>إضافة وتعديل صلاحيات المشرفين الآخرين</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">
+                  حفظ المشرف
+                </button>
+                <button type="button" onClick={() => setNewAdminModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">
+                  إلغاء
+                </button>
               </div>
             </form>
           </div>
