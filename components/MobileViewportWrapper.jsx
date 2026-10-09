@@ -14,7 +14,7 @@ export default function MobileViewportWrapper({ children }) {
     <div className={`min-h-screen py-8 px-4 flex justify-center items-start transition-colors duration-300 ${
       isDark ? 'bg-slate-950' : 'bg-slate-200'
     }`}>
-      {/* إطار الهاتف بالأبعاد القياسية الدقيقة: 375px */}
+      {/* إطار بأبعاد شاشة الهاتف القياسية: 375px */}
       <div className={`w-full max-w-[375px] min-h-[812px] rounded-[40px] shadow-2xl border-[8px] overflow-hidden flex flex-col transition-all duration-200 ${
         isDark ? 'border-slate-800 bg-[#0E1E38]' : 'border-slate-900 bg-white'
       }`}>
