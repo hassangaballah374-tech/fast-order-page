@@ -15,7 +15,7 @@ export function AppProvider({ children }) {
       const savedLang = localStorage.getItem('spike_lang') || 'ar';
       const savedTheme = localStorage.getItem('spike_theme') || 'light';
       const savedMobile = localStorage.getItem('spike_mobile_view') === 'true';
-      
+
       setLang(savedLang);
       setTheme(savedTheme);
       setIsMobileView(savedMobile);
@@ -63,7 +63,7 @@ export function AppProvider({ children }) {
   };
 
   const toggleMobileView = () => {
-    setIsMobileView(prev => {
+    setIsMobileView((prev) => {
       const next = !prev;
       try {
         localStorage.setItem('spike_mobile_view', String(next));
