@@ -8,7 +8,7 @@ export default function HeaderControls({ className = '' }) {
 
   return (
     <div className={`flex items-center gap-2 select-none ${className}`}>
-      {/* 📱 / 💻 زر تبديل العرض (أيقونة الموبايل أو اللاب فقط بجانب اللغة) */}
+      {/* أيقونة تبديل وضع الموبايل / اللاب توب */}
       <button
         type="button"
         onClick={toggleMobileView}
@@ -24,7 +24,7 @@ export default function HeaderControls({ className = '' }) {
         {isMobileView ? '💻' : '📱'}
       </button>
 
-      {/* 🌐 زر تبديل اللغة */}
+      {/* زر تبديل اللغة */}
       <button
         type="button"
         onClick={toggleLanguage}
@@ -38,7 +38,7 @@ export default function HeaderControls({ className = '' }) {
         <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
       </button>
 
-      {/* 🌙 / ☀️ زر تبديل المظهر */}
+      {/* زر تبديل المظهر (ليلي / نهاري) */}
       <button
         type="button"
         onClick={toggleTheme}
