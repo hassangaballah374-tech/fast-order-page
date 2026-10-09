@@ -3,54 +3,25 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 
-export default function HeaderControls({ className = '' }) {
-  const { lang, toggleLanguage, toggleTheme, isDark, isMobileView, toggleMobileView } = useApp();
+export default function MobileViewportWrapper({ children }) {
+  const { isMobileView, isDark } = useApp();
+
+  if (!isMobileView) {
+    return <>{children}</>;
+  }
 
   return (
-    <div className={`flex items-center gap-2 select-none ${className}`}>
-      {/* 📱 / 💻 زر تبديل العرض (أيقونة الموبايل أو اللاب فقط بجانب اللغة) */}
-      <button
-        type="button"
-        onClick={toggleMobileView}
-        className={`w-9 h-9 rounded-xl border flex items-center justify-center text-base transition cursor-pointer ${
-          isMobileView
-            ? 'bg-[#00B050] text-white border-[#00B050] shadow-sm'
-            : isDark
-            ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
-            : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-        }`}
-        title={isMobileView ? 'التبديل إلى شاشة الكمبيوتر' : 'التبديل إلى شاشة الموبايل'}
-      >
-        {isMobileView ? '💻' : '📱'}
-      </button>
-
-      {/* 🌐 زر تبديل اللغة */}
-      <button
-        type="button"
-        onClick={toggleLanguage}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
-          isDark
-            ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
-            : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-        }`}
-      >
-        <span>🌐</span>
-        <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
-      </button>
-
-      {/* 🌙 / ☀️ زر تبديل المظهر */}
-      <button
-        type="button"
-        onClick={toggleTheme}
-        className={`w-9 h-9 rounded-xl border flex items-center justify-center text-sm transition cursor-pointer ${
-          isDark
-            ? 'border-slate-700 bg-slate-800 text-amber-300 hover:bg-slate-700'
-            : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
-        }`}
-        title={isDark ? 'الوضع النهاري' : 'الوضع الليلي'}
-      >
-        {isDark ? '☀️' : '🌙'}
-      </button>
+    <div className={`min-h-screen py-8 px-4 flex justify-center items-start transition-colors duration-300 ${
+      isDark ? 'bg-slate-950' : 'bg-slate-200'
+    }`}>
+      {/* إطار الهاتف بالأبعاد القياسية الدقيقة: 375px */}
+      <div className={`w-full max-w-[375px] min-h-[812px] rounded-[40px] shadow-2xl border-[8px] overflow-hidden flex flex-col transition-all duration-200 ${
+        isDark ? 'border-slate-800 bg-[#0E1E38]' : 'border-slate-900 bg-white'
+      }`}>
+        <div className="w-full flex-1 overflow-y-auto overflow-x-hidden">
+          {children}
+        </div>
+      </div>
     </div>
   );
 }
