@@ -10,7 +10,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body className="antialiased transition-colors duration-200">
+      <body className="antialiased transition-colors duration-200 min-h-screen">
         <AppProvider>
           <MobileViewportWrapper>
             {children}
