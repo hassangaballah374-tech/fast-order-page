@@ -66,66 +66,70 @@ export default function SpikeSuperAdminDashboard() {
 
   const t = {
     ar: {
-      dashboard: 'لوحة التحكم',
-      overviewTitle: 'نظرة عامة على أداء منصة سبايك',
-      overviewSubtitle: 'مؤشرات الأداء اللحظية، طلبات المتاجر، والتسويات المالية',
+      dashboard: 'Dashboard',
+      overviewTitle: 'Dashboard Performances',
+      overviewSubtitle: 'Chart Value & Live Metrics',
       addStore: 'إضافة متجر جديد',
-      refreshData: 'تحديث البيانات',
+      refreshData: 'Download',
+      messageBtn: 'Message',
+      notificationBtn: 'Notification',
       statStores: 'إجمالي المتاجر',
       statPending: 'بانتظار الشحن',
       statActiveUsers: 'العملاء المفعلين',
       statSales: 'إجمالي المبيعات',
-      comparedLastMonth: 'مقارنة بالشهر الماضي',
-      underProcess: 'تحت التجهيز',
-      activeRate: 'معدل التفعيل',
-      totalReceipts: 'إجمالي المتحصلات',
-      adminRole: 'مدير النظام الأساسي (S.A)',
+      adminRole: 'Super Admin',
       logoutText: 'تسجيل الخروج',
-      navOverview: 'الرئيسية والمؤشرات',
-      navStores: 'المتاجر والتجار',
-      navOrders: 'كافة الطلبات',
-      navInventory: 'المنتجات والمخزون',
-      navPolicies: 'سياسات سبايك',
-      navRates: 'سعر الصرف والعمولة',
-      navDomains: 'الدومينات والربط',
-      navPlans: 'باقات الاشتراك',
-      navLogs: 'سجل الحركات',
-      navBroadcast: 'الإعلانات الجماعية',
-      navAdmins: 'فريق الإدارة',
+      navOverview: 'Dashboard',
+      navActivity: 'Activity',
+      navStores: 'Directories',
+      navOrders: 'Timeline',
+      navInventory: 'Files',
+      navRates: 'Payment',
+      navDomains: 'Domains & DNS',
+      navPlans: 'Subscription Plans',
+      navLogs: 'Audit Logs',
+      navBroadcast: 'Announcements',
+      navAdmins: 'Admin Team',
       adminStoresBtn: 'متاجر الأدمن الخاصة',
-      mainMenu: 'القائمة الرئيسية',
-      financeMenu: 'المالية والتحكم',
+      applicationMenu: 'APPLICATION',
+      settingsMenu: 'SETTINGS',
+      ordersCount: 'أوردر',
+      activeStatus: 'نشط',
+      save: 'حفظ التعديلات',
+      cancel: 'إلغاء'
     },
     en: {
       dashboard: 'Dashboard',
-      overviewTitle: 'SPIKE Platform Performance Overview',
-      overviewSubtitle: 'Real-time KPIs, merchant orders, and financial reconciliations',
+      overviewTitle: 'Dashboard Performances',
+      overviewSubtitle: 'Chart Value & Live Metrics',
       addStore: 'Add New Store',
-      refreshData: 'Refresh Data',
+      refreshData: 'Download',
+      messageBtn: 'Message',
+      notificationBtn: 'Notification',
       statStores: 'Total Stores',
       statPending: 'Pending Fulfillment',
       statActiveUsers: 'Active Clients',
       statSales: 'Total Sales',
-      comparedLastMonth: 'vs last month',
-      underProcess: 'Processing',
-      activeRate: 'Activation Rate',
-      totalReceipts: 'Total Net Volume',
-      adminRole: 'Super Admin Master (S.A)',
+      adminRole: 'Super Admin',
       logoutText: 'Sign Out',
-      navOverview: 'Overview & Analytics',
-      navStores: 'Stores & Merchants',
-      navOrders: 'All Orders',
-      navInventory: 'Products & Inventory',
-      navPolicies: 'Platform Policies',
-      navRates: 'Exchange & Fees',
+      navOverview: 'Dashboard',
+      navActivity: 'Activity',
+      navStores: 'Directories',
+      navOrders: 'Timeline',
+      navInventory: 'Files',
+      navRates: 'Payment',
       navDomains: 'Domains & DNS',
       navPlans: 'Subscription Plans',
       navLogs: 'Audit Logs',
-      navBroadcast: 'Broadcast Announcements',
+      navBroadcast: 'Announcements',
       navAdmins: 'Admin Team',
       adminStoresBtn: 'My Admin Stores',
-      mainMenu: 'MAIN MENU',
-      financeMenu: 'FINANCE',
+      applicationMenu: 'APPLICATION',
+      settingsMenu: 'SETTINGS',
+      ordersCount: 'orders',
+      activeStatus: 'Active',
+      save: 'Save Changes',
+      cancel: 'Cancel'
     }
   }[lang || 'ar'];
 
@@ -327,165 +331,98 @@ export default function SpikeSuperAdminDashboard() {
   const activeStoresCount = stores.filter(s => s.is_active !== false).length;
   const totalSalesAmount = orders.reduce((acc, curr) => acc + (Number(curr.total_price) || 0), 0);
 
-  const mainMenuItems = [
+  const applicationItems = [
     { id: 'overview', title: t.navOverview, icon: '🏠' },
-    { id: 'merchants', title: t.navStores, icon: '🏪', count: totalStoresCount },
-    { id: 'orders', title: t.navOrders, icon: '📦', count: orders.length },
-    { id: 'inventory', title: t.navInventory, icon: '🏷️', count: products.length },
+    { id: 'merchants', title: t.navStores, icon: '📂', count: totalStoresCount },
+    { id: 'orders', title: t.navOrders, icon: '⏱️', count: orders.length },
+    { id: 'inventory', title: t.navInventory, icon: '⚡', count: products.length },
     { id: 'admins', title: t.navAdmins, icon: '🛡️', count: adminUsers.length + 1 },
   ];
 
-  const financeMenuItems = [
-    { id: 'rates', title: t.navRates, icon: '💱' },
-    { id: 'domains', title: t.navDomains, icon: '🌐', count: domains.length },
+  const settingsItems = [
+    { id: 'rates', title: t.navRates, icon: '📁' },
+    { id: 'domains', title: t.navDomains, icon: '💳' },
     { id: 'plans', title: t.navPlans, icon: '💎' },
-    { id: 'audit', title: t.navLogs, icon: '📑', count: auditLogs.length },
-    { id: 'broadcast', title: t.navBroadcast, icon: '📢' },
   ];
 
   const statCards = [
-    {
-      title: t.statStores,
-      value: totalStoresCount.toString(),
-      change: '+100%',
-      icon: '🏬',
-      badgeColor: 'text-[#00B050] bg-[#00B050]/15 border-[#00B050]/30',
-      desc1: t.comparedLastMonth,
-      desc2: t.totalReceipts,
-      progress: '100%',
-    },
-    {
-      title: t.statPending,
-      value: pendingOrdersCount.toString(),
-      change: `${pendingOrdersCount} ${t.ordersCount}`,
-      icon: '⏳',
-      badgeColor: 'text-amber-500 bg-amber-500/15 border-amber-500/30',
-      desc1: t.underProcess,
-      desc2: t.underProcess,
-      progress: pendingOrdersCount > 0 ? '45%' : '0%',
-    },
-    {
-      title: t.statActiveUsers,
-      value: activeStoresCount.toString(),
-      change: `100% ${t.activeStatus}`,
-      icon: '🟢',
-      badgeColor: 'text-[#00B050] bg-[#00B050]/15 border-[#00B050]/30',
-      desc1: t.activeRate,
-      desc2: t.activeRate,
-      progress: '100%',
-    },
-    {
-      title: t.statSales,
-      value: `${totalSalesAmount.toFixed(2)} ج.م`,
-      change: '0.00%',
-      icon: '💰',
-      badgeColor: 'text-[#00B050] bg-[#00B050]/15 border-[#00B050]/30',
-      desc1: t.comparedLastMonth,
-      desc2: t.totalReceipts,
-      progress: totalSalesAmount > 0 ? '60%' : '5%',
-    },
+    { title: t.statStores, value: totalStoresCount.toString(), change: '980', icon: '⚠️', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
+    { title: t.statPending, value: pendingOrdersCount.toString(), change: '2,940', icon: '🛡️', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
+    { title: t.statActiveUsers, value: activeStoresCount.toString(), change: '2,504', icon: '☕', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
+    { title: t.statSales, value: `${totalSalesAmount.toFixed(2)} ج.م`, change: '4,923', icon: '📦', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
   ];
 
   if (loading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center font-sans ${isDark ? 'bg-[#121824] text-white' : 'bg-[#EAEFF5] text-slate-900'}`}>
+      <div className="min-h-screen flex items-center justify-center font-sans bg-[#1E222B] text-cyan-400">
         <div className="animate-pulse text-sm font-bold">جاري تحميل لوحة التحكم...</div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen font-sans flex transition-colors duration-200 select-none ${
-      isDark ? 'bg-[#121824] text-slate-100' : 'bg-[#EAEFF5] text-slate-800'
-    }`} dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen font-sans flex bg-[#161B22] text-slate-100 select-none overflow-x-hidden" dir={isAr ? 'rtl' : 'ltr'}>
 
-      {/* 1. الشريط الجانبي المصغر (Icon Dock) مطابق للصورة */}
-      <aside className={`w-20 shrink-0 border-r flex flex-col items-center py-6 justify-between transition-colors ${
-        isDark ? 'bg-[#0B132B] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-      }`}>
-        <div className="space-y-6 flex flex-col items-center">
-          <div className="w-10 h-10 rounded-2xl bg-[#00B050] flex items-center justify-center text-white font-black shadow-md shadow-[#00B050]/30">
-            S
-          </div>
-
-          <div className="space-y-3 pt-4">
-            {['🏠', '🏪', '📦', '🏷️', '🛡️', '💱'].map((icon, idx) => (
-              <button 
-                key={idx}
-                onClick={() => setActiveTab(mainMenuItems[idx]?.id || 'overview')}
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg transition cursor-pointer ${
-                  activeTab === mainMenuItems[idx]?.id 
-                    ? 'bg-[#00B050] text-white shadow-md shadow-[#00B050]/30' 
-                    : isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-500 hover:bg-slate-100'
-                }`}
-              >
-                {icon}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <button 
-            onClick={toggleTheme}
-            className={`w-10 h-10 rounded-2xl flex items-center justify-center text-sm transition cursor-pointer ${
-              isDark ? 'bg-slate-800 text-amber-300' : 'bg-slate-100 text-slate-700'
-            }`}
-            title="تغيير المظهر"
-          >
-            {isDark ? '☀️' : '🌙'}
-          </button>
-        </div>
-      </aside>
-
-      {/* 2. القائمة الجانبية الرئيسية الموسعة (Sidebar) */}
-      <aside className={`w-64 shrink-0 border-r flex flex-col justify-between p-5 transition-colors ${
-        isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-      }`}>
+      {/* الشريط الجانبي الداكن المطابق للصورة تماماً */}
+      <aside className="w-72 shrink-0 bg-[#1A212D] border-r border-slate-800/80 flex flex-col justify-between p-6 shadow-2xl">
         <div className="space-y-6">
           
-          <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-7 w-auto object-contain rounded-lg" />
-              <span className={`font-black text-base tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                salesku <span className="text-[10px] text-[#00B050] font-mono">| SPIKE</span>
-              </span>
+          {/* بروفايل المستخدم العلوي في السايد بار */}
+          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border border-cyan-500/40">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="Profile" className="w-full h-full object-cover" />
+              </div>
+              <div className="leading-tight">
+                <span className="text-xs font-black block text-white">Hassan Hosny</span>
+                <span className="text-[10px] text-slate-400 font-mono">{t.adminRole}</span>
+              </div>
             </div>
+            <button onClick={handleLogout} className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs cursor-pointer" title={t.logoutText}>
+              🚪
+            </button>
           </div>
 
-          {/* 👑 زر الانتقال السريع لمتاجر الأدمن الخاصة بك */}
+          {/* شريط البحث */}
+          <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-[#12161F] border border-slate-800 text-slate-300">
+            <span className="text-slate-500">🔍</span>
+            <input type="text" placeholder="Search" className="bg-transparent text-xs outline-none w-full text-white placeholder-slate-500" />
+          </div>
+
+          {/* 👑 زر متاجر الأدمن الخاصة */}
           <button
             onClick={() => {
               localStorage.setItem('merchant_user_id', 'main_flagship_owner');
               router.push('/dashboard');
             }}
-            className="w-full py-2.5 px-3 bg-gradient-to-r from-[#00B050] to-emerald-600 hover:from-[#009644] text-white rounded-2xl text-xs font-black shadow-md transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            className="w-full py-2.5 px-3 bg-gradient-to-r from-cyan-500 to-teal-600 hover:from-cyan-400 text-white rounded-2xl text-xs font-black shadow-lg shadow-cyan-500/20 transition cursor-pointer flex items-center justify-center gap-2"
           >
             <span>👑</span>
             <span>{t.adminStoresBtn}</span>
           </button>
 
-          <div className="space-y-1.5">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider px-3 block mb-2">
-              {t.mainMenu}
+          {/* قسم APPLICATION */}
+          <div className="space-y-1.5 pt-2">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 block mb-2">
+              {t.applicationMenu}
             </span>
-            {mainMenuItems.map(item => (
+            {applicationItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
                   activeTab === item.id 
-                    ? 'bg-[#00B050] text-white shadow-md shadow-[#00B050]/25' 
-                    : isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30' 
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <span>{item.icon}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm">{item.icon}</span>
                   <span>{item.title}</span>
                 </div>
                 {item.count !== undefined && (
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                    activeTab === item.id ? 'bg-white/20 text-white' : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600'
+                    activeTab === item.id ? 'bg-slate-950/20 text-slate-950' : 'bg-slate-800 text-slate-400'
                   }`}>
                     {item.count}
                   </span>
@@ -494,180 +431,129 @@ export default function SpikeSuperAdminDashboard() {
             ))}
           </div>
 
+          {/* قسم SETTINGS */}
           <div className="space-y-1.5 pt-2">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider px-3 block mb-2">
-              {t.financeMenu}
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 block mb-2">
+              {t.settingsMenu}
             </span>
-            {financeMenuItems.map(item => (
+            {settingsItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
                   activeTab === item.id 
-                    ? 'bg-[#00B050] text-white shadow-md shadow-[#00B050]/25' 
-                    : isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30' 
+                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <span>{item.icon}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm">{item.icon}</span>
                   <span>{item.title}</span>
                 </div>
-                {item.count !== undefined && (
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                    activeTab === item.id ? 'bg-white/20 text-white' : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-200 text-slate-600'
-                  }`}>
-                    {item.count}
-                  </span>
-                )}
               </button>
             ))}
           </div>
 
         </div>
 
-        {/* بروفايل المستخدم وزر تسجيل الخروج */}
-        <div className={`p-3 rounded-2xl border flex flex-col gap-2.5 ${
-          isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
-        }`}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#00B050] to-emerald-400 flex items-center justify-center text-white font-black text-xs shrink-0 shadow-xs">
-              S.A
-            </div>
-            <div className="leading-tight truncate">
-              <span className={`text-xs font-black block truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                {t.adminRole}
-              </span>
-              <span className="text-[10px] text-slate-400 block font-mono truncate">{SUPER_ADMIN_EMAIL}</span>
-            </div>
+        {/* صندوق ترقية الحساب أسفل السايد بار كما في الصورة */}
+        <div className="p-4 rounded-3xl bg-[#12161F] border border-slate-800 space-y-3 relative overflow-hidden">
+          <div className="absolute right-0 bottom-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-xl"></div>
+          <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs">
+            <span>⭐</span>
+            <span>Upgrade to Premium.</span>
           </div>
-
-          <button
-            onClick={handleLogout}
-            className="w-full py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <span>🚪</span>
-            <span>{t.logoutText}</span>
+          <p className="text-[10px] text-slate-400 leading-relaxed">Enjoy benefits and unlock more content on premium</p>
+          <button onClick={() => setActiveTab('plans')} className="w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl text-xs font-black transition cursor-pointer shadow-md">
+            Explore Now
           </button>
         </div>
       </aside>
 
-      {/* 3. منطقة المحتوى الرئيسي */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      {/* منطقة العمل الرئيسية (Main Workspace ذات الخلفية الفاتحة الناعمة) */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-[#F0F2F5] text-slate-800">
         
-        <header className={`px-6 sm:px-10 py-4 border-b flex items-center justify-between sticky top-0 z-30 backdrop-blur-md transition-colors ${
-          isDark ? 'bg-[#0E1E38]/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-xs'
-        }`}>
+        {/* الترويسة العلوية الأنيقة */}
+        <header className="px-8 py-5 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-xs">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight">Dashboard</h1>
-            <p className="text-xs text-slate-400">{t.overviewSubtitle}</p>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">{t.overviewTitle}</h1>
+            <p className="text-xs text-slate-500">{t.overviewSubtitle}</p>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className={`hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-2xl border ${
-              isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-100 border-slate-200 text-slate-800'
-            }`}>
-              <span>🔍</span>
-              <input 
-                type="text" 
-                placeholder="Search..." 
-                className="bg-transparent text-xs outline-none w-48"
-              />
-            </div>
-
-            <button
-              onClick={() => setNewStoreModal(true)}
-              className="px-4 py-2 bg-[#00B050] hover:bg-[#009644] text-white rounded-2xl text-xs font-black shadow-md shadow-[#00B050]/25 transition cursor-pointer"
-            >
+            <button onClick={() => setNewStoreModal(true)} className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-2xl text-xs font-black shadow-sm transition cursor-pointer">
               + {t.addStore}
             </button>
-
-            <div className="flex items-center gap-2.5 pl-2 border-l border-slate-300 dark:border-slate-700">
-              <div className="w-9 h-9 rounded-full bg-slate-700 overflow-hidden border border-[#00B050]/50 shadow-xs">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="Profile" className="w-full h-full object-cover" />
-              </div>
-              <div className="hidden md:block text-left" dir="ltr">
-                <span className={`text-xs font-black block leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Super Admin</span>
-                <span className="text-[10px] text-slate-400 font-mono">Master (S.A)</span>
-              </div>
-            </div>
+            <button onClick={fetchAllData} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl text-xs font-bold shadow-2xs transition cursor-pointer">
+              📥 {t.refreshData}
+            </button>
+            <button onClick={() => setActiveTab('broadcast')} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl text-xs font-bold shadow-2xs transition cursor-pointer">
+              💬 {t.messageBtn}
+            </button>
+            <button onClick={() => setActiveTab('orders')} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl text-xs font-bold shadow-2xs transition cursor-pointer">
+              🔔 {t.notificationBtn}
+            </button>
           </div>
         </header>
 
-        <div className="p-6 sm:p-10 space-y-6">
+        {/* محتوى اللوحة الديناميكي */}
+        <div className="p-8 space-y-6">
 
           {activeTab === 'overview' && (
             <>
+              {/* البطاقات البيضاء الناعمة الـ 4 */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {statCards.map((stat, i) => (
-                  <div
-                    key={i}
-                    className={`p-6 rounded-3xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between ${
-                      isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <span className={`text-[10px] font-bold font-mono px-2.5 py-1 rounded-lg border ${stat.badgeColor}`}>
-                        {stat.change}
-                      </span>
-                      <span className="text-xl p-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800/60">{stat.icon}</span>
+                  <div key={i} className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm transition hover:shadow-md flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xl p-2 rounded-2xl bg-slate-50 border border-slate-100">{stat.icon}</span>
+                      <span className={`text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full border ${stat.badgeColor}`}>{stat.change}</span>
                     </div>
-
-                    <div className="space-y-1 text-left" dir="ltr">
-                      <span className="text-2xl font-black font-mono tracking-tight block">
-                        {stat.value}
-                      </span>
-                      <span className="text-xs text-slate-400 font-bold block">
-                        {stat.title}
-                      </span>
+                    <div className="space-y-1">
+                      <span className="text-2xl font-black text-slate-900 font-mono tracking-tight block" dir="ltr">{stat.value}</span>
+                      <span className="text-xs text-slate-500 font-bold block">{stat.title}</span>
                     </div>
-
-                    <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-[10px] text-slate-400">
-                      <span>{stat.desc2}</span>
-                      <div className="w-20 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#00B050] rounded-full" style={{ width: stat.progress }} />
-                      </div>
-                    </div>
+                    <span className="text-[10px] text-slate-400 pt-3 border-t border-slate-100 mt-4 block">Chart Value</span>
                   </div>
                 ))}
               </div>
 
-              <div className={`p-6 sm:p-8 rounded-3xl border ${
-                isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
-              }`}>
+              {/* قسم الجدول السريع للطلبات */}
+              <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/80 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                   <div>
-                    <h3 className="text-base font-black">أحدث طلبات المنصة الحية</h3>
-                    <p className="text-xs text-slate-400">مزامنة لحظية للعمليات مع تأكيد الدفع والشحن</p>
+                    <h3 className="text-sm font-black text-slate-900">Section Title - Live Orders</h3>
+                    <p className="text-xs text-slate-400">Chart Value & Transactions</p>
                   </div>
-                  <button onClick={() => setActiveTab('orders')} className="text-xs text-[#00B050] font-bold hover:underline cursor-pointer">
-                    عرض الكل ←
+                  <button onClick={() => setActiveTab('orders')} className="text-xs text-cyan-600 font-bold hover:underline cursor-pointer">
+                    View all →
                   </button>
                 </div>
 
                 {orders.length === 0 ? (
-                  <div className="text-center py-12 text-slate-400 text-xs">لا توجد طلبات مسجلة حتى اللحظة</div>
+                  <div className="text-center py-12 text-slate-400 text-xs">No recorded orders yet</div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
-                        <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400">
-                          <th className="p-3 text-right">رقم الطلب</th>
-                          <th className="p-3 text-right">العميل</th>
-                          <th className="p-3 text-right">المحافظة</th>
-                          <th className="p-3 text-right">الإجمالي</th>
-                          <th className="p-3 text-right">الحالة</th>
+                        <tr className="border-b border-slate-100 text-slate-400 font-bold">
+                          <th className="p-3 text-right">CODE</th>
+                          <th className="p-3 text-right">PRODUCT / CUSTOMER</th>
+                          <th className="p-3 text-right">DATE</th>
+                          <th className="p-3 text-right">PRICE</th>
+                          <th className="p-3 text-right">STATUS</th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-slate-100">
                         {orders.slice(0, 5).map((o, idx) => (
-                          <tr key={idx} className="border-b border-slate-100 dark:border-slate-800/50">
-                            <td className="p-3 font-mono font-bold">#{o.id}</td>
-                            <td className="p-3">{o.customer_name || 'عميل نقدي'}</td>
-                            <td className="p-3">{o.governorate || 'القاهرة'}</td>
-                            <td className="p-3 font-mono font-bold text-[#00B050]">{o.total_price} ج.م</td>
+                          <tr key={idx} className="hover:bg-slate-50/80 transition">
+                            <td className="p-3 font-mono font-bold text-slate-900">#{o.id}</td>
+                            <td className="p-3 font-bold text-slate-800">{o.customer_name || 'Cash Customer'}</td>
+                            <td className="p-3 text-slate-500">{new Date(o.created_at).toLocaleDateString()}</td>
+                            <td className="p-3 font-mono font-bold text-cyan-600">{o.total_price} ج.م</td>
                             <td className="p-3">
-                              <span className="px-2.5 py-1 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-bold">
-                                {o.status || 'pending'}
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-black uppercase">
+                                Success
                               </span>
                             </td>
                           </tr>
@@ -681,36 +567,36 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {activeTab === 'merchants' && (
-            <div className={`p-6 rounded-3xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-black">إدارة المتاجر والتجار ({stores.length})</h3>
-                <button onClick={() => setNewStoreModal(true)} className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer">+ إضافة متجر</button>
+                <h3 className="text-base font-black text-slate-900">Directories - Stores & Merchants ({stores.length})</h3>
+                <button onClick={() => setNewStoreModal(true)} className="px-4 py-2 bg-cyan-500 text-slate-950 rounded-xl text-xs font-black cursor-pointer">+ Add Store</button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                      <th className="p-3 text-right">المتجر</th>
-                      <th className="p-3 text-right">المالك</th>
-                      <th className="p-3 text-right">الرصيد</th>
-                      <th className="p-3 text-right">الحالة</th>
-                      <th className="p-3 text-center">الإجراءات</th>
+                    <tr className="border-b border-slate-200 text-slate-400 font-bold">
+                      <th className="p-3 text-right">STORE</th>
+                      <th className="p-3 text-right">OWNER</th>
+                      <th className="p-3 text-right">WALLET</th>
+                      <th className="p-3 text-right">STATUS</th>
+                      <th className="p-3 text-center">ACTIONS</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-100">
                     {stores.map((s, i) => (
-                      <tr key={i} className="border-b border-slate-100 dark:border-slate-800/50">
-                        <td className="p-3 font-bold">{s.store_name} <span className="text-[10px] text-slate-400 block font-mono">({s.store_slug}.spike.shop)</span></td>
-                        <td className="p-3">{s.owner_name}</td>
-                        <td className="p-3 font-mono text-emerald-500 font-bold">${s.wallet_balance_usd || 0}</td>
+                      <tr key={i} className="hover:bg-slate-50">
+                        <td className="p-3 font-bold text-slate-900">{s.store_name} <span className="text-[10px] text-slate-400 block font-mono">({s.store_slug}.spike.shop)</span></td>
+                        <td className="p-3 text-slate-700">{s.owner_name}</td>
+                        <td className="p-3 font-mono text-cyan-600 font-bold">${s.wallet_balance_usd || 0}</td>
                         <td className="p-3">
-                          <button onClick={() => handleToggleStoreStatus(s.id, s.is_active !== false)} className={`px-2 py-0.5 rounded text-[10px] font-bold ${s.is_active !== false ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                            {s.is_active !== false ? 'مفعل' : 'معطل'}
+                          <button onClick={() => handleToggleStoreStatus(s.id, s.is_active !== false)} className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${s.is_active !== false ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
+                            {s.is_active !== false ? 'Active' : 'Disabled'}
                           </button>
                         </td>
                         <td className="p-3 text-center space-x-2">
-                          <button onClick={() => handleUpdateWallet(s.id, s.wallet_balance_usd || 0)} className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded font-bold">شحن</button>
-                          <button onClick={() => { localStorage.setItem('merchant_user_id', s.user_id); router.push('/dashboard'); }} className="px-2 py-1 bg-[#00B050]/15 text-[#00B050] rounded font-bold">دخول ↗</button>
+                          <button onClick={() => handleUpdateWallet(s.id, s.wallet_balance_usd || 0)} className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg font-bold">Wallet</button>
+                          <button onClick={() => { localStorage.setItem('merchant_user_id', s.user_id); router.push('/dashboard'); }} className="px-2.5 py-1 bg-cyan-500/15 text-cyan-700 rounded-lg font-bold">Access ↗</button>
                         </td>
                       </tr>
                     ))}
@@ -721,33 +607,33 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {activeTab === 'orders' && (
-            <div className={`p-6 rounded-3xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
-              <h3 className="text-lg font-black mb-4">كافة طلبات المنصة ({orders.length})</h3>
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
+              <h3 className="text-base font-black text-slate-900 mb-4">Timeline - All Orders ({orders.length})</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                      <th className="p-3 text-right">رقم الطلب</th>
-                      <th className="p-3 text-right">العميل</th>
-                      <th className="p-3 text-right">المحافظة</th>
-                      <th className="p-3 text-right">الإجمالي</th>
-                      <th className="p-3 text-center">الحالة</th>
+                    <tr className="border-b border-slate-200 text-slate-400 font-bold">
+                      <th className="p-3 text-right">ORDER ID</th>
+                      <th className="p-3 text-right">CUSTOMER</th>
+                      <th className="p-3 text-right">GOVERNORATE</th>
+                      <th className="p-3 text-right">AMOUNT</th>
+                      <th className="p-3 text-center">STATUS</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-100">
                     {orders.map((o, i) => (
-                      <tr key={i} className="border-b border-slate-100 dark:border-slate-800/50">
-                        <td className="p-3 font-mono font-bold">#{o.id}</td>
-                        <td className="p-3 font-bold">{o.customer_name}</td>
-                        <td className="p-3">{o.governorate}</td>
-                        <td className="p-3 font-mono text-[#00B050] font-bold">{o.total_price} ج.م</td>
+                      <tr key={i} className="hover:bg-slate-50">
+                        <td className="p-3 font-mono font-bold text-slate-900">#{o.id}</td>
+                        <td className="p-3 font-bold text-slate-800">{o.customer_name}</td>
+                        <td className="p-3 text-slate-600">{o.governorate}</td>
+                        <td className="p-3 font-mono text-cyan-600 font-bold">{o.total_price} ج.م</td>
                         <td className="p-3 text-center">
-                          <select value={o.status || 'pending'} onChange={(e) => handleUpdateOrderStatus(o.id, e.target.value)} className="p-1 border rounded text-xs bg-transparent">
-                            <option value="pending">بانتظار الشحن</option>
-                            <option value="confirmed">تم التأكيد</option>
-                            <option value="shipped">تم الشحن</option>
-                            <option value="delivered">تم التسليم</option>
-                            <option value="cancelled">ملغي</option>
+                          <select value={o.status || 'pending'} onChange={(e) => handleUpdateOrderStatus(o.id, e.target.value)} className="p-1.5 border border-slate-200 rounded-xl text-xs bg-slate-50 font-bold text-slate-700 cursor-pointer">
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="shipped">Shipped</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="cancelled">Cancelled</option>
                           </select>
                         </td>
                       </tr>
@@ -759,16 +645,16 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {activeTab === 'inventory' && (
-            <div className={`p-6 rounded-3xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-black">المنتجات والمخزون ({products.length})</h3>
-                <button onClick={() => setNewProductModal(true)} className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold">+ إضافة منتج</button>
+                <h3 className="text-base font-black text-slate-900">Files - Products & Stock ({products.length})</h3>
+                <button onClick={() => setNewProductModal(true)} className="px-4 py-2 bg-cyan-500 text-slate-950 rounded-xl text-xs font-black">+ Add Product</button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {products.map((p, i) => (
-                  <div key={i} className="p-4 border rounded-2xl border-slate-700/50 space-y-2">
-                    <span className="font-bold text-sm block">{p.title}</span>
-                    <span className="text-[#00B050] font-mono font-bold">{p.price} ج.م</span>
+                  <div key={i} className="p-4 border border-slate-200 rounded-2xl bg-slate-50/50 space-y-2">
+                    <span className="font-black text-slate-900 text-sm block">{p.title}</span>
+                    <span className="text-cyan-600 font-mono font-bold">{p.price} ج.م</span>
                   </div>
                 ))}
               </div>
@@ -776,30 +662,30 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {activeTab === 'admins' && (
-            <div className={`p-6 rounded-3xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-black">فريق الإدارة والصلاحيات</h3>
-                <button onClick={() => setNewAdminModal(true)} className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold">+ إضافة أدمن</button>
+                <h3 className="text-base font-black text-slate-900">Admin Team & Roles</h3>
+                <button onClick={() => setNewAdminModal(true)} className="px-4 py-2 bg-cyan-500 text-slate-950 rounded-xl text-xs font-black">+ Add Admin</button>
               </div>
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                    <th className="p-3 text-right">الاسم</th>
-                    <th className="p-3 text-right">البريد</th>
-                    <th className="p-3 text-center">الإجراء</th>
+                  <tr className="border-b border-slate-200 text-slate-400 font-bold">
+                    <th className="p-3 text-right">NAME</th>
+                    <th className="p-3 text-right">EMAIL</th>
+                    <th className="p-3 text-center">ACTION</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr className="border-b border-slate-100 dark:border-slate-800/50 bg-emerald-500/5">
-                    <td className="p-3 font-black text-emerald-500">Super Admin (المالك)</td>
+                <tbody className="divide-y divide-slate-100">
+                  <tr className="bg-cyan-500/5">
+                    <td className="p-3 font-black text-slate-900">Hassan Hosny (Owner)</td>
                     <td className="p-3 font-mono font-bold" dir="ltr">{SUPER_ADMIN_EMAIL}</td>
-                    <td className="p-3 text-center text-slate-400">🔒 أساسي</td>
+                    <td className="p-3 text-center text-slate-400 font-mono">🔒 Master</td>
                   </tr>
                   {adminUsers.map(user => (
-                    <tr key={user.id} className="border-b border-slate-100 dark:border-slate-800/50">
-                      <td className="p-3 font-bold">{user.name}</td>
-                      <td className="p-3 font-mono" dir="ltr">{user.email}</td>
-                      <td className="p-3 text-center"><button onClick={() => handleDeleteAdmin(user.id, user.email)} className="text-rose-500 font-bold">إلغاء</button></td>
+                    <tr key={user.id} className="hover:bg-slate-50">
+                      <td className="p-3 font-bold text-slate-800">{user.name}</td>
+                      <td className="p-3 font-mono text-slate-600" dir="ltr">{user.email}</td>
+                      <td className="p-3 text-center"><button onClick={() => handleDeleteAdmin(user.id, user.email)} className="text-rose-500 font-bold">Revoke</button></td>
                     </tr>
                   ))}
                 </tbody>
@@ -808,46 +694,46 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {activeTab === 'rates' && (
-            <div className={`p-6 rounded-3xl border max-w-xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
-              <h3 className="text-lg font-black mb-4">سعر الصرف والعمولات</h3>
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm max-w-xl">
+              <h3 className="text-base font-black text-slate-900 mb-4">Payment & Exchange Settings</h3>
               <div className="space-y-4 text-xs font-bold">
                 <div>
-                  <label className="block text-slate-400 mb-1">سعر الدولار (USD to EGP)</label>
-                  <input type="number" step="0.1" value={exchangeRate} onChange={e => setExchangeRate(e.target.value)} className="w-full p-3 rounded-xl border bg-transparent font-mono" />
+                  <label className="block text-slate-500 mb-1">USD to EGP Rate</label>
+                  <input type="number" step="0.1" value={exchangeRate} onChange={e => setExchangeRate(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono" />
                 </div>
                 <div>
-                  <label className="block text-slate-400 mb-1">عمولة المنصة (%)</label>
-                  <input type="number" step="0.1" value={platformCommission} onChange={e => setPlatformCommission(e.target.value)} className="w-full p-3 rounded-xl border bg-transparent font-mono" />
+                  <label className="block text-slate-500 mb-1">Platform Commission (%)</label>
+                  <input type="number" step="0.1" value={platformCommission} onChange={e => setPlatformCommission(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono" />
                 </div>
-                <button onClick={handleSavePlatformSettings} className="px-6 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">حفظ الإعدادات</button>
+                <button onClick={handleSavePlatformSettings} className="px-6 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer">Save Changes</button>
               </div>
             </div>
           )}
 
           {activeTab === 'broadcast' && (
-            <div className={`p-6 rounded-3xl border max-w-xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
-              <h3 className="text-lg font-black mb-2">إرسال إعلان جماعي للتجار</h3>
-              <textarea rows="4" value={broadcastMessage} onChange={e => setBroadcastMessage(e.target.value)} placeholder="اكتب الإعلان هنا..." className="w-full p-3 rounded-xl border bg-transparent text-xs mb-3 outline-none focus:border-[#00B050]" />
-              <button onClick={() => { if (!broadcastMessage) return; alert('✅ تم الإرسال بنجاح'); setBroadcastMessage(''); }} className="px-5 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer">إرسال الآن</button>
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm max-w-xl">
+              <h3 className="text-base font-black text-slate-900 mb-2">Send Broadcast Announcement</h3>
+              <textarea rows="4" value={broadcastMessage} onChange={e => setBroadcastMessage(e.target.value)} placeholder="Type announcement..." className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs mb-3 outline-none focus:border-cyan-500" />
+              <button onClick={() => { if (!broadcastMessage) return; alert('✅ Broadcast sent successfully'); setBroadcastMessage(''); }} className="px-5 py-2 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer">Send Now</button>
             </div>
           )}
 
         </div>
       </main>
 
-      {/* مودال متجر جديد */}
+      {/* مودال إنشاء متجر جديد */}
       {newStoreModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className={`p-6 rounded-3xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'}`}>
-            <h3 className="text-base font-black mb-4">إنشاء متجر جديد</h3>
+          <div className="p-6 rounded-3xl max-w-md w-full bg-white border border-slate-200 text-slate-900 shadow-2xl">
+            <h3 className="text-base font-black mb-4">Deploy New Store</h3>
             <form onSubmit={handleCreateStore} className="space-y-3 text-xs">
-              <input type="text" required placeholder="اسم المتجر" value={newStoreData.store_name} onChange={e => setNewStoreData({ ...newStoreData, store_name: e.target.value })} className="w-full p-3 rounded-xl border bg-transparent" />
-              <input type="text" required placeholder="الدومين (Slug)" value={newStoreData.store_slug} onChange={e => setNewStoreData({ ...newStoreData, store_slug: e.target.value })} className="w-full p-3 rounded-xl border bg-transparent font-mono" />
-              <input type="text" placeholder="اسم المالك" value={newStoreData.owner_name} onChange={e => setNewStoreData({ ...newStoreData, owner_name: e.target.value })} className="w-full p-3 rounded-xl border bg-transparent" />
-              <input type="tel" placeholder="الهاتف" value={newStoreData.phone} onChange={e => setNewStoreData({ ...newStoreData, phone: e.target.value })} className="w-full p-3 rounded-xl border bg-transparent font-mono" />
+              <input type="text" required placeholder="Store Name" value={newStoreData.store_name} onChange={e => setNewStoreData({ ...newStoreData, store_name: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50" />
+              <input type="text" required placeholder="Slug" value={newStoreData.store_slug} onChange={e => setNewStoreData({ ...newStoreData, store_slug: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono" />
+              <input type="text" placeholder="Owner Name" value={newStoreData.owner_name} onChange={e => setNewStoreData({ ...newStoreData, owner_name: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50" />
+              <input type="tel" placeholder="Phone" value={newStoreData.phone} onChange={e => setNewStoreData({ ...newStoreData, phone: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono" />
               <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إنشاء</button>
-                <button type="button" onClick={() => setNewStoreModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">إلغاء</button>
+                <button type="submit" className="flex-1 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer">Deploy</button>
+                <button type="button" onClick={() => setNewStoreModal(false)} className="px-4 py-2.5 border border-slate-200 rounded-xl cursor-pointer">Cancel</button>
               </div>
             </form>
           </div>
@@ -857,14 +743,14 @@ export default function SpikeSuperAdminDashboard() {
       {/* مودال منتج جديد */}
       {newProductModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className={`p-6 rounded-3xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'}`}>
-            <h3 className="text-base font-black mb-4">إضافة منتج جديد</h3>
+          <div className="p-6 rounded-3xl max-w-md w-full bg-white border border-slate-200 text-slate-900 shadow-2xl">
+            <h3 className="text-base font-black mb-4">Add Product</h3>
             <form onSubmit={handleCreateProduct} className="space-y-3 text-xs">
-              <input type="text" required placeholder="اسم المنتج" value={newProductData.title} onChange={e => setNewProductData({ ...newProductData, title: e.target.value })} className="w-full p-3 rounded-xl border bg-transparent" />
-              <input type="number" required placeholder="السعر (ج.م)" value={newProductData.price} onChange={e => setNewProductData({ ...newProductData, price: e.target.value })} className="w-full p-3 rounded-xl border bg-transparent font-mono" />
+              <input type="text" required placeholder="Title" value={newProductData.title} onChange={e => setNewProductData({ ...newProductData, title: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50" />
+              <input type="number" required placeholder="Price" value={newProductData.price} onChange={e => setNewProductData({ ...newProductData, price: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono" />
               <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إضافة</button>
-                <button type="button" onClick={() => setNewProductModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">إلغاء</button>
+                <button type="submit" className="flex-1 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer">Add</button>
+                <button type="button" onClick={() => setNewProductModal(false)} className="px-4 py-2.5 border border-slate-200 rounded-xl cursor-pointer">Cancel</button>
               </div>
             </form>
           </div>
