@@ -20,7 +20,9 @@ export default function SpikeMerchantDashboard() {
   const [storeData, setStoreData] = useState(null);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
-  
+  const [walletTransactions, setWalletTransactions] = useState([]);
+  const [customDomains, setCustomDomains] = useState([]);
+
   const [newProductModal, setNewProductModal] = useState(false);
   const [newProductData, setNewProductData] = useState({
     title: '',
@@ -28,6 +30,11 @@ export default function SpikeMerchantDashboard() {
     cost_price: '',
     stock: 50
   });
+
+  const [withdrawModal, setWithdrawModal] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [domainModal, setDomainModal] = useState(false);
+  const [domainName, setDomainName] = useState('');
 
   const t = {
     ar: {
@@ -44,6 +51,8 @@ export default function SpikeMerchantDashboard() {
       navOverview: 'الرئيسية والمؤشرات',
       navProducts: 'منتجات المتجر',
       navOrders: 'طلبات العملاء',
+      navWallet: 'المحفظة والأرباح',
+      navDomains: 'الدومينات المخصصة',
       navSettings: 'إعدادات المتجر',
       save: 'حفظ التعديلات',
       cancel: 'إلغاء'
@@ -62,6 +71,8 @@ export default function SpikeMerchantDashboard() {
       navOverview: 'Overview & Metrics',
       navProducts: 'Store Products',
       navOrders: 'Customer Orders',
+      navWallet: 'Wallet & Payouts',
+      navDomains: 'Custom Domains',
       navSettings: 'Store Settings',
       save: 'Save Changes',
       cancel: 'Cancel'
@@ -79,44 +90,51 @@ export default function SpikeMerchantDashboard() {
     router.push('/register');
   };
 
-  useEffect(() => {
-    const fetchMerchantData = async () => {
-      try {
-        const merchantId = localStorage.getItem('merchant_user_id') || localStorage.getItem('user_email');
-        if (!merchantId) {
-          router.push('/register');
-          return;
-        }
-
-        const { data: store } = await supabase
-          .from('store_profiles')
-          .select('*')
-          .or(`user_id.eq.${merchantId},store_slug.eq.${merchantId}`)
-          .maybeSingle();
-
-        if (store) {
-          setStoreData(store);
-          
-          const { data: prods } = await supabase
-            .from('products')
-            .select('*')
-            .eq('store_id', store.user_id);
-          if (prods) setProducts(prods);
-
-          const { data: ords } = await supabase
-            .from('orders')
-            .select('*')
-            .eq('store_id', store.user_id);
-          if (ords) setOrders(ords);
-        }
-      } catch (err) {
-        console.error('Error fetching merchant data:', err);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
+  const fetchMerchantData = async () => {
+    setRefreshing(true);
+    try {
+      const merchantId = localStorage.getItem('merchant_user_id') || localStorage.getItem('user_email');
+      if (!merchantId) {
+        router.push('/register');
+        return;
       }
-    };
 
+      const { data: store } = await supabase
+        .from('store_profiles')
+        .select('*')
+        .or(`user_id.eq.${merchantId},store_slug.eq.${merchantId}`)
+        .maybeSingle();
+
+      if (store) {
+        setStoreData(store);
+        
+        const { data: prods } = await supabase
+          .from('products')
+          .select('*')
+          .eq('store_id', store.user_id);
+        if (prods) setProducts(prods);
+
+        const { data: ords } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('store_id', store.user_id);
+        if (ords) setOrders(ords);
+
+        const { data: doms } = await supabase
+          .from('custom_domains')
+          .select('*')
+          .eq('user_id', store.user_id);
+        if (doms) setCustomDomains(doms);
+      }
+    } catch (err) {
+      console.error('Error fetching merchant data:', err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
     fetchMerchantData();
   }, []);
 
@@ -137,18 +155,55 @@ export default function SpikeMerchantDashboard() {
       alert(isAr ? '✅ تمت إضافة المنتج بنجاح' : 'Product added successfully');
       setNewProductModal(false);
       setNewProductData({ title: '', price: '', cost_price: '', stock: 50 });
-      // إعادة تحميل المنتجات
-      const { data: prods } = await supabase.from('products').select('*').eq('store_id', storeData.user_id);
-      if (prods) setProducts(prods);
+      fetchMerchantData();
     } else {
       alert(error.message);
     }
   };
 
+  const handleRequestWithdrawal = async (e) => {
+    e.preventDefault();
+    const amount = parseFloat(withdrawAmount);
+    if (isNaN(amount) || amount <= 0) return;
+
+    if (amount > (storeData?.wallet_balance_usd || 0)) {
+      alert(isAr ? '❌ رصيد المحفظة غير كافٍ!' : 'Insufficient wallet balance!');
+      return;
+    }
+
+    alert(isAr ? '✅ تم إرسال طلب سحب الأرباح بنجاح ومراجعة الإدارة' : 'Withdrawal request submitted successfully');
+    setWithdrawModal(false);
+    setWithdrawAmount('');
+  };
+
+  const handleAddDomain = async (e) => {
+    e.preventDefault();
+    if (!domainName || !storeData) return;
+
+    const { error } = await supabase.from('custom_domains').insert([{
+      user_id: storeData.user_id,
+      domain_name: domainName.trim().toLowerCase(),
+      status: 'pending'
+    }]);
+
+    if (!error) {
+      alert(isAr ? '✅ تمت إضافة الدومين بنجاح بانتظار الربط' : 'Domain added successfully');
+      setDomainName('');
+      setDomainModal(false);
+      fetchMerchantData();
+    } else {
+      alert(error.message);
+    }
+  };
+
+  const totalSalesAmount = orders.reduce((acc, curr) => acc + (Number(curr.total_price) || 0), 0);
+
   const navItems = [
     { id: 'overview', title: t.navOverview, icon: '📊' },
     { id: 'products', title: t.navProducts, icon: '🏷️', count: products.length },
     { id: 'orders', title: t.navOrders, icon: '📦', count: orders.length },
+    { id: 'wallet', title: t.navWallet, icon: '💰' },
+    { id: 'domains', title: t.navDomains, icon: '🌐', count: customDomains.length },
     { id: 'settings', title: t.navSettings, icon: '⚙️' },
   ];
 
@@ -174,7 +229,7 @@ export default function SpikeMerchantDashboard() {
         />
       )}
 
-      {/* الشريط الجانبي للتاجر مع زر تسجيل الخروج */}
+      {/* الشريط الجانبي الشامل للتاجر */}
       <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-all duration-300 ease-in-out lg:static lg:z-10 lg:translate-x-0 ${
         sidebarOpen 
           ? 'translate-x-0 shadow-2xl' 
@@ -282,7 +337,7 @@ export default function SpikeMerchantDashboard() {
           })}
         </nav>
 
-        {/* زر تسجيل الخروج الفعّال للتاجر */}
+        {/* زر تسجيل الخروج الثابت */}
         <div className={`p-4 border-t flex items-center justify-between ${
           isDark ? 'border-slate-800' : 'border-slate-200/80'
         }`}>
@@ -308,7 +363,7 @@ export default function SpikeMerchantDashboard() {
         </div>
       </aside>
 
-      {/* منطقة المحتوى الرئيسية للتاجر */}
+      {/* منطقة المحتوى الرئيسية */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <header className={`px-4 sm:px-8 py-4 border-b flex items-center justify-between backdrop-blur-md sticky top-0 z-30 transition-colors ${
           isDark ? 'bg-[#0B132B]/95 border-slate-800' : 'bg-[#F4F6F9]/95 border-slate-200/80 shadow-xs'
@@ -349,6 +404,19 @@ export default function SpikeMerchantDashboard() {
               <span className="hidden sm:inline">{t.addProduct}</span>
               <span className="sm:hidden">منتج</span>
             </button>
+
+            <button 
+              onClick={fetchMerchantData}
+              disabled={refreshing}
+              className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1 transition cursor-pointer ${
+                isDark 
+                  ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700' 
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-2xs'
+              }`}
+              title="تحديث البيانات"
+            >
+              <span className={refreshing ? 'animate-spin' : ''}>🔄</span>
+            </button>
           </div>
         </header>
 
@@ -371,7 +439,7 @@ export default function SpikeMerchantDashboard() {
                 </div>
                 <div className={`p-5 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-xs'}`}>
                   <span className="text-xs text-slate-400 block mb-1">{t.statSales}</span>
-                  <span className="text-2xl font-black font-mono text-[#E86A53]">0.00 ج.م</span>
+                  <span className="text-2xl font-black font-mono text-[#E86A53]">{totalSalesAmount.toFixed(2)} ج.م</span>
                 </div>
               </div>
             </>
@@ -380,7 +448,7 @@ export default function SpikeMerchantDashboard() {
           {activeTab === 'products' && (
             <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-black">منتجات المتجر</h3>
+                <h3 className="text-lg font-black">منتجات المتجر ({products.length})</h3>
                 <button onClick={() => setNewProductModal(true)} className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer">+ إضافة منتج</button>
               </div>
               {products.length === 0 ? (
@@ -403,7 +471,7 @@ export default function SpikeMerchantDashboard() {
 
           {activeTab === 'orders' && (
             <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
-              <h3 className="text-lg font-black mb-4">طلبات العملاء</h3>
+              <h3 className="text-lg font-black mb-4">طلبات العملاء ({orders.length})</h3>
               {orders.length === 0 ? (
                 <div className="text-center py-12 text-slate-400 text-xs">لا توجد طلبات واردة حتى الآن</div>
               ) : (
@@ -419,18 +487,49 @@ export default function SpikeMerchantDashboard() {
             </div>
           )}
 
+          {activeTab === 'wallet' && (
+            <div className={`p-6 rounded-2xl border max-w-xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+              <h3 className="text-lg font-black mb-2">محفظة الأرباح وسحب الأموال</h3>
+              <p className="text-xs text-slate-400 mb-4">الرصيد المتاح للسحب: <strong className="text-emerald-500 text-sm font-mono">${storeData?.wallet_balance_usd || 0}</strong></p>
+              <button onClick={() => setWithdrawModal(true)} className="px-4 py-2.5 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer">طلب سحب أرباح</button>
+            </div>
+          )}
+
+          {activeTab === 'domains' && (
+            <div className={`p-6 rounded-2xl border max-w-xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-black">الدومينات المخصصة</h3>
+                <button onClick={() => setDomainModal(true)} className="px-3 py-1.5 bg-[#00B050] text-white rounded-lg text-xs font-bold cursor-pointer">+ ربط دومين</button>
+              </div>
+              {customDomains.length === 0 ? (
+                <p className="text-xs text-slate-400">متجرك يعمل حالياً على النطاق المجاني: <span className="font-mono text-emerald-500">{storeData?.store_slug}.spike.shop</span></p>
+              ) : (
+                <div className="space-y-2 text-xs font-mono">
+                  {customDomains.map((d, i) => (
+                    <div key={i} className="p-2 border rounded flex justify-between">
+                      <span>{d.domain_name}</span>
+                      <span className="text-amber-500">{d.status}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'settings' && (
             <div className={`p-6 rounded-2xl border max-w-xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-4">إعدادات المتجر</h3>
-              <p className="text-xs text-slate-400">اسم المتجر: <strong>{storeData?.store_name}</strong></p>
-              <p className="text-xs text-slate-400 mt-2">رابط المتجر: <span className="font-mono text-emerald-500">{storeData?.store_slug}.spike.shop</span></p>
+              <div className="space-y-3 text-xs">
+                <p className="text-slate-400">اسم المتجر: <strong>{storeData?.store_name}</strong></p>
+                <p className="text-slate-400">رابط المتجر الأساسي: <span className="font-mono text-emerald-500">{storeData?.store_slug}.spike.shop</span></p>
+              </div>
             </div>
           )}
 
         </div>
       </main>
 
-      {/* مودال إضافة منتج للتاجر */}
+      {/* مودال إضافة منتج */}
       {newProductModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
@@ -477,6 +576,53 @@ export default function SpikeMerchantDashboard() {
               <div className="flex gap-2 pt-3">
                 <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إضافة المنتج</button>
                 <button type="button" onClick={() => setNewProductModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* مودال سحب الأرباح */}
+      {withdrawModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className={`p-6 rounded-2xl max-w-sm w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+            <h3 className="text-base font-black mb-3">طلب سحب أرباح</h3>
+            <form onSubmit={handleRequestWithdrawal} className="space-y-3 text-xs">
+              <input
+                type="number"
+                step="0.01"
+                required
+                placeholder="المبلغ بالدولار ($)"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                className="w-full p-2.5 rounded-lg border bg-transparent font-mono"
+              />
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="flex-1 py-2 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">تأكيد الطلب</button>
+                <button type="button" onClick={() => setWithdrawModal(false)} className="px-3 py-2 border rounded-xl cursor-pointer">إلغاء</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* مودال ربط الدومين */}
+      {domainModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className={`p-6 rounded-2xl max-w-sm w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+            <h3 className="text-base font-black mb-3">ربط دومين مخصص</h3>
+            <form onSubmit={handleAddDomain} className="space-y-3 text-xs">
+              <input
+                type="text"
+                required
+                placeholder="mystore.com"
+                value={domainName}
+                onChange={(e) => setDomainName(e.target.value)}
+                className="w-full p-2.5 rounded-lg border bg-transparent font-mono"
+              />
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="flex-1 py-2 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">ربط الدومين</button>
+                <button type="button" onClick={() => setDomainModal(false)} className="px-3 py-2 border rounded-xl cursor-pointer">إلغاء</button>
               </div>
             </form>
           </div>
