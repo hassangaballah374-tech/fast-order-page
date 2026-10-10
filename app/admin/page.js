@@ -349,7 +349,7 @@ export default function SpikeSuperAdminDashboard() {
       value: totalStoresCount.toString(),
       change: '+100%',
       icon: '🏬',
-      badgeColor: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+      badgeColor: 'text-[#00B050] bg-[#00B050]/15 border-[#00B050]/30',
       desc1: t.comparedLastMonth,
       desc2: t.totalReceipts,
       progress: '100%',
@@ -359,7 +359,7 @@ export default function SpikeSuperAdminDashboard() {
       value: pendingOrdersCount.toString(),
       change: `${pendingOrdersCount} ${t.ordersCount}`,
       icon: '⏳',
-      badgeColor: 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20',
+      badgeColor: 'text-amber-500 bg-amber-500/15 border-amber-500/30',
       desc1: t.underProcess,
       desc2: t.underProcess,
       progress: pendingOrdersCount > 0 ? '45%' : '0%',
@@ -369,7 +369,7 @@ export default function SpikeSuperAdminDashboard() {
       value: activeStoresCount.toString(),
       change: `100% ${t.activeStatus}`,
       icon: '🟢',
-      badgeColor: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+      badgeColor: 'text-[#00B050] bg-[#00B050]/15 border-[#00B050]/30',
       desc1: t.activeRate,
       desc2: t.activeRate,
       progress: '100%',
@@ -379,7 +379,7 @@ export default function SpikeSuperAdminDashboard() {
       value: `${totalSalesAmount.toFixed(2)} ج.م`,
       change: '0.00%',
       icon: '💰',
-      badgeColor: 'text-[#00B050] bg-[#00B050]/10 border-[#00B050]/20',
+      badgeColor: 'text-[#00B050] bg-[#00B050]/15 border-[#00B050]/30',
       desc1: t.comparedLastMonth,
       desc2: t.totalReceipts,
       progress: totalSalesAmount > 0 ? '60%' : '5%',
@@ -388,7 +388,7 @@ export default function SpikeSuperAdminDashboard() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center font-sans ${isDark ? 'bg-[#121824] text-white' : 'bg-[#F4F6F9] text-slate-900'}`}>
+      <div className={`min-h-screen flex items-center justify-center font-sans ${isDark ? 'bg-[#121824] text-white' : 'bg-[#EAEFF5] text-slate-900'}`}>
         <div className="animate-pulse text-sm font-bold">جاري تحميل لوحة التحكم...</div>
       </div>
     );
@@ -399,9 +399,9 @@ export default function SpikeSuperAdminDashboard() {
       isDark ? 'bg-[#121824] text-slate-100' : 'bg-[#EAEFF5] text-slate-800'
     }`} dir={isAr ? 'rtl' : 'ltr'}>
 
-      {/* 1. الشريط الجانبي المصغر المتمثل بالأيقونات (Icon Dock) أقصى اليمين/اليسار */}
+      {/* 1. الشريط الجانبي المصغر (Icon Dock) مطابق للصورة */}
       <aside className={`w-20 shrink-0 border-r flex flex-col items-center py-6 justify-between transition-colors ${
-        isDark ? 'bg-[#0B132B] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+        isDark ? 'bg-[#0B132B] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
       }`}>
         <div className="space-y-6 flex flex-col items-center">
           <div className="w-10 h-10 rounded-2xl bg-[#00B050] flex items-center justify-center text-white font-black shadow-md shadow-[#00B050]/30">
@@ -440,12 +440,11 @@ export default function SpikeSuperAdminDashboard() {
 
       {/* 2. القائمة الجانبية الرئيسية الموسعة (Sidebar) */}
       <aside className={`w-64 shrink-0 border-r flex flex-col justify-between p-5 transition-colors ${
-        isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+        isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
       }`}>
         <div className="space-y-6">
           
-          {/* الشعار واسم المنصة */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-700/50">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-7 w-auto object-contain rounded-lg" />
               <span className={`font-black text-base tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -466,7 +465,6 @@ export default function SpikeSuperAdminDashboard() {
             <span>{t.adminStoresBtn}</span>
           </button>
 
-          {/* قائمة Main Menu */}
           <div className="space-y-1.5">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider px-3 block mb-2">
               {t.mainMenu}
@@ -478,7 +476,7 @@ export default function SpikeSuperAdminDashboard() {
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
                   activeTab === item.id 
                     ? 'bg-[#00B050] text-white shadow-md shadow-[#00B050]/25' 
-                    : isDark ? 'text-slate-300 hover:bg-slate-800/80 hover:text-white' : 'text-slate-600 hover:bg-slate-100'
+                    : isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -496,7 +494,6 @@ export default function SpikeSuperAdminDashboard() {
             ))}
           </div>
 
-          {/* قائمة Finance */}
           <div className="space-y-1.5 pt-2">
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider px-3 block mb-2">
               {t.financeMenu}
@@ -508,7 +505,7 @@ export default function SpikeSuperAdminDashboard() {
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
                   activeTab === item.id 
                     ? 'bg-[#00B050] text-white shadow-md shadow-[#00B050]/25' 
-                    : isDark ? 'text-slate-300 hover:bg-slate-800/80 hover:text-white' : 'text-slate-600 hover:bg-slate-100'
+                    : isDark ? 'text-slate-300 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -528,7 +525,7 @@ export default function SpikeSuperAdminDashboard() {
 
         </div>
 
-        {/* قسم البروفايل وتسجيل الخروج في الأسفل */}
+        {/* بروفايل المستخدم وزر تسجيل الخروج */}
         <div className={`p-3 rounded-2xl border flex flex-col gap-2.5 ${
           isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'
         }`}>
@@ -557,15 +554,12 @@ export default function SpikeSuperAdminDashboard() {
       {/* 3. منطقة المحتوى الرئيسي */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         
-        {/* الترويسة العلوية الفاخرة مع شريط البحث والملف الشخصي */}
         <header className={`px-6 sm:px-10 py-4 border-b flex items-center justify-between sticky top-0 z-30 backdrop-blur-md transition-colors ${
-          isDark ? 'bg-[#0E1E38]/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-2xs'
+          isDark ? 'bg-[#0E1E38]/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-xs'
         }`}>
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight">Dashboard</h1>
-              <p className="text-xs text-slate-400">{t.overviewSubtitle}</p>
-            </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight">Dashboard</h1>
+            <p className="text-xs text-slate-400">{t.overviewSubtitle}</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -593,13 +587,12 @@ export default function SpikeSuperAdminDashboard() {
               </div>
               <div className="hidden md:block text-left" dir="ltr">
                 <span className={`text-xs font-black block leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Super Admin</span>
-                <span className="text-[10px] text-slate-400 font-mono">Master</span>
+                <span className="text-[10px] text-slate-400 font-mono">Master (S.A)</span>
               </div>
             </div>
           </div>
         </header>
 
-        {/* المحتوى */}
         <div className="p-6 sm:p-10 space-y-6">
 
           {activeTab === 'overview' && (
@@ -609,7 +602,7 @@ export default function SpikeSuperAdminDashboard() {
                   <div
                     key={i}
                     className={`p-6 rounded-3xl border transition-all duration-200 hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between ${
-                      isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+                      isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-4">
@@ -639,7 +632,7 @@ export default function SpikeSuperAdminDashboard() {
               </div>
 
               <div className={`p-6 sm:p-8 rounded-3xl border ${
-                isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+                isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
               }`}>
                 <div className="flex justify-between items-center mb-6">
                   <div>
