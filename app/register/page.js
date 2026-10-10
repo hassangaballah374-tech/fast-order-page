@@ -101,11 +101,22 @@ export default function SpikeRegisterAndAuthPage() {
     try {
       const emailInput = formData.email.trim().toLowerCase();
 
-      // 👑 التحقق الصارم: إذا كان البريد هو بريد السوبر أدمن، يوجه فوراً إلى /admin دون شروط
+      // 👑 فحص قاطع: إذا كان البريد هو بريد السوبر أدمن، يتم توجيهه حصرياً وفوراً إلى /admin وتخزينه
       if (emailInput === SUPER_ADMIN_EMAIL.toLowerCase()) {
         localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
         localStorage.setItem('is_super_admin', 'true');
-        alert(isAr ? '👑 أهلاً بك يا حسن حسني (مرحباً بك في لوحة الإدارة)' : 'Welcome Super Admin!');
+        
+        // محاولة تسجيل الدخول في Supabase إن أمكن، وإن حدث خطأ نتجاوزه لضمان الدخول للوحة الأدمن
+        try {
+          await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password,
+          });
+        } catch (authErr) {
+          console.log('Bypassing auth check for super admin:', authErr);
+        }
+
+        alert(isAr ? '👑 أهلاً بك يا حسن حسني (مرحباً بك في لوحة الإدارة العليا)' : 'Welcome Super Admin!');
         router.push('/admin');
         setLoading(false);
         return;
@@ -114,6 +125,18 @@ export default function SpikeRegisterAndAuthPage() {
       if (isLoginMode) {
         if (!emailInput || !formData.password) {
           alert(isAr ? 'يرجى كتابة البريد الإلكتروني وكلمة المرور' : 'Please enter email and password');
+          setLoading(false);
+          return;
+        }
+
+        // محاولة تسجيل الدخول الفعلي عبر Supabase للتاجر
+        const { error: loginError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (loginError) {
+          alert(isAr ? 'خطأ في البريد أو كلمة المرور: ' + loginError.message : 'Login Error: ' + loginError.message);
           setLoading(false);
           return;
         }
