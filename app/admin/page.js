@@ -83,6 +83,7 @@ export default function SpikeSuperAdminDashboard() {
       activeRate: 'معدل التفعيل',
       totalReceipts: 'إجمالي المتحصلات',
       adminRole: 'مدير النظام الأساسي',
+      logoutText: 'تسجيل الخروج',
       navOverview: 'الرئيسية والمؤشرات',
       navStores: 'المتاجر والتجار',
       navOrders: 'كافة الطلبات',
@@ -114,6 +115,7 @@ export default function SpikeSuperAdminDashboard() {
       activeRate: 'Activation Rate',
       totalReceipts: 'Total Net Volume',
       adminRole: 'Super Admin Master',
+      logoutText: 'Sign Out',
       navOverview: 'Overview & Analytics',
       navStores: 'Stores & Merchants',
       navOrders: 'All Orders',
@@ -132,14 +134,23 @@ export default function SpikeSuperAdminDashboard() {
     }
   }[lang || 'ar'];
 
-  // 🔒 حماية صارمة: مبرمجة لفتح لوحة الأدمن فقط لبريدك أو المشرفين المعتمدين حصرياً
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error(err);
+    }
+    localStorage.clear();
+    router.push('/register');
+  };
+
   useEffect(() => {
     const verifyAdminAccess = async () => {
       try {
         const storedEmail = (localStorage.getItem('user_email') || '').toLowerCase().trim();
         
         if (storedEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
-          grantSuperAdminAccess();
+          fetchAllData();
           return;
         }
 
@@ -148,7 +159,7 @@ export default function SpikeSuperAdminDashboard() {
 
         if (authEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
           localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
-          grantSuperAdminAccess();
+          fetchAllData();
           return;
         }
 
@@ -176,64 +187,31 @@ export default function SpikeSuperAdminDashboard() {
       }
     };
 
-    const grantSuperAdminAccess = () => {
-      setCurrentAdminRole('super_admin');
-      setCurrentPermissions({
-        manage_stores: true,
-        manage_orders: true,
-        manage_finance: true,
-        manage_admins: true
-      });
-      fetchAllData();
-    };
-
     verifyAdminAccess();
   }, []);
 
   const fetchAllData = async () => {
     setRefreshing(true);
     try {
-      const { data: storesData } = await supabase
-        .from('store_profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data: storesData } = await supabase.from('store_profiles').select('*').order('created_at', { ascending: false });
       if (storesData) setStores(storesData);
 
-      const { data: ordersData } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
       if (ordersData) setOrders(ordersData);
 
-      const { data: productsData } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data: productsData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (productsData) setProducts(productsData);
 
-      const { data: logsData } = await supabase
-        .from('audit_logs')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
+      const { data: logsData } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(20);
       if (logsData) setAuditLogs(logsData);
 
-      const { data: domainsData } = await supabase
-        .from('custom_domains')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data: domainsData } = await supabase.from('custom_domains').select('*').order('created_at', { ascending: false });
       if (domainsData) setDomains(domainsData);
 
-      const { data: adminsData } = await supabase
-        .from('admin_users')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data: adminsData } = await supabase.from('admin_users').select('*').order('created_at', { ascending: false });
       if (adminsData) setAdminUsers(adminsData);
 
-      const { data: settingsData } = await supabase
-        .from('platform_settings')
-        .select('*')
-        .single();
+      const { data: settingsData } = await supabase.from('platform_settings').select('*').single();
       if (settingsData) {
         if (settingsData.exchange_rate) setExchangeRate(settingsData.exchange_rate);
         if (settingsData.commission_percentage) setPlatformCommission(settingsData.commission_percentage);
@@ -593,14 +571,12 @@ export default function SpikeSuperAdminDashboard() {
           isDark ? 'border-slate-800' : 'border-slate-200/80'
         }`}>
           <button 
-            onClick={() => {
-              localStorage.clear();
-              router.push('/register');
-            }}
-            className="text-slate-400 hover:text-rose-500 text-base p-1 transition cursor-pointer" 
-            title="تسجيل الخروج"
+            onClick={handleLogout}
+            className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer"
+            title={t.logoutText}
           >
-            🚪
+            <span>🚪</span>
+            <span>{t.logoutText}</span>
           </button>
           <div className="flex items-center gap-2.5 text-right">
             <div className="leading-tight">
