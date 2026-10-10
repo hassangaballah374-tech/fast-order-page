@@ -95,6 +95,7 @@ export default function SpikeSuperAdminDashboard() {
       navLogs: 'سجل الحركات',
       navBroadcast: 'الإعلانات الجماعية',
       navAdmins: 'فريق الإدارة والصلاحيات',
+      adminStoresBtn: 'متاجر الأدمن الخاصة',
       ordersCount: 'أوردر',
       activeStatus: 'نشط',
       save: 'حفظ التعديلات',
@@ -127,6 +128,7 @@ export default function SpikeSuperAdminDashboard() {
       navLogs: 'Audit Logs',
       navBroadcast: 'Broadcast Announcements',
       navAdmins: 'Admin Team & Roles',
+      adminStoresBtn: 'My Admin Stores',
       ordersCount: 'orders',
       activeStatus: 'Active',
       save: 'Save Changes',
@@ -134,7 +136,6 @@ export default function SpikeSuperAdminDashboard() {
     }
   }[lang || 'ar'];
 
-  // 🚪 دالة موحدة لجميع المستخدمين لتسجيل الخروج الآمن
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -500,6 +501,19 @@ export default function SpikeSuperAdminDashboard() {
               />
             </Link>
           </div>
+
+          {/* 👑 زر الانتقال السريع لمتاجر الأدمن الخاصة بك */}
+          <button
+            onClick={() => {
+              localStorage.setItem('merchant_user_id', 'main_flagship_owner');
+              router.push('/dashboard');
+            }}
+            className="w-full py-2 bg-gradient-to-r from-[#00B050] to-emerald-600 hover:from-[#009644] text-white rounded-xl text-xs font-black shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+            title="الدخول إلى متاجر الأدمن الخاصة بك"
+          >
+            <span>👑</span>
+            <span>{t.adminStoresBtn}</span>
+          </button>
 
           <div className={`p-1 rounded-xl flex items-center gap-1 border ${
             isDark ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-slate-100/90'
