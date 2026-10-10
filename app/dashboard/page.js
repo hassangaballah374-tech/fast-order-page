@@ -17,9 +17,7 @@ export default function MerchantFullDashboard() {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
 
-  // حالة صلاحية إظهار زر السوبر أدمن المخصص لك فقط
   const [canAccessAdmin, setCanAccessAdmin] = useState(false);
-
   const [myStore, setMyStore] = useState(null);
   const [platformLogo, setPlatformLogo] = useState('/spike-brand.jpg');
   const [exchangeRate, setExchangeRate] = useState(50.0);
@@ -97,7 +95,6 @@ export default function MerchantFullDashboard() {
     'سوهاج', 'قنا', 'الأقصر', 'أسوان', 'البحر الأحمر', 'مطروح',
   ];
 
-  // 🚪 دالة تسجيل الخروج الآمنة لجميع المستخدمين
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -463,7 +460,6 @@ export default function MerchantFullDashboard() {
       isDark ? 'bg-[#0E1E38] text-white' : 'bg-[#F7F4EC] text-[#0E1E38]'
     }`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       
-      {/* 🌑 تعتيم الموبايل عند فتح القائمة الجانبية */}
       {sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
@@ -471,7 +467,6 @@ export default function MerchantFullDashboard() {
         />
       )}
 
-      {/* 👑 شريط عائم دائم للسوبر أدمن باللون الأخضر */}
       {canAccessAdmin && (
         <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 bg-slate-900/95 border-2 border-[#00B050] p-2 rounded-2xl shadow-2xl backdrop-blur-md">
           <button
@@ -489,7 +484,6 @@ export default function MerchantFullDashboard() {
 
       <div className="flex flex-col lg:flex-row flex-1">
         
-        {/* 🧭 الشريط الجانبي الذكي */}
         <aside className={`fixed top-0 bottom-0 ${lang === 'ar' ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-all duration-300 ease-in-out lg:static lg:z-10 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0 shadow-2xl' : lang === 'ar' ? 'translate-x-full' : '-translate-x-full'
         } ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -586,7 +580,6 @@ export default function MerchantFullDashboard() {
               <span>{lang === 'ar' ? 'رابط متجرك للزبائن ↗' : 'View Customer Store ↗'}</span>
             </a>
 
-            {/* 🚪 زر تسجيل الخروج */}
             <button
               onClick={handleLogout}
               className="w-full py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer"
@@ -597,7 +590,6 @@ export default function MerchantFullDashboard() {
           </div>
         </aside>
 
-        {/* 🖥️ المحتوى الرئيسي */}
         <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
           
           <header className={`px-4 sm:px-8 py-3.5 border-b flex items-center justify-between backdrop-blur-md sticky top-0 z-30 transition-colors ${
@@ -656,7 +648,6 @@ export default function MerchantFullDashboard() {
 
           <div className="p-4 sm:p-8 space-y-6">
 
-            {/* 1. الرئيسية والمؤشرات */}
             {activeTab === 'home' && (
               <div className="space-y-6">
                 <div className={`border-2 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
@@ -722,7 +713,6 @@ export default function MerchantFullDashboard() {
               </div>
             )}
 
-            {/* 2. باقات الشحن والاشتراك */}
             {activeTab === 'plans' && (
               <div className="space-y-8">
                 <div className="border-b border-slate-800 pb-4">
@@ -834,7 +824,6 @@ export default function MerchantFullDashboard() {
               </div>
             )}
 
-            {/* 3. المحفظة وسجل الخصومات */}
             {activeTab === 'wallet' && (
               <div className="space-y-6 max-w-3xl">
                 <div className={`border p-6 rounded-3xl space-y-4 ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -885,7 +874,6 @@ export default function MerchantFullDashboard() {
               </div>
             )}
 
-            {/* 4. المنتجات والمخزون ومصفوفة الـ 16 خانة */}
             {activeTab === 'products' && (
               <div className="space-y-4">
                 <div className={`p-5 rounded-3xl border flex justify-between items-center ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -966,7 +954,6 @@ export default function MerchantFullDashboard() {
               </div>
             )}
 
-            {/* 5. القوالب وصفحات الهبوط */}
             {activeTab === 'landing_builder' && (
               <div className={`border p-6 rounded-3xl space-y-6 max-w-4xl ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
                 <h3 className="text-lg font-black">{lang === 'ar' ? 'قوالب العرض وصفحات الهبوط' : 'Templates & Landers'}</h3>
@@ -996,7 +983,6 @@ export default function MerchantFullDashboard() {
               </div>
             )}
 
-            {/* 6. الطلبات والشحن وتصدير الإكسيل */}
             {activeTab === 'orders' && (
               <div className="space-y-4">
                 <div className={`p-5 rounded-3xl border flex justify-between items-center ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -1040,7 +1026,6 @@ export default function MerchantFullDashboard() {
               </div>
             )}
 
-            {/* 7. أسعار الشحن للمحافظات */}
             {activeTab === 'shipping' && (
               <div className={`border p-6 rounded-3xl space-y-4 max-w-2xl ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
                 <h3 className="text-lg font-black">{lang === 'ar' ? 'مصفوفة أسعار الشحن بالمحافظات' : 'Shipping Rates Matrix'}</h3>
@@ -1054,7 +1039,6 @@ export default function MerchantFullDashboard() {
               </div>
             )}
 
-            {/* 8. سياسات وتواصل متجر التاجر للزبائن */}
             {activeTab === 'my_policies' && (
               <form onSubmit={handleSaveSettings} className={`border p-6 rounded-3xl space-y-5 max-w-3xl ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
                 <div>
@@ -1125,7 +1109,6 @@ export default function MerchantFullDashboard() {
               </form>
             )}
 
-            {/* 9. سياسات وشروط منصة سبايك الرسمية */}
             {activeTab === 'platform_terms' && (
               <div className={`border p-6 rounded-3xl space-y-5 max-w-3xl ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
                 <div>
@@ -1165,7 +1148,6 @@ export default function MerchantFullDashboard() {
               </div>
             )}
 
-            {/* 10. البلاك ليست */}
             {activeTab === 'blacklist' && (
               <div className={`border p-6 rounded-3xl space-y-4 max-w-2xl ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
                 <h3 className="text-lg font-black text-rose-400">{lang === 'ar' ? 'حظر الأرقام والطلبات الوهمية' : 'Spam & Fake Orders Blacklist'}</h3>
@@ -1184,7 +1166,6 @@ export default function MerchantFullDashboard() {
               </div>
             )}
 
-            {/* 11. البيكسلات CAPI */}
             {activeTab === 'pixels' && (
               <form onSubmit={handleSaveSettings} className={`border p-6 rounded-3xl space-y-4 max-w-2xl ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
                 <h3 className="text-lg font-black">{lang === 'ar' ? 'إعدادات البيكسل (Facebook CAPI)' : 'Facebook Pixel & CAPI Settings'}</h3>
@@ -1194,7 +1175,6 @@ export default function MerchantFullDashboard() {
               </form>
             )}
 
-            {/* 12. إعدادات المتجر وهوية التاجر */}
             {activeTab === 'settings' && (
               <form onSubmit={handleSaveSettings} className={`border p-6 rounded-3xl space-y-4 max-w-2xl ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
                 <h3 className="text-lg font-black">{lang === 'ar' ? 'هوية المتجر واسم التاجر والشعار' : 'Store Identity & Merchant Name'}</h3>
@@ -1228,7 +1208,6 @@ export default function MerchantFullDashboard() {
         </main>
       </div>
 
-      {/* مودال إضافة وتعديل المنتج */}
       {showProductModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
           <form onSubmit={handleSaveProduct} className={`border rounded-3xl p-6 sm:p-8 max-w-3xl w-full my-8 space-y-4 ${isDark ? 'bg-[#091222] border-slate-800 text-white' : 'bg-white border-slate-300 text-black'}`}>
