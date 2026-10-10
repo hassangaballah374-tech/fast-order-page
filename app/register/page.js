@@ -16,7 +16,6 @@ export default function SpikeRegisterAndAuthPage() {
   const [isLoginMode, setIsLoginMode] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // تخزين تلقائي لبريدك كأدمن بمجرد فتح الصفحة لضمان صلاحية الدخول الفوري
   useEffect(() => {
     localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
     localStorage.setItem('is_super_admin', 'true');
@@ -102,7 +101,7 @@ export default function SpikeRegisterAndAuthPage() {
     try {
       const emailInput = formData.email.trim().toLowerCase();
 
-      // التحقق التلقائي إذا كان الحساب هو بريدك للإدارة
+      // 👑 التحقق الصارم: إذا كان البريد هو بريد السوبر أدمن، يوجه فوراً إلى /admin دون شروط
       if (emailInput === SUPER_ADMIN_EMAIL.toLowerCase()) {
         localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
         localStorage.setItem('is_super_admin', 'true');
@@ -185,13 +184,12 @@ export default function SpikeRegisterAndAuthPage() {
 
   return (
     <div 
-      className={`min-h-screen font-sans flex flex-col justify-between selection:bg-emerald-500 selection:text-white transition-colors duration-200 overflow-x-hidden ${
+      className={`min-h-screen font-sans flex flex-col justify-between selection:bg-[#00B050] selection:text-white transition-colors duration-200 overflow-x-hidden ${
         isDark ? 'bg-[#0B132B] text-slate-100' : 'bg-[#F4F6F9] text-slate-800'
       }`} 
       dir={isAr ? 'rtl' : 'ltr'}
     >
 
-      {/* 🧭 النافبار المخصص المتجاوب */}
       <header className={`px-4 sm:px-8 py-3 border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${
         isDark ? 'bg-[#091222]/95 border-slate-800' : 'bg-white/95 border-slate-200/90 shadow-2xs'
       }`}>
@@ -257,7 +255,6 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </header>
 
-      {/* 📝 البطاقة المركزية */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-10 w-full max-w-lg mx-auto">
         
         <div className="text-center space-y-2 mb-5">
@@ -272,7 +269,7 @@ export default function SpikeRegisterAndAuthPage() {
           <div className="flex items-center justify-center gap-1.5 font-black text-xl">
             <span className={isDark ? 'text-white' : 'text-[#0E1E38]'}>سبايك</span>
             <span className="text-slate-400 font-light">|</span>
-            <span className="text-[#E86A53] font-mono tracking-wider">SPIKE</span>
+            <span className="text-[#00B050] font-mono tracking-wider">SPIKE</span>
           </div>
 
           <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -438,7 +435,6 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </main>
 
-      {/* 🖤 الفوتر */}
       <footer className="bg-[#121824] text-white pt-8 pb-6 px-4 sm:px-8 border-t border-slate-800 text-xs">
         <div className="max-w-6xl mx-auto space-y-6">
           
@@ -503,7 +499,6 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </footer>
 
-      {/* 🟢 زر واتساب العائم */}
       <a
         href="https://wa.me/201000000000"
         target="_blank"
