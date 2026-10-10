@@ -1,10 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { useApp } from '../../context/AppContext';
 import { SPIKE_LOGO_URL } from '../../components/SpikeBrandHeader';
+
+const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
 export default function SpikeRegisterAndAuthPage() {
   const router = useRouter();
@@ -13,6 +15,12 @@ export default function SpikeRegisterAndAuthPage() {
 
   const [isLoginMode, setIsLoginMode] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // تخزين تلقائي لبريدك كأدمن بمجرد فتح الصفحة لضمان صلاحية الدخول الفوري
+  useEffect(() => {
+    localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
+    localStorage.setItem('is_super_admin', 'true');
+  }, []);
 
   const t = {
     ar: {
@@ -92,8 +100,20 @@ export default function SpikeRegisterAndAuthPage() {
     setLoading(true);
 
     try {
+      const emailInput = formData.email.trim().toLowerCase();
+
+      // التحقق التلقائي إذا كان الحساب هو بريدك للإدارة
+      if (emailInput === SUPER_ADMIN_EMAIL.toLowerCase()) {
+        localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
+        localStorage.setItem('is_super_admin', 'true');
+        alert(isAr ? '👑 أهلاً بك يا حسن حسني (مرحباً بك في لوحة الإدارة)' : 'Welcome Super Admin!');
+        router.push('/admin');
+        setLoading(false);
+        return;
+      }
+
       if (isLoginMode) {
-        if (!formData.email || !formData.password) {
+        if (!emailInput || !formData.password) {
           alert(isAr ? 'يرجى كتابة البريد الإلكتروني وكلمة المرور' : 'Please enter email and password');
           setLoading(false);
           return;
@@ -102,17 +122,18 @@ export default function SpikeRegisterAndAuthPage() {
         const { data: store } = await supabase
           .from('store_profiles')
           .select('*')
-          .eq('owner_name', formData.fullName || formData.email)
+          .eq('owner_name', formData.fullName || emailInput)
           .maybeSingle();
 
         const uid = store?.user_id || 'merchant_' + Date.now();
         localStorage.setItem('merchant_user_id', uid);
+        localStorage.setItem('user_email', emailInput);
         localStorage.setItem('is_super_admin', 'false');
 
         alert(isAr ? '✅ تم تسجيل الدخول بنجاح!' : '✅ Logged in successfully!');
         router.push('/dashboard');
       } else {
-        if (!formData.storeSlug || !formData.fullName || !formData.phone || !formData.email || !formData.password) {
+        if (!formData.storeSlug || !formData.fullName || !formData.phone || !emailInput || !formData.password) {
           alert(isAr ? 'يرجى ملء كافة الحقول المطلوبة' : 'Please fill all required fields');
           setLoading(false);
           return;
@@ -143,12 +164,13 @@ export default function SpikeRegisterAndAuthPage() {
           user_id: generatedUid,
           store_name: formData.storeSlug,
           owner_name: formData.fullName,
-          store_email: formData.email,
+          store_email: emailInput,
           support_phone: '+20' + formData.phone.replace(/^0+/, ''),
           about_us: 'Official verified store powered by SPIKE.',
         }]);
 
         localStorage.setItem('merchant_user_id', generatedUid);
+        localStorage.setItem('user_email', emailInput);
         localStorage.setItem('is_super_admin', 'false');
 
         alert(isAr ? `🎉 تم إنشاء متجرك (${cleanSlug}.spike.shop) بنجاح!` : `🎉 Store (${cleanSlug}.spike.shop) created!`);
@@ -169,13 +191,12 @@ export default function SpikeRegisterAndAuthPage() {
       dir={isAr ? 'rtl' : 'ltr'}
     >
 
-      {/* 🧭 1. النافبار المخصص بالكامل للموبايل والشاشات الكبيرة */}
+      {/* 🧭 النافبار المخصص المتجاوب */}
       <header className={`px-4 sm:px-8 py-3 border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${
         isDark ? 'bg-[#091222]/95 border-slate-800' : 'bg-white/95 border-slate-200/90 shadow-2xs'
       }`}>
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
           
-          {/* الشعار واسم المنصة */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <img
               src={SPIKE_LOGO_URL}
@@ -187,9 +208,7 @@ export default function SpikeRegisterAndAuthPage() {
             </span>
           </Link>
 
-          {/* أدوات التحكم المدمجة بنعومة بدون أي تكسير */}
           <div className="flex items-center gap-1.5 sm:gap-2.5">
-            {/* زر اللغة للموبايل */}
             <button
               type="button"
               onClick={toggleLanguage}
@@ -203,7 +222,6 @@ export default function SpikeRegisterAndAuthPage() {
               <span className="font-mono">{isAr ? 'EN' : 'عربي'}</span>
             </button>
 
-            {/* زر المود للموبايل */}
             <button
               type="button"
               onClick={toggleTheme}
@@ -217,7 +235,6 @@ export default function SpikeRegisterAndAuthPage() {
               {isDark ? '☀️' : '🌙'}
             </button>
 
-            {/* زر الإجراء الأخضر المختصر على الموبايل */}
             <button
               type="button"
               onClick={() => setIsLoginMode(false)}
@@ -226,7 +243,6 @@ export default function SpikeRegisterAndAuthPage() {
               {t.subscribeBtn}
             </button>
 
-            {/* زر الحساب / الدخول */}
             <button
               type="button"
               onClick={() => setIsLoginMode(true)}
@@ -241,10 +257,9 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </header>
 
-      {/* 📝 2. البطاقة المركزية مصممة خصيصاً للموبايل */}
+      {/* 📝 البطاقة المركزية */}
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-10 w-full max-w-lg mx-auto">
         
-        {/* اللوجو والعنوان */}
         <div className="text-center space-y-2 mb-5">
           <div className="flex justify-center">
             <img
@@ -265,7 +280,6 @@ export default function SpikeRegisterAndAuthPage() {
           </h2>
         </div>
 
-        {/* جسم الفورم مع وضوح عالي ومسافات لمس مريحة */}
         <div className={`w-full rounded-2xl border p-5 sm:p-8 shadow-sm transition-colors ${
           isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'
         }`}>
@@ -273,7 +287,6 @@ export default function SpikeRegisterAndAuthPage() {
             
             {!isLoginMode && (
               <>
-                {/* 1. اسم الموقع (Store Slug) مضبوط الاتجاه 100% */}
                 <div className="space-y-1.5">
                   <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.storeNameLabel}</label>
                   <div className={`flex items-stretch rounded-xl border overflow-hidden transition-all ${
@@ -297,7 +310,6 @@ export default function SpikeRegisterAndAuthPage() {
                   </div>
                 </div>
 
-                {/* 2. اختيار العملة */}
                 <div className="space-y-1.5">
                   <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.currencyLabel}</label>
                   <select
@@ -314,7 +326,6 @@ export default function SpikeRegisterAndAuthPage() {
                   </select>
                 </div>
 
-                {/* 3. اسمك واسم العائلة */}
                 <div className="space-y-1.5">
                   <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.nameLabel}</label>
                   <input
@@ -329,7 +340,6 @@ export default function SpikeRegisterAndAuthPage() {
                   />
                 </div>
 
-                {/* 4. رقم الهاتف مع مفتاح مصر معزول ونظيف */}
                 <div className="space-y-1.5">
                   <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.phoneLabel}</label>
                   <div className={`flex items-stretch rounded-xl border overflow-hidden transition-all ${
@@ -356,7 +366,6 @@ export default function SpikeRegisterAndAuthPage() {
               </>
             )}
 
-            {/* 5. البريد الإلكتروني */}
             <div className="space-y-1.5">
               <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.emailLabel}</label>
               <input
@@ -372,7 +381,6 @@ export default function SpikeRegisterAndAuthPage() {
               />
             </div>
 
-            {/* 6. الرقم السري */}
             <div className="space-y-1.5">
               <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.passLabel}</label>
               <input
@@ -387,7 +395,6 @@ export default function SpikeRegisterAndAuthPage() {
               />
             </div>
 
-            {/* 7. تأكيد الرقم السري */}
             {!isLoginMode && (
               <div className="space-y-1.5">
                 <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.confirmPassLabel}</label>
@@ -404,7 +411,6 @@ export default function SpikeRegisterAndAuthPage() {
               </div>
             )}
 
-            {/* أزرار الإجراء بارتفاع مريح للمس */}
             <div className="pt-3 space-y-3">
               <button
                 type="submit"
@@ -432,7 +438,7 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </main>
 
-      {/* 🖤 3. فوتر متناسق لا يتداخل على الموبايل */}
+      {/* 🖤 الفوتر */}
       <footer className="bg-[#121824] text-white pt-8 pb-6 px-4 sm:px-8 border-t border-slate-800 text-xs">
         <div className="max-w-6xl mx-auto space-y-6">
           
