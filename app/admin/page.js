@@ -431,7 +431,7 @@ export default function SpikeSuperAdminDashboard() {
       value: `${totalSalesAmount.toFixed(2)} ج.م`,
       change: '0.00%',
       icon: '💰',
-      badgeColor: 'text-[#E86A53] bg-[#E86A53]/10 border-[#E86A53]/20',
+      badgeColor: 'text-[#00B050] bg-[#00B050]/10 border-[#00B050]/20',
       desc1: t.comparedLastMonth,
       desc2: t.totalReceipts,
       progress: totalSalesAmount > 0 ? '60%' : '5%',
@@ -460,7 +460,7 @@ export default function SpikeSuperAdminDashboard() {
         />
       )}
 
-      {/* الشريط الجانبي الذكي: ثابت في اللاب ومنزلق في الموبايل */}
+      {/* الشريط الجانبي الذكي باللون الأخضر */}
       <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-all duration-300 ease-in-out lg:static lg:z-10 lg:translate-x-0 ${
         sidebarOpen 
           ? 'translate-x-0 shadow-2xl' 
@@ -480,7 +480,7 @@ export default function SpikeSuperAdminDashboard() {
               ✕
             </button>
 
-            <span className="hidden lg:inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-500 border border-rose-500/20">
+            <span className="hidden lg:inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
               Super Admin Master
             </span>
 
@@ -489,7 +489,7 @@ export default function SpikeSuperAdminDashboard() {
                 <div className="flex items-center gap-1 font-black text-base sm:text-lg leading-tight">
                   <span className={isDark ? 'text-[#F7F4EC]' : 'text-[#0E1E38]'}>سبايك</span>
                   <span className="text-slate-400 font-light">|</span>
-                  <span className="font-mono text-xs tracking-wider text-[#E86A53]">SPIKE</span>
+                  <span className="font-mono text-xs tracking-wider text-[#00B050]">SPIKE</span>
                 </div>
                 <span className="text-[9px] text-slate-400 block font-medium">ابنِ متجرك.. وضاعف طلباتك</span>
               </div>
@@ -541,7 +541,7 @@ export default function SpikeSuperAdminDashboard() {
                 }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-l from-[#E86A53] to-orange-500 text-white shadow-md shadow-[#E86A53]/25 font-black'
+                    ? 'bg-gradient-to-l from-[#00B050] to-emerald-600 text-white shadow-md shadow-[#00B050]/25 font-black'
                     : isDark
                     ? 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -568,7 +568,6 @@ export default function SpikeSuperAdminDashboard() {
           })}
         </nav>
 
-        {/* زر تسجيل الخروج لجميع المستخدمين */}
         <div className={`p-4 border-t flex items-center justify-between ${
           isDark ? 'border-slate-800' : 'border-slate-200/80'
         }`}>
@@ -587,7 +586,7 @@ export default function SpikeSuperAdminDashboard() {
               </span>
               <span className="text-[10px] text-slate-400 block font-mono">{SUPER_ADMIN_EMAIL}</span>
             </div>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#E86A53] to-orange-400 flex items-center justify-center text-white text-xs font-black shadow-xs">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00B050] to-emerald-400 flex items-center justify-center text-white text-xs font-black shadow-xs">
               S
             </div>
           </div>
@@ -747,7 +746,7 @@ export default function SpikeSuperAdminDashboard() {
                             <td className="p-3 font-mono font-bold">#{o.id}</td>
                             <td className="p-3">{o.customer_name || 'عميل نقدي'}</td>
                             <td className="p-3">{o.governorate || 'القاهرة'}</td>
-                            <td className="p-3 font-mono font-bold text-[#E86A53]">{o.total_price} ج.م</td>
+                            <td className="p-3 font-mono font-bold text-[#00B050]">{o.total_price} ج.م</td>
                             <td className="p-3">
                               <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-bold">
                                 {o.status || 'pending'}
@@ -949,7 +948,7 @@ export default function SpikeSuperAdminDashboard() {
                           <td className="p-3 font-bold">{o.customer_name}</td>
                           <td className="p-3 font-mono" dir="ltr">{o.customer_phone}</td>
                           <td className="p-3">{o.governorate} - {o.address}</td>
-                          <td className="p-3 font-mono font-bold text-[#E86A53]">{o.total_price} ج.م</td>
+                          <td className="p-3 font-mono font-bold text-[#00B050]">{o.total_price} ج.م</td>
                           <td className="p-3">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500">
                               {o.status || 'pending'}
