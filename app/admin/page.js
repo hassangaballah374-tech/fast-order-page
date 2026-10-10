@@ -483,8 +483,9 @@ export default function SpikeSuperAdminDashboard() {
               ✕
             </button>
 
+            {/* تم التعديل هنا إلى S.A بدلاً من Super Admin Master */}
             <span className="hidden lg:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-              Super Admin Master
+              S.A
             </span>
 
             <Link href="/" className="flex items-center gap-2">
@@ -494,7 +495,7 @@ export default function SpikeSuperAdminDashboard() {
                   <span className="text-slate-400 font-light">|</span>
                   <span className="font-mono text-xs tracking-wider text-[#00B050]">SPIKE</span>
                 </div>
-                <span className="text-[9px] text-slate-400 block font-medium">ابنِ متجرك.. وضاعف طلباتك</span>
+                <span className="text-[9px] text-slate-400 block font-medium">لوحة التحكم والإدارة</span>
               </div>
               <img
                 src={SPIKE_LOGO_URL}
@@ -811,7 +812,7 @@ export default function SpikeSuperAdminDashboard() {
                       <td className="p-3 font-mono font-bold" dir="ltr">{SUPER_ADMIN_EMAIL}</td>
                       <td className="p-3">
                         <span className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-500/10 text-rose-500 border border-rose-500/20">
-                          Super Admin Master
+                          S.A
                         </span>
                       </td>
                       <td className="p-3">
