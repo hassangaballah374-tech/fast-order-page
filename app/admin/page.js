@@ -19,11 +19,9 @@ export default function SpikeSuperAdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // صلاحيات المستخدم الحالي
   const [currentAdminRole, setCurrentAdminRole] = useState(null);
   const [currentPermissions, setCurrentPermissions] = useState({});
 
-  // بيانات النظام
   const [stores, setStores] = useState([]);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
@@ -35,7 +33,6 @@ export default function SpikeSuperAdminDashboard() {
   const [platformCommission, setPlatformCommission] = useState(2.5);
   const [withdrawThreshold, setWithdrawThreshold] = useState(100);
 
-  // المودالات
   const [newStoreModal, setNewStoreModal] = useState(false);
   const [newStoreData, setNewStoreData] = useState({
     store_name: '',
@@ -85,7 +82,7 @@ export default function SpikeSuperAdminDashboard() {
       underProcess: 'تحت التجهيز',
       activeRate: 'معدل التفعيل',
       totalReceipts: 'إجمالي المتحصلات',
-      adminRole: 'مدير النظام',
+      adminRole: 'مدير النظام الأساسي',
       navOverview: 'الرئيسية والمؤشرات',
       navStores: 'المتاجر والتجار',
       navOrders: 'كافة الطلبات',
@@ -116,7 +113,7 @@ export default function SpikeSuperAdminDashboard() {
       underProcess: 'Processing',
       activeRate: 'Activation Rate',
       totalReceipts: 'Total Net Volume',
-      adminRole: 'Super Admin',
+      adminRole: 'Super Admin Master',
       navOverview: 'Overview & Analytics',
       navStores: 'Stores & Merchants',
       navOrders: 'All Orders',
@@ -135,17 +132,12 @@ export default function SpikeSuperAdminDashboard() {
     }
   }[lang || 'ar'];
 
-  // التحقق الأمني المباشر (تخطي تلقائي لبريدك الأساسي وفتح فوري)
+  // 🔒 حماية صارمة: مبرمجة لفتح لوحة الأدمن فقط لبريدك أو المشرفين المعتمدين حصرياً
   useEffect(() => {
     const verifyAdminAccess = async () => {
       try {
-        // تعيين بريدك تلقائياً في التخزين المحلي لضمان عدم حدوث أي عوائق
-        localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
-        localStorage.setItem('is_super_admin', 'true');
-
-        const storedEmail = (localStorage.getItem('user_email') || localStorage.getItem('merchant_email') || '').toLowerCase().trim();
+        const storedEmail = (localStorage.getItem('user_email') || '').toLowerCase().trim();
         
-        // فتح فوري لبريدك الأساسي المالك للنظام
         if (storedEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
           grantSuperAdminAccess();
           return;
@@ -154,12 +146,12 @@ export default function SpikeSuperAdminDashboard() {
         const { data: { user } } = await supabase.auth.getUser();
         const authEmail = user?.email?.toLowerCase().trim();
 
-        if (authEmail === SUPER_ADMIN_EMAIL.toLowerCase() || authEmail === 'hassanhosny2007@gmail.com') {
+        if (authEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
+          localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
           grantSuperAdminAccess();
           return;
         }
 
-        // فحص جدول المشرفين المساعدين
         const emailToCheck = storedEmail || authEmail;
         if (emailToCheck) {
           const { data: adminRecord } = await supabase
@@ -176,10 +168,11 @@ export default function SpikeSuperAdminDashboard() {
           }
         }
 
-        grantSuperAdminAccess(); // السماح الاحتياطي التلقائي أثناء التطوير
+        alert(isAr ? '⛔ عذراً، غير مسموح لك بالدخول. هذه لوحة تحكم الإدارة العليا.' : 'Access Denied: Admins Only.');
+        router.push('/dashboard');
       } catch (err) {
         console.error('Auth verification failed:', err);
-        grantSuperAdminAccess();
+        router.push('/dashboard');
       }
     };
 
@@ -469,7 +462,7 @@ export default function SpikeSuperAdminDashboard() {
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center font-sans ${isDark ? 'bg-[#0B132B] text-white' : 'bg-[#F4F6F9] text-slate-900'}`}>
-        <div className="animate-pulse text-sm font-bold">جاري فتح لوحة الإدارة...</div>
+        <div className="animate-pulse text-sm font-bold">جاري التحقق الأمني وفتح لوحة الإدارة...</div>
       </div>
     );
   }
@@ -481,7 +474,6 @@ export default function SpikeSuperAdminDashboard() {
       }`} 
       dir={isAr ? 'rtl' : 'ltr'}
     >
-      {/* 🌑 تعتيم الموبايل عند فتح القائمة */}
       {sidebarOpen && (
         <div 
           onClick={() => setSidebarOpen(false)}
@@ -489,7 +481,7 @@ export default function SpikeSuperAdminDashboard() {
         />
       )}
 
-      {/* 🚀 السايد بار: ثابت في اللاب ومنزلق في الموبايل */}
+      {/* الشريط الجانبي الذكي: ثابت في اللاب ومنزلق في الموبايل */}
       <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-all duration-300 ease-in-out lg:static lg:z-10 lg:translate-x-0 ${
         sidebarOpen 
           ? 'translate-x-0 shadow-2xl' 
@@ -602,9 +594,7 @@ export default function SpikeSuperAdminDashboard() {
         }`}>
           <button 
             onClick={() => {
-              localStorage.removeItem('user_email');
-              localStorage.removeItem('merchant_user_id');
-              localStorage.removeItem('is_super_admin');
+              localStorage.clear();
               router.push('/register');
             }}
             className="text-slate-400 hover:text-rose-500 text-base p-1 transition cursor-pointer" 
@@ -626,7 +616,7 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       </aside>
 
-      {/* 📊 منطقة المحتوى الرئيسية */}
+      {/* منطقة المحتوى الرئيسية */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <header className={`px-4 sm:px-8 py-4 border-b flex items-center justify-between backdrop-blur-md sticky top-0 z-30 transition-colors ${
           isDark ? 'bg-[#0B132B]/95 border-slate-800' : 'bg-[#F4F6F9]/95 border-slate-200/80 shadow-xs'
