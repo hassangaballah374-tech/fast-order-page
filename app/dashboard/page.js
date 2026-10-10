@@ -113,7 +113,6 @@ export default function MerchantFullDashboard() {
     initMerchant();
   }, []);
 
-  // فحص صارم للصلاحيات: فقط حسابك أو المسجلين في جدول admin_users
   async function checkAdminPermissions() {
     try {
       const storedEmail = (localStorage.getItem('user_email') || '').toLowerCase().trim();
@@ -472,15 +471,15 @@ export default function MerchantFullDashboard() {
         />
       )}
 
-      {/* 👑 شريط عائم دائم للسوبر أدمن: محمي ولا يظهر إلا لحسابك أو الأدمن المعين */}
+      {/* 👑 شريط عائم دائم للسوبر أدمن باللون الأخضر */}
       {canAccessAdmin && (
-        <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 bg-slate-900/95 border-2 border-[#E86A53] p-2 rounded-2xl shadow-2xl backdrop-blur-md">
+        <div className="fixed bottom-4 left-4 z-50 flex items-center gap-2 bg-slate-900/95 border-2 border-[#00B050] p-2 rounded-2xl shadow-2xl backdrop-blur-md">
           <button
             onClick={() => {
               localStorage.setItem('is_super_admin', 'true');
               router.push('/admin');
             }}
-            className="px-4 py-2 bg-gradient-to-r from-[#E86A53] to-amber-500 hover:from-[#d65942] text-white text-xs font-black rounded-xl shadow-lg transition cursor-pointer flex items-center gap-1.5"
+            className="px-4 py-2 bg-gradient-to-r from-[#00B050] to-emerald-600 hover:from-[#009644] text-white text-xs font-black rounded-xl shadow-lg transition cursor-pointer flex items-center gap-1.5"
           >
             <span>👑</span>
             <span>{lang === 'ar' ? 'العودة للوحة السوبر أدمن' : 'Back to Super Admin'}</span>
@@ -490,7 +489,7 @@ export default function MerchantFullDashboard() {
 
       <div className="flex flex-col lg:flex-row flex-1">
         
-        {/* 🧭 الشريط الجانبي الذكي: ثابت في اللاب ومنزلق (Drawer) في الموبايل */}
+        {/* 🧭 الشريط الجانبي الذكي */}
         <aside className={`fixed top-0 bottom-0 ${lang === 'ar' ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-all duration-300 ease-in-out lg:static lg:z-10 lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0 shadow-2xl' : lang === 'ar' ? 'translate-x-full' : '-translate-x-full'
         } ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -499,8 +498,6 @@ export default function MerchantFullDashboard() {
             
             <div className="space-y-3 pb-3 border-b border-slate-800">
               <div className="flex items-center justify-between">
-                
-                {/* زر الإغلاق: يظهر في الموبايل فقط */}
                 <button
                   onClick={() => setSidebarOpen(false)}
                   className="lg:hidden w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 hover:text-rose-500 transition cursor-pointer"
@@ -515,16 +512,15 @@ export default function MerchantFullDashboard() {
                     className="h-10 w-auto object-contain rounded-lg shadow-sm border border-slate-700"
                   />
                   <div>
-                    <span className="text-sm font-black text-[#E86A53] block leading-tight">
+                    <span className="text-sm font-black text-[#00B050] block leading-tight">
                       سبايك | SPIKE
                     </span>
-                    <span className="text-[9px] bg-[#E86A53]/20 text-[#E86A53] font-bold px-1.5 py-0.2 rounded-full border border-[#E86A53]/30">
+                    <span className="text-[9px] bg-[#00B050]/20 text-[#00B050] font-bold px-1.5 py-0.2 rounded-full border border-[#00B050]/30">
                       {lang === 'ar' ? 'لوحة التاجر الشريك' : 'Merchant Partner'}
                     </span>
                   </div>
                 </div>
 
-                {/* أدوات المود واللغة داخل السايد بار */}
                 <div className="flex gap-1">
                   <button onClick={toggleLanguage} className="px-2 py-1 bg-slate-800 text-white rounded-lg text-[10px] font-bold border border-slate-700 cursor-pointer">
                     🌐 {lang === 'ar' ? 'EN' : 'AR'}
@@ -540,7 +536,7 @@ export default function MerchantFullDashboard() {
                   <span>🏪</span>
                   <span>{myStore?.store_name || storeSettings.store_name || (lang === 'ar' ? 'متجري' : 'My Store')}</span>
                 </div>
-                <div className="text-[11px] text-[#E86A53] font-bold truncate flex items-center gap-1.5">
+                <div className="text-[11px] text-[#00B050] font-bold truncate flex items-center gap-1.5">
                   <span>👤 {lang === 'ar' ? 'التاجر:' : 'Merchant:'}</span>
                   <span>{myStore?.owner_name || storeSettings.owner_name || (lang === 'ar' ? 'التاجر' : 'Owner')}</span>
                 </div>
@@ -566,11 +562,11 @@ export default function MerchantFullDashboard() {
                   key={item.id}
                   onClick={() => {
                     setActiveTab(item.id);
-                    setSidebarOpen(false); // إغلاق السايد بار تلقائياً في الموبايل
+                    setSidebarOpen(false);
                   }}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl transition cursor-pointer ${
                     activeTab === item.id 
-                      ? 'bg-[#E86A53] text-white shadow-lg shadow-[#E86A53]/30' 
+                      ? 'bg-[#00B050] text-white shadow-lg shadow-[#00B050]/30' 
                       : isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-600 hover:bg-slate-100 hover:text-black'
                   }`}
                 >
@@ -585,12 +581,12 @@ export default function MerchantFullDashboard() {
             <a
               href={`/store/${myStore?.store_slug || 'main-store'}`}
               target="_blank"
-              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-[#E86A53] text-xs font-black rounded-xl flex items-center justify-center gap-1.5 transition"
+              className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-[#00B050] text-xs font-black rounded-xl flex items-center justify-center gap-1.5 transition"
             >
               <span>{lang === 'ar' ? 'رابط متجرك للزبائن ↗' : 'View Customer Store ↗'}</span>
             </a>
 
-            {/* 🚪 زر تسجيل الخروج الآمن المضاف خصيصاً للتاجر */}
+            {/* 🚪 زر تسجيل الخروج */}
             <button
               onClick={handleLogout}
               className="w-full py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 cursor-pointer"
@@ -604,12 +600,10 @@ export default function MerchantFullDashboard() {
         {/* 🖥️ المحتوى الرئيسي */}
         <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
           
-          {/* الترويسة العلوية النظيفة مع زر الموبايل وزر ☰ */}
           <header className={`px-4 sm:px-8 py-3.5 border-b flex items-center justify-between backdrop-blur-md sticky top-0 z-30 transition-colors ${
             isDark ? 'bg-[#0E1E38]/95 border-slate-800' : 'bg-[#F7F4EC]/95 border-slate-200 shadow-xs'
           }`}>
             <div className="flex items-center gap-3">
-              {/* زر الهامبرجر يظهر فقط على الموبايل */}
               <button
                 type="button"
                 onClick={() => setSidebarOpen(true)}
@@ -631,7 +625,6 @@ export default function MerchantFullDashboard() {
               </div>
             </div>
 
-            {/* أدوات التحكم العلوية: أيقونة الموبايل/اللاب وزر رابط المتجر السريع */}
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -667,7 +660,7 @@ export default function MerchantFullDashboard() {
             {activeTab === 'home' && (
               <div className="space-y-6">
                 <div className={`border-2 p-5 rounded-3xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
-                  isDark ? 'bg-gradient-to-r from-slate-900 to-[#091222] border-[#E86A53]/40' : 'bg-white border-[#E86A53]/40 shadow-sm'
+                  isDark ? 'bg-gradient-to-r from-slate-900 to-[#091222] border-[#00B050]/40' : 'bg-white border-[#00B050]/40 shadow-sm'
                 }`}>
                   <div>
                     <span className="text-xs text-slate-400 block mb-1">
@@ -680,7 +673,7 @@ export default function MerchantFullDashboard() {
                         <span className="text-2xl font-black text-amber-400">{lang === 'ar' ? 'طلبات غير محدودة (0$ عمولة)' : 'Unlimited Orders ($0 Fee)'}</span>
                       ) : (
                         <>
-                          <span className="text-3xl font-black text-[#E86A53] font-mono">{walletUsd.toFixed(2)}$</span>
+                          <span className="text-3xl font-black text-[#00B050] font-mono">{walletUsd.toFixed(2)}$</span>
                           <span className="text-xs text-slate-400">(~{Math.round(walletUsd * exchangeRate)} {lang === 'ar' ? 'ج.م' : 'EGP'})</span>
                         </>
                       )}
@@ -701,7 +694,7 @@ export default function MerchantFullDashboard() {
                     </button>
                     <button
                       onClick={() => setActiveTab('wallet')}
-                      className="px-5 py-2.5 bg-[#E86A53] hover:bg-[#d65942] text-white rounded-xl text-xs font-black shadow-lg cursor-pointer"
+                      className="px-5 py-2.5 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-xs font-black shadow-lg cursor-pointer"
                     >
                       {lang === 'ar' ? 'تفاصيل الاستهلاك ⚡' : 'Wallet Details ⚡'}
                     </button>
@@ -711,7 +704,7 @@ export default function MerchantFullDashboard() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div className={`p-5 rounded-2xl border ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <span className="text-xs text-slate-400 block mb-1">{lang === 'ar' ? 'إجمالي المبيعات' : 'Gross Revenue'}</span>
-                    <span className="text-2xl font-black text-[#E86A53]">{totalSales.toLocaleString()} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
+                    <span className="text-2xl font-black text-[#00B050]">{totalSales.toLocaleString()} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
                   </div>
                   <div className={`p-5 rounded-2xl border ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <span className="text-xs text-slate-400 block mb-1">{lang === 'ar' ? 'تكلفة البضاعة' : 'Cost of Goods'}</span>
@@ -744,7 +737,7 @@ export default function MerchantFullDashboard() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">💳</span>
-                    <h4 className="text-sm font-black text-[#E86A53]">{lang === 'ar' ? 'باقات شحن الرصيد المفتوحة (خصم 5 سنت لكل أوردر)' : 'Pay-As-You-Go Top-up (5¢ per order)'}</h4>
+                    <h4 className="text-sm font-black text-[#00B050]">{lang === 'ar' ? 'باقات شحن الرصيد المفتوحة (خصم 5 سنت لكل أوردر)' : 'Pay-As-You-Go Top-up (5¢ per order)'}</h4>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -758,12 +751,12 @@ export default function MerchantFullDashboard() {
                         key={tier.usd}
                         className={`border p-5 rounded-3xl relative flex flex-col justify-between space-y-4 ${
                           tier.popular 
-                            ? isDark ? 'border-[#E86A53]/80 bg-gradient-to-b from-[#E86A53]/20 to-[#091222]' : 'border-[#E86A53] bg-[#E86A53]/5 shadow-md'
+                            ? isDark ? 'border-[#00B050]/80 bg-gradient-to-b from-[#00B050]/20 to-[#091222]' : 'border-[#00B050] bg-[#00B050]/5 shadow-md'
                             : isDark ? 'bg-[#091222] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
                         }`}
                       >
                         {tier.popular && (
-                          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#E86A53] text-white text-[9px] font-black px-2.5 py-0.5 rounded-full">
+                          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-[#00B050] text-white text-[9px] font-black px-2.5 py-0.5 rounded-full">
                             {lang === 'ar' ? 'الأكثر استخداماً' : 'Most Popular'}
                           </span>
                         )}
@@ -774,7 +767,7 @@ export default function MerchantFullDashboard() {
                             <span className="text-2xl font-black font-mono">{tier.usd}$</span>
                             <span className="text-xs text-slate-400 font-mono">(~{Math.round(tier.usd * exchangeRate)} {lang === 'ar' ? 'ج.م' : 'EGP'})</span>
                           </div>
-                          <div className="text-xs text-[#E86A53] font-bold bg-[#E86A53]/10 p-2 rounded-xl">
+                          <div className="text-xs text-[#00B050] font-bold bg-[#00B050]/10 p-2 rounded-xl">
                             {lang === 'ar' ? 'سعة الشحن:' : 'Capacity:'} <strong className={isDark ? 'text-white' : 'text-black'}>{tier.orders} {lang === 'ar' ? 'طلب' : 'orders'}</strong>
                           </div>
                           <ul className="text-[11px] text-slate-400 space-y-1.5 pt-2">
@@ -855,7 +848,7 @@ export default function MerchantFullDashboard() {
                   <div className={`p-4 rounded-2xl border flex justify-between items-center ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                     <div>
                       <span className="text-xs text-slate-400 block">{lang === 'ar' ? 'حالة الحساب' : 'Account Status'}</span>
-                      <strong className="text-2xl text-[#E86A53] font-mono">
+                      <strong className="text-2xl text-[#00B050] font-mono">
                         {isUnlimitedActive ? 'غير محدود (Unlimited)' : `${walletUsd.toFixed(2)}$`}
                       </strong>
                     </div>
@@ -867,7 +860,7 @@ export default function MerchantFullDashboard() {
 
                   <button
                     onClick={() => setActiveTab('plans')}
-                    className="w-full py-3.5 bg-[#E86A53] hover:bg-[#d65942] text-white font-black text-xs rounded-xl shadow-lg shadow-[#E86A53]/30 transition cursor-pointer"
+                    className="w-full py-3.5 bg-[#00B050] hover:bg-[#009644] text-white font-black text-xs rounded-xl shadow-lg shadow-[#00B050]/30 transition cursor-pointer"
                   >
                     {lang === 'ar' ? 'شحن رصيد أو ترقية الباقة 🚀' : 'Top-up or Upgrade Plan 🚀'}
                   </button>
@@ -912,7 +905,7 @@ export default function MerchantFullDashboard() {
                       });
                       setShowProductModal(true);
                     }}
-                    className="px-5 py-2.5 bg-[#E86A53] hover:bg-[#d65942] text-white rounded-xl text-xs font-black shadow-lg shadow-[#E86A53]/30 cursor-pointer"
+                    className="px-5 py-2.5 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-xs font-black shadow-lg shadow-[#00B050]/30 cursor-pointer"
                   >
                     ➕ {lang === 'ar' ? 'إضافة منتج جديد' : 'Add Product'}
                   </button>
@@ -934,7 +927,7 @@ export default function MerchantFullDashboard() {
                         </div>
                         <h4 className="font-bold text-sm truncate">{p.name}</h4>
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-[#E86A53] font-bold">{p.price} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
+                          <span className="text-[#00B050] font-bold">{p.price} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
                           <span className="text-slate-400">{lang === 'ar' ? 'الخيارات:' : 'Variants:'} {p.variants_matrix?.length || 0}</span>
                         </div>
                         <div className="flex gap-2 pt-2 border-t border-slate-800">
@@ -988,7 +981,7 @@ export default function MerchantFullDashboard() {
                       onClick={() => setStoreSettings({ ...storeSettings, theme_style: th.id })}
                       className={`p-4 rounded-2xl border cursor-pointer transition space-y-2 ${
                         storeSettings.theme_style === th.id 
-                          ? 'border-[#E86A53] bg-[#E86A53]/10' 
+                          ? 'border-[#00B050] bg-[#00B050]/10' 
                           : isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50'
                       }`}
                     >
@@ -997,7 +990,7 @@ export default function MerchantFullDashboard() {
                     </div>
                   ))}
                 </div>
-                <button onClick={handleSaveSettings} className="px-6 py-3 bg-[#E86A53] hover:bg-[#d65942] text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-[#E86A53]/30">
+                <button onClick={handleSaveSettings} className="px-6 py-3 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-[#00B050]/30">
                   {lang === 'ar' ? 'حفظ النمط المختار 💾' : 'Save Template Style 💾'}
                 </button>
               </div>
@@ -1024,7 +1017,7 @@ export default function MerchantFullDashboard() {
                         <span className="text-slate-400">{o.product_name} | {o.governorate} - {o.address}</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-[#E86A53] font-bold font-mono">{o.total_amount} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
+                        <span className="text-[#00B050] font-bold font-mono">{o.total_amount} {lang === 'ar' ? 'ج.م' : 'EGP'}</span>
                         <select
                           value={o.status || 'جديد'}
                           onChange={async (e) => {
@@ -1056,7 +1049,7 @@ export default function MerchantFullDashboard() {
                     {governoratesList.map((g, i) => <option key={i} value={g}>{g}</option>)}
                   </select>
                   <input type="number" placeholder="Cost" value={govShippingCost} onChange={(e) => setGovShippingCost(e.target.value)} className={`border rounded-xl p-2.5 text-xs w-28 font-bold ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`} />
-                  <button onClick={handleSaveShippingRate} className="px-4 py-2.5 bg-[#E86A53] hover:bg-[#d65942] text-white rounded-xl text-xs font-bold cursor-pointer">{lang === 'ar' ? 'حفظ' : 'Save'}</button>
+                  <button onClick={handleSaveShippingRate} className="px-4 py-2.5 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-xs font-bold cursor-pointer">{lang === 'ar' ? 'حفظ' : 'Save'}</button>
                 </div>
               </div>
             )}
@@ -1126,7 +1119,7 @@ export default function MerchantFullDashboard() {
                   </div>
                 </div>
 
-                <button type="submit" className="px-6 py-3 bg-[#E86A53] hover:bg-[#d65942] text-white rounded-xl text-xs font-black cursor-pointer shadow-lg shadow-[#E86A53]/30">
+                <button type="submit" className="px-6 py-3 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-xs font-black cursor-pointer shadow-lg shadow-[#00B050]/30">
                   {lang === 'ar' ? 'حفظ السياسات وعرضها للمشترين 💾' : 'Save & Publish Policies 💾'}
                 </button>
               </form>
@@ -1155,7 +1148,7 @@ export default function MerchantFullDashboard() {
 
                 <div className="space-y-4 text-xs">
                   <div className={`p-4 rounded-2xl border space-y-1 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                    <h4 className="font-bold text-[#E86A53] text-sm">{lang === 'ar' ? 'من نحن:' : 'About Us:'}</h4>
+                    <h4 className="font-bold text-[#00B050] text-sm">{lang === 'ar' ? 'من نحن:' : 'About Us:'}</h4>
                     <p className="leading-relaxed">{platformTerms.about_us || 'منظومة سبايك الرائدة في التجارة الإلكترونية ومضاعفة المبيعات والدفع عند الاستلام.'}</p>
                   </div>
 
@@ -1197,7 +1190,7 @@ export default function MerchantFullDashboard() {
                 <h3 className="text-lg font-black">{lang === 'ar' ? 'إعدادات البيكسل (Facebook CAPI)' : 'Facebook Pixel & CAPI Settings'}</h3>
                 <input type="text" placeholder="Pixel ID" value={storeSettings.pixel_1} onChange={(e) => setStoreSettings({ ...storeSettings, pixel_1: e.target.value })} className={`w-full border rounded-xl p-2.5 text-xs font-mono ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`} />
                 <input type="text" placeholder="Access Token" value={storeSettings.token_1} onChange={(e) => setStoreSettings({ ...storeSettings, token_1: e.target.value })} className={`w-full border rounded-xl p-2.5 text-xs font-mono ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`} />
-                <button type="submit" className="px-6 py-2.5 bg-[#E86A53] hover:bg-[#d65942] text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-[#E86A53]/30">{lang === 'ar' ? 'حفظ البيكسل' : 'Save Pixel'}</button>
+                <button type="submit" className="px-6 py-2.5 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-xs font-bold cursor-pointer shadow-md shadow-[#00B050]/30">{lang === 'ar' ? 'حفظ البيكسل' : 'Save Pixel'}</button>
               </form>
             )}
 
@@ -1227,7 +1220,7 @@ export default function MerchantFullDashboard() {
                   <input type="tel" value={storeSettings.support_phone} onChange={(e) => setStoreSettings({ ...storeSettings, support_phone: e.target.value })} className={`w-full border rounded-xl p-2.5 text-xs font-mono ${isDark ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300'}`} />
                 </div>
 
-                <button type="submit" className="px-6 py-2.5 bg-[#E86A53] hover:bg-[#d65942] text-white rounded-xl text-xs font-black cursor-pointer shadow-md shadow-[#E86A53]/30">{lang === 'ar' ? 'حفظ وتحديث التاجر 💾' : 'Save Merchant Settings 💾'}</button>
+                <button type="submit" className="px-6 py-2.5 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-xs font-black cursor-pointer shadow-md shadow-[#00B050]/30">{lang === 'ar' ? 'حفظ وتحديث التاجر 💾' : 'Save Merchant Settings 💾'}</button>
               </form>
             )}
 
@@ -1294,14 +1287,14 @@ export default function MerchantFullDashboard() {
               <div className={`space-y-3 border p-4 rounded-2xl ${isDark ? 'bg-[#091222] border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                   <div>
-                    <h4 className="text-xs font-black text-[#E86A53]">
+                    <h4 className="text-xs font-black text-[#00B050]">
                       {lang === 'ar' ? 'مصفوفة المتغيرات المركبة' : 'Variants Matrix'} ({productForm.variants_matrix.length})
                     </h4>
                   </div>
                   <div className="flex items-center gap-2">
-                    <input type="number" placeholder="Bulk Price" value={bulkPriceInput} onChange={(e) => setBulkPriceInput(e.target.value)} className="w-24 bg-black border border-slate-700 rounded-lg p-1.5 text-xs text-[#E86A53] font-bold" />
+                    <input type="number" placeholder="Bulk Price" value={bulkPriceInput} onChange={(e) => setBulkPriceInput(e.target.value)} className="w-24 bg-black border border-slate-700 rounded-lg p-1.5 text-xs text-[#00B050] font-bold" />
                     <input type="number" placeholder="Bulk Stock" value={bulkStockInput} onChange={(e) => setBulkStockInput(e.target.value)} className="w-20 bg-black border border-slate-700 rounded-lg p-1.5 text-xs text-white" />
-                    <button type="button" onClick={handleApplyBulkPricing} className="px-3 py-1.5 bg-[#E86A53] text-white rounded-lg text-xs font-bold shadow-md shadow-[#E86A53]/30 cursor-pointer">Apply ✓</button>
+                    <button type="button" onClick={handleApplyBulkPricing} className="px-3 py-1.5 bg-[#00B050] text-white rounded-lg text-xs font-bold shadow-md shadow-[#00B050]/30 cursor-pointer">Apply ✓</button>
                   </div>
                 </div>
 
@@ -1309,11 +1302,11 @@ export default function MerchantFullDashboard() {
                   {productForm.variants_matrix.map((item, idx) => (
                     <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-slate-900/80 p-2 rounded-xl text-xs border border-slate-800 text-white">
                       <div className="col-span-4 font-bold flex items-center gap-1">
-                        <span className="text-[#E86A53]">●</span>
+                        <span className="text-[#00B050]">●</span>
                         <span>{item.color}</span> / <span>{item.size}</span>
                       </div>
                       <div className="col-span-4">
-                        <input type="number" value={item.price} onChange={(e) => handleMatrixItemChange(idx, 'price', e.target.value)} className="w-full bg-black border border-slate-700 rounded-lg p-1.5 text-xs text-[#E86A53] font-bold" />
+                        <input type="number" value={item.price} onChange={(e) => handleMatrixItemChange(idx, 'price', e.target.value)} className="w-full bg-black border border-slate-700 rounded-lg p-1.5 text-xs text-[#00B050] font-bold" />
                       </div>
                       <div className="col-span-4">
                         <input type="number" value={item.stock} onChange={(e) => handleMatrixItemChange(idx, 'stock', e.target.value)} className="w-full bg-black border border-slate-700 rounded-lg p-1.5 text-xs text-white" />
@@ -1348,7 +1341,7 @@ export default function MerchantFullDashboard() {
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
               <button type="button" onClick={() => setShowProductModal(false)} className="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold cursor-pointer">{lang === 'ar' ? 'إلغاء' : 'Cancel'}</button>
-              <button type="submit" disabled={uploadingMedia} className="px-5 py-2 bg-[#E86A53] hover:bg-[#d65942] text-white rounded-xl text-xs font-black cursor-pointer shadow-lg shadow-[#E86A53]/30">{lang === 'ar' ? 'حفظ المنتج والمصفوفة 🚀' : 'Save Product Matrix 🚀'}</button>
+              <button type="submit" disabled={uploadingMedia} className="px-5 py-2 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-xs font-black cursor-pointer shadow-lg shadow-[#00B050]/30">{lang === 'ar' ? 'حفظ المنتج والمصفوفة 🚀' : 'Save Product Matrix 🚀'}</button>
             </div>
           </form>
         </div>
