@@ -135,43 +135,58 @@ export default function SpikeSuperAdminDashboard() {
     }
   }[lang || 'ar'];
 
-  // التحقق الأمني من صلاحية الدخول للداشبورد
+  // التحقق الأمني المباشر (يدعم حسابك والـ LocalStorage وجلسة Supabase)
   useEffect(() => {
     const verifyAdminAccess = async () => {
-      const storedEmail = (localStorage.getItem('user_email') || '').toLowerCase().trim();
-
-      // السماح المباشر للمالك الأساسي
-      if (storedEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
-        setCurrentAdminRole('super_admin');
-        setCurrentPermissions({
-          manage_stores: true,
-          manage_orders: true,
-          manage_finance: true,
-          manage_admins: true
-        });
-        fetchAllData();
-        return;
-      }
-
-      // فحص المشرفين في قاعدة البيانات
-      if (storedEmail) {
-        const { data, error } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('email', storedEmail)
-          .maybeSingle();
-
-        if (data && !error) {
-          setCurrentAdminRole(data.role);
-          setCurrentPermissions(data.permissions || {});
-          fetchAllData();
+      try {
+        const storedEmail = (localStorage.getItem('user_email') || localStorage.getItem('merchant_email') || '').toLowerCase().trim();
+        
+        if (storedEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
+          grantSuperAdminAccess();
           return;
         }
-      }
 
-      // طرد أي مستخدم أو تاجر غير مصرح له
-      alert(isAr ? '⛔ عذراً، هذه الصفحة مخصصة لإدارة منصة سبايك فقط.' : 'Access Denied: Admins Only.');
-      router.push('/register');
+        const { data: { user } } = await supabase.auth.getUser();
+        const authEmail = user?.email?.toLowerCase().trim();
+
+        if (authEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
+          grantSuperAdminAccess();
+          return;
+        }
+
+        const emailToCheck = storedEmail || authEmail;
+        if (emailToCheck) {
+          const { data: adminRecord } = await supabase
+            .from('admin_users')
+            .select('*')
+            .eq('email', emailToCheck)
+            .maybeSingle();
+
+          if (adminRecord) {
+            setCurrentAdminRole(adminRecord.role);
+            setCurrentPermissions(adminRecord.permissions || {});
+            fetchAllData();
+            return;
+          }
+        }
+
+        alert(isAr ? '⛔ عذراً، هذه الصفحة مخصصة للمشرفين المعتمدين فقط.' : 'Access Denied: Admins Only.');
+        router.push('/register');
+      } catch (err) {
+        console.error('Auth verification failed:', err);
+        router.push('/register');
+      }
+    };
+
+    const grantSuperAdminAccess = () => {
+      setCurrentAdminRole('super_admin');
+      setCurrentPermissions({
+        manage_stores: true,
+        manage_orders: true,
+        manage_finance: true,
+        manage_admins: true
+      });
+      fetchAllData();
     };
 
     verifyAdminAccess();
@@ -445,6 +460,14 @@ export default function SpikeSuperAdminDashboard() {
       progress: totalSalesAmount > 0 ? '60%' : '5%',
     },
   ];
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center font-sans ${isDark ? 'bg-[#0B132B] text-white' : 'bg-[#F4F6F9] text-slate-900'}`}>
+        <div className="animate-pulse text-sm font-bold">جاري التحقق من الصلاحيات وفتح لوحة الإدارة...</div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -795,7 +818,6 @@ export default function SpikeSuperAdminDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {/* حساب المالك الأساسي دائماً في القمة ومحمى */}
                     <tr className="border-b border-slate-100 dark:border-slate-800/50 bg-emerald-500/5">
                       <td className="p-3 font-black text-emerald-600 dark:text-emerald-400">حسن حسني (المالك)</td>
                       <td className="p-3 font-mono font-bold" dir="ltr">{SUPER_ADMIN_EMAIL}</td>
@@ -812,7 +834,6 @@ export default function SpikeSuperAdminDashboard() {
                       </td>
                     </tr>
 
-                    {/* المشرفون المعينون من قاعدة البيانات */}
                     {adminUsers.map((user) => (
                       <tr key={user.id} className="border-b border-slate-100 dark:border-slate-800/50">
                         <td className="p-3 font-bold">{user.name}</td>
