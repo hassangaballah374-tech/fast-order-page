@@ -69,7 +69,7 @@ export default function SpikeSuperAdminDashboard() {
 
   const t = {
     ar: {
-      dashboard: 'الإدارة العليا',
+      dashboard: 'داشبورد',
       overviewTitle: 'نظرة عامة على أداء منصة سبايك',
       overviewSubtitle: 'مؤشرات الأداء اللحظية، طلبات المتاجر، والتسويات المالية',
       addStore: 'إضافة متجر جديد',
@@ -102,7 +102,7 @@ export default function SpikeSuperAdminDashboard() {
       cancel: 'إلغاء'
     },
     en: {
-      dashboard: 'Admin Dashboard',
+      dashboard: 'Dashboard',
       overviewTitle: 'SPIKE Platform Performance Overview',
       overviewSubtitle: 'Real-time KPIs, merchant orders, and financial reconciliations',
       addStore: 'Add New Store',
@@ -136,6 +136,7 @@ export default function SpikeSuperAdminDashboard() {
     }
   }[lang || 'ar'];
 
+  // 🚪 دالة موحدة لجميع المستخدمين لتسجيل الخروج الآمن
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -461,7 +462,7 @@ export default function SpikeSuperAdminDashboard() {
         />
       )}
 
-      {/* الشريط الجانبي الداعم للمظهر النهاري والليلي باللون الأخضر */}
+      {/* الشريط الجانبي الذكي */}
       <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-all duration-300 ease-in-out lg:static lg:z-10 lg:translate-x-0 ${
         sidebarOpen 
           ? 'translate-x-0 shadow-2xl' 
@@ -483,6 +484,7 @@ export default function SpikeSuperAdminDashboard() {
               ✕
             </button>
 
+            {/* تم التعديل هنا إلى S.A */}
             <span className="hidden lg:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
               S.A
             </span>
@@ -1280,7 +1282,7 @@ export default function SpikeSuperAdminDashboard() {
                 />
               </div>
               <div className="flex gap-2 pt-3">
-                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إنضافة المنتج</button>
+                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إضافة المنتج</button>
                 <button type="button" onClick={() => setNewProductModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">إلغاء</button>
               </div>
             </form>
