@@ -483,7 +483,6 @@ export default function SpikeSuperAdminDashboard() {
               ✕
             </button>
 
-            {/* تم التعديل هنا إلى S.A بدلاً من Super Admin Master */}
             <span className="hidden lg:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
               S.A
             </span>
@@ -585,28 +584,30 @@ export default function SpikeSuperAdminDashboard() {
           })}
         </nav>
 
-        <div className={`p-4 border-t flex items-center justify-between ${
+        {/* 🚪 قسم بيانات المشرف وزر تسجيل الخروج تحته تماماً */}
+        <div className={`p-4 border-t flex flex-col gap-2.5 ${
           isDark ? 'border-slate-800' : 'border-slate-200'
         }`}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00B050] to-emerald-400 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
+              S
+            </div>
+            <div className="leading-tight truncate">
+              <span className={`text-xs font-bold block ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                {t.adminRole}
+              </span>
+              <span className="text-[10px] text-slate-400 block font-mono truncate">{SUPER_ADMIN_EMAIL}</span>
+            </div>
+          </div>
+
           <button 
             onClick={handleLogout}
-            className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer"
+            className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer"
             title={t.logoutText}
           >
             <span>🚪</span>
             <span>{t.logoutText}</span>
           </button>
-          <div className="flex items-center gap-2.5 text-right">
-            <div className="leading-tight">
-              <span className={`text-xs font-bold block ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                {t.adminRole}
-              </span>
-              <span className="text-[10px] text-slate-400 block font-mono">{SUPER_ADMIN_EMAIL}</span>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00B050] to-emerald-400 flex items-center justify-center text-white text-xs font-black shadow-xs">
-              S
-            </div>
-          </div>
         </div>
       </aside>
 
@@ -1279,7 +1280,7 @@ export default function SpikeSuperAdminDashboard() {
                 />
               </div>
               <div className="flex gap-2 pt-3">
-                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إضافة المنتج</button>
+                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إنضافة المنتج</button>
                 <button type="button" onClick={() => setNewProductModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">إلغاء</button>
               </div>
             </form>
