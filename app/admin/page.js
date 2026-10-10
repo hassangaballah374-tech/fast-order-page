@@ -134,6 +134,7 @@ export default function SpikeSuperAdminDashboard() {
     }
   }[lang || 'ar'];
 
+  // 🚪 دالة موحدة لجميع المستخدمين لتسجيل الخروج الآمن
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -567,6 +568,7 @@ export default function SpikeSuperAdminDashboard() {
           })}
         </nav>
 
+        {/* زر تسجيل الخروج لجميع المستخدمين */}
         <div className={`p-4 border-t flex items-center justify-between ${
           isDark ? 'border-slate-800' : 'border-slate-200/80'
         }`}>
