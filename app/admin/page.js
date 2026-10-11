@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -1404,6 +1404,41 @@ export default function SpikeSuperAdminDashboard() {
           letter-spacing: 0;
         }
         .spike-dashboard * { box-sizing: border-box; }
+
+        /* Layout guardrails: keep the sidebar and content in their intended columns. */
+        .spike-dashboard > aside {
+          width: 288px !important;
+          min-width: 288px !important;
+          max-width: 288px !important;
+          flex: 0 0 288px !important;
+          position: relative;
+          inset: auto !important;
+          transform: none;
+        }
+        .spike-dashboard > main {
+          width: calc(100% - 288px);
+          min-width: 0 !important;
+          flex: 1 1 auto !important;
+        }
+        .spike-dashboard > main > header { min-height: 76px; }
+        .spike-dashboard > main > div { width: 100%; min-width: 0; }
+        .spike-dashboard h1,
+        .spike-dashboard h2,
+        .spike-dashboard h3 { line-height: 1.45; overflow-wrap: anywhere; }
+        .spike-dashboard button { white-space: normal; }
+        .spike-dashboard table { min-width: 640px; }
+        @media (max-width: 1023px) {
+          .spike-dashboard > aside {
+            position: fixed !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            width: 288px !important;
+            min-width: 288px !important;
+            max-width: 288px !important;
+            flex: none !important;
+          }
+          .spike-dashboard > main { width: 100%; }
+        }
         .spike-dashboard button,
         .spike-dashboard input,
         .spike-dashboard select,
