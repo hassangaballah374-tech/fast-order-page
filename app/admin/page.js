@@ -68,7 +68,7 @@ export default function SpikeSuperAdminDashboard() {
     ar: {
       dashboard: 'Dashboard',
       overviewTitle: 'Dashboard Performances',
-      overviewSubtitle: 'Chart Value & Live Metrics',
+      overviewSubtitle: 'مؤشرات الأداء اللحظية، طلبات المتاجر، والتسويات المالية',
       addStore: 'إضافة متجر جديد',
       refreshData: 'Download',
       messageBtn: 'Message',
@@ -101,7 +101,7 @@ export default function SpikeSuperAdminDashboard() {
     en: {
       dashboard: 'Dashboard',
       overviewTitle: 'Dashboard Performances',
-      overviewSubtitle: 'Chart Value & Live Metrics',
+      overviewSubtitle: 'Real-time KPIs, merchant orders, and financial reconciliations',
       addStore: 'Add New Store',
       refreshData: 'Download',
       messageBtn: 'Message',
@@ -121,7 +121,7 @@ export default function SpikeSuperAdminDashboard() {
       navDomains: 'Domains & DNS',
       navPlans: 'Subscription Plans',
       navLogs: 'Audit Logs',
-      navBroadcast: 'Announcements',
+      navBroadcast: 'Broadcast Announcements',
       navAdmins: 'Admin Team',
       adminStoresBtn: 'My Admin Stores',
       applicationMenu: 'APPLICATION',
@@ -331,7 +331,7 @@ export default function SpikeSuperAdminDashboard() {
   const activeStoresCount = stores.filter(s => s.is_active !== false).length;
   const totalSalesAmount = orders.reduce((acc, curr) => acc + (Number(curr.total_price) || 0), 0);
 
-  const applicationItems = [
+  const mainMenuItems = [
     { id: 'overview', title: t.navOverview, icon: '🏠' },
     { id: 'merchants', title: t.navStores, icon: '📂', count: totalStoresCount },
     { id: 'orders', title: t.navOrders, icon: '⏱️', count: orders.length },
@@ -363,8 +363,43 @@ export default function SpikeSuperAdminDashboard() {
   return (
     <div className="min-h-screen font-sans flex bg-[#161B22] text-slate-100 select-none overflow-x-hidden" dir={isAr ? 'rtl' : 'ltr'}>
 
-      {/* الشريط الجانبي الداكن المطابق للصورة تماماً */}
-      <aside className="w-72 shrink-0 bg-[#1A212D] border-r border-slate-800/80 flex flex-col justify-between p-6 shadow-2xl">
+      {/* الشريط الجانبي المصغر (Icon Dock) */}
+      <aside className="w-20 shrink-0 bg-[#1A212D] border-r border-slate-800/80 flex flex-col items-center py-6 justify-between shadow-2xl">
+        <div className="space-y-6 flex flex-col items-center">
+          <div className="w-10 h-10 rounded-2xl bg-cyan-500 flex items-center justify-center text-slate-950 font-black shadow-md shadow-cyan-500/30">
+            S
+          </div>
+
+          <div className="space-y-3 pt-4">
+            {['🏠', '📂', '⏱️', '⚡', '🛡️', '📁'].map((icon, idx) => (
+              <button 
+                key={idx}
+                onClick={() => setActiveTab(mainMenuItems[idx]?.id || 'overview')}
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg transition cursor-pointer ${
+                  activeTab === mainMenuItems[idx]?.id 
+                    ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/30' 
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                {icon}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <button 
+            onClick={toggleTheme}
+            className="w-10 h-10 rounded-2xl flex items-center justify-center text-sm transition cursor-pointer bg-slate-800 text-amber-300"
+            title="تغيير المظهر"
+          >
+            {isDark ? '☀️' : '🌙'}
+          </button>
+        </div>
+      </aside>
+
+      {/* القائمة الجانبية الرئيسية الموسعة (Sidebar) مطابقة للصورة */}
+      <aside className="w-64 shrink-0 bg-[#1A212D] border-r border-slate-800/80 flex flex-col justify-between p-6 shadow-2xl">
         <div className="space-y-6">
           
           {/* بروفايل المستخدم العلوي في السايد بار */}
@@ -406,7 +441,7 @@ export default function SpikeSuperAdminDashboard() {
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 block mb-2">
               {t.applicationMenu}
             </span>
-            {applicationItems.map(item => (
+            {mainMenuItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
@@ -456,7 +491,7 @@ export default function SpikeSuperAdminDashboard() {
 
         </div>
 
-        {/* صندوق ترقية الحساب أسفل السايد بار كما في الصورة */}
+        {/* صندوق ترقية الحساب أسفل السايد بار */}
         <div className="p-4 rounded-3xl bg-[#12161F] border border-slate-800 space-y-3 relative overflow-hidden">
           <div className="absolute right-0 bottom-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-xl"></div>
           <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs">
@@ -473,8 +508,7 @@ export default function SpikeSuperAdminDashboard() {
       {/* منطقة العمل الرئيسية (Main Workspace ذات الخلفية الفاتحة الناعمة) */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-[#F0F2F5] text-slate-800">
         
-        {/* الترويسة العلوية الأنيقة */}
-        <header className="px-8 py-5 border-b border-slate-200 bg-white/80 backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-xs">
+        <header className="px-8 py-5 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-xs">
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight">{t.overviewTitle}</h1>
             <p className="text-xs text-slate-500">{t.overviewSubtitle}</p>
@@ -496,7 +530,6 @@ export default function SpikeSuperAdminDashboard() {
           </div>
         </header>
 
-        {/* محتوى اللوحة الديناميكي */}
         <div className="p-8 space-y-6">
 
           {activeTab === 'overview' && (
@@ -506,7 +539,7 @@ export default function SpikeSuperAdminDashboard() {
                 {statCards.map((stat, i) => (
                   <div key={i} className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm transition hover:shadow-md flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xl p-2 rounded-2xl bg-slate-50 border border-slate-100">{stat.icon}</span>
+                      <span className="text-xl p-2.5 rounded-2xl bg-slate-50 border border-slate-100">{stat.icon}</span>
                       <span className={`text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full border ${stat.badgeColor}`}>{stat.change}</span>
                     </div>
                     <div className="space-y-1">
