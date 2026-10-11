@@ -9,6 +9,7 @@ import {
   ChartCard, Segmented, Sparkline, AreaChart, BarChart, HBarList, Donut, ProgressBar, fmt, fmtK,
 } from '../../components/SpikeCharts';
 import SpikeIntegrations from '../../components/SpikeIntegrations';
+import { spikeLogout } from '../../components/SpikeSessionBar';
 
 const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
@@ -177,15 +178,7 @@ export default function SpikeSuperAdminDashboard() {
   }[lang || 'ar'];
 
   // 🚪 دالة موحدة لجميع المستخدمين لتسجيل الخروج الآمن
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error(err);
-    }
-    localStorage.clear();
-    router.push('/register');
-  };
+  const handleLogout = () => spikeLogout(router);
 
   useEffect(() => {
     const verifyAdminAccess = async () => {
@@ -218,8 +211,9 @@ export default function SpikeSuperAdminDashboard() {
           }
         }
 
+        if (!authEmail) { router.replace('/register'); return; }
         alert(isAr ? '⛔ عذراً، غير مسموح لك بالدخول. هذه لوحة تحكم الإدارة العليا.' : 'Access Denied: Admins Only.');
-        router.push('/dashboard');
+        router.replace('/dashboard');
       } catch (err) {
         console.error('Auth verification failed:', err);
         router.push('/dashboard');
