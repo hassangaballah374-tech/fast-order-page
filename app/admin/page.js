@@ -19,6 +19,9 @@ export default function SpikeSuperAdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const [currentAdminRole, setCurrentAdminRole] = useState(null);
+  const [currentPermissions, setCurrentPermissions] = useState({});
+
   const [stores, setStores] = useState([]);
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
@@ -66,66 +69,66 @@ export default function SpikeSuperAdminDashboard() {
 
   const t = {
     ar: {
-      dashboard: 'Dashboard',
+      dashboard: 'الإدارة العليا',
       overviewTitle: 'Dashboard Performances',
       overviewSubtitle: 'مؤشرات الأداء اللحظية، طلبات المتاجر، والتسويات المالية',
       addStore: 'إضافة متجر جديد',
-      refreshData: 'Download',
-      messageBtn: 'Message',
-      notificationBtn: 'Notification',
+      refreshData: 'تحديث البيانات',
       statStores: 'إجمالي المتاجر',
       statPending: 'بانتظار الشحن',
       statActiveUsers: 'العملاء المفعلين',
       statSales: 'إجمالي المبيعات',
-      adminRole: 'Super Admin',
+      comparedLastMonth: 'مقارنة بالشهر الماضي',
+      underProcess: 'تحت التجهيز',
+      activeRate: 'معدل التفعيل',
+      totalReceipts: 'إجمالي المتحصلات',
+      adminRole: 'مدير النظام الأساسي',
       logoutText: 'تسجيل الخروج',
       navOverview: 'Dashboard',
-      navActivity: 'Activity',
       navStores: 'Directories',
       navOrders: 'Timeline',
       navInventory: 'Files',
+      navPolicies: 'سياسات سبايك',
       navRates: 'Payment',
-      navDomains: 'Domains & DNS',
-      navPlans: 'Subscription Plans',
-      navLogs: 'Audit Logs',
-      navBroadcast: 'Announcements',
-      navAdmins: 'Admin Team',
+      navDomains: 'الدومينات والربط',
+      navPlans: 'باقات الاشتراك',
+      navLogs: 'سجل الحركات',
+      navBroadcast: 'الإعلانات الجماعية',
+      navAdmins: 'فريق الإدارة والصلاحيات',
       adminStoresBtn: 'متاجر الأدمن الخاصة',
-      applicationMenu: 'APPLICATION',
-      settingsMenu: 'SETTINGS',
       ordersCount: 'أوردر',
       activeStatus: 'نشط',
       save: 'حفظ التعديلات',
       cancel: 'إلغاء'
     },
     en: {
-      dashboard: 'Dashboard',
+      dashboard: 'Admin Dashboard',
       overviewTitle: 'Dashboard Performances',
       overviewSubtitle: 'Real-time KPIs, merchant orders, and financial reconciliations',
       addStore: 'Add New Store',
-      refreshData: 'Download',
-      messageBtn: 'Message',
-      notificationBtn: 'Notification',
+      refreshData: 'Refresh Data',
       statStores: 'Total Stores',
       statPending: 'Pending Fulfillment',
       statActiveUsers: 'Active Clients',
       statSales: 'Total Sales',
-      adminRole: 'Super Admin',
+      comparedLastMonth: 'vs last month',
+      underProcess: 'Processing',
+      activeRate: 'Activation Rate',
+      totalReceipts: 'Total Net Volume',
+      adminRole: 'Super Admin Master',
       logoutText: 'Sign Out',
       navOverview: 'Dashboard',
-      navActivity: 'Activity',
       navStores: 'Directories',
       navOrders: 'Timeline',
       navInventory: 'Files',
+      navPolicies: 'Platform Policies',
       navRates: 'Payment',
       navDomains: 'Domains & DNS',
       navPlans: 'Subscription Plans',
       navLogs: 'Audit Logs',
       navBroadcast: 'Broadcast Announcements',
-      navAdmins: 'Admin Team',
+      navAdmins: 'Admin Team & Roles',
       adminStoresBtn: 'My Admin Stores',
-      applicationMenu: 'APPLICATION',
-      settingsMenu: 'SETTINGS',
       ordersCount: 'orders',
       activeStatus: 'Active',
       save: 'Save Changes',
@@ -147,6 +150,7 @@ export default function SpikeSuperAdminDashboard() {
     const verifyAdminAccess = async () => {
       try {
         const storedEmail = (localStorage.getItem('user_email') || '').toLowerCase().trim();
+        
         if (storedEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
           fetchAllData();
           return;
@@ -170,18 +174,21 @@ export default function SpikeSuperAdminDashboard() {
             .maybeSingle();
 
           if (adminRecord) {
+            setCurrentAdminRole(adminRecord.role);
+            setCurrentPermissions(adminRecord.permissions || {});
             fetchAllData();
             return;
           }
         }
 
-        alert(isAr ? '⛔ عذراً، غير مسموح لك بالدخول.' : 'Access Denied.');
+        alert(isAr ? '⛔ عذراً، غير مسموح لك بالدخول. هذه لوحة تحكم الإدارة العليا.' : 'Access Denied: Admins Only.');
         router.push('/dashboard');
       } catch (err) {
-        console.error('Auth check failed:', err);
+        console.error('Auth verification failed:', err);
         router.push('/dashboard');
       }
     };
+
     verifyAdminAccess();
   }, []);
 
@@ -213,7 +220,7 @@ export default function SpikeSuperAdminDashboard() {
         if (settingsData.withdraw_threshold) setWithdrawThreshold(settingsData.withdraw_threshold);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching admin data:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -222,7 +229,10 @@ export default function SpikeSuperAdminDashboard() {
 
   const handleCreateStore = async (e) => {
     e.preventDefault();
-    if (!newStoreData.store_name || !newStoreData.store_slug) return;
+    if (!newStoreData.store_name || !newStoreData.store_slug) {
+      alert(isAr ? 'يرجى كتابة اسم ورابط المتجر' : 'Please fill required fields');
+      return;
+    }
     const cleanSlug = newStoreData.store_slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
     const newUserId = 'merchant_' + Date.now().toString(36);
 
@@ -239,7 +249,7 @@ export default function SpikeSuperAdminDashboard() {
     }]);
 
     if (!error) {
-      alert(isAr ? '✅ تم إنشاء المتجر بنجاح' : 'Store created');
+      alert(isAr ? '✅ تم إنشاء المتجر بنجاح' : 'Store created successfully');
       setNewStoreModal(false);
       setNewStoreData({ store_name: '', store_slug: '', owner_name: '', phone: '', currency: 'USD', initial_wallet: 10 });
       fetchAllData();
@@ -250,8 +260,14 @@ export default function SpikeSuperAdminDashboard() {
 
   const handleToggleStoreStatus = async (storeId, currentStatus) => {
     const nextStatus = !currentStatus;
-    const { error } = await supabase.from('store_profiles').update({ is_active: nextStatus }).eq('id', storeId);
-    if (!error) setStores(prev => prev.map(s => s.id === storeId ? { ...s, is_active: nextStatus } : s));
+    const { error } = await supabase
+      .from('store_profiles')
+      .update({ is_active: nextStatus })
+      .eq('id', storeId);
+
+    if (!error) {
+      setStores(prev => prev.map(s => s.id === storeId ? { ...s, is_active: nextStatus } : s));
+    }
   };
 
   const handleUpdateWallet = async (storeId, currentBalance) => {
@@ -259,18 +275,34 @@ export default function SpikeSuperAdminDashboard() {
     if (amount === null) return;
     const num = parseFloat(amount);
     if (isNaN(num)) return;
-    const { error } = await supabase.from('store_profiles').update({ wallet_balance_usd: num }).eq('id', storeId);
-    if (!error) setStores(prev => prev.map(s => s.id === storeId ? { ...s, wallet_balance_usd: num } : s));
+
+    const { error } = await supabase
+      .from('store_profiles')
+      .update({ wallet_balance_usd: num })
+      .eq('id', storeId);
+
+    if (!error) {
+      setStores(prev => prev.map(s => s.id === storeId ? { ...s, wallet_balance_usd: num } : s));
+    }
   };
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
-    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
-    if (!error) setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: newStatus })
+      .eq('id', orderId);
+
+    if (!error) {
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+    }
   };
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
-    if (!newProductData.title || !newProductData.price) return;
+    if (!newProductData.title || !newProductData.price) {
+      alert(isAr ? 'يرجى إدخال اسم المنتج والسعر' : 'Please fill product title and price');
+      return;
+    }
     const { error } = await supabase.from('products').insert([{
       title: newProductData.title,
       price: parseFloat(newProductData.price) || 0,
@@ -279,8 +311,9 @@ export default function SpikeSuperAdminDashboard() {
       store_id: newProductData.store_id || (stores[0]?.user_id || 'spike_main'),
       status: 'active'
     }]);
+
     if (!error) {
-      alert(isAr ? '✅ تمت إضافة المنتج بنجاح' : 'Product added');
+      alert(isAr ? '✅ تمت إضافة المنتج بنجاح' : 'Product added successfully');
       setNewProductModal(false);
       setNewProductData({ title: '', price: '', cost_price: '', stock: 100, store_id: '' });
       fetchAllData();
@@ -292,6 +325,7 @@ export default function SpikeSuperAdminDashboard() {
   const handleCreateAdmin = async (e) => {
     e.preventDefault();
     if (!newAdminData.email) return;
+
     const cleanEmail = newAdminData.email.trim().toLowerCase();
     const { error } = await supabase.from('admin_users').insert([{
       email: cleanEmail,
@@ -299,9 +333,16 @@ export default function SpikeSuperAdminDashboard() {
       role: newAdminData.role,
       permissions: newAdminData.permissions
     }]);
+
     if (!error) {
-      alert(isAr ? '✅ تمت إضافة المشرف بنجاح' : 'Admin created');
+      alert(isAr ? '✅ تمت إضافة المشرف وتعيين الصلاحيات بنجاح' : 'Admin created successfully');
       setNewAdminModal(false);
+      setNewAdminData({
+        email: '',
+        name: '',
+        role: 'admin',
+        permissions: { manage_stores: true, manage_orders: true, manage_finance: false, manage_admins: false }
+      });
       fetchAllData();
     } else {
       alert(error.message);
@@ -309,10 +350,16 @@ export default function SpikeSuperAdminDashboard() {
   };
 
   const handleDeleteAdmin = async (id, email) => {
-    if (email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) return alert('Cannot delete owner!');
-    if (!confirm(`Revoke access for ${email}?`)) return;
+    if (email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+      alert(isAr ? '⚠️ لا يمكن حذف حساب المالك الأساسي للنظام!' : 'Primary Super Admin cannot be deleted!');
+      return;
+    }
+    if (!confirm(isAr ? `هل أنت متأكد من إلغاء صلاحيات المسؤول ${email}؟` : `Revoke access for ${email}?`)) return;
+
     const { error } = await supabase.from('admin_users').delete().eq('id', id);
-    if (!error) setAdminUsers(prev => prev.filter(a => a.id !== id));
+    if (!error) {
+      setAdminUsers(prev => prev.filter(a => a.id !== id));
+    }
   };
 
   const handleSavePlatformSettings = async () => {
@@ -323,7 +370,12 @@ export default function SpikeSuperAdminDashboard() {
       withdraw_threshold: parseFloat(withdrawThreshold),
       updated_at: new Date().toISOString()
     });
-    if (!error) alert(isAr ? '✅ تم حفظ إعدادات النظام بنجاح' : 'Settings saved');
+
+    if (!error) {
+      alert(isAr ? '✅ تم حفظ إعدادات النظام وسعر الصرف بنجاح' : 'Settings saved successfully');
+    } else {
+      alert(error.message);
+    }
   };
 
   const totalStoresCount = stores.length;
@@ -331,25 +383,60 @@ export default function SpikeSuperAdminDashboard() {
   const activeStoresCount = stores.filter(s => s.is_active !== false).length;
   const totalSalesAmount = orders.reduce((acc, curr) => acc + (Number(curr.total_price) || 0), 0);
 
-  const mainMenuItems = [
-    { id: 'overview', title: t.navOverview, icon: '🏠' },
-    { id: 'merchants', title: t.navStores, icon: '📂', count: totalStoresCount },
-    { id: 'orders', title: t.navOrders, icon: '⏱️', count: orders.length },
-    { id: 'inventory', title: t.navInventory, icon: '⚡', count: products.length },
+  const navItems = [
+    { id: 'overview', title: t.navOverview, icon: '🏠', count: null },
+    { id: 'merchants', title: t.navStores, icon: '🏬', count: totalStoresCount },
+    { id: 'orders', title: t.navOrders, icon: '📦', count: orders.length },
+    { id: 'inventory', title: t.navInventory, icon: '🏷️', count: products.length },
     { id: 'admins', title: t.navAdmins, icon: '🛡️', count: adminUsers.length + 1 },
-  ];
-
-  const settingsItems = [
-    { id: 'rates', title: t.navRates, icon: '📁' },
-    { id: 'domains', title: t.navDomains, icon: '💳' },
-    { id: 'plans', title: t.navPlans, icon: '💎' },
+    { id: 'rates', title: t.navRates, icon: '💱', count: null },
+    { id: 'domains', title: t.navDomains, icon: '🌐', count: domains.length },
+    { id: 'plans', title: t.navPlans, icon: '💎', count: null },
+    { id: 'audit', title: t.navLogs, icon: '📑', count: auditLogs.length },
+    { id: 'broadcast', title: t.navBroadcast, icon: '📢', count: null },
   ];
 
   const statCards = [
-    { title: t.statStores, value: totalStoresCount.toString(), change: '980', icon: '⚠️', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
-    { title: t.statPending, value: pendingOrdersCount.toString(), change: '2,940', icon: '🛡️', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
-    { title: t.statActiveUsers, value: activeStoresCount.toString(), change: '2,504', icon: '☕', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
-    { title: t.statSales, value: `${totalSalesAmount.toFixed(2)} ج.م`, change: '4,923', icon: '📦', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
+    {
+      title: t.statStores,
+      value: totalStoresCount.toString(),
+      change: '980',
+      icon: '⚠️',
+      badgeColor: 'text-cyan-600 bg-cyan-500/10 border-cyan-500/20',
+      desc1: t.comparedLastMonth,
+      desc2: t.totalReceipts,
+      progress: '100%',
+    },
+    {
+      title: t.statPending,
+      value: pendingOrdersCount.toString(),
+      change: '2,940',
+      icon: '🛡️',
+      badgeColor: 'text-cyan-600 bg-cyan-500/10 border-cyan-500/20',
+      desc1: t.underProcess,
+      desc2: t.underProcess,
+      progress: pendingOrdersCount > 0 ? '45%' : '0%',
+    },
+    {
+      title: t.statActiveUsers,
+      value: activeStoresCount.toString(),
+      change: '2,504',
+      icon: '☕',
+      badgeColor: 'text-cyan-600 bg-cyan-500/10 border-cyan-500/20',
+      desc1: t.activeRate,
+      desc2: t.activeRate,
+      progress: '100%',
+    },
+    {
+      title: t.statSales,
+      value: `${totalSalesAmount.toFixed(2)} ج.م`,
+      change: '4,923',
+      icon: '📦',
+      badgeColor: 'text-cyan-600 bg-cyan-500/10 border-cyan-500/20',
+      desc1: t.comparedLastMonth,
+      desc2: t.totalReceipts,
+      progress: totalSalesAmount > 0 ? '60%' : '5%',
+    },
   ];
 
   if (loading) {
@@ -361,46 +448,23 @@ export default function SpikeSuperAdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen font-sans flex bg-[#161B22] text-slate-100 select-none overflow-x-hidden" dir={isAr ? 'rtl' : 'ltr'}>
+    <div 
+      className="min-h-screen font-sans flex bg-[#161B22] text-slate-100 select-none overflow-x-hidden" 
+      dir={isAr ? 'rtl' : 'ltr'}
+    >
+      {sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-xs transition-opacity"
+        />
+      )}
 
-      {/* الشريط الجانبي المصغر (Icon Dock) */}
-      <aside className="w-20 shrink-0 bg-[#1A212D] border-r border-slate-800/80 flex flex-col items-center py-6 justify-between shadow-2xl">
-        <div className="space-y-6 flex flex-col items-center">
-          <div className="w-10 h-10 rounded-2xl bg-cyan-500 flex items-center justify-center text-slate-950 font-black shadow-md shadow-cyan-500/30">
-            S
-          </div>
-
-          <div className="space-y-3 pt-4">
-            {['🏠', '📂', '⏱️', '⚡', '🛡️', '📁'].map((icon, idx) => (
-              <button 
-                key={idx}
-                onClick={() => setActiveTab(mainMenuItems[idx]?.id || 'overview')}
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg transition cursor-pointer ${
-                  activeTab === mainMenuItems[idx]?.id 
-                    ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/30' 
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                }`}
-              >
-                {icon}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <button 
-            onClick={toggleTheme}
-            className="w-10 h-10 rounded-2xl flex items-center justify-center text-sm transition cursor-pointer bg-slate-800 text-amber-300"
-            title="تغيير المظهر"
-          >
-            {isDark ? '☀️' : '🌙'}
-          </button>
-        </div>
-      </aside>
-
-      {/* القائمة الجانبية الرئيسية الموسعة (Sidebar) مطابقة للصورة */}
-      <aside className="w-64 shrink-0 bg-[#1A212D] border-r border-slate-800/80 flex flex-col justify-between p-6 shadow-2xl">
-        <div className="space-y-6">
+      {/* الشريط الجانبي الداكن الفاخر المطابق للصورة تماماً */}
+      <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 bg-[#1A212D] border-r border-slate-800/80 flex flex-col justify-between p-6 shadow-2xl transition-all duration-300 lg:static lg:translate-x-0 ${
+        sidebarOpen ? 'translate-x-0 shadow-2xl' : isAr ? 'translate-x-full' : '-translate-x-full'
+      }`}>
+        
+        <div className="space-y-6 flex-1 overflow-y-auto">
           
           {/* بروفايل المستخدم العلوي في السايد بار */}
           <div className="flex items-center justify-between pb-4 border-b border-slate-800">
@@ -410,11 +474,14 @@ export default function SpikeSuperAdminDashboard() {
               </div>
               <div className="leading-tight">
                 <span className="text-xs font-black block text-white">Hassan Hosny</span>
-                <span className="text-[10px] text-slate-400 font-mono">{t.adminRole}</span>
+                <span className="text-[10px] text-slate-400 font-mono">Super Admin</span>
               </div>
             </div>
-            <button onClick={handleLogout} className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs cursor-pointer" title={t.logoutText}>
-              🚪
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden w-8 h-8 rounded-lg border border-slate-700 flex items-center justify-center text-slate-300 hover:bg-slate-800"
+            >
+              ✕
             </button>
           </div>
 
@@ -424,7 +491,7 @@ export default function SpikeSuperAdminDashboard() {
             <input type="text" placeholder="Search" className="bg-transparent text-xs outline-none w-full text-white placeholder-slate-500" />
           </div>
 
-          {/* 👑 زر متاجر الأدمن الخاصة */}
+          {/* 👑 زر الانتقال السريع لمتاجر الأدمن الخاصة بك */}
           <button
             onClick={() => {
               localStorage.setItem('merchant_user_id', 'main_flagship_owner');
@@ -436,135 +503,200 @@ export default function SpikeSuperAdminDashboard() {
             <span>{t.adminStoresBtn}</span>
           </button>
 
-          {/* قسم APPLICATION */}
+          {/* القوائم الجانبية */}
           <div className="space-y-1.5 pt-2">
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 block mb-2">
               {t.applicationMenu}
             </span>
-            {mainMenuItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
-                  activeTab === item.id 
-                    ? 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30' 
-                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm">{item.icon}</span>
-                  <span>{item.title}</span>
-                </div>
-                {item.count !== undefined && (
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                    activeTab === item.id ? 'bg-slate-950/20 text-slate-950' : 'bg-slate-800 text-slate-400'
-                  }`}>
-                    {item.count}
-                  </span>
-                )}
-              </button>
-            ))}
+            {navItems.slice(0, 5).map((item) => {
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                    isActive
+                      ? 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30'
+                      : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm">{item.icon}</span>
+                    <span>{item.title}</span>
+                  </div>
+
+                  {item.count !== null && (
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                      isActive ? 'bg-slate-950/20 text-slate-950' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      {item.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
-          {/* قسم SETTINGS */}
           <div className="space-y-1.5 pt-2">
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 block mb-2">
               {t.settingsMenu}
             </span>
-            {settingsItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
-                  activeTab === item.id 
-                    ? 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30' 
-                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm">{item.icon}</span>
-                  <span>{item.title}</span>
-                </div>
-              </button>
-            ))}
+            {navItems.slice(5).map((item) => {
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    setSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                    isActive
+                      ? 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30'
+                      : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm">{item.icon}</span>
+                    <span>{item.title}</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
         </div>
 
-        {/* صندوق ترقية الحساب أسفل السايد بار */}
-        <div className="p-4 rounded-3xl bg-[#12161F] border border-slate-800 space-y-3 relative overflow-hidden">
-          <div className="absolute right-0 bottom-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-xl"></div>
-          <div className="flex items-center gap-2 text-cyan-400 font-bold text-xs">
-            <span>⭐</span>
-            <span>Upgrade to Premium.</span>
+        {/* 🚪 قسم بيانات المشرف وزر تسجيل الخروج تحت مدير النظام الأساسي */}
+        <div className="p-4 border-t border-slate-800 flex flex-col gap-2.5 bg-[#12161F] rounded-2xl">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-teal-400 flex items-center justify-center text-slate-950 text-xs font-black shadow-xs shrink-0">
+              S.A
+            </div>
+            <div className="leading-tight truncate">
+              <span className="text-xs font-bold block text-white">
+                {t.adminRole}
+              </span>
+              <span className="text-[10px] text-slate-400 block font-mono truncate">{SUPER_ADMIN_EMAIL}</span>
+            </div>
           </div>
-          <p className="text-[10px] text-slate-400 leading-relaxed">Enjoy benefits and unlock more content on premium</p>
-          <button onClick={() => setActiveTab('plans')} className="w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-xl text-xs font-black transition cursor-pointer shadow-md">
-            Explore Now
+
+          <button 
+            onClick={handleLogout}
+            className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer"
+            title={t.logoutText}
+          >
+            <span>🚪</span>
+            <span>{t.logoutText}</span>
           </button>
         </div>
       </aside>
 
-      {/* منطقة العمل الرئيسية (Main Workspace ذات الخلفية الفاتحة الناعمة) */}
+      {/* منطقة العمل الرئيسية (Main Workspace بخلفية رمادية ناعمة وفاتحة) */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-[#F0F2F5] text-slate-800">
         
-        <header className="px-8 py-5 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-xs">
-          <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">{t.overviewTitle}</h1>
-            <p className="text-xs text-slate-500">{t.overviewSubtitle}</p>
+        <header className="px-6 sm:px-10 py-4 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-xs">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden w-9 h-9 rounded-xl border border-slate-200 bg-slate-100 flex items-center justify-center text-lg font-bold text-slate-800 cursor-pointer"
+            >
+              ☰
+            </button>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{t.overviewTitle}</h1>
+              <p className="text-xs text-slate-500">{t.overviewSubtitle}</p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <button onClick={() => setNewStoreModal(true)} className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-2xl text-xs font-black shadow-sm transition cursor-pointer">
+          <div className="flex items-center gap-2.5">
+            <button 
+              onClick={() => setNewStoreModal(true)}
+              className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-2xl text-xs font-black shadow-sm transition cursor-pointer"
+            >
               + {t.addStore}
             </button>
-            <button onClick={fetchAllData} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl text-xs font-bold shadow-2xs transition cursor-pointer">
+
+            <button 
+              onClick={fetchAllData}
+              disabled={refreshing}
+              className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl text-xs font-bold transition shadow-2xs cursor-pointer"
+            >
               📥 {t.refreshData}
             </button>
-            <button onClick={() => setActiveTab('broadcast')} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl text-xs font-bold shadow-2xs transition cursor-pointer">
+
+            <button
+              onClick={() => setActiveTab('broadcast')}
+              className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl text-xs font-bold transition shadow-2xs cursor-pointer"
+            >
               💬 {t.messageBtn}
             </button>
-            <button onClick={() => setActiveTab('orders')} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl text-xs font-bold shadow-2xs transition cursor-pointer">
+
+            <button
+              onClick={() => setActiveTab('orders')}
+              className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl text-xs font-bold transition shadow-2xs cursor-pointer"
+            >
               🔔 {t.notificationBtn}
             </button>
           </div>
         </header>
 
-        <div className="p-8 space-y-6">
+        <div className="p-6 sm:p-10 space-y-6">
 
+          {/* تبويب الرئيسية والمؤشرات */}
           {activeTab === 'overview' && (
             <>
-              {/* البطاقات البيضاء الناعمة الـ 4 */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 {statCards.map((stat, i) => (
-                  <div key={i} className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm transition hover:shadow-md flex flex-col justify-between">
+                  <div
+                    key={i}
+                    className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm transition hover:shadow-md flex flex-col justify-between"
+                  >
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-xl p-2.5 rounded-2xl bg-slate-50 border border-slate-100">{stat.icon}</span>
-                      <span className={`text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full border ${stat.badgeColor}`}>{stat.change}</span>
+                      <span className={`text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full border ${stat.badgeColor}`}>
+                        {stat.change}
+                      </span>
                     </div>
-                    <div className="space-y-1">
-                      <span className="text-2xl font-black text-slate-900 font-mono tracking-tight block" dir="ltr">{stat.value}</span>
-                      <span className="text-xs text-slate-500 font-bold block">{stat.title}</span>
+
+                    <div className="space-y-1" dir="ltr">
+                      <span className="text-2xl font-black text-slate-900 font-mono tracking-tight block">
+                        {stat.value}
+                      </span>
+                      <span className="text-xs text-slate-500 font-bold block">
+                        {stat.title}
+                      </span>
                     </div>
+
                     <span className="text-[10px] text-slate-400 pt-3 border-t border-slate-100 mt-4 block">Chart Value</span>
                   </div>
                 ))}
               </div>
 
-              {/* قسم الجدول السريع للطلبات */}
               <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/80 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h3 className="text-sm font-black text-slate-900">Section Title - Live Orders</h3>
                     <p className="text-xs text-slate-400">Chart Value & Transactions</p>
                   </div>
-                  <button onClick={() => setActiveTab('orders')} className="text-xs text-cyan-600 font-bold hover:underline cursor-pointer">
+                  <button 
+                    onClick={() => setActiveTab('orders')}
+                    className="text-xs text-cyan-600 font-bold hover:underline cursor-pointer"
+                  >
                     View all →
                   </button>
                 </div>
 
                 {orders.length === 0 ? (
-                  <div className="text-center py-12 text-slate-400 text-xs">No recorded orders yet</div>
+                  <div className="text-center py-12 text-slate-400 text-xs">
+                    No recorded orders yet
+                  </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
@@ -599,12 +731,69 @@ export default function SpikeSuperAdminDashboard() {
             </>
           )}
 
+          {/* تبويب فريق الإدارة والصلاحيات */}
+          {activeTab === 'admins' && (
+            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Admin Team & Roles</h3>
+                  <p className="text-xs text-slate-500">حسابات المشرفين والصلاحيات الممنوحة</p>
+                </div>
+                <button
+                  onClick={() => setNewAdminModal(true)}
+                  className="px-4 py-2 bg-cyan-500 text-slate-950 rounded-xl text-xs font-black cursor-pointer shadow-sm"
+                >
+                  + Add Admin
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-400 font-bold">
+                      <th className="p-3 text-right">NAME</th>
+                      <th className="p-3 text-right">EMAIL</th>
+                      <th className="p-3 text-right">ROLE</th>
+                      <th className="p-3 text-center">ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    <tr className="bg-cyan-500/5">
+                      <td className="p-3 font-black text-slate-900">Hassan Hosny (Owner)</td>
+                      <td className="p-3 font-mono font-bold" dir="ltr">{SUPER_ADMIN_EMAIL}</td>
+                      <td className="p-3"><span className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-500/10 text-rose-600">S.A</span></td>
+                      <td className="p-3 text-center text-slate-400 font-mono">🔒 Master</td>
+                    </tr>
+                    {adminUsers.map(user => (
+                      <tr key={user.id} className="hover:bg-slate-50">
+                        <td className="p-3 font-bold text-slate-800">{user.name}</td>
+                        <td className="p-3 font-mono text-slate-600" dir="ltr">{user.email}</td>
+                        <td className="p-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600">{user.role}</span></td>
+                        <td className="p-3 text-center"><button onClick={() => handleDeleteAdmin(user.id, user.email)} className="text-rose-500 font-bold cursor-pointer">Revoke</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* تبويب المتاجر والتجار */}
           {activeTab === 'merchants' && (
             <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-base font-black text-slate-900">Directories - Stores & Merchants ({stores.length})</h3>
-                <button onClick={() => setNewStoreModal(true)} className="px-4 py-2 bg-cyan-500 text-slate-950 rounded-xl text-xs font-black cursor-pointer">+ Add Store</button>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Directories - Stores & Merchants ({stores.length})</h3>
+                  <p className="text-xs text-slate-500">إدارة ومتابعة المتاجر المسجلة في المنصة</p>
+                </div>
+                <button 
+                  onClick={() => setNewStoreModal(true)}
+                  className="px-4 py-2 bg-cyan-500 text-slate-950 rounded-xl text-xs font-black cursor-pointer shadow-sm"
+                >
+                  + Add Store
+                </button>
               </div>
+
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
@@ -617,19 +806,42 @@ export default function SpikeSuperAdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {stores.map((s, i) => (
-                      <tr key={i} className="hover:bg-slate-50">
-                        <td className="p-3 font-bold text-slate-900">{s.store_name} <span className="text-[10px] text-slate-400 block font-mono">({s.store_slug}.spike.shop)</span></td>
-                        <td className="p-3 text-slate-700">{s.owner_name}</td>
-                        <td className="p-3 font-mono text-cyan-600 font-bold">${s.wallet_balance_usd || 0}</td>
+                    {stores.map((s, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50">
                         <td className="p-3">
-                          <button onClick={() => handleToggleStoreStatus(s.id, s.is_active !== false)} className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${s.is_active !== false ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
+                          <span className="font-bold text-slate-900 block">{s.store_name}</span>
+                          <span className="text-[10px] text-slate-400 font-mono" dir="ltr">{s.store_slug}.spike.shop</span>
+                        </td>
+                        <td className="p-3 text-slate-700">{s.owner_name || '—'}</td>
+                        <td className="p-3 font-mono font-bold text-cyan-600">${s.wallet_balance_usd || 0}</td>
+                        <td className="p-3">
+                          <button
+                            onClick={() => handleToggleStoreStatus(s.id, s.is_active !== false)}
+                            className={`px-2.5 py-1 rounded-md text-[10px] font-bold cursor-pointer transition ${
+                              s.is_active !== false 
+                                ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' 
+                                : 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
+                            }`}
+                          >
                             {s.is_active !== false ? 'Active' : 'Disabled'}
                           </button>
                         </td>
                         <td className="p-3 text-center space-x-2">
-                          <button onClick={() => handleUpdateWallet(s.id, s.wallet_balance_usd || 0)} className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-lg font-bold">Wallet</button>
-                          <button onClick={() => { localStorage.setItem('merchant_user_id', s.user_id); router.push('/dashboard'); }} className="px-2.5 py-1 bg-cyan-500/15 text-cyan-700 rounded-lg font-bold">Access ↗</button>
+                          <button
+                            onClick={() => handleUpdateWallet(s.id, s.wallet_balance_usd || 0)}
+                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold cursor-pointer"
+                          >
+                            Wallet
+                          </button>
+                          <button
+                            onClick={() => {
+                              localStorage.setItem('merchant_user_id', s.user_id);
+                              router.push('/dashboard');
+                            }}
+                            className="px-2.5 py-1 bg-cyan-500/15 text-cyan-700 rounded-lg font-bold cursor-pointer"
+                          >
+                            Access ↗
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -639,115 +851,173 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           )}
 
+          {/* تبويب كافة الطلبات */}
           {activeTab === 'orders' && (
             <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
-              <h3 className="text-base font-black text-slate-900 mb-4">Timeline - All Orders ({orders.length})</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-400 font-bold">
-                      <th className="p-3 text-right">ORDER ID</th>
-                      <th className="p-3 text-right">CUSTOMER</th>
-                      <th className="p-3 text-right">GOVERNORATE</th>
-                      <th className="p-3 text-right">AMOUNT</th>
-                      <th className="p-3 text-center">STATUS</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {orders.map((o, i) => (
-                      <tr key={i} className="hover:bg-slate-50">
-                        <td className="p-3 font-mono font-bold text-slate-900">#{o.id}</td>
-                        <td className="p-3 font-bold text-slate-800">{o.customer_name}</td>
-                        <td className="p-3 text-slate-600">{o.governorate}</td>
-                        <td className="p-3 font-mono text-cyan-600 font-bold">{o.total_price} ج.م</td>
-                        <td className="p-3 text-center">
-                          <select value={o.status || 'pending'} onChange={(e) => handleUpdateOrderStatus(o.id, e.target.value)} className="p-1.5 border border-slate-200 rounded-xl text-xs bg-slate-50 font-bold text-slate-700 cursor-pointer">
-                            <option value="pending">Pending</option>
-                            <option value="confirmed">Confirmed</option>
-                            <option value="shipped">Shipped</option>
-                            <option value="delivered">Delivered</option>
-                            <option value="cancelled">Cancelled</option>
-                          </select>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Timeline - All Orders ({orders.length})</h3>
+                  <p className="text-xs text-slate-500">متابعة شحنات وحالات الدفع عند الاستلام</p>
+                </div>
+                <button onClick={fetchAllData} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold cursor-pointer">Refresh</button>
               </div>
+
+              {orders.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-sm">No orders found</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-slate-400 font-bold">
+                        <th className="p-3 text-right">ORDER ID</th>
+                        <th className="p-3 text-right">CUSTOMER</th>
+                        <th className="p-3 text-right">PHONE</th>
+                        <th className="p-3 text-right">GOVERNORATE</th>
+                        <th className="p-3 text-right">AMOUNT</th>
+                        <th className="p-3 text-center">STATUS</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {orders.map((o, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50">
+                          <td className="p-3 font-mono font-bold text-slate-900">#{o.id}</td>
+                          <td className="p-3 font-bold text-slate-800">{o.customer_name}</td>
+                          <td className="p-3 font-mono" dir="ltr">{o.customer_phone}</td>
+                          <td className="p-3 text-slate-600">{o.governorate} - {o.address}</td>
+                          <td className="p-3 font-mono font-bold text-cyan-600">{o.total_price} ج.م</td>
+                          <td className="p-3 text-center">
+                            <select
+                              value={o.status || 'pending'}
+                              onChange={(e) => handleUpdateOrderStatus(o.id, e.target.value)}
+                              className="p-1.5 border border-slate-200 rounded-xl text-xs bg-slate-50 font-bold text-slate-700 cursor-pointer"
+                            >
+                              <option value="pending">Pending</option>
+                              <option value="confirmed">Confirmed</option>
+                              <option value="shipped">Shipped</option>
+                              <option value="delivered">Delivered</option>
+                              <option value="cancelled">Cancelled</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
+          {/* تبويب المنتجات والمخزون */}
           {activeTab === 'inventory' && (
             <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-base font-black text-slate-900">Files - Products & Stock ({products.length})</h3>
-                <button onClick={() => setNewProductModal(true)} className="px-4 py-2 bg-cyan-500 text-slate-950 rounded-xl text-xs font-black">+ Add Product</button>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Files - Products & Stock ({products.length})</h3>
+                  <p className="text-xs text-slate-500">إدارة عتاد ومخزون المتاجر</p>
+                </div>
+                <button
+                  onClick={() => setNewProductModal(true)}
+                  className="px-4 py-2 bg-cyan-500 text-slate-950 rounded-xl text-xs font-black cursor-pointer shadow-sm"
+                >
+                  + Add Product
+                </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {products.map((p, i) => (
-                  <div key={i} className="p-4 border border-slate-200 rounded-2xl bg-slate-50/50 space-y-2">
-                    <span className="font-black text-slate-900 text-sm block">{p.title}</span>
-                    <span className="text-cyan-600 font-mono font-bold">{p.price} ج.م</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {activeTab === 'admins' && (
-            <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-base font-black text-slate-900">Admin Team & Roles</h3>
-                <button onClick={() => setNewAdminModal(true)} className="px-4 py-2 bg-cyan-500 text-slate-950 rounded-xl text-xs font-black">+ Add Admin</button>
-              </div>
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-400 font-bold">
-                    <th className="p-3 text-right">NAME</th>
-                    <th className="p-3 text-right">EMAIL</th>
-                    <th className="p-3 text-center">ACTION</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  <tr className="bg-cyan-500/5">
-                    <td className="p-3 font-black text-slate-900">Hassan Hosny (Owner)</td>
-                    <td className="p-3 font-mono font-bold" dir="ltr">{SUPER_ADMIN_EMAIL}</td>
-                    <td className="p-3 text-center text-slate-400 font-mono">🔒 Master</td>
-                  </tr>
-                  {adminUsers.map(user => (
-                    <tr key={user.id} className="hover:bg-slate-50">
-                      <td className="p-3 font-bold text-slate-800">{user.name}</td>
-                      <td className="p-3 font-mono text-slate-600" dir="ltr">{user.email}</td>
-                      <td className="p-3 text-center"><button onClick={() => handleDeleteAdmin(user.id, user.email)} className="text-rose-500 font-bold">Revoke</button></td>
-                    </tr>
+              {products.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-sm">Inventory is empty</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {products.map((p, idx) => (
+                    <div key={idx} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col justify-between space-y-3">
+                      <div>
+                        <span className="font-bold text-sm text-slate-900 block">{p.title}</span>
+                        <div className="flex justify-between text-xs text-slate-500 mt-2 font-mono">
+                          <span>Price: {p.price} ج.م</span>
+                          <span>Cost: {p.cost_price || 0} ج.م</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-xs">
+                        <span className="text-slate-500">Stock: <strong>{p.stock_quantity || 0}</strong></span>
+                        <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 rounded text-[10px] font-bold">In Stock</span>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              )}
             </div>
           )}
 
+          {/* تبويب سعر الصرف والعمولة */}
           {activeTab === 'rates' && (
             <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm max-w-xl">
-              <h3 className="text-base font-black text-slate-900 mb-4">Payment & Exchange Settings</h3>
+              <h3 className="text-base font-black text-slate-900 mb-1">Payment & Exchange Settings</h3>
+              <p className="text-xs text-slate-500 mb-4">إدارة أسعار الصرف والعمولة المالية للمنصة</p>
+              
               <div className="space-y-4 text-xs font-bold">
                 <div>
                   <label className="block text-slate-500 mb-1">USD to EGP Rate</label>
-                  <input type="number" step="0.1" value={exchangeRate} onChange={e => setExchangeRate(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono" />
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={exchangeRate}
+                    onChange={(e) => setExchangeRate(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-mono outline-none focus:border-cyan-500"
+                  />
                 </div>
+
                 <div>
                   <label className="block text-slate-500 mb-1">Platform Commission (%)</label>
-                  <input type="number" step="0.1" value={platformCommission} onChange={e => setPlatformCommission(e.target.value)} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono" />
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={platformCommission}
+                    onChange={(e) => setPlatformCommission(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-mono outline-none focus:border-cyan-500"
+                  />
                 </div>
-                <button onClick={handleSavePlatformSettings} className="px-6 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer">Save Changes</button>
+
+                <div>
+                  <label className="block text-slate-500 mb-1">Withdraw Threshold ($)</label>
+                  <input
+                    type="number"
+                    value={withdrawThreshold}
+                    onChange={(e) => setWithdrawThreshold(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-mono outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <button 
+                  onClick={handleSavePlatformSettings}
+                  className="px-6 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black text-xs hover:bg-cyan-400 transition cursor-pointer mt-2 shadow-sm"
+                >
+                  Save Changes
+                </button>
               </div>
             </div>
           )}
 
+          {/* تبويب الإعلانات الجماعية */}
           {activeTab === 'broadcast' && (
             <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm max-w-xl">
-              <h3 className="text-base font-black text-slate-900 mb-2">Send Broadcast Announcement</h3>
-              <textarea rows="4" value={broadcastMessage} onChange={e => setBroadcastMessage(e.target.value)} placeholder="Type announcement..." className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs mb-3 outline-none focus:border-cyan-500" />
-              <button onClick={() => { if (!broadcastMessage) return; alert('✅ Broadcast sent successfully'); setBroadcastMessage(''); }} className="px-5 py-2 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer">Send Now</button>
+              <h3 className="text-base font-black text-slate-900 mb-1">Send Broadcast Announcement</h3>
+              <p className="text-xs text-slate-500 mb-3">إرسال إعلان هام يظهر لجميع التجار داخل لوحة تحكمهم.</p>
+              <textarea
+                rows="4"
+                value={broadcastMessage}
+                onChange={(e) => setBroadcastMessage(e.target.value)}
+                placeholder="Type announcement..."
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs mb-3 outline-none focus:border-cyan-500"
+              />
+              <button
+                onClick={() => {
+                  if (!broadcastMessage) return;
+                  alert('✅ Broadcast sent successfully');
+                  setBroadcastMessage('');
+                }}
+                className="px-5 py-2 bg-cyan-500 text-slate-950 rounded-xl font-black text-xs cursor-pointer shadow-sm"
+              >
+                Send Now
+              </button>
             </div>
           )}
 
@@ -757,15 +1027,41 @@ export default function SpikeSuperAdminDashboard() {
       {/* مودال إنشاء متجر جديد */}
       {newStoreModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="p-6 rounded-3xl max-w-md w-full bg-white border border-slate-200 text-slate-900 shadow-2xl">
-            <h3 className="text-base font-black mb-4">Deploy New Store</h3>
+          <div className="p-6 rounded-3xl max-w-md w-full bg-white border border-slate-200 text-slate-900 shadow-2xl space-y-3">
+            <h3 className="text-base font-black">Deploy New Store</h3>
             <form onSubmit={handleCreateStore} className="space-y-3 text-xs">
-              <input type="text" required placeholder="Store Name" value={newStoreData.store_name} onChange={e => setNewStoreData({ ...newStoreData, store_name: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50" />
-              <input type="text" required placeholder="Slug" value={newStoreData.store_slug} onChange={e => setNewStoreData({ ...newStoreData, store_slug: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono" />
-              <input type="text" placeholder="Owner Name" value={newStoreData.owner_name} onChange={e => setNewStoreData({ ...newStoreData, owner_name: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50" />
-              <input type="tel" placeholder="Phone" value={newStoreData.phone} onChange={e => setNewStoreData({ ...newStoreData, phone: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono" />
+              <input
+                type="text"
+                required
+                placeholder="Store Name"
+                value={newStoreData.store_name}
+                onChange={(e) => setNewStoreData({ ...newStoreData, store_name: e.target.value })}
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:border-cyan-500"
+              />
+              <input
+                type="text"
+                required
+                placeholder="Slug"
+                value={newStoreData.store_slug}
+                onChange={(e) => setNewStoreData({ ...newStoreData, store_slug: e.target.value })}
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono outline-none focus:border-cyan-500"
+              />
+              <input
+                type="text"
+                placeholder="Owner Name"
+                value={newStoreData.owner_name}
+                onChange={(e) => setNewStoreData({ ...newStoreData, owner_name: e.target.value })}
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:border-cyan-500"
+              />
+              <input
+                type="tel"
+                placeholder="Phone"
+                value={newStoreData.phone}
+                onChange={(e) => setNewStoreData({ ...newStoreData, phone: e.target.value })}
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono outline-none focus:border-cyan-500"
+              />
               <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-1 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer">Deploy</button>
+                <button type="submit" className="flex-1 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer shadow-sm">Deploy</button>
                 <button type="button" onClick={() => setNewStoreModal(false)} className="px-4 py-2.5 border border-slate-200 rounded-xl cursor-pointer">Cancel</button>
               </div>
             </form>
@@ -773,17 +1069,63 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       )}
 
-      {/* مودال منتج جديد */}
+      {/* مودال إضافة منتج جديد */}
       {newProductModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="p-6 rounded-3xl max-w-md w-full bg-white border border-slate-200 text-slate-900 shadow-2xl">
-            <h3 className="text-base font-black mb-4">Add Product</h3>
+          <div className="p-6 rounded-3xl max-w-md w-full bg-white border border-slate-200 text-slate-900 shadow-2xl space-y-3">
+            <h3 className="text-base font-black">Add Product</h3>
             <form onSubmit={handleCreateProduct} className="space-y-3 text-xs">
-              <input type="text" required placeholder="Title" value={newProductData.title} onChange={e => setNewProductData({ ...newProductData, title: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50" />
-              <input type="number" required placeholder="Price" value={newProductData.price} onChange={e => setNewProductData({ ...newProductData, price: e.target.value })} className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono" />
+              <input
+                type="text"
+                required
+                placeholder="Title"
+                value={newProductData.title}
+                onChange={(e) => setNewProductData({ ...newProductData, title: e.target.value })}
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:border-cyan-500"
+              />
+              <input
+                type="number"
+                required
+                placeholder="Price"
+                value={newProductData.price}
+                onChange={(e) => setNewProductData({ ...newProductData, price: e.target.value })}
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono outline-none focus:border-cyan-500"
+              />
               <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-1 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer">Add</button>
+                <button type="submit" className="flex-1 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer shadow-sm">Add</button>
                 <button type="button" onClick={() => setNewProductModal(false)} className="px-4 py-2.5 border border-slate-200 rounded-xl cursor-pointer">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* مودال إضافة مشرف جديد */}
+      {newAdminModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="p-6 rounded-3xl max-w-md w-full bg-white border border-slate-200 text-slate-900 shadow-2xl space-y-4">
+            <h3 className="text-base font-black">Add Admin & Permissions</h3>
+            <form onSubmit={handleCreateAdmin} className="space-y-3 text-xs font-bold">
+              <input
+                type="text"
+                required
+                placeholder="Name"
+                value={newAdminData.name}
+                onChange={(e) => setNewAdminData({ ...newAdminData, name: e.target.value })}
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:border-cyan-500"
+              />
+              <input
+                type="email"
+                required
+                dir="ltr"
+                placeholder="admin@example.com"
+                value={newAdminData.email}
+                onChange={(e) => setNewAdminData({ ...newAdminData, email: e.target.value })}
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono outline-none focus:border-cyan-500"
+              />
+              <div className="flex gap-2 pt-2">
+                <button type="submit" className="flex-1 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer shadow-sm">Save</button>
+                <button type="button" onClick={() => setNewAdminModal(false)} className="px-4 py-2.5 border border-slate-200 rounded-xl cursor-pointer">Cancel</button>
               </div>
             </form>
           </div>
@@ -793,3 +1135,4 @@ export default function SpikeSuperAdminDashboard() {
     </div>
   );
 }
+```[cite: 5, 6, 7]
