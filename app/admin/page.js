@@ -369,19 +369,52 @@ export default function SpikeSuperAdminDashboard() {
     );
   }
 
-  const primaryColor = '#10B981'; // أخضر نعناعي مشرق ومميز مطابق للصورة
+  const primaryColor = '#10B981'; // أخضر نعناعي مشرق ومميز
 
   return (
     <div className="min-h-screen font-sans flex select-none overflow-x-hidden bg-[#E8F8F0] text-slate-800" dir={isAr ? 'rtl' : 'ltr'}>
       {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/40 z-40 lg:hidden backdrop-blur-xs transition-opacity" />}
 
-      {/* القائمة الجانبية باللون الأبيض النظيف تماماً مثل الصورة */}
-      <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-64 shrink-0 bg-white border-r border-emerald-100 flex flex-col justify-between p-6 shadow-xl transition-all duration-300 lg:static lg:translate-x-0 ${
+      {/* الشريط الجانبي المصغر (Icon Dock) أقصى اليمين/اليسار */}
+      <aside className="w-20 shrink-0 bg-white border-r border-emerald-100 hidden sm:flex flex-col items-center py-6 justify-between shadow-xs">
+        <div className="space-y-6 flex flex-col items-center">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-black shadow-md shadow-emerald-500/30" style={{ backgroundColor: primaryColor }}>
+            S
+          </div>
+
+          <div className="space-y-3 pt-4">
+            {['🟢', '📊', '💰', '🔄', '💳', '🧾'].map((icon, idx) => (
+              <button 
+                key={idx}
+                onClick={() => setActiveTab(navItems[idx]?.id || 'overview')}
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg transition cursor-pointer ${
+                  activeTab === navItems[idx]?.id ? 'text-white font-black shadow-md shadow-emerald-500/30' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+                style={{ backgroundColor: activeTab === navItems[idx]?.id ? primaryColor : 'transparent' }}
+              >
+                {icon}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <button 
+            onClick={toggleTheme}
+            className="w-10 h-10 rounded-2xl flex items-center justify-center text-sm transition cursor-pointer bg-slate-100 text-slate-700 hover:bg-slate-200"
+            title="تغيير المظهر"
+          >
+            {isDark ? '☀️' : '🌙'}
+          </button>
+        </div>
+      </aside>
+
+      {/* القائمة الجانبية الرئيسية الموسعة (Sidebar) باللون الأبيض النظيف */}
+      <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 bg-white border-r border-emerald-100 flex flex-col justify-between p-6 shadow-xl transition-all duration-300 lg:static lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0 shadow-2xl' : isAr ? 'translate-x-full' : '-translate-x-full'
       }`}>
         <div className="space-y-6 flex-1 overflow-y-auto">
           
-          {/* الشعار */}
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black shadow-md shadow-emerald-500/30" style={{ backgroundColor: primaryColor }}>
@@ -392,7 +425,6 @@ export default function SpikeSuperAdminDashboard() {
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600">✕</button>
           </div>
 
-          {/* 👑 زر متاجر الأدمن الخاصة */}
           <button
             onClick={() => {
               localStorage.setItem('merchant_user_id', 'main_flagship_owner');
@@ -405,9 +437,9 @@ export default function SpikeSuperAdminDashboard() {
             <span>{t.adminStoresBtn}</span>
           </button>
 
-          {/* القوائم */}
           <div className="space-y-1 pt-2">
-            {mainMenuItems.map((item) => {
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block mb-2">{t.applicationMenu}</span>
+            {navItems.slice(0, 5).map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button
@@ -430,8 +462,8 @@ export default function SpikeSuperAdminDashboard() {
           </div>
 
           <div className="space-y-1 pt-2 border-t border-slate-100">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block mb-2 pt-2">{t.financeMenu}</span>
-            {settingsItems.map((item) => {
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block mb-2 pt-2">{t.settingsMenu}</span>
+            {navItems.slice(5).map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button
@@ -454,7 +486,7 @@ export default function SpikeSuperAdminDashboard() {
 
         </div>
 
-        {/* زر تسجيل الخروج كما في الصورة أسفل السايد بار */}
+        {/* زر تسجيل الخروج */}
         <div className="p-4 border-t border-slate-100">
           <button 
             onClick={handleLogout}
@@ -487,7 +519,7 @@ export default function SpikeSuperAdminDashboard() {
             <button onClick={() => setNewStoreModal(true)} className="px-4 py-2 text-white rounded-2xl text-xs font-black shadow-sm transition cursor-pointer" style={{ backgroundColor: primaryColor }}>+ {t.addStore}</button>
             <button onClick={fetchAllData} disabled={refreshing} className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-2xl text-xs font-bold transition shadow-2xs cursor-pointer">📥 {t.refreshData}</button>
 
-            {/* بروفايل المستخدم العلوي تماماً مثل الصورة */}
+            {/* بروفايل المستخدم العلوي مطاببق للصورة */}
             <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
               <div className="w-9 h-9 rounded-full overflow-hidden border border-emerald-400">
                 <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="Profile" className="w-full h-full object-cover" />
@@ -669,4 +701,3 @@ export default function SpikeSuperAdminDashboard() {
     </div>
   );
 }
-```[cite: 10]
