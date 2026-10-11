@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
@@ -15,11 +15,6 @@ export default function SpikeRegisterAndAuthPage() {
 
   const [isLoginMode, setIsLoginMode] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
-    localStorage.setItem('is_super_admin', 'true');
-  }, []);
 
   const t = {
     ar: {
@@ -94,6 +89,55 @@ export default function SpikeRegisterAndAuthPage() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const emailNow = formData.email.trim().toLowerCase();
+  const isAdminEmail = emailNow === SUPER_ADMIN_EMAIL.toLowerCase();
+  // لو كتب إيميل الأدمن، الفورم يتحول لدخول تلقائياً (من غير حقول التسجيل)
+  const showRegisterFields = !isLoginMode && !isAdminEmail;
+
+  // ينشئ صفحة المتجر للتاجر أول مرة يدخل (بيانات المتجر محفوظة مع الحساب وقت التسجيل)
+  const ensureStore = async (user) => {
+    const meta = user.user_metadata || {};
+    const { data: existing } = await supabase
+      .from('store_profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (existing || !meta.store_slug) return;
+
+    const cleanSlug = String(meta.store_slug).trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+    const phone = '+20' + String(meta.phone || '').replace(/^0+/, '');
+
+    const { error: spErr } = await supabase.from('store_profiles').insert([{
+      user_id: user.id,
+      store_name: meta.store_slug,
+      store_slug: cleanSlug,
+      owner_name: meta.full_name || '',
+      phone,
+      wallet_balance_usd: 5.0,
+      is_active: true,
+      subscription_status: 'active',
+      plan_type: 'starter',
+    }]);
+    if (spErr) throw new Error(spErr.message);
+
+    await supabase.from('merchant_settings').insert([{
+      user_id: user.id,
+      store_name: meta.store_slug,
+      owner_name: meta.full_name || '',
+      store_email: user.email,
+      support_phone: phone,
+      about_us: 'Official verified store powered by SPIKE.',
+    }]);
+  };
+
+  const rememberSession = (user, isAdmin) => {
+    try {
+      localStorage.setItem('user_email', user.email || '');
+      localStorage.setItem('is_super_admin', isAdmin ? 'true' : 'false');
+      if (!isAdmin) localStorage.setItem('merchant_user_id', user.id);
+    } catch (err) { /* تجاهل */ }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -101,103 +145,101 @@ export default function SpikeRegisterAndAuthPage() {
     try {
       const emailInput = formData.email.trim().toLowerCase();
 
-      // 👑 فحص قاطع: إذا كان البريد هو بريد السوبر أدمن، يتم توجيهه حصرياً وفوراً إلى /admin وتخزينه
-      if (emailInput === SUPER_ADMIN_EMAIL.toLowerCase()) {
-        localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
-        localStorage.setItem('is_super_admin', 'true');
-        
-        // محاولة تسجيل الدخول في Supabase إن أمكن، وإن حدث خطأ نتجاوزه لضمان الدخول للوحة الأدمن
-        try {
-          await supabase.auth.signInWithPassword({
-            email: formData.email,
-            password: formData.password,
-          });
-        } catch (authErr) {
-          console.log('Bypassing auth check for super admin:', authErr);
-        }
-
-        alert(isAr ? '👑 أهلاً بك يا حسن حسني (مرحباً بك في لوحة الإدارة العليا)' : 'Welcome Super Admin!');
-        router.push('/admin');
-        setLoading(false);
-        return;
-      }
-
-      if (isLoginMode) {
+      // ===== دخول (للأدمن من أي وضع، وللتاجر في وضع الدخول) =====
+      if (isLoginMode || emailInput === SUPER_ADMIN_EMAIL.toLowerCase()) {
         if (!emailInput || !formData.password) {
           alert(isAr ? 'يرجى كتابة البريد الإلكتروني وكلمة المرور' : 'Please enter email and password');
           setLoading(false);
           return;
         }
 
-        // محاولة تسجيل الدخول الفعلي عبر Supabase للتاجر
-        const { error: loginError } = await supabase.auth.signInWithPassword({
-          email: formData.email,
+        const { data, error: loginError } = await supabase.auth.signInWithPassword({
+          email: emailInput,
           password: formData.password,
         });
 
-        if (loginError) {
-          alert(isAr ? 'خطأ في البريد أو كلمة المرور: ' + loginError.message : 'Login Error: ' + loginError.message);
+        if (loginError || !data?.user) {
+          alert((isAr ? 'خطأ في البريد أو كلمة المرور: ' : 'Login Error: ') + (loginError?.message || ''));
           setLoading(false);
           return;
         }
 
-        const { data: store } = await supabase
-          .from('store_profiles')
-          .select('*')
-          .eq('owner_name', formData.fullName || emailInput)
-          .maybeSingle();
-
-        const uid = store?.user_id || 'merchant_' + Date.now();
-        localStorage.setItem('merchant_user_id', uid);
-        localStorage.setItem('user_email', emailInput);
-        localStorage.setItem('is_super_admin', 'false');
-
-        alert(isAr ? '✅ تم تسجيل الدخول بنجاح!' : '✅ Logged in successfully!');
-        router.push('/dashboard');
-      } else {
-        if (!formData.storeSlug || !formData.fullName || !formData.phone || !emailInput || !formData.password) {
-          alert(isAr ? 'يرجى ملء كافة الحقول المطلوبة' : 'Please fill all required fields');
-          setLoading(false);
+        // الأدمن: دخول مباشر على الإدارة (الجلسة حقيقية، والتحقق الفعلي في صفحة الإدارة وقاعدة البيانات)
+        if (emailInput === SUPER_ADMIN_EMAIL.toLowerCase()) {
+          rememberSession(data.user, true);
+          router.replace('/admin');
           return;
         }
 
-        if (formData.password !== formData.confirmPassword) {
-          alert(isAr ? 'كلمتا المرور غير متطابقتين!' : 'Passwords do not match!');
-          setLoading(false);
-          return;
-        }
-
-        const cleanSlug = formData.storeSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-        const generatedUid = 'usr_' + Date.now().toString(36);
-
-        await supabase.from('store_profiles').insert([{
-          user_id: generatedUid,
-          store_name: formData.storeSlug,
-          store_slug: cleanSlug,
-          owner_name: formData.fullName,
-          phone: '+20' + formData.phone.replace(/^0+/, ''),
-          wallet_balance_usd: 5.0,
-          is_active: true,
-          subscription_status: 'active',
-          plan_type: 'starter',
-        }]);
-
-        await supabase.from('merchant_settings').insert([{
-          user_id: generatedUid,
-          store_name: formData.storeSlug,
-          owner_name: formData.fullName,
-          store_email: emailInput,
-          support_phone: '+20' + formData.phone.replace(/^0+/, ''),
-          about_us: 'Official verified store powered by SPIKE.',
-        }]);
-
-        localStorage.setItem('merchant_user_id', generatedUid);
-        localStorage.setItem('user_email', emailInput);
-        localStorage.setItem('is_super_admin', 'false');
-
-        alert(isAr ? `🎉 تم إنشاء متجرك (${cleanSlug}.spike.shop) بنجاح!` : `🎉 Store (${cleanSlug}.spike.shop) created!`);
-        router.push('/dashboard');
+        await ensureStore(data.user);
+        rememberSession(data.user, false);
+        router.replace('/dashboard');
+        return;
       }
+
+      // ===== إنشاء حساب تاجر جديد =====
+      if (!formData.storeSlug || !formData.fullName || !formData.phone || !emailInput || !formData.password) {
+        alert(isAr ? 'يرجى ملء كافة الحقول المطلوبة' : 'Please fill all required fields');
+        setLoading(false);
+        return;
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        alert(isAr ? 'كلمتا المرور غير متطابقتين!' : 'Passwords do not match!');
+        setLoading(false);
+        return;
+      }
+
+      if (formData.password.length < 6) {
+        alert(isAr ? 'كلمة المرور يجب ألا تقل عن 6 أحرف' : 'Password must be at least 6 characters');
+        setLoading(false);
+        return;
+      }
+
+      const cleanSlug = formData.storeSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: emailInput,
+        password: formData.password,
+        options: {
+          data: {
+            store_slug: formData.storeSlug.trim(),
+            full_name: formData.fullName.trim(),
+            phone: formData.phone.trim(),
+            currency: formData.currency,
+          },
+        },
+      });
+
+      if (signUpError) {
+        alert((isAr ? 'تعذر إنشاء الحساب: ' : 'Sign up failed: ') + signUpError.message);
+        setLoading(false);
+        return;
+      }
+
+      // الإيميل مسجل من قبل (Supabase بيرجع مستخدم من غير هويات)
+      if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        alert(isAr ? 'هذا البريد مسجل بالفعل، سجّل الدخول بدلاً من ذلك.' : 'Email already registered. Please sign in.');
+        setIsLoginMode(true);
+        setLoading(false);
+        return;
+      }
+
+      // لو تأكيد البريد مفعّل في Supabase، مفيش جلسة لحد ما يؤكد
+      if (!data?.session) {
+        alert(isAr
+          ? '📧 تم إنشاء حسابك. افتح بريدك واضغط رابط التأكيد، ثم سجّل الدخول وسيُنشأ متجرك تلقائياً.'
+          : '📧 Account created. Confirm your email, then sign in and your store will be created.');
+        setIsLoginMode(true);
+        setLoading(false);
+        return;
+      }
+
+      await ensureStore(data.user);
+      rememberSession(data.user, false);
+      alert(isAr ? `🎉 تم إنشاء متجرك (${cleanSlug}.spike.shop) بنجاح!` : `🎉 Store (${cleanSlug}.spike.shop) created!`);
+      router.replace('/dashboard');
+      return;
     } catch (err) {
       alert('Error: ' + (err.message || 'Connection failed'));
     }
@@ -296,7 +338,7 @@ export default function SpikeRegisterAndAuthPage() {
           </div>
 
           <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            {isLoginMode ? t.loginTitle : t.registerTitle}
+            {(isLoginMode || isAdminEmail) ? t.loginTitle : t.registerTitle}
           </h2>
         </div>
 
@@ -305,7 +347,7 @@ export default function SpikeRegisterAndAuthPage() {
         }`}>
           <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
             
-            {!isLoginMode && (
+            {showRegisterFields && (
               <>
                 <div className="space-y-1.5">
                   <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.storeNameLabel}</label>
@@ -415,7 +457,7 @@ export default function SpikeRegisterAndAuthPage() {
               />
             </div>
 
-            {!isLoginMode && (
+            {showRegisterFields && (
               <div className="space-y-1.5">
                 <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.confirmPassLabel}</label>
                 <input
@@ -437,7 +479,7 @@ export default function SpikeRegisterAndAuthPage() {
                 disabled={loading}
                 className="w-full py-3.5 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-sm font-black transition-all shadow-sm active:scale-98 cursor-pointer flex items-center justify-center gap-2"
               >
-                {loading ? t.processing : isLoginMode ? t.submitLogin : t.submitRegister}
+                {loading ? t.processing : (isLoginMode || isAdminEmail) ? t.submitLogin : t.submitRegister}
               </button>
 
               <div className="text-center pt-1">
