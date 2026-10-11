@@ -1,6 +1,7 @@
 import './globals.css';
 import { AppProvider } from '../context/AppContext';
 import MobileViewportWrapper from '../components/MobileViewportWrapper';
+import SpikeSessionBar from '../components/SpikeSessionBar';
 
 export const metadata = {
   title: 'سبايك | SPIKE - ابنِ متجرك.. وضاعف طلباتك',
@@ -15,6 +16,7 @@ export default function RootLayout({ children }) {
           <MobileViewportWrapper>
             {children}
           </MobileViewportWrapper>
+          <SpikeSessionBar />
         </AppProvider>
       </body>
     </html>
