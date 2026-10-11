@@ -65,6 +65,7 @@ export default function SpikeSuperAdminDashboard() {
   });
 
   const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [statModal, setStatModal] = useState(null); // 'stores' | 'active' | 'pending' | 'sales'
 
   const t = {
     ar: {
@@ -398,6 +399,7 @@ export default function SpikeSuperAdminDashboard() {
 
   const statCards = [
     {
+      id: 'stores',
       title: t.statStores,
       value: totalStoresCount.toString(),
       change: '+100%',
@@ -408,6 +410,7 @@ export default function SpikeSuperAdminDashboard() {
       progress: '100%',
     },
     {
+      id: 'pending',
       title: t.statPending,
       value: pendingOrdersCount.toString(),
       change: `${pendingOrdersCount} ${t.ordersCount}`,
@@ -418,6 +421,7 @@ export default function SpikeSuperAdminDashboard() {
       progress: pendingOrdersCount > 0 ? '45%' : '0%',
     },
     {
+      id: 'active',
       title: t.statActiveUsers,
       value: activeStoresCount.toString(),
       change: `100% ${t.activeStatus}`,
@@ -428,6 +432,7 @@ export default function SpikeSuperAdminDashboard() {
       progress: '100%',
     },
     {
+      id: 'sales',
       title: t.statSales,
       value: `${totalSalesAmount.toFixed(2)} ج.م`,
       change: '0.00%',
@@ -475,16 +480,7 @@ export default function SpikeSuperAdminDashboard() {
 
         <div className={`p-4 sm:p-5 border-b space-y-3.5 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
           <div className="flex items-center justify-between">
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className={`lg:hidden w-8 h-8 rounded-lg border flex items-center justify-center transition cursor-pointer ${
-                isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              ✕
-            </button>
-
-            <span className="hidden lg:inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+            <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
               S.A
             </span>
 
@@ -692,7 +688,11 @@ export default function SpikeSuperAdminDashboard() {
                 {statCards.map((stat, i) => (
                   <div
                     key={i}
-                    className={`p-5 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg flex flex-col justify-between ${
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setStatModal(stat.id)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setStatModal(stat.id); } }}
+                    className={`p-5 rounded-2xl border cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg flex flex-col justify-between ${
                       isDark
                         ? 'bg-[#0E1E38] border-slate-800 hover:border-slate-700'
                         : 'bg-white border-slate-200 shadow-xs hover:border-slate-300'
@@ -1173,6 +1173,115 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       </main>
 
+      {/* مودال تفاصيل المؤشرات (يفتح عند الضغط على كارت من الأعلى) */}
+      {statModal && (() => {
+        const cfgMap = {
+          stores:  { title: isAr ? 'إجمالي المتاجر' : 'All stores', kind: 'stores', rows: stores, tab: 'merchants' },
+          active:  { title: isAr ? 'المتاجر المفعلة' : 'Active stores', kind: 'stores', rows: stores.filter(s => s.is_active !== false), tab: 'merchants' },
+          pending: { title: isAr ? 'طلبات بانتظار الشحن' : 'Pending orders', kind: 'orders', rows: orders.filter(o => o.status === 'pending' || !o.status), tab: 'orders' },
+          sales:   { title: isAr ? 'إجمالي المبيعات' : 'Total sales', kind: 'orders', rows: orders, tab: 'orders' },
+        };
+        const cfg = cfgMap[statModal];
+        if (!cfg) return null;
+        return (
+          <div onClick={() => setStatModal(null)} className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className={`p-6 rounded-2xl max-w-3xl w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}
+            >
+              <div className="flex justify-between items-center mb-4 gap-3">
+                <h3 className="text-base font-black !mb-0">{cfg.title} ({cfg.rows.length})</h3>
+                <button type="button" onClick={() => setStatModal(null)} className="border rounded-xl cursor-pointer">
+                  {isAr ? 'إغلاق' : 'Close'}
+                </button>
+              </div>
+
+              {cfg.rows.length === 0 ? (
+                <div className="text-center py-10 text-slate-400 text-sm">
+                  {isAr ? 'لا توجد بيانات لعرضها' : 'Nothing to show yet'}
+                </div>
+              ) : (
+                <div className="overflow-auto" style={{ maxHeight: '55vh' }}>
+                  {cfg.kind === 'stores' ? (
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr>
+                          <th className="p-3 text-right">المتجر</th>
+                          <th className="p-3 text-right">المالك</th>
+                          <th className="p-3 text-right">الهاتف</th>
+                          <th className="p-3 text-right">رصيد المحفظة</th>
+                          <th className="p-3 text-right">الحالة</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cfg.rows.map((s, idx) => (
+                          <tr key={idx}>
+                            <td className="p-3">
+                              <span className="font-bold block">{s.store_name}</span>
+                              <span className="text-[10px] text-slate-400 font-mono" dir="ltr">{s.store_slug}.spike.shop</span>
+                            </td>
+                            <td className="p-3">{s.owner_name || '—'}</td>
+                            <td className="p-3 font-mono" dir="ltr">{s.phone || '—'}</td>
+                            <td className="p-3 font-mono font-bold text-emerald-500">${s.wallet_balance_usd || 0}</td>
+                            <td className="p-3">
+                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                s.is_active !== false ? 'bg-emerald-500/15 text-emerald-600' : 'bg-rose-500/15 text-rose-500'
+                              }`}>
+                                {s.is_active !== false ? 'مفعل' : 'معطل'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr>
+                          <th className="p-3 text-right">رقم الطلب</th>
+                          <th className="p-3 text-right">العميل</th>
+                          <th className="p-3 text-right">المحافظة</th>
+                          <th className="p-3 text-right">الإجمالي</th>
+                          <th className="p-3 text-right">الحالة</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cfg.rows.map((o, idx) => (
+                          <tr key={idx}>
+                            <td className="p-3 font-mono font-bold">#{o.id}</td>
+                            <td className="p-3">{o.customer_name || 'عميل نقدي'}</td>
+                            <td className="p-3">{o.governorate || '—'}</td>
+                            <td className="p-3 font-mono font-bold text-[#00B050]">{o.total_price} ج.م</td>
+                            <td className="p-3">
+                              <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-bold">
+                                {o.status || 'pending'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-between items-center gap-3 pt-4 mt-4 border-t border-slate-200 dark:border-slate-800">
+                <span className="text-xs text-slate-400 font-mono" dir="ltr">
+                  {statModal === 'sales' ? `${totalSalesAmount.toFixed(2)} ج.م` : ''}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setActiveTab(cfg.tab); setStatModal(null); }}
+                  className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  {isAr ? 'فتح الصفحة الكاملة' : 'Open full page'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* مودال إنشاء متجر جديد */}
       {newStoreModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
@@ -1466,6 +1575,9 @@ export default function SpikeSuperAdminDashboard() {
         @media (max-width: 1023px) {
           .spike-dashboard > aside { width: 288px; }
         }
+        @media (min-width: 1024px) {
+          .spike-dashboard button[class*='lg:hidden'] { display: none; }
+        }
 
         /* ---------- Header ---------- */
         .spike-dashboard header {
@@ -1487,7 +1599,6 @@ export default function SpikeSuperAdminDashboard() {
 
         /* ---------- Buttons: حجم موحد وطبيعي ---------- */
         .spike-dashboard button {
-          display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 6px;
@@ -1629,22 +1740,35 @@ export default function SpikeSuperAdminDashboard() {
           outline-offset: 2px;
         }
 
-        /* ---------- Sidebar (الجزء الفخم: تيل داكن + عاجي) ---------- */
-        .spike-dashboard > aside {
-          background: linear-gradient(180deg, var(--teal-deep), var(--teal-ink));
-          border: 0;
-          color: var(--ivory);
-          box-shadow: 10px 0 40px -20px rgba(3, 30, 33, 0.6);
+        /* ---------- Sidebar: فاتح، والأزرار الغامقة ---------- */
+        .spike-dashboard {
+          --nav-active-bg: var(--teal-deep);
+          --nav-active-ink: var(--ivory);
         }
+        .spike-dashboard[data-theme='dark'] {
+          --nav-active-bg: var(--ivory);
+          --nav-active-ink: var(--teal-deep);
+        }
+        .spike-dashboard > aside {
+          background: var(--surface);
+          border: 0;
+          color: var(--ink);
+          box-shadow: 0 0 0 1px var(--line), 12px 0 40px -26px rgba(6, 73, 78, 0.35);
+        }
+        /* إخفاء السكرول مع بقاء التمرير شغال */
+        .spike-dashboard > aside,
+        .spike-dashboard > aside nav { scrollbar-width: none; -ms-overflow-style: none; }
+        .spike-dashboard > aside::-webkit-scrollbar,
+        .spike-dashboard > aside nav::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
         .spike-dashboard > aside [class*='text-slate-900'],
-        .spike-dashboard > aside [class*='text-white'] { color: var(--ivory); }
-        .spike-dashboard > aside .text-slate-400 { color: #9dbdbd; }
-        .spike-dashboard > aside [class*='text-emerald'] { color: #9fe3cf; }
+        .spike-dashboard > aside [class*='text-white'] { color: var(--ink); }
+        .spike-dashboard > aside .text-slate-400 { color: var(--muted); }
         .spike-dashboard > aside [class*='border-slate'],
         .spike-dashboard > aside .border-b,
-        .spike-dashboard > aside .border-t { border-color: rgba(255, 255, 255, 0.10); }
+        .spike-dashboard > aside .border-t { border-color: var(--line); }
 
-        /* زر متاجر الأدمن = اللمسة الذهبية البرتقالية */
+        /* زر متاجر الأدمن = اللمسة البرتقالية */
         .spike-dashboard > aside > div:first-child > button[class*='from-[#00B050]'] {
           background: linear-gradient(135deg, #f4b987, #e08f4f);
           border-color: transparent;
@@ -1657,17 +1781,19 @@ export default function SpikeSuperAdminDashboard() {
 
         /* مفتاح الثيم/اللغة */
         .spike-dashboard > aside div[class*='p-1'][class*='rounded-xl'] {
-          background: rgba(255, 255, 255, 0.07);
-          border-color: rgba(255, 255, 255, 0.10);
+          background: var(--surface-2);
+          border-color: var(--line);
         }
         .spike-dashboard > aside div[class*='p-1'] button {
           min-height: 34px;
           background: transparent;
           border: 0;
-          color: #e9f1ee;
+          color: var(--ink);
           box-shadow: none;
         }
-        .spike-dashboard > aside div[class*='p-1'] button:hover { background: rgba(255, 255, 255, 0.10); }
+        .spike-dashboard > aside div[class*='p-1'] button:hover {
+          background: color-mix(in srgb, var(--teal) 10%, transparent);
+        }
 
         /* عناصر القائمة */
         .spike-dashboard > aside nav { padding: 14px 12px; }
@@ -1679,44 +1805,53 @@ export default function SpikeSuperAdminDashboard() {
           font-size: 13.5px;
           font-weight: 600;
           white-space: normal;
-          color: #cfe3e1;
+          color: var(--ink);
           background: transparent;
           border-radius: 14px;
           box-shadow: none;
         }
-        .spike-dashboard > aside nav button:hover { background: rgba(255, 255, 255, 0.08); color: #fff; }
+        .spike-dashboard > aside nav button:hover { background: var(--surface-2); color: var(--ink); }
         .spike-dashboard > aside nav button span[class*='rounded-full'] {
           min-width: 26px;
           text-align: center;
           font-size: 11.5px;
-          background: rgba(255, 255, 255, 0.12);
-          color: #e9f1ee;
+          background: var(--surface-2);
+          color: var(--muted);
         }
         .spike-dashboard > aside nav button[class*='from-[#00B050]'] {
-          background: var(--ivory);
-          color: var(--teal-deep);
+          background: var(--nav-active-bg);
+          color: var(--nav-active-ink);
           font-weight: 800;
-          box-shadow: 0 10px 22px -12px rgba(0, 0, 0, 0.6);
+          box-shadow: 0 10px 22px -12px rgba(6, 73, 78, 0.6);
         }
-        .spike-dashboard > aside nav button[class*='from-[#00B050]']:hover { background: var(--ivory); color: var(--teal-deep); }
+        .spike-dashboard > aside nav button[class*='from-[#00B050]']:hover {
+          background: var(--nav-active-bg);
+          color: var(--nav-active-ink);
+        }
         .spike-dashboard > aside nav button[class*='from-[#00B050]'] span[class*='rounded-full'] {
-          background: var(--teal-deep);
-          color: var(--ivory);
+          background: rgba(255, 255, 255, 0.18);
+          color: var(--nav-active-ink);
+        }
+        .spike-dashboard[data-theme='dark'] > aside nav button[class*='from-[#00B050]'] span[class*='rounded-full'] {
+          background: rgba(6, 73, 78, 0.14);
         }
         .spike-dashboard > aside div[class*='bg-gradient'] {
           background: linear-gradient(135deg, var(--orange), #e08f4f);
           color: #3a1d08;
         }
         .spike-dashboard > aside button[class*='rose'] {
-          background: rgba(255, 120, 110, 0.12);
-          border-color: rgba(255, 120, 110, 0.28);
-          color: #ffb3aa;
+          background: color-mix(in srgb, #dc5a50 10%, transparent);
+          border-color: color-mix(in srgb, #dc5a50 30%, transparent);
+          color: var(--danger);
         }
-        .spike-dashboard > aside button[class*='rose']:hover { background: rgba(255, 120, 110, 0.2); }
-        .spike-dashboard > aside button[class*='lg:hidden'] {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 255, 255, 0.14);
-          color: #fff;
+        .spike-dashboard > aside button[class*='rose']:hover {
+          background: color-mix(in srgb, #dc5a50 18%, transparent);
+        }
+
+        /* كروت المؤشرات قابلة للضغط */
+        .spike-dashboard .grid > div[class*='p-5'][role='button']:focus-visible {
+          outline: 3px solid color-mix(in srgb, var(--teal) 35%, transparent);
+          outline-offset: 2px;
         }
 
         /* ---------- Modals ---------- */
@@ -1724,7 +1859,8 @@ export default function SpikeSuperAdminDashboard() {
           background: rgba(5, 35, 38, 0.55);
           backdrop-filter: blur(6px);
         }
-        .spike-dashboard div[class*='max-w-md'] {
+        .spike-dashboard div[class*='max-w-md'],
+        .spike-dashboard div[class*='max-w-3xl'] {
           max-height: 90vh;
           overflow-y: auto;
           padding: 28px;
@@ -1735,8 +1871,10 @@ export default function SpikeSuperAdminDashboard() {
           box-shadow: 0 30px 80px -20px rgba(3, 30, 33, 0.55);
           animation: spike-pop 0.18s ease-out;
         }
-        .spike-dashboard div[class*='max-w-md'] h3 { font-size: 18px; margin-bottom: 18px; }
-        .spike-dashboard div[class*='max-w-md'] label { color: var(--muted); font-weight: 700; }
+        .spike-dashboard div[class*='max-w-md'] h3,
+        .spike-dashboard div[class*='max-w-3xl'] h3 { font-size: 18px; margin-bottom: 18px; }
+        .spike-dashboard div[class*='max-w-md'] label,
+        .spike-dashboard div[class*='max-w-3xl'] label { color: var(--muted); font-weight: 700; }
         @keyframes spike-pop {
           from { opacity: 0; transform: translateY(8px) scale(0.98); }
           to { opacity: 1; transform: none; }
@@ -1748,7 +1886,8 @@ export default function SpikeSuperAdminDashboard() {
           .spike-dashboard main > div { padding: 14px; }
           .spike-dashboard main div[class*='rounded-2xl'],
           .spike-dashboard main div[class*='rounded-3xl'] { border-radius: 16px; }
-          .spike-dashboard div[class*='max-w-md'] { padding: 20px; }
+          .spike-dashboard div[class*='max-w-md'],
+          .spike-dashboard div[class*='max-w-3xl'] { padding: 20px; }
         }
         @media (prefers-reduced-motion: reduce) {
           .spike-dashboard * { animation: none !important; transition: none !important; }
