@@ -1387,243 +1387,115 @@ export default function SpikeSuperAdminDashboard() {
       )}
 
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
 
         .spike-dashboard {
           --spike-teal: #078b91;
-          --spike-teal-dark: #05777d;
+          --spike-teal-hover: #06777d;
           --spike-orange: #f5a56b;
-          --spike-cream: #e8e5d0;
-          --spike-paper: #fbfbfa;
-          --spike-ink: #25313b;
-          --spike-muted: #7e8991;
+          --spike-cream: #e9e6d2;
+          --spike-surface: #fbfbfa;
+          --spike-ink: #28343d;
+          --spike-muted: #7d8990;
           font-family: 'Cairo', 'Inter', sans-serif !important;
           background: var(--spike-cream) !important;
           color: var(--spike-ink);
           letter-spacing: 0;
         }
-        .spike-dashboard * { box-sizing: border-box; }
+        .spike-dashboard *, .spike-dashboard *::before, .spike-dashboard *::after { box-sizing: border-box; }
 
-        /* Layout guardrails: keep the sidebar and content in their intended columns. */
+        /* Keep the existing flex layout intact; only normalize the sidebar width. */
         .spike-dashboard > aside {
-          width: 248px !important;
-          min-width: 248px !important;
-          max-width: 248px !important;
-          flex: 0 0 248px !important;
-          position: relative;
-          inset: auto !important;
-          transform: none;
+          width: 250px !important;
+          min-width: 250px !important;
+          max-width: 250px !important;
+          flex: 0 0 250px !important;
         }
-        .spike-dashboard > main {
-          width: calc(100% - 248px);
-          min-width: 0 !important;
-          flex: 1 1 auto !important;
-        }
-        .spike-dashboard > main > header { min-height: 76px; }
-        .spike-dashboard > main > div { width: 100%; min-width: 0; }
-        .spike-dashboard h1,
-        .spike-dashboard h2,
-        .spike-dashboard h3 { line-height: 1.45; overflow-wrap: anywhere; }
-        .spike-dashboard button { white-space: nowrap; }
-        .spike-dashboard table { min-width: 640px; }
-        @media (max-width: 1023px) {
-          .spike-dashboard > aside {
-            position: fixed !important;
-            top: 0 !important;
-            bottom: 0 !important;
-            width: 248px !important;
-            min-width: 248px !important;
-            max-width: 248px !important;
-            flex: none !important;
-          }
-          .spike-dashboard > main { width: 100%; }
-        }
-        .spike-dashboard button,
-        .spike-dashboard input,
-        .spike-dashboard select,
-        .spike-dashboard textarea { font-family: inherit; }
-        .spike-dashboard button { transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
-        .spike-dashboard button:focus-visible,
-        .spike-dashboard input:focus-visible,
-        .spike-dashboard select:focus-visible,
-        .spike-dashboard textarea:focus-visible {
-          outline: 3px solid rgba(7,139,145,.2);
-          outline-offset: 2px;
-        }
-        .spike-dashboard aside {
-          background: #f8f8f6 !important;
-          border-color: #e5e7e4 !important;
-          box-shadow: 8px 0 32px rgba(35,55,57,.035);
-        }
-        .spike-dashboard header {
-          background: rgba(250,250,248,.94) !important;
-          border-color: #e7e9e5 !important;
-          box-shadow: 0 4px 18px rgba(35,55,57,.025) !important;
-        }
-        .spike-dashboard .bg-white,
-        .spike-dashboard [class~="bg-[#0E1E38]"],
-        .spike-dashboard [class~="bg-[#0B132B]"] {
-          background-color: var(--spike-paper) !important;
-        }
+        .spike-dashboard > main { flex: 1 1 0% !important; min-width: 0 !important; width: auto !important; }
+        .spike-dashboard > main > header { min-height: 62px; }
+        .spike-dashboard h1, .spike-dashboard h2, .spike-dashboard h3 { line-height: 1.4; }
+        .spike-dashboard button, .spike-dashboard input, .spike-dashboard select, .spike-dashboard textarea { font-family: inherit; }
+        .spike-dashboard button { transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease; }
+        .spike-dashboard button:focus-visible, .spike-dashboard input:focus-visible, .spike-dashboard select:focus-visible, .spike-dashboard textarea:focus-visible { outline: 2px solid rgba(7,139,145,.22); outline-offset: 2px; }
+
+        .spike-dashboard aside { background: #f9f9f7 !important; border-color: #e4e7e3 !important; box-shadow: 4px 0 18px rgba(35,55,57,.025); }
+        .spike-dashboard header { background: rgba(250,250,248,.96) !important; border-color: #e7e9e5 !important; box-shadow: 0 2px 10px rgba(35,55,57,.025) !important; }
+        .spike-dashboard .bg-white, .spike-dashboard [class~="bg-[#0E1E38]"], .spike-dashboard [class~="bg-[#0B132B]"] { background-color: var(--spike-surface) !important; }
         .spike-dashboard [class~="bg-[#F4F6F9]"] { background-color: var(--spike-cream) !important; }
-        .spike-dashboard [class~="bg-[#00B050]"],
-        .spike-dashboard [class~="from-[#00B050]"] {
-          background-color: var(--spike-teal) !important;
-        }
-        .spike-dashboard [class~="bg-gradient-to-r"],
-        .spike-dashboard [class~="bg-gradient-to-l"],
-        .spike-dashboard [class~="bg-gradient-to-tr"] {
-          background-image: linear-gradient(120deg, var(--spike-teal), #087d86) !important;
-        }
-        .spike-dashboard [class~="hover:bg-[#009644]"]:hover,
-        .spike-dashboard [class~="hover:from-[#009644]"]:hover,
-        .spike-dashboard [class~="hover:bg-emerald-600"]:hover {
-          background-color: var(--spike-teal-dark) !important;
-        }
-        .spike-dashboard [class~="text-[#00B050]"],
-        .spike-dashboard [class~="text-emerald-500"],
-        .spike-dashboard [class~="text-emerald-600"] { color: var(--spike-teal) !important; }
+        .spike-dashboard [class~="bg-[#00B050]"], .spike-dashboard [class~="from-[#00B050]"] { background-color: var(--spike-teal) !important; }
+        .spike-dashboard [class~="bg-gradient-to-r"], .spike-dashboard [class~="bg-gradient-to-l"], .spike-dashboard [class~="bg-gradient-to-tr"] { background-image: linear-gradient(110deg, #078b91, #087d86) !important; }
+        .spike-dashboard [class~="hover:bg-[#009644]"]:hover, .spike-dashboard [class~="hover:from-[#009644]"]:hover, .spike-dashboard [class~="hover:bg-emerald-600"]:hover { background-color: var(--spike-teal-hover) !important; }
+        .spike-dashboard [class~="text-[#00B050]"], .spike-dashboard [class~="text-emerald-500"], .spike-dashboard [class~="text-emerald-600"] { color: var(--spike-teal) !important; }
         .spike-dashboard [class~="border-[#00B050]"] { border-color: var(--spike-teal) !important; }
         .spike-dashboard [class~="bg-amber-500"] { background-color: var(--spike-orange) !important; }
-        .spike-dashboard [class~="text-amber-500"],
-        .spike-dashboard [class~="text-amber-600"] { color: #bd713d !important; }
-        .spike-dashboard [class~="bg-[#0E1E38]"],
-        .spike-dashboard [class~="bg-slate-50"],
-        .spike-dashboard [class~="bg-slate-100"] { background-color: #f2f4f2 !important; }
-        .spike-dashboard [class~="border-slate-200"],
-        .spike-dashboard [class~="border-slate-300"] { border-color: #e3e7e4 !important; }
-        .spike-dashboard [class~="rounded-2xl"],
-        .spike-dashboard [class~="rounded-3xl"] { border-radius: 21px !important; }
-        .spike-dashboard [class~="rounded-xl"] { border-radius: 14px !important; }
-        .spike-dashboard [class~="shadow-lg"],
-        .spike-dashboard [class~="shadow-md"],
-        .spike-dashboard [class~="shadow-sm"] { box-shadow: 0 7px 22px rgba(38,58,60,.055) !important; }
-        .spike-dashboard main > div { scrollbar-color: #c4d4d1 transparent; }
-        .spike-dashboard table { border-collapse: separate; border-spacing: 0; }
-        .spike-dashboard thead th {
-          background: #f1f4f2;
-          color: #78858a;
-          font-size: 11px;
-          font-weight: 800;
-          white-space: nowrap;
+        .spike-dashboard [class~="text-amber-500"], .spike-dashboard [class~="text-amber-600"] { color: #bd713d !important; }
+        .spike-dashboard [class~="bg-slate-50"], .spike-dashboard [class~="bg-slate-100"] { background-color: #f2f4f2 !important; }
+        .spike-dashboard [class~="border-slate-200"], .spike-dashboard [class~="border-slate-300"] { border-color: #e3e7e4 !important; }
+        .spike-dashboard [class~="rounded-2xl"], .spike-dashboard [class~="rounded-3xl"] { border-radius: 16px !important; }
+        .spike-dashboard [class~="rounded-xl"] { border-radius: 11px !important; }
+        .spike-dashboard [class~="shadow-lg"], .spike-dashboard [class~="shadow-md"], .spike-dashboard [class~="shadow-sm"] { box-shadow: 0 4px 14px rgba(38,58,60,.045) !important; }
+
+        /* Buttons: compact, content-sized by default; preserve full-width utility buttons. */
+        .spike-dashboard button {
+          min-height: 32px;
+          padding: 6px 12px !important;
+          font-size: 12px !important;
+          line-height: 1.35 !important;
+          border-radius: 9px !important;
+          max-width: 100%;
+          box-shadow: none;
         }
+        .spike-dashboard button.w-full { width: 100%; }
+        .spike-dashboard button[class*="bg-[#00B050]"], .spike-dashboard button[class*="from-[#00B050]"] { background: var(--spike-teal) !important; color: #fff !important; border-color: var(--spike-teal) !important; }
+        .spike-dashboard button[class*="bg-[#00B050]"]:hover, .spike-dashboard button[class*="from-[#00B050]"]:hover { background: var(--spike-teal-hover) !important; }
+        .spike-dashboard nav { padding: 8px !important; }
+        .spike-dashboard nav button { min-height: 36px; padding: 7px 10px !important; text-align: start; }
+        .spike-dashboard nav button[class*="bg-gradient"] { background: var(--spike-teal) !important; box-shadow: 0 3px 8px rgba(7,139,145,.12) !important; }
+        .spike-dashboard nav button:not([class*="bg-gradient"]):hover { background: #eaf3f1 !important; color: var(--spike-teal) !important; }
+
+        /* Balanced spacing and typography without overriding every Tailwind utility. */
+        .spike-dashboard > main > div { min-width: 0; padding: 22px 24px; gap: 18px; }
+        .spike-dashboard [class~="p-5"] { padding: 16px !important; }
+        .spike-dashboard [class~="p-6"] { padding: 18px !important; }
+        .spike-dashboard [class~="p-8"] { padding: 22px !important; }
+        .spike-dashboard [class~="text-2xl"] { font-size: 1.35rem !important; line-height: 1.35 !important; }
+        .spike-dashboard [class~="text-xl"] { font-size: 1.15rem !important; line-height: 1.4 !important; }
+        .spike-dashboard h3 { font-size: 1rem; }
+        .spike-dashboard table { border-collapse: separate; border-spacing: 0; width: 100%; }
+        .spike-dashboard thead th { background: #f1f4f2; color: #78858a; font-size: 11px; font-weight: 700; white-space: nowrap; }
+        .spike-dashboard th, .spike-dashboard td { padding: 9px 10px !important; }
         .spike-dashboard tbody tr { transition: background-color .15s ease; }
         .spike-dashboard tbody tr:hover { background-color: #f0f7f6; }
-        .spike-dashboard input:not([type="checkbox"]):not([type="radio"]),
-        .spike-dashboard select,
-        .spike-dashboard textarea {
-          border-color: #dfe5e2 !important;
-          border-radius: 12px !important;
-          background-color: #fff !important;
-          color: #26343a !important;
-          box-shadow: inset 0 1px 2px rgba(20,40,40,.025);
-        }
-        .spike-dashboard input:focus,
-        .spike-dashboard select:focus,
-        .spike-dashboard textarea:focus {
-          border-color: var(--spike-teal) !important;
-          box-shadow: 0 0 0 3px rgba(7,139,145,.10) !important;
-          outline: none;
-        }
-        .spike-dashboard button[class*="bg-[#00B050]"],
-        .spike-dashboard button[class*="from-[#00B050]"] {
-          background: var(--spike-teal) !important;
-          color: #fff !important;
-          border-color: var(--spike-teal) !important;
-          box-shadow: 0 5px 12px rgba(7,139,145,.16);
-        }
-        .spike-dashboard button[class*="bg-[#00B050]"]:hover,
-        .spike-dashboard button[class*="from-[#00B050]"]:hover {
-          background: var(--spike-teal-dark) !important;
-          transform: translateY(-1px);
-        }
-        .spike-dashboard nav button[class*="bg-gradient"] {
-          background: var(--spike-teal) !important;
-          box-shadow: 0 6px 16px rgba(7,139,145,.2) !important;
-        }
-        .spike-dashboard nav button:not([class*="bg-gradient"]):hover {
-          background: #eaf3f1 !important;
-          color: var(--spike-teal) !important;
-        }
+        .spike-dashboard input:not([type="checkbox"]):not([type="radio"]), .spike-dashboard select, .spike-dashboard textarea { border-color: #dfe5e2 !important; border-radius: 9px !important; background-color: #fff !important; color: #26343a !important; }
+        .spike-dashboard input:focus, .spike-dashboard select:focus, .spike-dashboard textarea:focus { border-color: var(--spike-teal) !important; box-shadow: 0 0 0 2px rgba(7,139,145,.09) !important; outline: none; }
         .spike-dashboard [class*="bg-rose-500/10"] { background-color: #fff0ed !important; }
         .spike-dashboard [class*="text-rose-500"] { color: #c95e53 !important; }
-        .spike-dashboard [class*="bg-emerald-500/10"],
-        .spike-dashboard [class*="bg-emerald-500/15"] { background-color: #e7f4f0 !important; }
+        .spike-dashboard [class*="bg-emerald-500/10"], .spike-dashboard [class*="bg-emerald-500/15"] { background-color: #e7f4f0 !important; }
         .spike-dashboard [class*="border-emerald-500"] { border-color: #c9e6dc !important; }
         .spike-dashboard [class*="bg-amber-500/10"] { background-color: #fff1e5 !important; }
         .spike-dashboard .text-slate-400 { color: var(--spike-muted) !important; }
         .spike-dashboard .text-slate-500 { color: #738087 !important; }
-        .spike-dashboard .text-slate-800,
-        .spike-dashboard .text-slate-900 { color: var(--spike-ink) !important; }
-        .spike-dashboard .border-t,
-        .spike-dashboard .border-b { border-color: #e8ebe8 !important; }
+        .spike-dashboard .text-slate-800, .spike-dashboard .text-slate-900 { color: var(--spike-ink) !important; }
+        .spike-dashboard .border-t, .spike-dashboard .border-b { border-color: #e8ebe8 !important; }
 
-        /* Dark mode remains available, with a coordinated deep-teal palette. */
-        .dark .spike-dashboard,
-        .spike-dashboard:has(aside [class*="bg-[#0E1E38]"]) {
-          color: #e8f0f0;
-        }
-        .dark .spike-dashboard aside,
-        .dark .spike-dashboard header,
-        .dark .spike-dashboard .bg-white,
-        .dark .spike-dashboard [class~="bg-[#0E1E38]"],
-        .dark .spike-dashboard [class~="bg-[#0B132B]"] {
-          background-color: #102c35 !important;
-          border-color: #24434a !important;
-        }
-        .dark .spike-dashboard input:not([type="checkbox"]):not([type="radio"]),
-        .dark .spike-dashboard select,
-        .dark .spike-dashboard textarea {
-          background-color: #0d252d !important;
-          color: #e8f0f0 !important;
-          border-color: #31515a !important;
-        }
+        /* Dark theme stays usable and does not inherit light surface overrides. */
+        .dark .spike-dashboard { color: #e8f0f0; }
+        .dark .spike-dashboard aside, .dark .spike-dashboard header, .dark .spike-dashboard .bg-white, .dark .spike-dashboard [class~="bg-[#0E1E38]"], .dark .spike-dashboard [class~="bg-[#0B132B]"] { background-color: #102c35 !important; border-color: #24434a !important; }
+        .dark .spike-dashboard input:not([type="checkbox"]):not([type="radio"]), .dark .spike-dashboard select, .dark .spike-dashboard textarea { background-color: #0d252d !important; color: #e8f0f0 !important; border-color: #31515a !important; }
         .dark .spike-dashboard thead th { background: #163740; color: #b2c5c8; }
         .dark .spike-dashboard tbody tr:hover { background: #173a41; }
-        /* Compact, proportionate sizing: prevent oversized controls and excessive whitespace. */
-        .spike-dashboard > main > header {
-          min-height: 64px !important;
-          padding-top: 12px !important;
-          padding-bottom: 12px !important;
-          gap: 12px;
-        }
-        .spike-dashboard > main > div {
-          padding: 22px 26px !important;
-          gap: 20px !important;
-        }
-        .spike-dashboard button {
-          min-height: 34px;
-          max-width: 100%;
-          padding-top: 8px;
-          padding-bottom: 8px;
-          font-size: 12px !important;
-          line-height: 1.35 !important;
-          border-radius: 11px !important;
-        }
-        .spike-dashboard aside > div:first-child { padding: 16px !important; }
-        .spike-dashboard nav { padding: 10px !important; }
-        .spike-dashboard nav button { min-height: 38px; padding: 9px 11px !important; }
-        .spike-dashboard aside > div:last-child { padding: 14px !important; }
-        .spike-dashboard [class~="p-5"] { padding: 17px !important; }
-        .spike-dashboard [class~="p-6"] { padding: 20px !important; }
-        .spike-dashboard [class~="p-8"] { padding: 22px !important; }
-        .spike-dashboard [class~="rounded-2xl"],
-        .spike-dashboard [class~="rounded-3xl"] { border-radius: 17px !important; }
-        .spike-dashboard [class~="text-2xl"] { font-size: 1.35rem !important; line-height: 1.35 !important; }
-        .spike-dashboard [class~="text-xl"] { font-size: 1.15rem !important; line-height: 1.4 !important; }
-        .spike-dashboard h3 { font-size: 1rem !important; }
-        .spike-dashboard table { font-size: 12px; }
-        .spike-dashboard th, .spike-dashboard td { padding: 10px !important; }
 
         @media (max-width: 1023px) {
+          .spike-dashboard > aside { width: 250px !important; min-width: 250px !important; max-width: 250px !important; flex: 0 0 250px !important; }
+          .spike-dashboard > main { width: 100%; }
           .spike-dashboard > main > div { padding: 18px !important; }
         }
         @media (max-width: 640px) {
           .spike-dashboard header { padding-inline: 12px !important; }
-          .spike-dashboard main > div { padding: 14px !important; }
+          .spike-dashboard > main > div { padding: 14px !important; gap: 14px !important; }
           .spike-dashboard button { white-space: normal; }
-          .spike-dashboard [class~="rounded-2xl"],
-          .spike-dashboard [class~="rounded-3xl"] { border-radius: 16px !important; }
+          .spike-dashboard [class~="rounded-2xl"], .spike-dashboard [class~="rounded-3xl"] { border-radius: 13px !important; }
+          .spike-dashboard table { min-width: 560px; }
         }
       `}</style>
 
