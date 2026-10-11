@@ -11,16 +11,13 @@ const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
 export default function SpikeSuperAdminDashboard() {
   const router = useRouter();
-  const { lang, theme, toggleLanguage, toggleTheme, isDark, isMobileView, toggleMobileView } = useApp();
+  const { lang, toggleLanguage, toggleTheme, isDark } = useApp();
   const isAr = lang === 'ar';
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  const [currentAdminRole, setCurrentAdminRole] = useState(null);
-  const [currentPermissions, setCurrentPermissions] = useState({});
 
   const [stores, setStores] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -69,40 +66,39 @@ export default function SpikeSuperAdminDashboard() {
 
   const t = {
     ar: {
-      dashboard: 'الإدارة العليا',
+      dashboard: 'Dashboard',
       overviewTitle: 'Dashboard Performances',
       overviewSubtitle: 'مؤشرات الأداء اللحظية، طلبات المتاجر، والتسويات المالية',
       addStore: 'إضافة متجر جديد',
-      refreshData: 'تحديث البيانات',
+      refreshData: 'Download',
+      messageBtn: 'Message',
+      notificationBtn: 'Notification',
       statStores: 'إجمالي المتاجر',
       statPending: 'بانتظار الشحن',
       statActiveUsers: 'العملاء المفعلين',
       statSales: 'إجمالي المبيعات',
-      comparedLastMonth: 'مقارنة بالشهر الماضي',
-      underProcess: 'تحت التجهيز',
-      activeRate: 'معدل التفعيل',
-      totalReceipts: 'إجمالي المتحصلات',
-      adminRole: 'مدير النظام الأساسي',
+      adminRole: 'Super Admin',
       logoutText: 'تسجيل الخروج',
       navOverview: 'Dashboard',
       navStores: 'Directories',
       navOrders: 'Timeline',
       navInventory: 'Files',
-      navPolicies: 'سياسات سبايك',
       navRates: 'Payment',
-      navDomains: 'الدومينات والربط',
-      navPlans: 'باقات الاشتراك',
-      navLogs: 'سجل الحركات',
-      navBroadcast: 'الإعلانات الجماعية',
-      navAdmins: 'فريق الإدارة والصلاحيات',
+      navDomains: 'Domains & DNS',
+      navPlans: 'Subscription Plans',
+      navLogs: 'Audit Logs',
+      navBroadcast: 'Announcements',
+      navAdmins: 'Admin Team',
       adminStoresBtn: 'متاجر الأدمن الخاصة',
+      applicationMenu: 'APPLICATION',
+      settingsMenu: 'SETTINGS',
       ordersCount: 'أوردر',
       activeStatus: 'نشط',
       save: 'حفظ التعديلات',
       cancel: 'إلغاء'
     },
     en: {
-      dashboard: 'Admin Dashboard',
+      dashboard: 'Dashboard',
       overviewTitle: 'Dashboard Performances',
       overviewSubtitle: 'Real-time KPIs, merchant orders, and financial reconciliations',
       addStore: 'Add New Store',
@@ -111,24 +107,21 @@ export default function SpikeSuperAdminDashboard() {
       statPending: 'Pending Fulfillment',
       statActiveUsers: 'Active Clients',
       statSales: 'Total Sales',
-      comparedLastMonth: 'vs last month',
-      underProcess: 'Processing',
-      activeRate: 'Activation Rate',
-      totalReceipts: 'Total Net Volume',
-      adminRole: 'Super Admin Master',
+      adminRole: 'Super Admin',
       logoutText: 'Sign Out',
       navOverview: 'Dashboard',
       navStores: 'Directories',
       navOrders: 'Timeline',
       navInventory: 'Files',
-      navPolicies: 'Platform Policies',
       navRates: 'Payment',
       navDomains: 'Domains & DNS',
       navPlans: 'Subscription Plans',
       navLogs: 'Audit Logs',
       navBroadcast: 'Broadcast Announcements',
-      navAdmins: 'Admin Team & Roles',
+      navAdmins: 'Admin Team',
       adminStoresBtn: 'My Admin Stores',
+      applicationMenu: 'APPLICATION',
+      settingsMenu: 'SETTINGS',
       ordersCount: 'orders',
       activeStatus: 'Active',
       save: 'Save Changes',
@@ -150,7 +143,6 @@ export default function SpikeSuperAdminDashboard() {
     const verifyAdminAccess = async () => {
       try {
         const storedEmail = (localStorage.getItem('user_email') || '').toLowerCase().trim();
-        
         if (storedEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
           fetchAllData();
           return;
@@ -174,23 +166,20 @@ export default function SpikeSuperAdminDashboard() {
             .maybeSingle();
 
           if (adminRecord) {
-            setCurrentAdminRole(adminRecord.role);
-            setCurrentPermissions(adminRecord.permissions || {});
             fetchAllData();
             return;
           }
         }
 
-        alert(isAr ? '⛔ عذراً، غير مسموح لك بالدخول. هذه لوحة تحكم الإدارة العليا.' : 'Access Denied: Admins Only.');
+        alert(isAr ? '⛔ عذراً، غير مسموح لك بالدخول.' : 'Access Denied.');
         router.push('/dashboard');
       } catch (err) {
-        console.error('Auth verification failed:', err);
+        console.error('Auth check failed:', err);
         router.push('/dashboard');
       }
     };
-
     verifyAdminAccess();
-  }, []);
+  }, [isAr, router]);
 
   const fetchAllData = async () => {
     setRefreshing(true);
@@ -220,7 +209,7 @@ export default function SpikeSuperAdminDashboard() {
         if (settingsData.withdraw_threshold) setWithdrawThreshold(settingsData.withdraw_threshold);
       }
     } catch (err) {
-      console.error('Error fetching admin data:', err);
+      console.error(err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -229,10 +218,7 @@ export default function SpikeSuperAdminDashboard() {
 
   const handleCreateStore = async (e) => {
     e.preventDefault();
-    if (!newStoreData.store_name || !newStoreData.store_slug) {
-      alert(isAr ? 'يرجى كتابة اسم ورابط المتجر' : 'Please fill required fields');
-      return;
-    }
+    if (!newStoreData.store_name || !newStoreData.store_slug) return;
     const cleanSlug = newStoreData.store_slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
     const newUserId = 'merchant_' + Date.now().toString(36);
 
@@ -249,7 +235,7 @@ export default function SpikeSuperAdminDashboard() {
     }]);
 
     if (!error) {
-      alert(isAr ? '✅ تم إنشاء المتجر بنجاح' : 'Store created successfully');
+      alert(isAr ? '✅ تم إنشاء المتجر بنجاح' : 'Store created');
       setNewStoreModal(false);
       setNewStoreData({ store_name: '', store_slug: '', owner_name: '', phone: '', currency: 'USD', initial_wallet: 10 });
       fetchAllData();
@@ -260,14 +246,8 @@ export default function SpikeSuperAdminDashboard() {
 
   const handleToggleStoreStatus = async (storeId, currentStatus) => {
     const nextStatus = !currentStatus;
-    const { error } = await supabase
-      .from('store_profiles')
-      .update({ is_active: nextStatus })
-      .eq('id', storeId);
-
-    if (!error) {
-      setStores(prev => prev.map(s => s.id === storeId ? { ...s, is_active: nextStatus } : s));
-    }
+    const { error } = await supabase.from('store_profiles').update({ is_active: nextStatus }).eq('id', storeId);
+    if (!error) setStores(prev => prev.map(s => s.id === storeId ? { ...s, is_active: nextStatus } : s));
   };
 
   const handleUpdateWallet = async (storeId, currentBalance) => {
@@ -275,34 +255,18 @@ export default function SpikeSuperAdminDashboard() {
     if (amount === null) return;
     const num = parseFloat(amount);
     if (isNaN(num)) return;
-
-    const { error } = await supabase
-      .from('store_profiles')
-      .update({ wallet_balance_usd: num })
-      .eq('id', storeId);
-
-    if (!error) {
-      setStores(prev => prev.map(s => s.id === storeId ? { ...s, wallet_balance_usd: num } : s));
-    }
+    const { error } = await supabase.from('store_profiles').update({ wallet_balance_usd: num }).eq('id', storeId);
+    if (!error) setStores(prev => prev.map(s => s.id === storeId ? { ...s, wallet_balance_usd: num } : s));
   };
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: newStatus })
-      .eq('id', orderId);
-
-    if (!error) {
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    }
+    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
+    if (!error) setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
   };
 
   const handleCreateProduct = async (e) => {
     e.preventDefault();
-    if (!newProductData.title || !newProductData.price) {
-      alert(isAr ? 'يرجى إدخال اسم المنتج والسعر' : 'Please fill product title and price');
-      return;
-    }
+    if (!newProductData.title || !newProductData.price) return;
     const { error } = await supabase.from('products').insert([{
       title: newProductData.title,
       price: parseFloat(newProductData.price) || 0,
@@ -311,9 +275,8 @@ export default function SpikeSuperAdminDashboard() {
       store_id: newProductData.store_id || (stores[0]?.user_id || 'spike_main'),
       status: 'active'
     }]);
-
     if (!error) {
-      alert(isAr ? '✅ تمت إضافة المنتج بنجاح' : 'Product added successfully');
+      alert(isAr ? '✅ تمت إضافة المنتج بنجاح' : 'Product added');
       setNewProductModal(false);
       setNewProductData({ title: '', price: '', cost_price: '', stock: 100, store_id: '' });
       fetchAllData();
@@ -325,7 +288,6 @@ export default function SpikeSuperAdminDashboard() {
   const handleCreateAdmin = async (e) => {
     e.preventDefault();
     if (!newAdminData.email) return;
-
     const cleanEmail = newAdminData.email.trim().toLowerCase();
     const { error } = await supabase.from('admin_users').insert([{
       email: cleanEmail,
@@ -333,16 +295,9 @@ export default function SpikeSuperAdminDashboard() {
       role: newAdminData.role,
       permissions: newAdminData.permissions
     }]);
-
     if (!error) {
-      alert(isAr ? '✅ تمت إضافة المشرف وتعيين الصلاحيات بنجاح' : 'Admin created successfully');
+      alert(isAr ? '✅ تمت إضافة المشرف بنجاح' : 'Admin created');
       setNewAdminModal(false);
-      setNewAdminData({
-        email: '',
-        name: '',
-        role: 'admin',
-        permissions: { manage_stores: true, manage_orders: true, manage_finance: false, manage_admins: false }
-      });
       fetchAllData();
     } else {
       alert(error.message);
@@ -350,16 +305,10 @@ export default function SpikeSuperAdminDashboard() {
   };
 
   const handleDeleteAdmin = async (id, email) => {
-    if (email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
-      alert(isAr ? '⚠️ لا يمكن حذف حساب المالك الأساسي للنظام!' : 'Primary Super Admin cannot be deleted!');
-      return;
-    }
-    if (!confirm(isAr ? `هل أنت متأكد من إلغاء صلاحيات المسؤول ${email}؟` : `Revoke access for ${email}?`)) return;
-
+    if (email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) return alert('Cannot delete owner!');
+    if (!confirm(`Revoke access for ${email}?`)) return;
     const { error } = await supabase.from('admin_users').delete().eq('id', id);
-    if (!error) {
-      setAdminUsers(prev => prev.filter(a => a.id !== id));
-    }
+    if (!error) setAdminUsers(prev => prev.filter(a => a.id !== id));
   };
 
   const handleSavePlatformSettings = async () => {
@@ -370,18 +319,27 @@ export default function SpikeSuperAdminDashboard() {
       withdraw_threshold: parseFloat(withdrawThreshold),
       updated_at: new Date().toISOString()
     });
-
-    if (!error) {
-      alert(isAr ? '✅ تم حفظ إعدادات النظام وسعر الصرف بنجاح' : 'Settings saved successfully');
-    } else {
-      alert(error.message);
-    }
+    if (!error) alert(isAr ? '✅ تم حفظ إعدادات النظام بنجاح' : 'Settings saved');
   };
 
   const totalStoresCount = stores.length;
   const pendingOrdersCount = orders.filter(o => o.status === 'pending' || !o.status).length;
   const activeStoresCount = stores.filter(s => s.is_active !== false).length;
   const totalSalesAmount = orders.reduce((acc, curr) => acc + (Number(curr.total_price) || 0), 0);
+
+  const mainMenuItems = [
+    { id: 'overview', title: t.navOverview, icon: '🏠' },
+    { id: 'merchants', title: t.navStores, icon: '📂', count: totalStoresCount },
+    { id: 'orders', title: t.navOrders, icon: '⏱️', count: orders.length },
+    { id: 'inventory', title: t.navInventory, icon: '⚡', count: products.length },
+    { id: 'admins', title: t.navAdmins, icon: '🛡️', count: adminUsers.length + 1 },
+  ];
+
+  const settingsItems = [
+    { id: 'rates', title: t.navRates, icon: '📁' },
+    { id: 'domains', title: t.navDomains, icon: '💳' },
+    { id: 'plans', title: t.navPlans, icon: '💎' },
+  ];
 
   const navItems = [
     { id: 'overview', title: t.navOverview, icon: '🏠', count: null },
@@ -397,73 +355,65 @@ export default function SpikeSuperAdminDashboard() {
   ];
 
   const statCards = [
-    {
-      title: t.statStores,
-      value: totalStoresCount.toString(),
-      change: '980',
-      icon: '⚠️',
-      badgeColor: 'text-cyan-600 bg-cyan-500/10 border-cyan-500/20',
-      desc1: t.comparedLastMonth,
-      desc2: t.totalReceipts,
-      progress: '100%',
-    },
-    {
-      title: t.statPending,
-      value: pendingOrdersCount.toString(),
-      change: '2,940',
-      icon: '🛡️',
-      badgeColor: 'text-cyan-600 bg-cyan-500/10 border-cyan-500/20',
-      desc1: t.underProcess,
-      desc2: t.underProcess,
-      progress: pendingOrdersCount > 0 ? '45%' : '0%',
-    },
-    {
-      title: t.statActiveUsers,
-      value: activeStoresCount.toString(),
-      change: '2,504',
-      icon: '☕',
-      badgeColor: 'text-cyan-600 bg-cyan-500/10 border-cyan-500/20',
-      desc1: t.activeRate,
-      desc2: t.activeRate,
-      progress: '100%',
-    },
-    {
-      title: t.statSales,
-      value: `${totalSalesAmount.toFixed(2)} ج.م`,
-      change: '4,923',
-      icon: '📦',
-      badgeColor: 'text-cyan-600 bg-cyan-500/10 border-cyan-500/20',
-      desc1: t.comparedLastMonth,
-      desc2: t.totalReceipts,
-      progress: totalSalesAmount > 0 ? '60%' : '5%',
-    },
+    { title: t.statStores, value: totalStoresCount.toString(), change: '980', icon: '⚠️', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
+    { title: t.statPending, value: pendingOrdersCount.toString(), change: '2,940', icon: '🛡️', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
+    { title: t.statActiveUsers, value: activeStoresCount.toString(), change: '2,504', icon: '☕', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
+    { title: t.statSales, value: `${totalSalesAmount.toFixed(2)} ج.م`, change: '4,923', icon: '📦', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
   ];
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center font-sans bg-[#1E222B] text-cyan-400">
-        <div className="animate-pulse text-sm font-bold">جاري تحميل لوحة التحكم...</div>
+        <div className="animate-pulse text-sm font-bold">جاري التحقق الأمني وفتح لوحة الإدارة...</div>
       </div>
     );
   }
 
-  return (
-    <div 
-      className="min-h-screen font-sans flex bg-[#161B22] text-slate-100 select-none overflow-x-hidden" 
-      dir={isAr ? 'rtl' : 'ltr'}
-    >
-      {sidebarOpen && (
-        <div 
-          onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-xs transition-opacity"
-        />
-      )}
+  const activeColor = '#06B6D4'; // تيل / أزرق سماوي فخم مطابق للصورة
 
-      {/* الشريط الجانبي الداكن الفاخر المطابق للصورة تماماً */}
+  return (
+    <div className="min-h-screen font-sans flex bg-[#161B22] text-slate-100 select-none overflow-x-hidden" dir={isAr ? 'rtl' : 'ltr'}>
+      {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-xs transition-opacity" />}
+
+      {/* الشريط الجانبي المصغر (Icon Dock) */}
+      <aside className="w-20 shrink-0 bg-[#1A212D] border-r border-slate-800/80 hidden sm:flex flex-col items-center py-6 justify-between shadow-2xl">
+        <div className="space-y-6 flex flex-col items-center">
+          <div className="w-10 h-10 rounded-2xl bg-cyan-500 flex items-center justify-center text-slate-950 font-black shadow-md shadow-cyan-500/30">
+            S
+          </div>
+
+          <div className="space-y-3 pt-4">
+            {['🏠', '📂', '⏱️', '⚡', '🛡️', '📁'].map((icon, idx) => (
+              <button 
+                key={idx}
+                onClick={() => setActiveTab(mainMenuItems[idx]?.id || 'overview')}
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg transition cursor-pointer ${
+                  activeTab === mainMenuItems[idx]?.id 
+                    ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/30' 
+                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                }`}
+              >
+                {icon}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <button 
+            onClick={toggleTheme}
+            className="w-10 h-10 rounded-2xl flex items-center justify-center text-sm transition cursor-pointer bg-slate-800 text-amber-300"
+            title="تغيير المظهر"
+          >
+            {isDark ? '☀️' : '🌙'}
+          </button>
+        </div>
+      </aside>
+
+      {/* القائمة الجانبية الرئيسية الموسعة (Sidebar) مطابقة للصورة */}
       <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 bg-[#1A212D] border-r border-slate-800/80 flex flex-col justify-between p-6 shadow-2xl transition-all duration-300 lg:static lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0 shadow-2xl' : isAr ? 'translate-x-full' : '-translate-x-full'
       }`}>
-        
         <div className="space-y-6 flex-1 overflow-y-auto">
           
           {/* بروفايل المستخدم العلوي في السايد بار */}
@@ -491,7 +441,7 @@ export default function SpikeSuperAdminDashboard() {
             <input type="text" placeholder="Search" className="bg-transparent text-xs outline-none w-full text-white placeholder-slate-500" />
           </div>
 
-          {/* 👑 زر الانتقال السريع لمتاجر الأدمن الخاصة بك */}
+          {/* 👑 زر متاجر الأدمن الخاصة */}
           <button
             onClick={() => {
               localStorage.setItem('merchant_user_id', 'main_flagship_owner');
@@ -508,7 +458,7 @@ export default function SpikeSuperAdminDashboard() {
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 block mb-2">
               {t.applicationMenu}
             </span>
-            {navItems.slice(0, 5).map((item) => {
+            {mainMenuItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button
@@ -545,7 +495,7 @@ export default function SpikeSuperAdminDashboard() {
             <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 block mb-2">
               {t.settingsMenu}
             </span>
-            {navItems.slice(5).map((item) => {
+            {settingsItems.map((item) => {
               const isActive = activeTab === item.id;
               return (
                 <button
@@ -600,7 +550,7 @@ export default function SpikeSuperAdminDashboard() {
       {/* منطقة العمل الرئيسية (Main Workspace بخلفية رمادية ناعمة وفاتحة) */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-[#F0F2F5] text-slate-800">
         
-        <header className="px-6 sm:px-10 py-4 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-xs">
+        <header className="px-8 py-5 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-xs">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -1135,4 +1085,3 @@ export default function SpikeSuperAdminDashboard() {
     </div>
   );
 }
-```[cite: 5, 6, 7]
