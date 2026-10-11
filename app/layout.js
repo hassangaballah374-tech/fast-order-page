@@ -1,15 +1,12 @@
 import './globals.css';
 import { AppProvider } from '../context/AppContext';
 import MobileViewportWrapper from '../components/MobileViewportWrapper';
-import SpikeSessionBar from '../components/SpikeSessionBar';
 
-export default function RootLayout({ children }) {
-  return (
-    <html lang="ar" dir="rtl">
-      <body>{children}</body>
-    </html>
-  );
-}
+export const metadata = {
+  title: 'سبايك | SPIKE - ابنِ متجرك.. وضاعف طلباتك',
+  description: 'المنظومة الأقوى لإدارة المتاجر الإلكترونية، الشحن، والدفع عند الاستلام',
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
@@ -18,7 +15,6 @@ export default function RootLayout({ children }) {
           <MobileViewportWrapper>
             {children}
           </MobileViewportWrapper>
-          <SpikeSessionBar />
         </AppProvider>
       </body>
     </html>
