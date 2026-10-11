@@ -79,19 +79,19 @@ export default function SpikeSuperAdminDashboard() {
       statSales: 'إجمالي المبيعات',
       adminRole: 'Super Admin',
       logoutText: 'تسجيل الخروج',
-      navOverview: 'Dashboard',
-      navStores: 'Directories',
-      navOrders: 'Timeline',
-      navInventory: 'Files',
-      navRates: 'Payment',
-      navDomains: 'Domains & DNS',
-      navPlans: 'Subscription Plans',
+      navOverview: 'Home',
+      navStores: 'Customers',
+      navOrders: 'Order',
+      navInventory: 'Products',
+      navRates: 'Overview',
+      navDomains: 'Billing',
+      navPlans: 'Payouts',
       navLogs: 'Audit Logs',
       navBroadcast: 'Announcements',
       navAdmins: 'Admin Team',
       adminStoresBtn: 'متاجر الأدمن الخاصة',
-      applicationMenu: 'APPLICATION',
-      settingsMenu: 'SETTINGS',
+      mainMenu: 'MAIN MENU',
+      financeMenu: 'FINANCE',
       ordersCount: 'أوردر',
       activeStatus: 'نشط',
       save: 'حفظ التعديلات',
@@ -102,26 +102,26 @@ export default function SpikeSuperAdminDashboard() {
       overviewTitle: 'Dashboard Performances',
       overviewSubtitle: 'Real-time KPIs, merchant orders, and financial reconciliations',
       addStore: 'Add New Store',
-      refreshData: 'Refresh Data',
+      refreshData: 'Download',
       statStores: 'Total Stores',
       statPending: 'Pending Fulfillment',
       statActiveUsers: 'Active Clients',
       statSales: 'Total Sales',
       adminRole: 'Super Admin',
       logoutText: 'Sign Out',
-      navOverview: 'Dashboard',
-      navStores: 'Directories',
-      navOrders: 'Timeline',
-      navInventory: 'Files',
-      navRates: 'Payment',
-      navDomains: 'Domains & DNS',
-      navPlans: 'Subscription Plans',
+      navOverview: 'Home',
+      navStores: 'Customers',
+      navOrders: 'Order',
+      navInventory: 'Products',
+      navRates: 'Overview',
+      navDomains: 'Billing',
+      navPlans: 'Payouts',
       navLogs: 'Audit Logs',
-      navBroadcast: 'Broadcast Announcements',
+      navBroadcast: 'Announcements',
       navAdmins: 'Admin Team',
       adminStoresBtn: 'My Admin Stores',
-      applicationMenu: 'APPLICATION',
-      settingsMenu: 'SETTINGS',
+      mainMenu: 'MAIN MENU',
+      financeMenu: 'FINANCE',
       ordersCount: 'orders',
       activeStatus: 'Active',
       save: 'Save Changes',
@@ -335,50 +335,37 @@ export default function SpikeSuperAdminDashboard() {
     { id: 'admins', title: t.navAdmins, icon: '🛡️', count: adminUsers.length + 1 },
   ];
 
-  const settingsItems = [
+  const financeMenuItems = [
     { id: 'rates', title: t.navRates, icon: '📁' },
     { id: 'domains', title: t.navDomains, icon: '💳' },
     { id: 'plans', title: t.navPlans, icon: '💎' },
   ];
 
-  const navItems = [
-    { id: 'overview', title: t.navOverview, icon: '🏠', count: null },
-    { id: 'merchants', title: t.navStores, icon: '🏬', count: totalStoresCount },
-    { id: 'orders', title: t.navOrders, icon: '📦', count: orders.length },
-    { id: 'inventory', title: t.navInventory, icon: '🏷️', count: products.length },
-    { id: 'admins', title: t.navAdmins, icon: '🛡️', count: adminUsers.length + 1 },
-    { id: 'rates', title: t.navRates, icon: '💱', count: null },
-    { id: 'domains', title: t.navDomains, icon: '🌐', count: domains.length },
-    { id: 'plans', title: t.navPlans, icon: '💎', count: null },
-    { id: 'audit', title: t.navLogs, icon: '📑', count: auditLogs.length },
-    { id: 'broadcast', title: t.navBroadcast, icon: '📢', count: null },
-  ];
-
   const statCards = [
-    { title: t.statStores, value: totalStoresCount.toString(), change: '980', icon: '⚠️', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
-    { title: t.statPending, value: pendingOrdersCount.toString(), change: '2,940', icon: '🛡️', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
-    { title: t.statActiveUsers, value: activeStoresCount.toString(), change: '2,504', icon: '☕', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
-    { title: t.statSales, value: `${totalSalesAmount.toFixed(2)} ج.م`, change: '4,923', icon: '📦', badgeColor: 'text-cyan-500 bg-cyan-500/10 border-cyan-500/20' },
+    { title: t.statStores, value: totalStoresCount.toString(), change: '980', icon: '⚠️', badgeColor: 'text-teal-600 bg-teal-500/10 border-teal-500/20' },
+    { title: t.statPending, value: pendingOrdersCount.toString(), change: '2,940', icon: '🛡️', badgeColor: 'text-teal-600 bg-teal-500/10 border-teal-500/20' },
+    { title: t.statActiveUsers, value: activeStoresCount.toString(), change: '2,504', icon: '☕', badgeColor: 'text-teal-600 bg-teal-500/10 border-teal-500/20' },
+    { title: t.statSales, value: `${totalSalesAmount.toFixed(2)} ج.م`, change: '4,923', icon: '📦', badgeColor: 'text-teal-600 bg-teal-500/10 border-teal-500/20' },
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center font-sans bg-[#1E222B] text-cyan-400">
-        <div className="animate-pulse text-sm font-bold">جاري التحقق الأمني وفتح لوحة الإدارة...</div>
+      <div className="min-h-screen flex items-center justify-center font-sans bg-[#F0F2F5] text-teal-600">
+        <div className="animate-pulse text-sm font-bold">جاري تحميل لوحة التحكم...</div>
       </div>
     );
   }
 
-  const activeColor = '#06B6D4'; // تيل / أزرق سماوي فخم مطابق للصورة
+  const activeColor = '#009688'; // لون التيل المطابق للصورة تماماً
 
   return (
-    <div className="min-h-screen font-sans flex bg-[#161B22] text-slate-100 select-none overflow-x-hidden" dir={isAr ? 'rtl' : 'ltr'}>
-      {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-xs transition-opacity" />}
+    <div className="min-h-screen font-sans flex select-none overflow-x-hidden bg-[#EAEFF5] text-slate-800" dir={isAr ? 'rtl' : 'ltr'}>
+      {sidebarOpen && <div onClick={() => setSidebarOpen(false)} className="fixed inset-0 bg-black/40 z-40 lg:hidden backdrop-blur-xs transition-opacity" />}
 
-      {/* الشريط الجانبي المصغر (Icon Dock) */}
-      <aside className="w-20 shrink-0 bg-[#1A212D] border-r border-slate-800/80 hidden sm:flex flex-col items-center py-6 justify-between shadow-2xl">
+      {/* 1. الشريط الجانبي المصغر (Icon Dock) أقصى اليمين/اليسار */}
+      <aside className="w-20 shrink-0 bg-white border-r border-slate-200 hidden sm:flex flex-col items-center py-6 justify-between shadow-xs">
         <div className="space-y-6 flex flex-col items-center">
-          <div className="w-10 h-10 rounded-2xl bg-cyan-500 flex items-center justify-center text-slate-950 font-black shadow-md shadow-cyan-500/30">
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-black shadow-md shadow-teal-500/30" style={{ backgroundColor: activeColor }}>
             S
           </div>
 
@@ -389,9 +376,10 @@ export default function SpikeSuperAdminDashboard() {
                 onClick={() => setActiveTab(mainMenuItems[idx]?.id || 'overview')}
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg transition cursor-pointer ${
                   activeTab === mainMenuItems[idx]?.id 
-                    ? 'bg-cyan-500 text-slate-950 font-black shadow-md shadow-cyan-500/30' 
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                    ? 'text-white font-black shadow-md shadow-teal-500/30' 
+                    : 'text-slate-400 hover:bg-slate-100 hover:text-slate-900'
                 }`}
+                style={{ backgroundColor: activeTab === mainMenuItems[idx]?.id ? activeColor : 'transparent' }}
               >
                 {icon}
               </button>
@@ -402,7 +390,7 @@ export default function SpikeSuperAdminDashboard() {
         <div className="space-y-3">
           <button 
             onClick={toggleTheme}
-            className="w-10 h-10 rounded-2xl flex items-center justify-center text-sm transition cursor-pointer bg-slate-800 text-amber-300"
+            className="w-10 h-10 rounded-2xl flex items-center justify-center text-sm transition cursor-pointer bg-slate-100 text-slate-700 hover:bg-slate-200"
             title="تغيير المظهر"
           >
             {isDark ? '☀️' : '🌙'}
@@ -410,35 +398,35 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       </aside>
 
-      {/* القائمة الجانبية الرئيسية الموسعة (Sidebar) مطابقة للصورة */}
-      <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 bg-[#1A212D] border-r border-slate-800/80 flex flex-col justify-between p-6 shadow-2xl transition-all duration-300 lg:static lg:translate-x-0 ${
+      {/* 2. القائمة الجانبية الرئيسية الموسعة (Sidebar) مطابقة للصورة تماماً بلون أبيض ناعم */}
+      <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 bg-white border-r border-slate-200 flex flex-col justify-between p-6 shadow-xl transition-all duration-300 lg:static lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0 shadow-2xl' : isAr ? 'translate-x-full' : '-translate-x-full'
       }`}>
         <div className="space-y-6 flex-1 overflow-y-auto">
           
           {/* بروفايل المستخدم العلوي في السايد بار */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-slate-700 overflow-hidden border border-cyan-500/40">
+              <div className="w-10 h-10 rounded-full bg-slate-200 overflow-hidden border border-teal-500/30">
                 <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=60" alt="Profile" className="w-full h-full object-cover" />
               </div>
               <div className="leading-tight">
-                <span className="text-xs font-black block text-white">Hassan Hosny</span>
+                <span className="text-xs font-black block text-slate-900">Hassan Hosny</span>
                 <span className="text-[10px] text-slate-400 font-mono">Super Admin</span>
               </div>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden w-8 h-8 rounded-lg border border-slate-700 flex items-center justify-center text-slate-300 hover:bg-slate-800"
+              className="lg:hidden w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100"
             >
               ✕
             </button>
           </div>
 
           {/* شريط البحث */}
-          <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-[#12161F] border border-slate-800 text-slate-300">
-            <span className="text-slate-500">🔍</span>
-            <input type="text" placeholder="Search" className="bg-transparent text-xs outline-none w-full text-white placeholder-slate-500" />
+          <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700">
+            <span className="text-slate-400">🔍</span>
+            <input type="text" placeholder="Search" className="bg-transparent text-xs outline-none w-full text-slate-800 placeholder-slate-400" />
           </div>
 
           {/* 👑 زر متاجر الأدمن الخاصة */}
@@ -447,7 +435,8 @@ export default function SpikeSuperAdminDashboard() {
               localStorage.setItem('merchant_user_id', 'main_flagship_owner');
               router.push('/dashboard');
             }}
-            className="w-full py-2.5 px-3 bg-gradient-to-r from-cyan-500 to-teal-600 hover:from-cyan-400 text-white rounded-2xl text-xs font-black shadow-lg shadow-cyan-500/20 transition cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-2.5 px-3 text-white rounded-2xl text-xs font-black shadow-lg shadow-teal-500/20 transition cursor-pointer flex items-center justify-center gap-2"
+            style={{ background: `linear-gradient(to right, ${activeColor}, #00796B)` }}
           >
             <span>👑</span>
             <span>{t.adminStoresBtn}</span>
@@ -455,8 +444,8 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* القوائم الجانبية */}
           <div className="space-y-1.5 pt-2">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 block mb-2">
-              {t.applicationMenu}
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block mb-2">
+              {t.mainMenu}
             </span>
             {mainMenuItems.map((item) => {
               const isActive = activeTab === item.id;
@@ -469,10 +458,9 @@ export default function SpikeSuperAdminDashboard() {
                     setSidebarOpen(false);
                   }}
                   className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
-                    isActive
-                      ? 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30'
-                      : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
+                    isActive ? 'text-white font-black shadow-md shadow-teal-500/25' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
+                  style={{ backgroundColor: isActive ? activeColor : 'transparent' }}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-sm">{item.icon}</span>
@@ -481,7 +469,7 @@ export default function SpikeSuperAdminDashboard() {
 
                   {item.count !== null && (
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
-                      isActive ? 'bg-slate-950/20 text-slate-950' : 'bg-slate-800 text-slate-400'
+                      isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
                     }`}>
                       {item.count}
                     </span>
@@ -492,7 +480,7 @@ export default function SpikeSuperAdminDashboard() {
           </div>
 
           <div className="space-y-1.5 pt-2">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-2 block mb-2">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 block mb-2">
               {t.settingsMenu}
             </span>
             {settingsItems.map((item) => {
@@ -506,10 +494,9 @@ export default function SpikeSuperAdminDashboard() {
                     setSidebarOpen(false);
                   }}
                   className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition cursor-pointer ${
-                    isActive
-                      ? 'bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/30'
-                      : 'text-slate-400 hover:bg-slate-800/60 hover:text-white'
+                    isActive ? 'text-white font-black shadow-md shadow-teal-500/25' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
+                  style={{ backgroundColor: isActive ? activeColor : 'transparent' }}
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-sm">{item.icon}</span>
@@ -522,14 +509,14 @@ export default function SpikeSuperAdminDashboard() {
 
         </div>
 
-        {/* 🚪 قسم بيانات المشرف وزر تسجيل الخروج تحت مدير النظام الأساسي */}
-        <div className="p-4 border-t border-slate-800 flex flex-col gap-2.5 bg-[#12161F] rounded-2xl">
+        {/* 🚪 قسم بيانات المشرف وزر تسجيل الخروج */}
+        <div className="p-4 border-t border-slate-100 flex flex-col gap-2.5 bg-slate-50 rounded-2xl">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-cyan-500 to-teal-400 flex items-center justify-center text-slate-950 text-xs font-black shadow-xs shrink-0">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0" style={{ backgroundColor: activeColor }}>
               S.A
             </div>
             <div className="leading-tight truncate">
-              <span className="text-xs font-bold block text-white">
+              <span className="text-xs font-bold block text-slate-900">
                 {t.adminRole}
               </span>
               <span className="text-[10px] text-slate-400 block font-mono truncate">{SUPER_ADMIN_EMAIL}</span>
@@ -538,7 +525,7 @@ export default function SpikeSuperAdminDashboard() {
 
           <button 
             onClick={handleLogout}
-            className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 border border-rose-500/20 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer"
             title={t.logoutText}
           >
             <span>🚪</span>
@@ -547,10 +534,10 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       </aside>
 
-      {/* منطقة العمل الرئيسية (Main Workspace بخلفية رمادية ناعمة وفاتحة) */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-[#F0F2F5] text-slate-800">
+      {/* 3. منطقة العمل الرئيسية (Main Workspace بخلفية رمادية ناعمة ومريحة) */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-[#F8FAFC]">
         
-        <header className="px-8 py-5 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-xs">
+        <header className="px-8 py-5 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between sticky top-0 z-30 shadow-2xs">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -568,7 +555,8 @@ export default function SpikeSuperAdminDashboard() {
           <div className="flex items-center gap-2.5">
             <button 
               onClick={() => setNewStoreModal(true)}
-              className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-2xl text-xs font-black shadow-sm transition cursor-pointer"
+              className="px-4 py-2 text-white rounded-2xl text-xs font-black shadow-sm transition cursor-pointer"
+              style={{ backgroundColor: activeColor }}
             >
               + {t.addStore}
             </button>
@@ -637,7 +625,8 @@ export default function SpikeSuperAdminDashboard() {
                   </div>
                   <button 
                     onClick={() => setActiveTab('orders')}
-                    className="text-xs text-cyan-600 font-bold hover:underline cursor-pointer"
+                    className="text-xs font-bold hover:underline cursor-pointer"
+                    style={{ color: activeColor }}
                   >
                     View all →
                   </button>
@@ -665,7 +654,7 @@ export default function SpikeSuperAdminDashboard() {
                             <td className="p-3 font-mono font-bold text-slate-900">#{o.id}</td>
                             <td className="p-3 font-bold text-slate-800">{o.customer_name || 'Cash Customer'}</td>
                             <td className="p-3 text-slate-500">{new Date(o.created_at).toLocaleDateString()}</td>
-                            <td className="p-3 font-mono font-bold text-cyan-600">{o.total_price} ج.م</td>
+                            <td className="p-3 font-mono font-bold" style={{ color: activeColor }}>{o.total_price} ج.م</td>
                             <td className="p-3">
                               <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-black uppercase">
                                 Success
@@ -691,7 +680,8 @@ export default function SpikeSuperAdminDashboard() {
                 </div>
                 <button
                   onClick={() => setNewAdminModal(true)}
-                  className="px-4 py-2 bg-cyan-500 text-slate-950 rounded-xl text-xs font-black cursor-pointer shadow-sm"
+                  className="px-4 py-2 text-white rounded-xl text-xs font-black cursor-pointer shadow-sm"
+                  style={{ backgroundColor: activeColor }}
                 >
                   + Add Admin
                 </button>
@@ -708,7 +698,7 @@ export default function SpikeSuperAdminDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    <tr className="bg-cyan-500/5">
+                    <tr className="bg-teal-500/5">
                       <td className="p-3 font-black text-slate-900">Hassan Hosny (Owner)</td>
                       <td className="p-3 font-mono font-bold" dir="ltr">{SUPER_ADMIN_EMAIL}</td>
                       <td className="p-3"><span className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-500/10 text-rose-600">S.A</span></td>
@@ -738,7 +728,8 @@ export default function SpikeSuperAdminDashboard() {
                 </div>
                 <button 
                   onClick={() => setNewStoreModal(true)}
-                  className="px-4 py-2 bg-cyan-500 text-slate-950 rounded-xl text-xs font-black cursor-pointer shadow-sm"
+                  className="px-4 py-2 text-white rounded-xl text-xs font-black cursor-pointer shadow-sm"
+                  style={{ backgroundColor: activeColor }}
                 >
                   + Add Store
                 </button>
@@ -763,7 +754,7 @@ export default function SpikeSuperAdminDashboard() {
                           <span className="text-[10px] text-slate-400 font-mono" dir="ltr">{s.store_slug}.spike.shop</span>
                         </td>
                         <td className="p-3 text-slate-700">{s.owner_name || '—'}</td>
-                        <td className="p-3 font-mono font-bold text-cyan-600">${s.wallet_balance_usd || 0}</td>
+                        <td className="p-3 font-mono font-bold" style={{ color: activeColor }}>${s.wallet_balance_usd || 0}</td>
                         <td className="p-3">
                           <button
                             onClick={() => handleToggleStoreStatus(s.id, s.is_active !== false)}
@@ -788,7 +779,8 @@ export default function SpikeSuperAdminDashboard() {
                               localStorage.setItem('merchant_user_id', s.user_id);
                               router.push('/dashboard');
                             }}
-                            className="px-2.5 py-1 bg-cyan-500/15 text-cyan-700 rounded-lg font-bold cursor-pointer"
+                            className="px-2.5 py-1 text-teal-700 rounded-lg font-bold cursor-pointer"
+                            style={{ backgroundColor: 'rgba(0, 150, 136, 0.1)' }}
                           >
                             Access ↗
                           </button>
@@ -834,7 +826,7 @@ export default function SpikeSuperAdminDashboard() {
                           <td className="p-3 font-bold text-slate-800">{o.customer_name}</td>
                           <td className="p-3 font-mono" dir="ltr">{o.customer_phone}</td>
                           <td className="p-3 text-slate-600">{o.governorate} - {o.address}</td>
-                          <td className="p-3 font-mono font-bold text-cyan-600">{o.total_price} ج.م</td>
+                          <td className="p-3 font-mono font-bold" style={{ color: activeColor }}>{o.total_price} ج.م</td>
                           <td className="p-3 text-center">
                             <select
                               value={o.status || 'pending'}
@@ -867,7 +859,8 @@ export default function SpikeSuperAdminDashboard() {
                 </div>
                 <button
                   onClick={() => setNewProductModal(true)}
-                  className="px-4 py-2 bg-cyan-500 text-slate-950 rounded-xl text-xs font-black cursor-pointer shadow-sm"
+                  className="px-4 py-2 text-white rounded-xl text-xs font-black cursor-pointer shadow-sm"
+                  style={{ backgroundColor: activeColor }}
                 >
                   + Add Product
                 </button>
@@ -911,7 +904,7 @@ export default function SpikeSuperAdminDashboard() {
                     step="0.1"
                     value={exchangeRate}
                     onChange={(e) => setExchangeRate(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-mono outline-none focus:border-cyan-500"
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-mono outline-none"
                   />
                 </div>
 
@@ -922,7 +915,7 @@ export default function SpikeSuperAdminDashboard() {
                     step="0.1"
                     value={platformCommission}
                     onChange={(e) => setPlatformCommission(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-mono outline-none focus:border-cyan-500"
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-mono outline-none"
                   />
                 </div>
 
@@ -932,13 +925,14 @@ export default function SpikeSuperAdminDashboard() {
                     type="number"
                     value={withdrawThreshold}
                     onChange={(e) => setWithdrawThreshold(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-mono outline-none focus:border-cyan-500"
+                    className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-sm font-mono outline-none"
                   />
                 </div>
 
                 <button 
                   onClick={handleSavePlatformSettings}
-                  className="px-6 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black text-xs hover:bg-cyan-400 transition cursor-pointer mt-2 shadow-sm"
+                  className="px-6 py-2.5 text-white rounded-xl font-black text-xs transition cursor-pointer mt-2 shadow-sm"
+                  style={{ backgroundColor: activeColor }}
                 >
                   Save Changes
                 </button>
@@ -956,7 +950,7 @@ export default function SpikeSuperAdminDashboard() {
                 value={broadcastMessage}
                 onChange={(e) => setBroadcastMessage(e.target.value)}
                 placeholder="Type announcement..."
-                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs mb-3 outline-none focus:border-cyan-500"
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-xs mb-3 outline-none"
               />
               <button
                 onClick={() => {
@@ -964,7 +958,8 @@ export default function SpikeSuperAdminDashboard() {
                   alert('✅ Broadcast sent successfully');
                   setBroadcastMessage('');
                 }}
-                className="px-5 py-2 bg-cyan-500 text-slate-950 rounded-xl font-black text-xs cursor-pointer shadow-sm"
+                className="px-5 py-2 text-white rounded-xl font-black text-xs cursor-pointer shadow-sm"
+                style={{ backgroundColor: activeColor }}
               >
                 Send Now
               </button>
@@ -976,7 +971,7 @@ export default function SpikeSuperAdminDashboard() {
 
       {/* مودال إنشاء متجر جديد */}
       {newStoreModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
           <div className="p-6 rounded-3xl max-w-md w-full bg-white border border-slate-200 text-slate-900 shadow-2xl space-y-3">
             <h3 className="text-base font-black">Deploy New Store</h3>
             <form onSubmit={handleCreateStore} className="space-y-3 text-xs">
@@ -986,7 +981,7 @@ export default function SpikeSuperAdminDashboard() {
                 placeholder="Store Name"
                 value={newStoreData.store_name}
                 onChange={(e) => setNewStoreData({ ...newStoreData, store_name: e.target.value })}
-                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:border-cyan-500"
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none"
               />
               <input
                 type="text"
@@ -994,24 +989,24 @@ export default function SpikeSuperAdminDashboard() {
                 placeholder="Slug"
                 value={newStoreData.store_slug}
                 onChange={(e) => setNewStoreData({ ...newStoreData, store_slug: e.target.value })}
-                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono outline-none focus:border-cyan-500"
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono outline-none"
               />
               <input
                 type="text"
                 placeholder="Owner Name"
                 value={newStoreData.owner_name}
                 onChange={(e) => setNewStoreData({ ...newStoreData, owner_name: e.target.value })}
-                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:border-cyan-500"
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none"
               />
               <input
                 type="tel"
                 placeholder="Phone"
                 value={newStoreData.phone}
                 onChange={(e) => setNewStoreData({ ...newStoreData, phone: e.target.value })}
-                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono outline-none focus:border-cyan-500"
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono outline-none"
               />
               <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-1 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer shadow-sm">Deploy</button>
+                <button type="submit" className="flex-1 py-2.5 text-white rounded-xl font-black cursor-pointer shadow-sm" style={{ backgroundColor: activeColor }}>Deploy</button>
                 <button type="button" onClick={() => setNewStoreModal(false)} className="px-4 py-2.5 border border-slate-200 rounded-xl cursor-pointer">Cancel</button>
               </div>
             </form>
@@ -1021,7 +1016,7 @@ export default function SpikeSuperAdminDashboard() {
 
       {/* مودال إضافة منتج جديد */}
       {newProductModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
           <div className="p-6 rounded-3xl max-w-md w-full bg-white border border-slate-200 text-slate-900 shadow-2xl space-y-3">
             <h3 className="text-base font-black">Add Product</h3>
             <form onSubmit={handleCreateProduct} className="space-y-3 text-xs">
@@ -1031,7 +1026,7 @@ export default function SpikeSuperAdminDashboard() {
                 placeholder="Title"
                 value={newProductData.title}
                 onChange={(e) => setNewProductData({ ...newProductData, title: e.target.value })}
-                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:border-cyan-500"
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none"
               />
               <input
                 type="number"
@@ -1039,10 +1034,10 @@ export default function SpikeSuperAdminDashboard() {
                 placeholder="Price"
                 value={newProductData.price}
                 onChange={(e) => setNewProductData({ ...newProductData, price: e.target.value })}
-                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono outline-none focus:border-cyan-500"
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono outline-none"
               />
               <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-1 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer shadow-sm">Add</button>
+                <button type="submit" className="flex-1 py-2.5 text-white rounded-xl font-black cursor-pointer shadow-sm" style={{ backgroundColor: activeColor }}>Add</button>
                 <button type="button" onClick={() => setNewProductModal(false)} className="px-4 py-2.5 border border-slate-200 rounded-xl cursor-pointer">Cancel</button>
               </div>
             </form>
@@ -1052,7 +1047,7 @@ export default function SpikeSuperAdminDashboard() {
 
       {/* مودال إضافة مشرف جديد */}
       {newAdminModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
           <div className="p-6 rounded-3xl max-w-md w-full bg-white border border-slate-200 text-slate-900 shadow-2xl space-y-4">
             <h3 className="text-base font-black">Add Admin & Permissions</h3>
             <form onSubmit={handleCreateAdmin} className="space-y-3 text-xs font-bold">
@@ -1062,7 +1057,7 @@ export default function SpikeSuperAdminDashboard() {
                 placeholder="Name"
                 value={newAdminData.name}
                 onChange={(e) => setNewAdminData({ ...newAdminData, name: e.target.value })}
-                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none focus:border-cyan-500"
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 outline-none"
               />
               <input
                 type="email"
@@ -1071,10 +1066,10 @@ export default function SpikeSuperAdminDashboard() {
                 placeholder="admin@example.com"
                 value={newAdminData.email}
                 onChange={(e) => setNewAdminData({ ...newAdminData, email: e.target.value })}
-                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono outline-none focus:border-cyan-500"
+                className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-mono outline-none"
               />
               <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-1 py-2.5 bg-cyan-500 text-slate-950 rounded-xl font-black cursor-pointer shadow-sm">Save</button>
+                <button type="submit" className="flex-1 py-2.5 text-white rounded-xl font-black cursor-pointer shadow-sm" style={{ backgroundColor: activeColor }}>Save</button>
                 <button type="button" onClick={() => setNewAdminModal(false)} className="px-4 py-2.5 border border-slate-200 rounded-xl cursor-pointer">Cancel</button>
               </div>
             </form>
