@@ -501,44 +501,6 @@ export default function SpikeSuperAdminDashboard() {
             </Link>
           </div>
 
-          {/* 👑 زر الانتقال السريع لمتاجر الأدمن الخاصة بك */}
-          <button
-            onClick={() => {
-              localStorage.setItem('merchant_user_id', 'main_flagship_owner');
-              router.push('/dashboard');
-            }}
-            className="w-full py-2 bg-gradient-to-r from-[#00B050] to-emerald-600 hover:from-[#009644] text-white rounded-xl text-xs font-black shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-            title="الدخول إلى متاجر الأدمن الخاصة بك"
-          >
-            <span>👑</span>
-            <span>{t.adminStoresBtn}</span>
-          </button>
-
-          <div className={`p-1 rounded-xl flex items-center gap-1 border ${
-            isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-100'
-          }`}>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95 ${
-                isDark ? 'hover:bg-slate-800 text-amber-300' : 'hover:bg-white text-slate-700 shadow-2xs'
-              }`}
-            >
-              <span>{isDark ? '☀️' : '🌙'}</span>
-              <span className="text-[11px]">{isDark ? 'نهاري' : 'ليلي'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={toggleLanguage}
-              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer active:scale-95 ${
-                isDark ? 'hover:bg-slate-800 text-slate-200' : 'hover:bg-white text-slate-700 shadow-2xs'
-              }`}
-            >
-              <span>🌐</span>
-              <span className="text-[11px] font-mono">{isAr ? 'EN' : 'العربية'}</span>
-            </button>
-          </div>
         </div>
 
         <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
@@ -579,33 +541,46 @@ export default function SpikeSuperAdminDashboard() {
               </button>
             );
           })}
+
+          {/* 👑 متاجر الأدمن الخاصة — داخل السكرول */}
+          <button
+            data-admin-stores
+            onClick={() => {
+              localStorage.setItem('merchant_user_id', 'main_flagship_owner');
+              router.push('/dashboard');
+            }}
+            className="w-full py-2 mt-3 bg-gradient-to-r from-[#00B050] to-emerald-600 text-white rounded-xl text-xs font-black shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+            title="الدخول إلى متاجر الأدمن الخاصة بك"
+          >
+            <span>👑</span>
+            <span>{t.adminStoresBtn}</span>
+          </button>
+
+          {/* 🚪 بيانات المشرف وتسجيل الخروج — تظهر عند النزول */}
+          <div className={`px-1 pt-4 mt-3 border-t flex flex-col gap-2.5 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00B050] to-emerald-400 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
+                S
+              </div>
+              <div className="leading-tight truncate">
+                <span className={`text-xs font-bold block ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  {t.adminRole}
+                </span>
+                <span className="text-[10px] text-slate-400 block font-mono truncate">{SUPER_ADMIN_EMAIL}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer"
+              title={t.logoutText}
+            >
+              <span>🚪</span>
+              <span>{t.logoutText}</span>
+            </button>
+          </div>
         </nav>
 
-        {/* 🚪 قسم بيانات المشرف وزر تسجيل الخروج تحته تماماً */}
-        <div className={`p-4 border-t flex flex-col gap-2.5 ${
-          isDark ? 'border-slate-800' : 'border-slate-200'
-        }`}>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00B050] to-emerald-400 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
-              S
-            </div>
-            <div className="leading-tight truncate">
-              <span className={`text-xs font-bold block ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                {t.adminRole}
-              </span>
-              <span className="text-[10px] text-slate-400 block font-mono truncate">{SUPER_ADMIN_EMAIL}</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer"
-            title={t.logoutText}
-          >
-            <span>🚪</span>
-            <span>{t.logoutText}</span>
-          </button>
-        </div>
       </aside>
 
       {/* منطقة المحتوى الرئيسية */}
@@ -648,6 +623,34 @@ export default function SpikeSuperAdminDashboard() {
               <span>+</span>
               <span className="hidden sm:inline">{t.addStore}</span>
               <span className="sm:hidden">متجر</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1 transition cursor-pointer ${
+                isDark
+                  ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
+                  : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 shadow-2xs'
+              }`}
+              title={isAr ? 'English' : 'العربية'}
+            >
+              <span>🌐</span>
+              <span className="font-mono">{isAr ? 'EN' : 'العربية'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1 transition cursor-pointer ${
+                isDark
+                  ? 'border-slate-700 bg-slate-800 text-amber-300 hover:bg-slate-700'
+                  : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 shadow-2xs'
+              }`}
+              title={isDark ? 'الوضع النهاري' : 'الوضع الليلي'}
+            >
+              <span>{isDark ? '☀️' : '🌙'}</span>
+              <span className="hidden sm:inline">{isDark ? 'نهاري' : 'ليلي'}</span>
             </button>
 
             <button
@@ -1768,33 +1771,7 @@ export default function SpikeSuperAdminDashboard() {
         .spike-dashboard > aside .border-b,
         .spike-dashboard > aside .border-t { border-color: var(--line); }
 
-        /* زر متاجر الأدمن = اللمسة البرتقالية */
-        .spike-dashboard > aside > div:first-child > button[class*='from-[#00B050]'] {
-          background: linear-gradient(135deg, #f4b987, #e08f4f);
-          border-color: transparent;
-          color: #3a1d08;
-          box-shadow: 0 8px 18px -8px rgba(224, 143, 79, 0.7);
-        }
-        .spike-dashboard > aside > div:first-child > button[class*='from-[#00B050]']:hover {
-          background: linear-gradient(135deg, #f7c79c, #e79a5c);
-        }
-
-        /* مفتاح الثيم/اللغة */
-        .spike-dashboard > aside div[class*='p-1'][class*='rounded-xl'] {
-          background: var(--surface-2);
-          border-color: var(--line);
-        }
-        .spike-dashboard > aside div[class*='p-1'] button {
-          min-height: 34px;
-          background: transparent;
-          border: 0;
-          color: var(--ink);
-          box-shadow: none;
-        }
-        .spike-dashboard > aside div[class*='p-1'] button:hover {
-          background: color-mix(in srgb, var(--teal) 10%, transparent);
-        }
-
+        /* زر متاجر الأدمن (داخل القائمة) يُعرَّف بعد قواعد عناصر القائمة */
         /* عناصر القائمة */
         .spike-dashboard > aside nav { padding: 14px 12px; }
         .spike-dashboard > aside nav button {
@@ -1847,6 +1824,21 @@ export default function SpikeSuperAdminDashboard() {
         .spike-dashboard > aside button[class*='rose']:hover {
           background: color-mix(in srgb, #dc5a50 18%, transparent);
         }
+
+        /* زر متاجر الأدمن = اللمسة البرتقالية */
+        .spike-dashboard > aside nav button[data-admin-stores] {
+          justify-content: center;
+          background: linear-gradient(135deg, #f4b987, #e08f4f);
+          border-color: transparent;
+          color: #3a1d08;
+          font-weight: 800;
+          box-shadow: 0 8px 18px -8px rgba(224, 143, 79, 0.7);
+        }
+        .spike-dashboard > aside nav button[data-admin-stores]:hover {
+          background: linear-gradient(135deg, #f7c79c, #e79a5c);
+          color: #3a1d08;
+        }
+        .spike-dashboard > aside nav button[class*='rose'] { justify-content: center; }
 
         /* كروت المؤشرات قابلة للضغط */
         .spike-dashboard .grid > div[class*='p-5'][role='button']:focus-visible {
