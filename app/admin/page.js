@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { useApp } from '../../context/AppContext';
 import { SPIKE_LOGO_URL } from '../../components/SpikeBrandHeader';
+import {
+  ChartCard, Segmented, Sparkline, AreaChart, BarChart, HBarList, Donut, ProgressBar, fmt, fmtK,
+} from '../../components/SpikeCharts';
+import SpikeIntegrations from '../../components/SpikeIntegrations';
+import { spikeLogout } from '../../components/SpikeSessionBar';
 
 const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
@@ -66,6 +71,40 @@ export default function SpikeSuperAdminDashboard() {
 
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [statModal, setStatModal] = useState(null); // 'stores' | 'active' | 'pending' | 'sales'
+  const [isSuper, setIsSuper] = useState(false);
+  const [actorEmail, setActorEmail] = useState('');
+  const [range, setRange] = useState(7);          // 7 | 30 يوم
+  const [metric, setMetric] = useState('sales');  // sales | orders
+  const [broadcasts, setBroadcasts] = useState([]);
+
+  // ===== الصلاحيات (فعلية، مش شكل) =====
+  const can = (perm) => isSuper || currentPermissions?.[perm] === true;
+  const TAB_PERM = {
+    overview: null,
+    merchants: 'manage_stores',
+    inventory: 'manage_stores',
+    integrations: 'manage_stores',
+    domains: 'manage_stores',
+    orders: 'manage_orders',
+    rates: 'manage_finance',
+    plans: 'manage_finance',
+    admins: 'manage_admins',
+    audit: 'manage_admins',
+    broadcast: 'manage_admins',
+  };
+  const tabAllowed = (id) => !TAB_PERM[id] || can(TAB_PERM[id]);
+  const shown = (id) => activeTab === id && tabAllowed(id);
+  const guard = (perm) => {
+    if (can(perm)) return true;
+    alert(isAr ? '⛔ ليس لديك صلاحية لهذا الإجراء' : 'You do not have permission for this action');
+    return false;
+  };
+  // ===== سجل الحركات =====
+  const logAction = async (action, meta = {}) => {
+    try {
+      await supabase.from('audit_logs').insert([{ action, actor_email: actorEmail || SUPER_ADMIN_EMAIL, meta }]);
+    } catch (err) { /* السجل لا يوقف العملية */ }
+  };
 
   const t = {
     ar: {
@@ -94,6 +133,7 @@ export default function SpikeSuperAdminDashboard() {
       navPlans: 'باقات الاشتراك',
       navLogs: 'سجل الحركات',
       navBroadcast: 'الإعلانات الجماعية',
+      navIntegrations: 'التكاملات والإضافات',
       navAdmins: 'فريق الإدارة والصلاحيات',
       adminStoresBtn: 'متاجر الأدمن الخاصة',
       ordersCount: 'أوردر',
@@ -127,6 +167,7 @@ export default function SpikeSuperAdminDashboard() {
       navPlans: 'Subscription Plans',
       navLogs: 'Audit Logs',
       navBroadcast: 'Broadcast Announcements',
+      navIntegrations: 'Integrations & Add-ons',
       navAdmins: 'Admin Team & Roles',
       adminStoresBtn: 'My Admin Stores',
       ordersCount: 'orders',
@@ -137,36 +178,23 @@ export default function SpikeSuperAdminDashboard() {
   }[lang || 'ar'];
 
   // 🚪 دالة موحدة لجميع المستخدمين لتسجيل الخروج الآمن
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error(err);
-    }
-    localStorage.clear();
-    router.push('/register');
-  };
+  const handleLogout = () => spikeLogout(router);
 
   useEffect(() => {
     const verifyAdminAccess = async () => {
       try {
-        const storedEmail = (localStorage.getItem('user_email') || '').toLowerCase().trim();
-
-        if (storedEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
-          fetchAllData();
-          return;
-        }
-
         const { data: { user } } = await supabase.auth.getUser();
         const authEmail = user?.email?.toLowerCase().trim();
 
         if (authEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
           localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
+          setIsSuper(true);
+          setActorEmail(authEmail);
           fetchAllData();
           return;
         }
 
-        const emailToCheck = storedEmail || authEmail;
+        const emailToCheck = authEmail;
         if (emailToCheck) {
           const { data: adminRecord } = await supabase
             .from('admin_users')
@@ -175,6 +203,7 @@ export default function SpikeSuperAdminDashboard() {
             .maybeSingle();
 
           if (adminRecord) {
+            setActorEmail(emailToCheck);
             setCurrentAdminRole(adminRecord.role);
             setCurrentPermissions(adminRecord.permissions || {});
             fetchAllData();
@@ -182,8 +211,9 @@ export default function SpikeSuperAdminDashboard() {
           }
         }
 
+        if (!authEmail) { router.replace('/register'); return; }
         alert(isAr ? '⛔ عذراً، غير مسموح لك بالدخول. هذه لوحة تحكم الإدارة العليا.' : 'Access Denied: Admins Only.');
-        router.push('/dashboard');
+        router.replace('/dashboard');
       } catch (err) {
         console.error('Auth verification failed:', err);
         router.push('/dashboard');
@@ -205,8 +235,11 @@ export default function SpikeSuperAdminDashboard() {
       const { data: productsData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (productsData) setProducts(productsData);
 
-      const { data: logsData } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(20);
+      const { data: logsData } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50);
       if (logsData) setAuditLogs(logsData);
+
+      const { data: bcData } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(5);
+      if (bcData) setBroadcasts(bcData);
 
       const { data: domainsData } = await supabase.from('custom_domains').select('*').order('created_at', { ascending: false });
       if (domainsData) setDomains(domainsData);
@@ -229,6 +262,7 @@ export default function SpikeSuperAdminDashboard() {
   };
 
   const handleCreateStore = async (e) => {
+    if (!guard('manage_stores')) { e.preventDefault(); return; }
     e.preventDefault();
     if (!newStoreData.store_name || !newStoreData.store_slug) {
       alert(isAr ? 'يرجى كتابة اسم ورابط المتجر' : 'Please fill required fields');
@@ -250,6 +284,7 @@ export default function SpikeSuperAdminDashboard() {
     }]);
 
     if (!error) {
+      logAction('store.create', { name: newStoreData.store_name, slug: cleanSlug });
       alert(isAr ? '✅ تم إنشاء المتجر بنجاح' : 'Store created successfully');
       setNewStoreModal(false);
       setNewStoreData({ store_name: '', store_slug: '', owner_name: '', phone: '', currency: 'USD', initial_wallet: 10 });
@@ -260,6 +295,7 @@ export default function SpikeSuperAdminDashboard() {
   };
 
   const handleToggleStoreStatus = async (storeId, currentStatus) => {
+    if (!guard('manage_stores')) return;
     const nextStatus = !currentStatus;
     const { error } = await supabase
       .from('store_profiles')
@@ -268,10 +304,12 @@ export default function SpikeSuperAdminDashboard() {
 
     if (!error) {
       setStores(prev => prev.map(s => s.id === storeId ? { ...s, is_active: nextStatus } : s));
+      logAction(nextStatus ? 'store.activate' : 'store.deactivate', { store_id: storeId });
     }
   };
 
   const handleUpdateWallet = async (storeId, currentBalance) => {
+    if (!guard('manage_stores')) return;
     const amount = prompt(isAr ? 'أدخل الرصيد الجديد بالدولار:' : 'Enter new balance in USD:', currentBalance);
     if (amount === null) return;
     const num = parseFloat(amount);
@@ -284,10 +322,33 @@ export default function SpikeSuperAdminDashboard() {
 
     if (!error) {
       setStores(prev => prev.map(s => s.id === storeId ? { ...s, wallet_balance_usd: num } : s));
+      logAction('wallet.update', { store_id: storeId, from: currentBalance, to: num });
     }
   };
 
+  const handleChangePlan = async (storeId, plan) => {
+    if (!guard('manage_finance')) return;
+    const { error } = await supabase.from('store_profiles').update({ plan_type: plan }).eq('id', storeId);
+    if (!error) {
+      setStores(prev => prev.map(s => s.id === storeId ? { ...s, plan_type: plan } : s));
+      logAction('store.plan', { store_id: storeId, plan });
+    } else alert(error.message);
+  };
+
+  const handleSendBroadcast = async () => {
+    if (!guard('manage_admins')) return;
+    const msg = broadcastMessage.trim();
+    if (!msg) return;
+    const { error } = await supabase.from('broadcasts').insert([{ message: msg, created_by: actorEmail || SUPER_ADMIN_EMAIL }]);
+    if (error) { alert(error.message); return; }
+    logAction('broadcast.send', { length: msg.length });
+    setBroadcastMessage('');
+    fetchAllData();
+    alert(isAr ? '✅ تم إرسال التنبيه لجميع التجار' : 'Broadcast sent');
+  };
+
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    if (!guard('manage_orders')) return;
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus })
@@ -295,10 +356,12 @@ export default function SpikeSuperAdminDashboard() {
 
     if (!error) {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      logAction('order.status', { order_id: orderId, status: newStatus });
     }
   };
 
   const handleCreateProduct = async (e) => {
+    if (!guard('manage_stores')) { e.preventDefault(); return; }
     e.preventDefault();
     if (!newProductData.title || !newProductData.price) {
       alert(isAr ? 'يرجى إدخال اسم المنتج والسعر' : 'Please fill product title and price');
@@ -314,6 +377,7 @@ export default function SpikeSuperAdminDashboard() {
     }]);
 
     if (!error) {
+      logAction('product.create', { title: newProductData.title });
       alert(isAr ? '✅ تمت إضافة المنتج بنجاح' : 'Product added successfully');
       setNewProductModal(false);
       setNewProductData({ title: '', price: '', cost_price: '', stock: 100, store_id: '' });
@@ -324,6 +388,7 @@ export default function SpikeSuperAdminDashboard() {
   };
 
   const handleCreateAdmin = async (e) => {
+    if (!guard('manage_admins')) { e.preventDefault(); return; }
     e.preventDefault();
     if (!newAdminData.email) return;
 
@@ -336,6 +401,7 @@ export default function SpikeSuperAdminDashboard() {
     }]);
 
     if (!error) {
+      logAction('admin.create', { email: cleanEmail, permissions: newAdminData.permissions });
       alert(isAr ? '✅ تمت إضافة المشرف وتعيين الصلاحيات بنجاح' : 'Admin created successfully');
       setNewAdminModal(false);
       setNewAdminData({
@@ -351,6 +417,7 @@ export default function SpikeSuperAdminDashboard() {
   };
 
   const handleDeleteAdmin = async (id, email) => {
+    if (!guard('manage_admins')) return;
     if (email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
       alert(isAr ? '⚠️ لا يمكن حذف حساب المالك الأساسي للنظام!' : 'Primary Super Admin cannot be deleted!');
       return;
@@ -360,10 +427,12 @@ export default function SpikeSuperAdminDashboard() {
     const { error } = await supabase.from('admin_users').delete().eq('id', id);
     if (!error) {
       setAdminUsers(prev => prev.filter(a => a.id !== id));
+      logAction('admin.revoke', { email });
     }
   };
 
   const handleSavePlatformSettings = async () => {
+    if (!guard('manage_finance')) return;
     const { error } = await supabase.from('platform_settings').upsert({
       id: 1,
       exchange_rate: parseFloat(exchangeRate),
@@ -373,6 +442,7 @@ export default function SpikeSuperAdminDashboard() {
     });
 
     if (!error) {
+      logAction('settings.update', { exchangeRate, platformCommission, withdrawThreshold });
       alert(isAr ? '✅ تم حفظ إعدادات النظام وسعر الصرف بنجاح' : 'Settings saved successfully');
     } else {
       alert(error.message);
@@ -384,11 +454,95 @@ export default function SpikeSuperAdminDashboard() {
   const activeStoresCount = stores.filter(s => s.is_active !== false).length;
   const totalSalesAmount = orders.reduce((acc, curr) => acc + (Number(curr.total_price) || 0), 0);
 
-  const navItems = [
+  // ===================== التحليلات (كلها من بيانات حقيقية) =====================
+  const sumPrice = (list) => list.reduce((a, o) => a + (Number(o.total_price) || 0), 0);
+  const dayKey = (d) => {
+    const x = new Date(d);
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+  };
+  const days30 = Array.from({ length: 30 }, (_, i) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (29 - i));
+    return d;
+  });
+  const bucket = (list, getVal) => {
+    const m = {};
+    list.forEach((o) => {
+      if (!o.created_at) return;
+      const k = dayKey(o.created_at);
+      m[k] = (m[k] || 0) + getVal(o);
+    });
+    return days30.map((d) => m[dayKey(d)] || 0);
+  };
+  const isPending = (o) => o.status === 'pending' || !o.status;
+  const salesSeries30 = bucket(orders, (o) => Number(o.total_price) || 0);
+  const ordersSeries30 = bucket(orders, () => 1);
+  const pendingSeries30 = bucket(orders.filter(isPending), () => 1);
+  const newStoresSeries30 = bucket(stores, () => 1);
+  const activeSeries30 = (() => {
+    const m = {};
+    orders.forEach((o) => {
+      if (!o.created_at) return;
+      const k = dayKey(o.created_at);
+      (m[k] = m[k] || new Set()).add(o.store_id || 'x');
+    });
+    return days30.map((d) => (m[dayKey(d)] ? m[dayKey(d)].size : 0));
+  })();
+
+  const monthIdx = (d) => { const x = new Date(d); return x.getFullYear() * 12 + x.getMonth(); };
+  const curMonth = monthIdx(new Date());
+  const inMonth = (list, off) => list.filter((x) => x.created_at && monthIdx(x.created_at) === curMonth - off);
+  const pct = (c, p) => (p > 0 ? ((c - p) / p) * 100 : c > 0 ? 100 : 0);
+  const pctLabel = (v) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
+  const salesGrowth = pct(sumPrice(inMonth(orders, 0)), sumPrice(inMonth(orders, 1)));
+  const storesThisMonth = inMonth(stores, 0).length;
+  const activeRatePct = totalStoresCount ? Math.round((activeStoresCount / totalStoresCount) * 100) : 0;
+
+  const deliveredSales = sumPrice(orders.filter((o) => o.status === 'delivered'));
+  const commissionEarned = (deliveredSales * (Number(platformCommission) || 0)) / 100;
+  const avgOrderValue = orders.length ? totalSalesAmount / orders.length : 0;
+  const walletsTotalUsd = stores.reduce((a, s) => a + (Number(s.wallet_balance_usd) || 0), 0);
+  const lowStockCount = products.filter((p) => (Number(p.stock_quantity) || 0) <= 5).length;
+
+  const chartDays = days30.slice(-range);
+  const chartLabels = chartDays.map((d) => `${d.getDate()}/${d.getMonth() + 1}`);
+  const chartSales = salesSeries30.slice(-range);
+  const chartOrders = ordersSeries30.slice(-range);
+
+  const statusMeta = [
+    { key: 'pending', label: isAr ? 'بانتظار الشحن' : 'Pending', color: '#f2a066' },
+    { key: 'confirmed', label: isAr ? 'تم التأكيد' : 'Confirmed', color: '#c9a45c' },
+    { key: 'shipped', label: isAr ? 'تم الشحن' : 'Shipped', color: '#5fb7bb' },
+    { key: 'delivered', label: isAr ? 'تم التسليم' : 'Delivered', color: '#0a7f86' },
+    { key: 'cancelled', label: isAr ? 'ملغي' : 'Cancelled', color: '#c95e53' },
+  ];
+  const statusSegments = statusMeta.map((m) => ({
+    label: m.label,
+    color: m.color,
+    value: orders.filter((o) => (o.status || 'pending') === m.key).length,
+  }));
+
+  const groupTop = (list, keyFn, valFn, limit) => {
+    const m = {};
+    list.forEach((o) => { const k = keyFn(o); if (!k) return; m[k] = (m[k] || 0) + valFn(o); });
+    return Object.entries(m).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value).slice(0, limit);
+  };
+  const topGovernorates = groupTop(orders, (o) => o.governorate, () => 1, 6);
+  const storeName = (id) => stores.find((s) => s.user_id === id)?.store_name || id;
+  const topStores = groupTop(orders, (o) => o.store_id, (o) => Number(o.total_price) || 0, 5).map((x) => ({ ...x, label: storeName(x.label) }));
+  const topProducts = products
+    .filter((p) => Number(p.price) > 0)
+    .map((p) => ({ ...p, margin: ((Number(p.price) - (Number(p.cost_price) || 0)) / Number(p.price)) * 100 }))
+    .sort((a, b) => b.margin - a.margin)
+    .slice(0, 6);
+
+  const navItemsAll = [
     { id: 'overview', title: t.navOverview, icon: '📊', count: null },
     { id: 'merchants', title: t.navStores, icon: '🏬', count: totalStoresCount },
     { id: 'orders', title: t.navOrders, icon: '📦', count: orders.length },
     { id: 'inventory', title: t.navInventory, icon: '🏷️', count: products.length },
+    { id: 'integrations', title: t.navIntegrations, icon: '🔌', count: null },
     { id: 'admins', title: t.navAdmins, icon: '🛡️', count: adminUsers.length + 1 },
     { id: 'rates', title: t.navRates, icon: '💱', count: null },
     { id: 'domains', title: t.navDomains, icon: '🌐', count: domains.length },
@@ -397,17 +551,22 @@ export default function SpikeSuperAdminDashboard() {
     { id: 'broadcast', title: t.navBroadcast, icon: '📢', count: null },
   ];
 
+  const navItems = navItemsAll.filter((i) => tabAllowed(i.id));
+
+  const upCls = 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+  const downCls = 'text-rose-500 bg-rose-500/10 border-rose-500/20';
   const statCards = [
     {
       id: 'stores',
       title: t.statStores,
       value: totalStoresCount.toString(),
-      change: '+100%',
+      change: `${storesThisMonth >= 0 ? '+' : ''}${storesThisMonth} ${isAr ? 'هذا الشهر' : 'this month'}`,
       icon: '🏬',
-      badgeColor: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-      desc1: t.comparedLastMonth,
-      desc2: t.totalReceipts,
-      progress: '100%',
+      badgeColor: upCls,
+      desc1: isAr ? 'متاجر جديدة آخر 30 يوم' : 'New stores, last 30 days',
+      desc2: t.statStores,
+      progress: `${Math.min(100, totalStoresCount * 10)}%`,
+      spark: newStoresSeries30,
     },
     {
       id: 'pending',
@@ -417,30 +576,33 @@ export default function SpikeSuperAdminDashboard() {
       icon: '⏳',
       badgeColor: 'text-amber-600 dark:text-amber-400 bg-amber-500/10 border-amber-500/20',
       desc1: t.underProcess,
-      desc2: t.underProcess,
-      progress: pendingOrdersCount > 0 ? '45%' : '0%',
+      desc2: isAr ? 'من إجمالي الطلبات' : 'of all orders',
+      progress: orders.length ? `${Math.round((pendingOrdersCount / orders.length) * 100)}%` : '0%',
+      spark: pendingSeries30,
     },
     {
       id: 'active',
       title: t.statActiveUsers,
       value: activeStoresCount.toString(),
-      change: `100% ${t.activeStatus}`,
+      change: `${activeRatePct}% ${t.activeStatus}`,
       icon: '🟢',
-      badgeColor: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+      badgeColor: upCls,
       desc1: t.activeRate,
-      desc2: t.activeRate,
-      progress: '100%',
+      desc2: `${activeStoresCount}/${totalStoresCount}`,
+      progress: `${activeRatePct}%`,
+      spark: activeSeries30,
     },
     {
       id: 'sales',
       title: t.statSales,
-      value: `${totalSalesAmount.toFixed(2)} ج.م`,
-      change: '0.00%',
+      value: `${fmt(totalSalesAmount, 2)} ج.م`,
+      change: pctLabel(salesGrowth),
       icon: '💰',
-      badgeColor: 'text-[#00B050] bg-[#00B050]/10 border-[#00B050]/20',
+      badgeColor: salesGrowth >= 0 ? 'text-[#00B050] bg-[#00B050]/10 border-[#00B050]/20' : downCls,
       desc1: t.comparedLastMonth,
-      desc2: t.totalReceipts,
-      progress: totalSalesAmount > 0 ? '60%' : '5%',
+      desc2: `${fmt(orders.length)} ${t.ordersCount}`,
+      progress: `${Math.min(100, Math.max(5, Math.round(50 + salesGrowth / 2)))}%`,
+      spark: salesSeries30,
     },
   ];
 
@@ -685,8 +847,9 @@ export default function SpikeSuperAdminDashboard() {
         <div className="p-4 sm:p-8 space-y-6">
 
           {/* تبويب الرئيسية والمؤشرات */}
-          {activeTab === 'overview' && (
+          {shown('overview') && (
             <>
+              {/* مؤشرات رئيسية */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                 {statCards.map((stat, i) => (
                   <div
@@ -696,31 +859,22 @@ export default function SpikeSuperAdminDashboard() {
                     onClick={() => setStatModal(stat.id)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setStatModal(stat.id); } }}
                     className={`p-5 rounded-2xl border cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg flex flex-col justify-between ${
-                      isDark
-                        ? 'bg-[#0E1E38] border-slate-800 hover:border-slate-700'
-                        : 'bg-white border-slate-200 shadow-xs hover:border-slate-300'
+                      isDark ? 'bg-[#0E1E38] border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 shadow-xs hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-4">
-                      <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-md border ${stat.badgeColor}`}>
-                        {stat.change}
-                      </span>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-md border ${stat.badgeColor}`}>{stat.change}</span>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{stat.title}</span>
                         <span className="text-base">{stat.icon}</span>
                       </div>
                     </div>
-
                     <div className="space-y-1 text-left" dir="ltr">
-                      <span className="text-2xl font-black font-mono tracking-tight block">
-                        {stat.value}
-                      </span>
-                      <span className="text-[10px] text-slate-400 block font-medium">
-                        {stat.desc1}
-                      </span>
+                      <span className="text-2xl font-black font-mono tracking-tight block">{stat.value}</span>
+                      <span className="text-[10px] text-slate-400 block font-medium">{stat.desc1}</span>
                     </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex justify-between items-center text-[10px] text-slate-400 font-medium">
+                    <div className="mt-2" dir="ltr"><Sparkline data={stat.spark} /></div>
+                    <div className="mt-2 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex justify-between items-center text-[10px] text-slate-400 font-medium">
                       <span>{stat.desc2}</span>
                       <div className="w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: stat.progress }} />
@@ -730,6 +884,103 @@ export default function SpikeSuperAdminDashboard() {
                 ))}
               </div>
 
+              {/* مؤشرات مالية ثانوية */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                {[
+                  { icon: '🏦', label: isAr ? 'عمولة المنصة (طلبات مسلّمة)' : 'Platform commission', val: `${fmt(commissionEarned, 2)} ج.م` },
+                  { icon: '🧾', label: isAr ? 'متوسط قيمة الطلب' : 'Avg order value', val: `${fmt(avgOrderValue, 2)} ج.م` },
+                  { icon: '👛', label: isAr ? 'إجمالي محافظ التجار' : 'Merchant wallets', val: `$${fmt(walletsTotalUsd, 2)}` },
+                  { icon: '⚠️', label: isAr ? 'منتجات مخزونها ≤ 5' : 'Low stock items', val: String(lowStockCount) },
+                ].map((k, i) => (
+                  <div key={i} className="p-5 rounded-2xl border">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-2"><span className="text-base">{k.icon}</span>{k.label}</div>
+                    <div className="text-xl font-black font-mono" dir="ltr">{k.val}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* الرسم الرئيسي + حالة الطلبات */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-5">
+                <ChartCard
+                  className="xl:col-span-2"
+                  title={metric === 'sales' ? (isAr ? 'المبيعات اليومية' : 'Daily sales') : (isAr ? 'الطلبات اليومية' : 'Daily orders')}
+                  subtitle={isAr ? `آخر ${range} يوم` : `Last ${range} days`}
+                  right={
+                    <div className="flex flex-col items-end gap-2">
+                      <Segmented
+                        value={metric}
+                        onChange={setMetric}
+                        options={[{ value: 'sales', label: isAr ? 'المبيعات' : 'Sales' }, { value: 'orders', label: isAr ? 'الطلبات' : 'Orders' }]}
+                      />
+                      <Segmented
+                        value={range}
+                        onChange={setRange}
+                        options={[{ value: 7, label: isAr ? '7 أيام' : '7d' }, { value: 30, label: isAr ? '30 يوم' : '30d' }]}
+                      />
+                    </div>
+                  }
+                >
+                  <AreaChart
+                    labels={chartLabels}
+                    values={metric === 'sales' ? chartSales : chartOrders}
+                    unit={metric === 'sales' ? 'ج.م' : isAr ? 'طلب' : 'orders'}
+                    name={metric}
+                  />
+                </ChartCard>
+
+                <ChartCard title={isAr ? 'حالة الطلبات' : 'Order status'} subtitle={isAr ? 'توزيع كل الطلبات' : 'All orders'}>
+                  <Donut segments={statusSegments} centerValue={fmt(orders.length)} centerLabel={isAr ? 'طلب' : 'orders'} />
+                </ChartCard>
+              </div>
+
+              {/* محافظات + متاجر + طلبات يومية */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+                <ChartCard title={isAr ? 'أكثر المحافظات طلباً' : 'Top governorates'} subtitle={isAr ? 'عدد الطلبات' : 'Order count'}>
+                  <HBarList items={topGovernorates} unit={isAr ? 'طلب' : ''} empty={isAr ? 'لا توجد بيانات بعد' : 'No data yet'} />
+                </ChartCard>
+                <ChartCard title={isAr ? 'أفضل المتاجر مبيعاً' : 'Top stores'} subtitle={isAr ? 'بالجنيه' : 'EGP'}>
+                  <HBarList items={topStores} unit="ج.م" color="var(--orange)" empty={isAr ? 'لا توجد بيانات بعد' : 'No data yet'} />
+                </ChartCard>
+                <ChartCard title={isAr ? 'عدد الطلبات' : 'Orders per day'} subtitle={isAr ? `آخر ${range} يوم` : `Last ${range} days`}>
+                  <BarChart labels={chartLabels} values={chartOrders} height={210} />
+                </ChartCard>
+              </div>
+
+              {/* المنتجات الأعلى هامش ربح */}
+              <ChartCard title={isAr ? 'المنتجات الأعلى هامش ربح' : 'Highest-margin products'} subtitle={isAr ? 'من سعر البيع وسعر التكلفة' : 'From price and cost'}>
+                {topProducts.length === 0 ? (
+                  <div className="text-center py-10 text-slate-400 text-xs">{isAr ? 'أضف منتجات بسعر وتكلفة لتظهر هنا' : 'Add products with price and cost'}</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr>
+                          <th className="p-3 text-right">المنتج</th>
+                          <th className="p-3 text-right">المخزون</th>
+                          <th className="p-3 text-right">هامش الربح</th>
+                          <th className="p-3 text-right">سعر البيع</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topProducts.map((p, i) => (
+                          <tr key={i}>
+                            <td className="p-3 font-bold">{p.title}</td>
+                            <td className="p-3 font-mono">{p.stock_quantity || 0}</td>
+                            <td className="p-3" style={{ minWidth: 180 }}>
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1"><ProgressBar value={p.margin} color={p.margin < 15 ? 'var(--orange)' : 'var(--teal)'} /></div>
+                                <span className="font-mono text-[11px] w-12 text-left" dir="ltr">{p.margin.toFixed(0)}%</span>
+                              </div>
+                            </td>
+                            <td className="p-3 font-mono font-bold text-[#00B050]">{fmt(p.price, 2)} ج.م</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </ChartCard>
+
               <div className={`p-6 sm:p-8 rounded-3xl border transition-colors ${
                 isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
               }`}>
@@ -738,12 +989,11 @@ export default function SpikeSuperAdminDashboard() {
                     <h3 className="text-base font-black">{isAr ? 'آخر طلبات المنصة الحية' : 'Latest Live Platform Orders'}</h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{isAr ? 'مزامنة لحظية للعمليات مع تأكيد الدفع والشحن' : 'Real-time sync'}</p>
                   </div>
-                  <button
-                    onClick={() => setActiveTab('orders')}
-                    className="text-xs text-[#00B050] font-bold hover:underline cursor-pointer"
-                  >
-                    {isAr ? 'عرض كل الطلبات ←' : 'View all orders →'}
-                  </button>
+                  {can('manage_orders') && (
+                    <button onClick={() => setActiveTab('orders')} className="text-xs text-[#00B050] font-bold hover:underline cursor-pointer">
+                      {isAr ? 'عرض كل الطلبات ←' : 'View all orders →'}
+                    </button>
+                  )}
                 </div>
 
                 {orders.length === 0 ? (
@@ -785,7 +1035,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {/* تبويب فريق الإدارة والصلاحيات */}
-          {activeTab === 'admins' && (
+          {shown('admins') && (
             <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
@@ -862,7 +1112,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {/* تبويب المتاجر والتجار */}
-          {activeTab === 'merchants' && (
+          {shown('merchants') && (
             <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
@@ -885,6 +1135,7 @@ export default function SpikeSuperAdminDashboard() {
                       <th className="p-3 text-right">المالك</th>
                       <th className="p-3 text-right">الهاتف</th>
                       <th className="p-3 text-right">رصيد المحفظة</th>
+                      <th className="p-3 text-right">الباقة</th>
                       <th className="p-3 text-right">الحالة</th>
                       <th className="p-3 text-center">إجراءات</th>
                     </tr>
@@ -899,6 +1150,18 @@ export default function SpikeSuperAdminDashboard() {
                         <td className="p-3">{s.owner_name || '—'}</td>
                         <td className="p-3 font-mono" dir="ltr">{s.phone || '—'}</td>
                         <td className="p-3 font-mono font-bold text-emerald-500">${s.wallet_balance_usd || 0}</td>
+                        <td className="p-3">
+                          <select
+                            value={s.plan_type || 'starter'}
+                            onChange={(e) => handleChangePlan(s.id, e.target.value)}
+                            disabled={!can('manage_finance')}
+                            style={{ minHeight: 34, padding: '4px 10px', fontSize: 12 }}
+                          >
+                            <option value="starter">Starter</option>
+                            <option value="pro">Pro</option>
+                            <option value="scale">Scale</option>
+                          </select>
+                        </td>
                         <td className="p-3">
                           <button
                             onClick={() => handleToggleStoreStatus(s.id, s.is_active !== false)}
@@ -937,7 +1200,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {/* تبويب كافة الطلبات */}
-          {activeTab === 'orders' && (
+          {shown('orders') && (
             <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
@@ -999,7 +1262,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {/* تبويب المنتجات والمخزون */}
-          {activeTab === 'inventory' && (
+          {shown('inventory') && (
             <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
@@ -1039,7 +1302,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {/* تبويب سعر الصرف والعمولة */}
-          {activeTab === 'rates' && (
+          {shown('rates') && (
             <div className={`p-6 sm:p-8 rounded-2xl border max-w-2xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-2">{isAr ? 'إعدادات سعر الصرف والعمولات المالية' : 'Exchange Rates & Fees'}</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">يتم تطبيق هذه الإعدادات لحظياً على حسابات جميع المتاجر وسحب الأرباح.</p>
@@ -1088,7 +1351,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {/* تبويب الدومينات */}
-          {activeTab === 'domains' && (
+          {shown('domains') && (
             <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-2">{isAr ? 'إدارة الدومينات المخصصة والربط' : 'Custom Domains & DNS'}</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">حالة طلبات الدومينات المخصصة والربط بسيرفرات سبايك عبر Cloudflare و CNAME.</p>
@@ -1110,7 +1373,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {/* تبويب الباقات */}
-          {activeTab === 'plans' && (
+          {shown('plans') && (
             <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-4">باقات الاشتراك المتاحة</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
@@ -1131,7 +1394,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {/* تبويب سجل الحركات */}
-          {activeTab === 'audit' && (
+          {shown('audit') && (
             <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-4">سجل الحركات الإدارية (Audit Logs)</h3>
               {auditLogs.length === 0 ? (
@@ -1140,8 +1403,9 @@ export default function SpikeSuperAdminDashboard() {
                 <div className="space-y-2 text-xs font-mono">
                   {auditLogs.map((log, i) => (
                     <div key={i} className="p-3 border rounded-xl flex justify-between">
-                      <span>{log.action}</span>
-                      <span className="text-slate-400">{log.created_at}</span>
+                      <span className="font-bold">{log.action}</span>
+                      <span className="text-slate-400 truncate mx-3 flex-1" dir="ltr">{log.actor_email || ''}</span>
+                      <span className="text-slate-400" dir="ltr">{log.created_at ? new Date(log.created_at).toLocaleString() : ''}</span>
                     </div>
                   ))}
                 </div>
@@ -1149,8 +1413,19 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           )}
 
+          {/* تبويب التكاملات والإضافات */}
+          {shown('integrations') && (
+            <SpikeIntegrations
+              stores={stores}
+              isAr={isAr}
+              canManage={can('manage_stores')}
+              onLog={logAction}
+              onImported={fetchAllData}
+            />
+          )}
+
           {/* تبويب الإعلانات الجماعية */}
-          {activeTab === 'broadcast' && (
+          {shown('broadcast') && (
             <div className={`p-6 sm:p-8 rounded-2xl border max-w-xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-2">إرسال تنبيه جماعي لجميع التجار</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">يظهر التنبيه داخل لوحة تحكم كل التجار المسجلين في المنصة فوراً.</p>
@@ -1162,15 +1437,22 @@ export default function SpikeSuperAdminDashboard() {
                 className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-xs mb-3 outline-none focus:border-[#00B050]"
               />
               <button
-                onClick={() => {
-                  if (!broadcastMessage) return;
-                  alert('✅ تم إرسال التنبيه الجماعي بنجاح');
-                  setBroadcastMessage('');
-                }}
+                onClick={handleSendBroadcast}
                 className="px-5 py-2.5 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer"
               >
                 إرسال الإعلان الآن
               </button>
+              {broadcasts.length > 0 && (
+                <div className="mt-6 space-y-2">
+                  <div className="text-xs font-black text-slate-400">آخر الإعلانات المرسلة</div>
+                  {broadcasts.map((b) => (
+                    <div key={b.id} className="p-3 rounded-xl border text-xs">
+                      <div>{b.message}</div>
+                      <div className="text-[10px] text-slate-400 mt-1 font-mono" dir="ltr">{new Date(b.created_at).toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
