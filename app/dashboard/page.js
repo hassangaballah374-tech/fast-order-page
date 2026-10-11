@@ -1,5 +1,11 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '../../lib/supabase';
+import MerchantPixelsPanel from '../../components/MerchantPixelsPanel';
+import { spikeLogout } from '../../components/SpikeSessionBar';
+
+const ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
 /* =====================================================================
    SPIKE — لوحة التاجر (Merchant Admin)
@@ -43,6 +49,12 @@ const Modal = ({ t, x, children }) => (
 const Field = ({ l, children }) => <label className="fld"><span>{l}</span>{children}</label>;
 
 export default function MerchantDashboard() {
+  const router = useRouter();
+  const [ready, setReady] = useState(false);
+  const [uid, setUid] = useState('');          // معرّف المتجر اللي بتتربط بيه البيكسلات
+  const [email, setEmail] = useState('');
+  const [pixelCount, setPixelCount] = useState(0);
+  const isAdmin = email.toLowerCase() === ADMIN_EMAIL;
   const [tab, setTab] = useState('home');
   const [store, setStore] = useState({ name: 'متجري', slug: 'my-store', cat: 'ملابس', color: '#0a7f86', cur: 'ج.م', domain: '', freeShip: 1000 });
   const [orders, setOrders] = useState(seedOrders);
@@ -52,7 +64,6 @@ export default function MerchantDashboard() {
   const [zones, setZones] = useState(ZONES);
   const [pay, setPay] = useState({ cod: true, wallet: false, card: false });
   const [fields, setFields] = useState({ phone2: false, email: false, note: true });
-  const [pixels, setPixels] = useState({ meta: '', tiktok: '', google: '' });
   const [upsell, setUpsell] = useState({ bundle: false, free: true });
   const [filter, setFilter] = useState('all');
   const [q, setQ] = useState('');
@@ -64,6 +75,29 @@ export default function MerchantDashboard() {
   const [toast, setToast] = useState('');
   const [np, setNp] = useState({ name: '', price: '', cost: '', stock: 10, variants: '' });
   const [nc, setNc] = useState({ code: '', pct: 10 });
+
+  // حماية الصفحة: لازم جلسة Supabase حقيقية، وإلا يرجع لصفحة الدخول
+  useEffect(() => {
+    let off = false;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const user = data?.session?.user;
+      if (!user) { router.replace('/register'); return; }
+      if (off) return;
+      const em = user.email || '';
+      setEmail(em);
+      // الأدمن: يشتغل على متجره الرئيسي (أو المتجر اللي اختاره من لوحة الإدارة). التاجر: متجره هو بس.
+      let storeKey = user.id;
+      if (em.toLowerCase() === ADMIN_EMAIL) {
+        try { storeKey = localStorage.getItem('merchant_user_id') || 'main_flagship_owner'; } catch { storeKey = 'main_flagship_owner'; }
+      }
+      setUid(storeKey);
+      const { data: sp } = await supabase.from('store_profiles').select('store_name,store_slug').eq('user_id', storeKey).maybeSingle();
+      if (sp && !off) setStore((s) => ({ ...s, name: sp.store_name || s.name, slug: sp.store_slug || s.slug }));
+      if (!off) setReady(true);
+    })();
+    return () => { off = true; };
+  }, []);
 
   useEffect(() => {
     try { setWiz(localStorage.getItem('spike_onboarded') ? 0 : 1); } catch { setWiz(0); }
@@ -91,7 +125,7 @@ export default function MerchantDashboard() {
     ['اضبط أسعار الشحن', zones.every((z) => z[1] > 0), () => setTab('settings')],
     ['فعّل طريقة دفع', pay.cod || pay.wallet || pay.card, () => setTab('settings')],
     ['اربط دومينك', !!store.domain, () => setTab('settings')],
-    ['فعّل بكسل التتبع', !!(pixels.meta || pixels.tiktok || pixels.google), () => setTab('marketing')],
+    ['فعّل بكسل التتبع', pixelCount > 0, () => setTab('marketing')],
   ];
   const done = steps.filter((s) => s[1]).length;
 
@@ -113,6 +147,10 @@ export default function MerchantDashboard() {
   };
   const margin = np.price ? Math.round(((np.price - (np.cost || 0)) / np.price) * 100) : 0;
 
+  if (!ready) {
+    return <div className="app" dir="rtl" style={{ '--b': store.color, alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>جاري تحميل لوحتك...</div>;
+  }
+
   return (
     <div className="app" dir="rtl" style={{ '--b': store.color }}>
       <aside className="side">
@@ -133,6 +171,8 @@ export default function MerchantDashboard() {
           <button className="srch" onClick={() => setCmd(true)}>🔎 ابحث أو نفّذ أمرًا… <kbd>Ctrl K</kbd></button>
           <a className="btn" href={`https://${store.slug}.spike.shop`} target="_blank" rel="noreferrer">👁️ معاينة المتجر</a>
           <button className="btn p" onClick={() => { setTab('products'); setPm(true); }}>+ منتج جديد</button>
+          {isAdmin && <button className="btn" onClick={() => router.push('/admin')}>🛡️ لوحة الإدارة</button>}
+          <button className="btn" style={{ color: '#c53030' }} onClick={() => spikeLogout(router)}>🚪 تسجيل الخروج</button>
         </header>
 
         <section className="pg">
@@ -226,10 +266,11 @@ export default function MerchantDashboard() {
               <div className="card"><h3>🧲 زيادة قيمة الطلب</h3>
                 <div className="pls"><p>شحن مجاني فوق {money(store.freeShip)}</p><Tog on={upsell.free} set={(v) => setUpsell({ ...upsell, free: v })} /></div>
                 <div className="pls"><p>عرض «اشترِ 2 بسعر أقل» في صفحة الدفع</p><Tog on={upsell.bundle} set={(v) => setUpsell({ ...upsell, bundle: v })} /></div>
-                <h3 style={{ marginTop: 18 }}>📡 بكسل التتبع</h3>
-                {[['meta', 'Meta Pixel'], ['tiktok', 'TikTok Pixel'], ['google', 'Google Tag']].map(([k, t]) => (
-                  <Field key={k} l={t}><input className="in num" dir="ltr" placeholder="ألصق الـ ID هنا" value={pixels[k]} onChange={(e) => setPixels({ ...pixels, [k]: e.target.value })} /></Field>))}
               </div>
+            </div>
+            <div className="card" style={{ marginTop: 16 }}>
+              <h3>📡 بكسلات التتبع والأحداث <small>اربط صفحاتك بنفسك وتحكم في الأحداث</small></h3>
+              <MerchantPixelsPanel storeId={uid} isAr canEdit onCount={setPixelCount} />
             </div>
           </>)}
 
