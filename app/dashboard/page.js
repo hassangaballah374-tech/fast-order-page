@@ -7,14 +7,25 @@ import { spikeLogout } from '../../components/SpikeSessionBar';
 
 const ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
-/* =====================================================================
-   SPIKE — لوحة التاجر (Merchant Admin)
-   بيانات تجريبية في الـ state. اربطها بـ Supabase مكان أي setX(...) لاحقًا.
-   ===================================================================== */
-
 const money = (n, c = 'ج.م') => `${Math.round(n).toLocaleString('en-US')} ${c}`;
-const NAV = [['home', 'الرئيسية', '🏠'], ['orders', 'الطلبات', '📦'], ['products', 'المنتجات', '🏷️'], ['carts', 'السلات المتروكة', '🛒'], ['marketing', 'التسويق', '📣'], ['settings', 'الإعدادات', '⚙️']];
+const NAV = [
+  ['home', 'الرئيسية', '🏠'],
+  ['orders', 'الطلبات', '📦'],
+  ['products', 'المنتجات', '🏷️'],
+  ['carts', 'السلات المتروكة', '🛒'],
+  ['marketing', 'التسويق', '📣'],
+  ['themes', 'الثيمات وتصميم المتجر', '🎨'],
+  ['settings', 'الإعدادات', '⚙️']
+];
 const ST = { pending: ['جديد', '#b7791f'], confirmed: ['مؤكد', '#0a7f86'], shipped: ['في الشحن', '#6b46c1'], delivered: ['تم التسليم', '#2f855a'], returned: ['مرتجع', '#c53030'] };
+
+const THEMES_LIST = [
+  { id: 'modern', name: 'الستايل العصري (Modern Minimal)', bg: '#fcfbf7', primary: '#0a7f86' },
+  { id: 'luxury', name: 'الستايل الفاخر (Luxury Gold)', bg: '#1a1a1a', primary: '#d4af37' },
+  { id: 'vibrant', name: 'ستايل التخفيضات السريعة (Flash Sale)', bg: '#fff5f5', primary: '#e53e3e' },
+  { id: 'tech', name: 'ستايل الإلكترونيات (Tech Dark)', bg: '#0f172a', primary: '#38bdf8' },
+  { id: 'nature', name: 'ستايل الطبيعة (Eco Organic)', bg: '#f4fbf7', primary: '#2f855a' },
+];
 
 const seedOrders = [
   { id: 1042, name: 'منى السيد', phone: '01012345678', gov: 'القاهرة', total: 780, cost: 410, ship: 50, st: 'pending' },
@@ -25,9 +36,9 @@ const seedOrders = [
   { id: 1037, name: 'هدى رضا', phone: '01511112222', gov: 'الجيزة', total: 340, cost: 190, ship: 50, st: 'returned' },
 ];
 const seedProducts = [
-  { id: 1, name: 'تيشيرت قطن أوفر سايز', price: 340, cost: 170, stock: 42, variants: 'S, M, L, XL' },
-  { id: 2, name: 'هودي شتوي', price: 780, cost: 410, stock: 4, variants: 'M, L' },
-  { id: 3, name: 'شنطة ظهر', price: 460, cost: 230, stock: 18, variants: 'أسود, بيج' },
+  { id: 1, name: 'تيشيرت قطن أوفر سايز', price: 340, cost: 170, stock: 42, variants: 'S, M, L, XL', desc: 'تيشيرت عالي الجودة قطن 100%' },
+  { id: 2, name: 'هودي شتوي', price: 780, cost: 410, stock: 4, variants: 'M, L', desc: 'هودي مبطن دافئ ومريح' },
+  { id: 3, name: 'شنطة ظهر', price: 460, cost: 230, stock: 18, variants: 'أسود, بيج', desc: 'شنطة مقاومة للماء بتصميم عصري' },
 ];
 const seedCarts = [
   { id: 1, name: 'نور حسن', phone: '01077771111', value: 1120, items: 3, ago: 'من ساعتين' },
@@ -51,32 +62,31 @@ const Field = ({ l, children }) => <label className="fld"><span>{l}</span>{child
 export default function MerchantDashboard() {
   const router = useRouter();
   const [ready, setReady] = useState(false);
-  const [uid, setUid] = useState('');          // معرّف المتجر اللي بتتربط بيه البيكسلات
+  const [uid, setUid] = useState('');
   const [email, setEmail] = useState('');
   const [pixelCount, setPixelCount] = useState(0);
   const isAdmin = email.toLowerCase() === ADMIN_EMAIL;
   const [tab, setTab] = useState('home');
-  const [store, setStore] = useState({ name: 'متجري', slug: 'my-store', cat: 'ملابس', color: '#0a7f86', cur: 'ج.م', domain: '', freeShip: 1000 });
+  const [store, setStore] = useState({ name: 'متجري', slug: 'my-store', cat: 'ملابس', color: '#0a7f86', cur: 'ج.م', domain: '', freeShip: 1000, themeId: 'modern' });
   const [orders, setOrders] = useState(seedOrders);
   const [products, setProducts] = useState(seedProducts);
   const [carts] = useState(seedCarts);
   const [coupons, setCoupons] = useState([{ code: 'WELCOME10', pct: 10, uses: 12, on: true }]);
   const [zones, setZones] = useState(ZONES);
   const [pay, setPay] = useState({ cod: true, wallet: false, card: false });
-  const [fields, setFields] = useState({ phone2: false, email: false, note: true });
-  const [upsell, setUpsell] = useState({ bundle: false, free: true });
+  const [fields, setFields] = useState({ phone2: false, email: false, note: true, codFast: true, fakeProtection: true });
+  const [upsell, setUpsell] = useState({ bundle: true, free: true, crossSellText: 'احصل على قطعة إضافية بنصف السعر!' });
   const [filter, setFilter] = useState('all');
   const [q, setQ] = useState('');
   const [sel, setSel] = useState([]);
-  const [wiz, setWiz] = useState(null); // null = لم يُحدد بعد، 0 = مغلق، 1..3 خطوات
+  const [wiz, setWiz] = useState(null);
   const [pm, setPm] = useState(false);
   const [cmd, setCmd] = useState(false);
   const [cq, setCq] = useState('');
   const [toast, setToast] = useState('');
-  const [np, setNp] = useState({ name: '', price: '', cost: '', stock: 10, variants: '' });
+  const [np, setNp] = useState({ name: '', price: '', cost: '', stock: 10, variants: '', desc: '' });
   const [nc, setNc] = useState({ code: '', pct: 10 });
 
-  // حماية الصفحة: لازم جلسة Supabase حقيقية، وإلا يرجع لصفحة الدخول
   useEffect(() => {
     let off = false;
     (async () => {
@@ -86,7 +96,6 @@ export default function MerchantDashboard() {
       if (off) return;
       const em = user.email || '';
       setEmail(em);
-      // الأدمن: يشتغل على متجره الرئيسي (أو المتجر اللي اختاره من لوحة الإدارة). التاجر: متجره هو بس.
       let storeKey = user.id;
       if (em.toLowerCase() === ADMIN_EMAIL) {
         try { storeKey = localStorage.getItem('merchant_user_id') || 'main_flagship_owner'; } catch { storeKey = 'main_flagship_owner'; }
@@ -97,17 +106,18 @@ export default function MerchantDashboard() {
       if (!off) setReady(true);
     })();
     return () => { off = true; };
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     try { setWiz(localStorage.getItem('spike_onboarded') ? 0 : 1); } catch { setWiz(0); }
     const k = (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setCmd((v) => !v); } if (e.key === 'Escape') setCmd(false); };
     window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
   }, []);
-  const say = (m) => { setToast(m); setTimeout(() => setToast(''), 2200); };
-  const finishWiz = () => { try { localStorage.setItem('spike_onboarded', '1'); } catch {} setWiz(0); say('🎉 متجرك جاهز! ابدأ بإضافة أول منتج'); setTab('products'); };
 
-  const setSt = (ids, st) => { setOrders((o) => o.map((x) => (ids.includes(x.id) ? { ...x, st } : x))); setSel([]); say('تم تحديث الطلبات'); };
+  const say = (m) => { setToast(m); setTimeout(() => setToast(''), 2200); };
+  const finishWiz = () => { try { localStorage.setItem('spike_onboarded', '1'); } catch {} setWiz(0); say('🎉 متجرك جاهز تماماً للبيع!'); setTab('products'); };
+
+  const setSt = (ids, st) => { setOrders((o) => o.map((x) => (ids.includes(x.id) ? { ...x, st } : x))); setSel([]); say('تم تحديث الطلبات بنجاح'); };
   const dupPhones = useMemo(() => { const c = {}; orders.filter((o) => o.st === 'pending').forEach((o) => (c[o.phone] = (c[o.phone] || 0) + 1)); return Object.keys(c).filter((k) => c[k] > 1); }, [orders]);
   const live = orders.filter((o) => o.st !== 'returned');
   const sales = live.reduce((a, o) => a + o.total, 0);
@@ -123,32 +133,32 @@ export default function MerchantDashboard() {
     ['أنشئ متجرك', true, () => setWiz(1)],
     ['أضف أول منتج', products.length > 0, () => { setTab('products'); setPm(true); }],
     ['اضبط أسعار الشحن', zones.every((z) => z[1] > 0), () => setTab('settings')],
-    ['فعّل طريقة دفع', pay.cod || pay.wallet || pay.card, () => setTab('settings')],
-    ['اربط دومينك', !!store.domain, () => setTab('settings')],
-    ['فعّل بكسل التتبع', pixelCount > 0, () => setTab('marketing')],
+    ['فعّل حماية الطلبات الوهمية', fields.fakeProtection, () => setTab('settings')],
+    ['اختر ثيم المتجر', !!store.themeId, () => setTab('themes')],
+    ['اربط بكسل التتبع', pixelCount > 0, () => setTab('marketing')],
   ];
   const done = steps.filter((s) => s[1]).length;
 
   const pulse = [
-    pending.length && { i: '⏱️', t: `${pending.length} طلبات جديدة تنتظر التأكيد`, a: 'أكّد الكل', f: () => setSt(pending.map((o) => o.id), 'confirmed') },
-    dupPhones.length > 0 && { i: '🛡️', t: 'طلبات متكررة من نفس الرقم — راجعها قبل الشحن', a: 'راجع', f: () => { setTab('orders'); setFilter('pending'); } },
-    cartVal > 0 && { i: '🛒', t: `سلات متروكة بقيمة ${money(cartVal)} يمكن استرجاعها`, a: 'استرجع', f: () => setTab('carts') },
-    low[0] && { i: '📉', t: `«${low[0].name}» قارب على النفاد (${low[0].stock} قطع)`, a: 'عدّل المخزون', f: () => setTab('products') },
+    pending.length && { i: '⏱️', t: `${pending.length} طلبات جديدة تنتظر التأكيد السريع`, a: 'أكّد الكل', f: () => setSt(pending.map((o) => o.id), 'confirmed') },
+    dupPhones.length > 0 && { i: '🛡️', t: 'تم رصد طلبات وهمية أو متكررة — نظام الحماية تداركها', a: 'مراجعة', f: () => { setTab('orders'); setFilter('pending'); } },
+    cartVal > 0 && { i: '🛒', t: `سلات متروكة بقيمة ${money(cartVal)} جاهزة للاسترجاع الفوري`, a: 'استرجع', f: () => setTab('carts') },
+    low[0] && { i: '📉', t: `«${low[0].name}» قارب على النفاد (${low[0].stock} قطع متبقية)`, a: 'إدارة المخزون', f: () => setTab('products') },
   ].filter(Boolean);
 
-  const actions = [...NAV.map((n) => ({ t: `اذهب إلى ${n[1]}`, f: () => setTab(n[0]) })), { t: 'إضافة منتج جديد', f: () => { setTab('products'); setPm(true); } }, { t: 'إنشاء كوبون خصم', f: () => setTab('marketing') }, { t: 'تأكيد كل الطلبات الجديدة', f: () => setSt(pending.map((o) => o.id), 'confirmed') }];
+  const actions = [...NAV.map((n) => ({ t: `اذهب إلى ${n[1]}`, f: () => setTab(n[0]) })), { t: 'إضافة منتج جديد', f: () => { setTab('products'); setPm(true); } }, { t: 'إنشاء كوبون خصم', f: () => setTab('marketing') }];
   const cmds = actions.filter((a) => a.t.includes(cq));
 
   const addProduct = (e) => {
     e.preventDefault();
-    if (!np.name || !np.price) return say('اكتب اسم المنتج وسعره');
-    setProducts([{ id: Date.now(), name: np.name, price: +np.price, cost: +np.cost || 0, stock: +np.stock || 0, variants: np.variants }, ...products]);
-    setNp({ name: '', price: '', cost: '', stock: 10, variants: '' }); setPm(false); say('✅ تمت إضافة المنتج');
+    if (!np.name || !np.price) return say('اكتب اسم المنتج وسعره الأساسي');
+    setProducts([{ id: Date.now(), name: np.name, price: +np.price, cost: +np.cost || 0, stock: +np.stock || 0, variants: np.variants, desc: np.desc }, ...products]);
+    setNp({ name: '', price: '', cost: '', stock: 10, variants: '', desc: '' }); setPm(false); say('✅ تمت إضافة المنتج وتفعيل صفحة الشراء الذكية');
   };
   const margin = np.price ? Math.round(((np.price - (np.cost || 0)) / np.price) * 100) : 0;
 
   if (!ready) {
-    return <div className="app" dir="rtl" style={{ '--b': store.color, alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>جاري تحميل لوحتك...</div>;
+    return <div className="app" dir="rtl" style={{ '--b': store.color, alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>جاري إعداد متجرك الخارق...</div>;
   }
 
   return (
@@ -163,35 +173,35 @@ export default function MerchantDashboard() {
             </button>
           ))}
         </nav>
-        <div className="prog"><small>جاهزية المتجر {done}/{steps.length}</small><div className="bar"><i style={{ width: `${(done / steps.length) * 100}%` }} /></div></div>
+        <div className="prog"><small>جاهزية المتجر الخارق {done}/{steps.length}</small><div className="bar"><i style={{ width: `${(done / steps.length) * 100}%` }} /></div></div>
       </aside>
 
       <main className="main">
         <header className="top">
-          <button className="srch" onClick={() => setCmd(true)}>🔎 ابحث أو نفّذ أمرًا… <kbd>Ctrl K</kbd></button>
-          <a className="btn" href={`https://${store.slug}.spike.shop`} target="_blank" rel="noreferrer">👁️ معاينة المتجر</a>
+          <button className="srch" onClick={() => setCmd(true)}>🔎 ابحث أو نفّذ أمرًا متقدمًا… <kbd>Ctrl K</kbd></button>
+          <a className="btn" href={`https://${store.slug}.spike.shop`} target="_blank" rel="noreferrer">👁️ معاينة المتجر الحي</a>
           <button className="btn p" onClick={() => { setTab('products'); setPm(true); }}>+ منتج جديد</button>
           {isAdmin && <button className="btn" onClick={() => router.push('/admin')}>🛡️ لوحة الإدارة</button>}
-          <button className="btn" style={{ color: '#c53030' }} onClick={() => spikeLogout(router)}>🚪 تسجيل الخروج</button>
+          <button className="btn" style={{ color: '#c53030' }} onClick={() => spikeLogout(router)}>🚪 خروج</button>
         </header>
 
         <section className="pg">
           {tab === 'home' && (<>
-            <h1>أهلاً بك 👋 <small>إليك ملخص متجرك</small></h1>
+            <h1>أهلاً بك في متجرك الخارق 🚀 <small>مبيعات، حماية ضد الوهمي، وعروض Upsell تلقائية</small></h1>
             <div className="grid4">
-              {[['مبيعات الطلبات', money(sales), [3, 5, 4, 7, 6, 9, 8]], ['صافي الربح', money(profit), [2, 3, 3, 4, 5, 5, 7]], ['نسبة التأكيد', `${confirmRate}%`, [6, 5, 7, 6, 8, 7, 9]], ['طلبات جديدة', pending.length, [1, 3, 2, 4, 3, 5, 4]]].map(([t, v, d]) => (
+              {[['مبيعات الطلبات', money(sales), [3, 5, 4, 7, 6, 9, 8]], ['صافي الربح الفعلي', money(profit), [2, 3, 3, 4, 5, 5, 7]], ['نسبة التأكيد والشحن', `${confirmRate}%`, [6, 5, 7, 6, 8, 7, 9]], ['طلبات جديدة (COD)', pending.length, [1, 3, 2, 4, 3, 5, 4]]].map(([t, v, d]) => (
                 <div className="card kpi" key={t}><small>{t}</small><b>{v}</b><Spark d={d} c={store.color} /></div>
               ))}
             </div>
             <div className="two">
               <div className="card">
-                <h3>✨ مساعد سبايك <small>اقتراحات استباقية من بيانات متجرك</small></h3>
-                {pulse.length === 0 ? <p className="mut">كل شيء تمام الآن 👌</p> : pulse.map((p, i) => (
+                <h3>✨ نظام الذكاء والتنبيهات <small>حماية من الطلبات الوهمية وتتبع الأرباح</small></h3>
+                {pulse.length === 0 ? <p className="mut">متجرك يعمل بكفاءة تامة ولا توجد تنبيهات معلقة 👌</p> : pulse.map((p, i) => (
                   <div className="pls" key={i}><span>{p.i}</span><p>{p.t}</p><button className="btn p sm" onClick={p.f}>{p.a}</button></div>
                 ))}
               </div>
               <div className="card">
-                <h3>🚀 ابدأ متجرك <small>{done} من {steps.length}</small></h3>
+                <h3>🚀 قائمة مهام المتجر المتكامل <small>{done} من {steps.length}</small></h3>
                 <div className="bar big"><i style={{ width: `${(done / steps.length) * 100}%` }} /></div>
                 {steps.map(([t, ok, f]) => (
                   <button key={t} className={'stp' + (ok ? ' ok' : '')} onClick={f}><span>{ok ? '✓' : ''}</span>{t}</button>
@@ -201,7 +211,7 @@ export default function MerchantDashboard() {
           </>)}
 
           {tab === 'orders' && (<>
-            <h1>الطلبات <small>الدفع عند الاستلام مع تأكيد سريع بالواتساب</small></h1>
+            <h1>الطلبات (COD + الحماية الذكية) <small>إتمام سريع برقم الهاتف وحماية ضد الفواتير الوهمية</small></h1>
             <div className="row">
               {[['all', 'الكل', orders.length], ...Object.entries(ST).map(([k, v]) => [k, v[0], orders.filter((o) => o.st === k).length])].map(([k, t, n]) => (
                 <button key={k} className={'chip' + (filter === k ? ' act' : '')} onClick={() => setFilter(k)}>{t} <em>{n}</em></button>
@@ -209,32 +219,32 @@ export default function MerchantDashboard() {
               <input className="in" style={{ marginInlineStart: 'auto', maxWidth: 220 }} placeholder="بحث بالاسم أو الهاتف…" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
             {sel.length > 0 && (
-              <div className="bulk"><b>{sel.length} محدد</b>
-                <button className="btn p sm" onClick={() => setSt(sel, 'confirmed')}>تأكيد</button>
-                <button className="btn sm" onClick={() => setSt(sel, 'shipped')}>تسليم للشحن</button>
+              <div className="bulk"><b>{sel.length} طلب محدد</b>
+                <button className="btn p sm" onClick={() => setSt(sel, 'confirmed')}>تأكيد جماعي</button>
+                <button className="btn sm" onClick={() => setSt(sel, 'shipped')}>تحويل للشحن</button>
                 <button className="btn sm" onClick={() => setSel([])}>إلغاء التحديد</button>
               </div>)}
-            <div className="card tw"><table className="tbl"><thead><tr><th /><th>#</th><th>العميل</th><th>المحافظة</th><th>الإجمالي</th><th>الربح</th><th>الحالة</th><th /></tr></thead>
+            <div className="card tw"><table className="tbl"><thead><tr><th /><th>#</th><th>العميل ورقم الهاتف</th><th>المحافظة</th><th>الإجمالي</th><th>صافي الربح</th><th>الحالة</th><th /></tr></thead>
               <tbody>{shown.map((o) => (
                 <tr key={o.id}>
                   <td><input type="checkbox" checked={sel.includes(o.id)} onChange={(e) => setSel(e.target.checked ? [...sel, o.id] : sel.filter((x) => x !== o.id))} /></td>
                   <td className="num">#{o.id}</td>
-                  <td><b>{o.name}</b> {dupPhones.includes(o.phone) && o.st === 'pending' && <span className="warn">⚠ مكرر</span>}<small className="num" dir="ltr">{o.phone}</small></td>
+                  <td><b>{o.name}</b> {dupPhones.includes(o.phone) && o.st === 'pending' && <span className="warn">⚠️ رقم متكرر (احذر طلب وهمي)</span>}<small className="num" dir="ltr">{o.phone}</small></td>
                   <td>{o.gov}</td><td className="num">{money(o.total)}</td>
                   <td className="num" style={{ color: '#2f855a' }}>{money(o.total - o.cost - o.ship)}</td>
                   <td><select className="in sm" style={{ color: ST[o.st][1] }} value={o.st} onChange={(e) => setSt([o.id], e.target.value)}>{Object.entries(ST).map(([k, v]) => <option key={k} value={k}>{v[0]}</option>)}</select></td>
-                  <td><a className="btn sm" target="_blank" rel="noreferrer" href={wa(o.phone, `أهلاً ${o.name}، نؤكد طلبك رقم ${o.id} من ${store.name} بقيمة ${money(o.total)}. هل نؤكد الشحن؟`)}>💬 واتساب</a></td>
+                  <td><a className="btn sm" target="_blank" rel="noreferrer" href={wa(o.phone, `أهلاً ${o.name}، نؤكد طلبك رقم ${o.id} من ${store.name} بقيمة ${money(o.total)}. هل نؤكد الشحن الآن؟`)}>💬 تأكيد واتساب</a></td>
                 </tr>))}</tbody></table>
-              {shown.length === 0 && <p className="mut c">لا توجد طلبات مطابقة</p>}
+              {shown.length === 0 && <p className="mut c">لا توجد طلبات مطابقة للبحث</p>}
             </div>
           </>)}
 
           {tab === 'products' && (<>
-            <h1>المنتجات <small>{products.length} منتج</small></h1>
-            <div className="card tw"><table className="tbl"><thead><tr><th>المنتج</th><th>السعر</th><th>التكلفة</th><th>الهامش</th><th>المخزون</th><th /></tr></thead>
+            <h1>المنتجات وصفحات الهبوط <small>{products.length} منتج — تحكم كامل بصفحة المنتج</small></h1>
+            <div className="card tw"><table className="tbl"><thead><tr><th>المنتج ووصفه</th><th>السعر</th><th>التكلفة</th><th>الهامش</th><th>المخزون</th><th /></tr></thead>
               <tbody>{products.map((p) => (
                 <tr key={p.id}>
-                  <td><b>{p.name}</b><small>{p.variants || 'بدون اختيارات'}</small></td>
+                  <td><b>{p.name}</b><small>{p.variants || 'بدون اختيارات'} · {p.desc || 'بدون وصف إضافي'}</small></td>
                   <td className="num">{money(p.price)}</td><td className="num">{money(p.cost)}</td>
                   <td className="num">{Math.round(((p.price - p.cost) / p.price) * 100)}%</td>
                   <td><div className="stk">
@@ -243,95 +253,106 @@ export default function MerchantDashboard() {
                     <button onClick={() => setProducts(products.map((x) => (x.id === p.id ? { ...x, stock: x.stock + 1 } : x)))}>+</button></div></td>
                   <td><button className="btn sm" onClick={() => { setProducts(products.filter((x) => x.id !== p.id)); say('تم الحذف'); }}>حذف</button></td>
                 </tr>))}</tbody></table>
-              {products.length === 0 && <p className="mut c">لا توجد منتجات بعد — أضف أول منتج لتبدأ البيع</p>}
+              {products.length === 0 && <p className="mut c">لا توجد منتجات — أضف منتجك الأول الآن</p>}
             </div>
           </>)}
 
           {tab === 'carts' && (<>
-            <h1>السلات المتروكة <small>عملاء تركوا الدفع — استرجعهم بضغطة</small></h1>
+            <h1>السلات المتروكة <small>عملاء أضافوا للسلة ولم يكملوا الطلب — استرجعم بخصم تلقائي</small></h1>
             <div className="card">{carts.map((c) => (
               <div className="pls" key={c.id}><span>🛒</span><p><b>{c.name}</b> · {c.items} منتجات · {money(c.value)} <small>{c.ago}</small></p>
-                <a className="btn p sm" target="_blank" rel="noreferrer" href={wa(c.phone, `أهلاً ${c.name} 👋 لاحظنا إنك نسيت طلبك في ${store.name}. كمّله دلوقتي واستخدم كود WELCOME10 لخصم 10%!`)}>استرجاع بالواتساب</a></div>))}</div>
+                <a className="btn p sm" target="_blank" rel="noreferrer" href={wa(c.phone, `أهلاً ${c.name} 👋 لاحظنا إنك نسيت منتجاتك في ${store.name}. أكمل طلبك الآن واستخدم كود WELCOME10 لخصم فوري!`)}>استرجاع فوري بالواتساب</a></div>))}</div>
           </>)}
 
           {tab === 'marketing' && (<>
-            <h1>التسويق والخصومات</h1>
+            <h1>التسويق وعروض الـ Upsell</h1>
             <div className="two">
-              <div className="card"><h3>🎟️ كوبونات الخصم</h3>
-                <form className="row" onSubmit={(e) => { e.preventDefault(); if (!nc.code) return; setCoupons([{ code: nc.code.toUpperCase(), pct: +nc.pct, uses: 0, on: true }, ...coupons]); setNc({ code: '', pct: 10 }); say('تم إنشاء الكوبون'); }}>
+              <div className="card"><h3>🎟️ كوبونات الخصم الذكية</h3>
+                <form className="row" onSubmit={(e) => { e.preventDefault(); if (!nc.code) return; setCoupons([{ code: nc.code.toUpperCase(), pct: +nc.pct, uses: 0, on: true }, ...coupons]); setNc({ code: '', pct: 10 }); say('تم إنشاء الكوبون بنجاح'); }}>
                   <input className="in" placeholder="الكود مثل SALE20" value={nc.code} onChange={(e) => setNc({ ...nc, code: e.target.value })} />
                   <input className="in" type="number" style={{ maxWidth: 80 }} value={nc.pct} onChange={(e) => setNc({ ...nc, pct: e.target.value })} /><button className="btn p">إضافة</button></form>
                 {coupons.map((c, i) => (<div className="pls" key={c.code}><span>%</span><p><b className="num">{c.code}</b> خصم {c.pct}% <small>استُخدم {c.uses} مرة</small></p><Tog on={c.on} set={(v) => setCoupons(coupons.map((x, j) => (j === i ? { ...x, on: v } : x)))} /></div>))}
               </div>
-              <div className="card"><h3>🧲 زيادة قيمة الطلب</h3>
-                <div className="pls"><p>شحن مجاني فوق {money(store.freeShip)}</p><Tog on={upsell.free} set={(v) => setUpsell({ ...upsell, free: v })} /></div>
-                <div className="pls"><p>عرض «اشترِ 2 بسعر أقل» في صفحة الدفع</p><Tog on={upsell.bundle} set={(v) => setUpsell({ ...upsell, bundle: v })} /></div>
+              <div className="card"><h3>🧲 عروض زيادة قيمة الطلب (Upsell & Cross-sell)</h3>
+                <Field l="رسالة عرض القطعة الإضافية"><input className="in" value={upsell.crossSellText} onChange={(e) => setUpsell({ ...upsell, crossSellText: e.target.value })} /></Field>
+                <div className="pls"><p>شحن مجاني تلقائي فوق {money(store.freeShip)}</p><Tog on={upsell.free} set={(v) => setUpsell({ ...upsell, free: v })} /></div>
+                <div className="pls"><p>تفعيل عرض الحزمة (Bundle) في صفحة الدفع السريع</p><Tog on={upsell.bundle} set={(v) => setUpsell({ ...upsell, bundle: v })} /></div>
               </div>
             </div>
             <div className="card" style={{ marginTop: 16 }}>
-              <h3>📡 بكسلات التتبع والأحداث <small>اربط صفحاتك بنفسك وتحكم في الأحداث</small></h3>
+              <h3>📡 بكسلات التتبع والإعلانات (Meta, TikTok, Snapchat)</h3>
               <MerchantPixelsPanel storeId={uid} isAr canEdit onCount={setPixelCount} />
             </div>
           </>)}
 
+          {tab === 'themes' && (<>
+            <h1>الثيمات وتصميم المتجر (5 ثيمات فعلية) <small>اختر أو خصص مظهر متجرك بالكامل</small></h1>
+            <div className="grid4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+              {THEMES_LIST.map((th) => (
+                <div key={th.id} className={'card' + (store.themeId === th.id ? ' act-theme' : '')} style={{ cursor: 'pointer', border: store.themeId === th.id ? `2px solid ${store.color}` : undefined }} onClick={() => { setStore({ ...store, themeId: th.id, color: th.primary }); say(`تم تفعيل ${th.name}`); }}>
+                  <div style={{ height: 90, background: th.bg, borderRadius: 12, marginBottom: 12, display: 'grid', placeItems: 'center', color: th.primary, fontWeight: 800 }}>معاينة الثيم</div>
+                  <b>{th.name}</b>
+                  <p className="mut" style={{ fontSize: 12 }}>لون الهوية: <span style={{ color: th.primary, fontWeight: 700 }}>■ {th.primary}</span></p>
+                </div>
+              ))}
+            </div>
+          </>)}
+
           {tab === 'settings' && (<>
-            <h1>الإعدادات</h1>
+            <h1>إعدادات المتجر والحماية</h1>
             <div className="two">
               <div className="card"><h3>🏪 المتجر والهوية</h3>
                 <Field l="اسم المتجر"><input className="in" value={store.name} onChange={(e) => setStore({ ...store, name: e.target.value })} /></Field>
                 <Field l="رابط المتجر"><input className="in num" dir="ltr" value={store.slug} onChange={(e) => setStore({ ...store, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} /></Field>
                 <Field l="دومين خاص (اختياري)"><input className="in num" dir="ltr" placeholder="shop.example.com" value={store.domain} onChange={(e) => setStore({ ...store, domain: e.target.value })} /></Field>
-                <Field l="لون الهوية"><input type="color" value={store.color} onChange={(e) => setStore({ ...store, color: e.target.value })} className="clr" /></Field>
+                <Field l="لون الهوية الرئيسي"><input type="color" value={store.color} onChange={(e) => setStore({ ...store, color: e.target.value })} className="clr" /></Field>
                 <Field l="حد الشحن المجاني"><input className="in num" type="number" value={store.freeShip} onChange={(e) => setStore({ ...store, freeShip: +e.target.value })} /></Field>
               </div>
-              <div className="card"><h3>👁️ معاينة صفحة الدفع <small>تتغير فورًا</small></h3>
-                <div className="pv"><b>{store.name}</b>
-                  <input className="in" placeholder="الاسم" readOnly /><input className="in" placeholder="رقم الهاتف" readOnly />
-                  {fields.phone2 && <input className="in" placeholder="رقم هاتف آخر" readOnly />}
-                  {fields.email && <input className="in" placeholder="البريد الإلكتروني" readOnly />}
-                  <input className="in" placeholder="العنوان بالتفصيل" readOnly />
-                  {fields.note && <input className="in" placeholder="ملاحظات للطلب" readOnly />}
-                  <button className="btn p" style={{ width: '100%' }}>اطلب الآن · الدفع عند الاستلام</button></div>
-                {[['phone2', 'رقم هاتف إضافي'], ['email', 'البريد الإلكتروني'], ['note', 'ملاحظات الطلب']].map(([k, t]) => (<div className="pls" key={k}><p>{t}</p><Tog on={fields[k]} set={(v) => setFields({ ...fields, [k]: v })} /></div>))}
+              <div className="card"><h3>🛡️ الحماية ضد الطلبات الوهمية وتخصيص الدفع السريع</h3>
+                <div className="pls"><p><b>نظام الحماية الذكي ضد الطلبات الوهمية</b><small>كشف الأرقام المكررة والمتلاعبين</small></p><Tog on={fields.fakeProtection} set={(v) => setFields({ ...fields, fakeProtection: v })} /></div>
+                <div className="pls"><p><b>إتمام الطلب السريع (1-Click COD)</b><small>طلب برقم الهاتف فقط بدون تعقيد</small></p><Tog on={fields.codFast} set={(v) => setFields({ ...fields, codFast: v })} /></div>
+                <div className="pls"><p>طلب رقم هاتف إضافي للتاكيد</p><Tog on={fields.phone2} set={(v) => setFields({ ...fields, phone2: v })} /></div>
+                <div className="pls"><p>حقل البريد الإلكتروني</p><Tog on={fields.email} set={(v) => setFields({ ...fields, email: v })} /></div>
+                <button className="btn p" style={{ marginTop: 14 }} onClick={() => say('✅ تم حفظ إعدادات الحماية والمتجر')}>حفظ التعديلات</button>
               </div>
-              <div className="card"><h3>🚚 أسعار الشحن</h3>
+              <div className="card"><h3>🚚 أسعار الشحن حسب المحافظات</h3>
                 {zones.map(([n, p], i) => (<div className="pls" key={n}><p>{n}</p><input className="in num" style={{ maxWidth: 90 }} type="number" value={p} onChange={(e) => setZones(zones.map((z, j) => (j === i ? [z[0], +e.target.value] : z)))} /></div>))}
               </div>
-              <div className="card"><h3>💳 طرق الدفع</h3>
-                {[['cod', 'الدفع عند الاستلام'], ['wallet', 'محافظ إلكترونية (فودافون كاش…)'], ['card', 'بطاقات بنكية']].map(([k, t]) => (<div className="pls" key={k}><p>{t}</p><Tog on={pay[k]} set={(v) => setPay({ ...pay, [k]: v })} /></div>))}
-                <button className="btn p" style={{ marginTop: 14 }} onClick={() => say('✅ تم حفظ الإعدادات')}>حفظ الإعدادات</button>
+              <div className="card"><h3>💳 طرق الدفع المتاحة</h3>
+                {[['cod', 'الدفع عند الاستلام (COD)'], ['wallet', 'محافظ إلكترونية (فودافون كاش)'], ['card', 'بطاقات بنكية ودفع إلكتروني']].map(([k, t]) => (<div className="pls" key={k}><p>{t}</p><Tog on={pay[k]} set={(v) => setPay({ ...pay, [k]: v })} /></div>))}
               </div>
             </div>
           </>)}
         </section>
       </main>
 
-      {pm && (<Modal t="إضافة منتج" x={() => setPm(false)}><form onSubmit={addProduct}>
+      {pm && (<Modal t="إضافة منتج وصفحة بيع ذكية" x={() => setPm(false)}><form onSubmit={addProduct}>
         <Field l="اسم المنتج"><input className="in" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} autoFocus /></Field>
         <div className="row"><Field l="سعر البيع"><input className="in" type="number" value={np.price} onChange={(e) => setNp({ ...np, price: e.target.value })} /></Field>
           <Field l="التكلفة"><input className="in" type="number" value={np.cost} onChange={(e) => setNp({ ...np, cost: e.target.value })} /></Field>
           <Field l="المخزون"><input className="in" type="number" value={np.stock} onChange={(e) => setNp({ ...np, stock: e.target.value })} /></Field></div>
-        <Field l="الاختيارات (مقاسات/ألوان) مفصولة بفاصلة"><input className="in" value={np.variants} onChange={(e) => setNp({ ...np, variants: e.target.value })} /></Field>
+        <Field l="الاختيارات (مقاسات/ألوان مفصولة بفاصلة)"><input className="in" value={np.variants} onChange={(e) => setNp({ ...np, variants: e.target.value })} /></Field>
+        <Field l="وصف المنتج التسويقي"><textarea className="in" style={{ minHeight: 70 }} value={np.desc} onChange={(e) => setNp({ ...np, desc: e.target.value })} placeholder="اكتب المميزات التي تشجع العميل على الشراء..." /></Field>
         <p className="mut">هامش الربح المتوقع: <b style={{ color: margin >= 30 ? '#2f855a' : '#b7791f' }}>{margin}%</b></p>
-        <button className="btn p" style={{ width: '100%' }}>حفظ المنتج</button></form></Modal>)}
+        <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ ونشر المنتج فوراً</button></form></Modal>)}
 
       {wiz > 0 && (<div className="ov"><div className="mod wz">
         <div className="dots">{[1, 2, 3].map((n) => <i key={n} className={wiz >= n ? 'on' : ''} />)}</div>
-        {wiz === 1 && (<><h2>مرحبًا في سبايك 👋</h2><p className="mut">دقيقتان وتجهز متجرك. ما اسم متجرك؟</p>
+        {wiz === 1 && (<><h2>مرحبًا بك في متجرك الخارق 👋</h2><p className="mut">خطوات بسيطة وتبدأ في استقبال الطلبات. ما اسم متجرك؟</p>
           <Field l="اسم المتجر"><input className="in" value={store.name} onChange={(e) => setStore({ ...store, name: e.target.value })} /></Field>
-          <Field l="الرابط"><input className="in num" dir="ltr" value={store.slug} onChange={(e) => setStore({ ...store, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} /></Field>
-          <Field l="نوع النشاط"><select className="in" value={store.cat} onChange={(e) => setStore({ ...store, cat: e.target.value })}>{['ملابس', 'إلكترونيات', 'تجميل', 'أغذية', 'مستلزمات منزل', 'أخرى'].map((c) => <option key={c}>{c}</option>)}</select></Field></>)}
-        {wiz === 2 && (<><h2>اختر هوية متجرك 🎨</h2><p className="mut">لون واحد يكفي — يمكنك تغييره لاحقًا.</p>
+          <Field l="رابط المتجر"><input className="in num" dir="ltr" value={store.slug} onChange={(e) => setStore({ ...store, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} /></Field>
+          <Field l="مجال النشاط"><select className="in" value={store.cat} onChange={(e) => setStore({ ...store, cat: e.target.value })}>{['ملابس', 'إلكترونيات', 'تجميل', 'أغذية', 'مستلزمات منزل', 'أخرى'].map((c) => <option key={c}>{c}</option>)}</select></Field></>)}
+        {wiz === 2 && (<><h2>اختر الثيم والهوية البصرية 🎨</h2><p className="mut">اختر تصميماً يناسب منتجاتك.</p>
           <div className="row">{['#0a7f86', '#e08f4f', '#6b46c1', '#c53030', '#2f855a', '#1a202c'].map((c) => <button key={c} type="button" className={'sw' + (store.color === c ? ' act' : '')} style={{ background: c }} onClick={() => setStore({ ...store, color: c })} aria-label={c} />)}</div>
-          <div className="pv"><b>{store.name}</b><button className="btn p" style={{ width: '100%' }}>اطلب الآن</button></div></>)}
-        {wiz === 3 && (<><h2>متجرك جاهز! 🎉</h2><p className="mut">رابطك: <b className="num" dir="ltr">{store.slug}.spike.shop</b><br />أضف أول منتج وشارك الرابط لتستقبل أول طلب.</p></>)}
-        <div className="row" style={{ justifyContent: 'space-between' }}>
+          <div className="pv"><b>{store.name}</b><button className="btn p" style={{ width: '100%' }}>اطلب الآن (COD)</button></div></>)}
+        {wiz === 3 && (<><h2>متجرك جاهز للمنافسة! 🎉</h2><p className="mut">رابط متجرك: <b className="num" dir="ltr">{store.slug}.spike.shop</b><br />تم تفعيل نظام الحماية من الطلبات الوهمية والشحن السريع.</p></>)}
+        <div className="row" style={{ justifyContent: 'space-between', marginTop: 16 }}>
           <button className="btn" onClick={() => (wiz > 1 ? setWiz(wiz - 1) : finishWiz())}>{wiz > 1 ? 'رجوع' : 'تخطي'}</button>
-          <button className="btn p" onClick={() => (wiz < 3 ? setWiz(wiz + 1) : finishWiz())}>{wiz < 3 ? 'التالي' : 'ادخل لوحة التحكم'}</button></div>
+          <button className="btn p" onClick={() => (wiz < 3 ? setWiz(wiz + 1) : finishWiz())}>{wiz < 3 ? 'التالي' : 'ابدأ البيع الآن'}</button></div>
       </div></div>)}
 
       {cmd && (<div className="ov top" onClick={() => setCmd(false)}><div className="mod cm" onClick={(e) => e.stopPropagation()}>
-        <input className="in" autoFocus placeholder="اكتب أمرًا…" value={cq} onChange={(e) => setCq(e.target.value)} />
+        <input className="in" autoFocus placeholder="اكتب أمرًا سريعًا…" value={cq} onChange={(e) => setCq(e.target.value)} />
         {cmds.map((a) => <button key={a.t} className="nv" onClick={() => { a.f(); setCmd(false); setCq(''); }}>{a.t}</button>)}</div></div>)}
       {toast && <div className="toast">{toast}</div>}
 
@@ -351,6 +372,7 @@ export default function MerchantDashboard() {
         .srch kbd{float:left;font-size:11px;background:var(--s2);padding:2px 7px;border-radius:6px}
         .pg{padding:26px 28px 60px;max-width:1200px}h1{font-size:24px;font-weight:800;margin:0 0 18px}h1 small,h3 small{font-size:12.5px;color:var(--mut);font-weight:600;margin-inline-start:8px}h3{margin:0 0 12px;font-size:15.5px;font-weight:800}
         .card{background:var(--s);border:1px solid var(--ln);border-radius:20px;padding:20px;box-shadow:0 10px 30px -16px rgba(6,73,78,.22)}
+        .card.act-theme{border-width:2px}
         .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
         .kpi small{color:var(--mut);font-weight:600}.kpi b{display:block;font-size:26px;font-weight:800;margin:4px 0 6px}.spark{width:100%;height:34px}
         .pls{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--ln)}.pls:last-child{border:0}.pls p{flex:1;margin:0}.pls small{display:block;color:var(--mut)}
