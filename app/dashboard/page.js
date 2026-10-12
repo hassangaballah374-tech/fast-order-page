@@ -13,7 +13,7 @@ const NAV = [
   ['orders', 'الطلبات', '📦'],
   ['products', 'المنتجات والهبوط', '🏷️'],
   ['carts', 'السلات المتروكة', '🛒'],
-  ['marketing', 'التسويق والإعلانات', '📣'],
+  ['marketing', 'التسويق وعروض الكميات', '📣'],
   ['themes', 'الثيمات وتصميم المتجر', '🎨'],
   ['settings', 'الإعدادات', '⚙️']
 ];
@@ -73,10 +73,8 @@ export default function MerchantDashboard() {
   const [cq, setCq] = useState('');
   const [toast, setToast] = useState('');
 
-  // نموذج المنتج الجديد المتكامل مع خصائص كل منتج على حدة
   const [np, setNp] = useState({
     name: '', cost: '', comparePrice: '', price: '', stock: 10, colors: 'أسود, أبيض', sizes: 'S, M, L, XL', showBadge: true, media: [], desc: '',
-    // خصائص العروض لكل منتج
     bundleActive: true,
     item2Price: 599,
     item3Price: 799,
@@ -84,6 +82,7 @@ export default function MerchantDashboard() {
     couponPct: 10
   });
 
+  // جلب البيانات الحية وثبات المنتجات والطلبات من Supabase
   useEffect(() => {
     let off = false;
     (async () => {
@@ -104,8 +103,9 @@ export default function MerchantDashboard() {
         setStore((s) => ({ ...s, name: sp.store_name || s.name, slug: sp.store_slug || s.slug }));
       }
 
-      const { data: dbProducts } = await supabase.from('products').select('*').eq('store_id', storeKey);
-      if (dbProducts && dbProducts.length > 0 && !off) {
+      // جلب المنتجات من الداتا بيز بانتظام وثبات
+      const { data: dbProducts } = await supabase.from('products').select('*').eq('store_id', storeKey).order('created_at', { ascending: false });
+      if (dbProducts && !off) {
         setProducts(dbProducts.map(p => ({
           id: p.id,
           name: p.title || p.name,
@@ -116,7 +116,7 @@ export default function MerchantDashboard() {
           colors: p.colors || 'أسود',
           sizes: p.sizes || 'M, L',
           showBadge: true,
-          media: p.image_url ? [p.image_url] : [],
+          media: p.image_url ? [p.image_url] : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
           desc: p.description || '',
           bundleActive: p.bundle_active ?? true,
           item2Price: p.item2_price || 599,
@@ -126,7 +126,7 @@ export default function MerchantDashboard() {
         })));
       }
 
-      const { data: dbOrders } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      const { data: dbOrders } = await supabase.from('orders').select('*').eq('store_id', storeKey).order('created_at', { ascending: false });
       if (dbOrders && !off) {
         setOrders(dbOrders.map(o => ({
           id: o.id,
@@ -219,7 +219,7 @@ export default function MerchantDashboard() {
       }, ...products]);
       setNp({ name: '', cost: '', comparePrice: '', price: '', stock: 10, colors: '', sizes: '', showBadge: true, media: [], desc: '', bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10 });
       setPm(false);
-      say('✅ تم حفظ المنتج مع عروضه الخاصة في قاعدة البيانات');
+      say('✅ تم حفظ ونشر المنتج بنجاح في متجرك');
     } else {
       say('❌ خطأ أثناء الحفظ: ' + (error?.message || 'تأكد من الاتصال'));
     }
@@ -248,7 +248,7 @@ export default function MerchantDashboard() {
     if (!error) {
       setProducts(products.map((p) => p.id === editProduct.id ? editProduct : p));
       setEditProduct(null);
-      say('✅ تم تحديث المنتج وعروضه في قاعدة البيانات');
+      say('✅ تم تحديث المنتج وحفظه بنجاح');
     } else {
       say('❌ خطأ في التحديث');
     }
@@ -289,7 +289,7 @@ export default function MerchantDashboard() {
 
       setPreviewProduct(null);
       setClientOrder({ name: '', phone: '', address: '', gov: 'القاهرة والجيزة', selectedSize: '', selectedColor: '', qty: 1, appliedCoupon: null, couponCodeInput: '' });
-      say('🎉 تم استلام طلبك بنجاح! تم إضافته لجدول الطلبات');
+      say('🎉 تم استلام طلبك بنجاح! تم تسجيله في قائمة الطلبات');
       setTab('orders');
     } else {
       say('❌ لم يتم تسجيل الطلب: ' + (error?.message || ''));
@@ -297,7 +297,7 @@ export default function MerchantDashboard() {
   };
 
   if (!ready) {
-    return <div className="app" dir="rtl" style={{ '--b': store.color, alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>جاري مزامنة بيانات متجرك...</div>;
+    return <div className="app" dir="rtl" style={{ '--b': store.color, alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>جاري تحميل متجرك...</div>;
   }
 
   return (
@@ -325,7 +325,7 @@ export default function MerchantDashboard() {
 
         <section className="pg">
           {tab === 'home' && (<>
-            <h1>أهلاً بك في منصة مبيعاتك الخارقة 🚀 <small>متجر متكامل وعروض مخصصة لكل منتج</small></h1>
+            <h1>أهلاً بك في منصة مبيعاتك الخارقة 🚀 <small>متجر متكامل وثابت بقاعدة البيانات</small></h1>
             <div className="grid4">
               {[['إجمالي المبيعات', money(sales), [3, 5, 4, 7, 6, 9, 8]], ['صافي الأرباح', money(profit), [2, 3, 3, 4, 5, 5, 7]], ['نسبة التأكيد', `${confirmRate}%`, [6, 5, 7, 6, 8, 7, 9]], ['طلبات جديدة (COD)', pending.length, [1, 3, 2, 4, 3, 5, 4]]].map(([t, v, d]) => (
                 <div className="card kpi" key={t}><small>{t}</small><b>{v}</b><Spark d={d} c={store.color} /></div>
@@ -357,7 +357,7 @@ export default function MerchantDashboard() {
 
           {tab === 'products' && (<>
             <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h1>إدارة المنتجات وعروضها الخاصة <small>{products.length} منتج مسجل</small></h1>
+              <h1>إدارة المنتجات وصفحات الهبوط <small>{products.length} منتج مسجل وثابت</small></h1>
               <button className="btn p" onClick={() => setPm(true)}>+ إضافة منتج جديد</button>
             </div>
             <div className="card tw"><table className="tbl"><thead><tr><th>المنتج والمقاسات</th><th>الأسعار</th><th>العروض المتاحة</th><th>الربح</th><th>الإجراءات</th></tr></thead>
@@ -374,7 +374,11 @@ export default function MerchantDashboard() {
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="btn sm" onClick={() => setEditProduct({ ...p })}>✏️ تعديل</button>
                       <button className="btn sm p" onClick={() => setPreviewProduct(p)}>🌐 معاينة كعميل</button>
-                      <button className="btn sm" style={{ color: '#c53030' }} onClick={() => { setProducts(products.filter((x) => x.id !== p.id)); say('تم الحذف'); }}>حذف</button>
+                      <button className="btn sm" style={{ color: '#c53030' }} onClick={async () => {
+                        await supabase.from('products').delete().eq('id', p.id);
+                        setProducts(products.filter((x) => x.id !== p.id));
+                        say('تم حذف المنتج');
+                      }}>حذف</button>
                     </div>
                   </td>
                 </tr>))}</tbody></table>
@@ -388,56 +392,46 @@ export default function MerchantDashboard() {
         </section>
       </main>
 
-      {/* مودال إضافة منتج مع عروض الكميات والكوبون لكل منتج */}
-      {pm && (<Modal t="إضافة منتج وعروضه الخاصة (لكل منتج)" x={() => setPm(false)}><form onSubmit={addProduct}>
+      {/* مودال إضافة منتج جديد */}
+      {pm && (<Modal t="إضافة منتج جديد وحفظه في قاعدة البيانات" x={() => setPm(false)}><form onSubmit={addProduct}>
         <Field l="اسم المنتج"><input className="in" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} autoFocus placeholder="اسم المنتج التسويقي" /></Field>
-        
         <div className="row">
           <Field l="1. التكلفة"><input className="in num" type="number" value={np.cost} onChange={(e) => setNp({ ...np, cost: e.target.value })} placeholder="150" /></Field>
           <Field l="2. قبل الخصم"><input className="in num" type="number" value={np.comparePrice} onChange={(e) => setNp({ ...np, comparePrice: e.target.value })} placeholder="600" /></Field>
           <Field l="3. بعد الخصم (سعر البيع)"><input className="in num" type="number" value={np.price} onChange={(e) => setNp({ ...np, price: e.target.value })} placeholder="450" /></Field>
         </div>
-
         <div className="row">
           <Field l="المخزون"><input className="in num" type="number" value={np.stock} onChange={(e) => setNp({ ...np, stock: e.target.value })} /></Field>
           <Field l="الألوان"><input className="in" value={np.colors} onChange={(e) => setNp({ ...np, colors: e.target.value })} placeholder="أحمر، أسود" /></Field>
           <Field l="المقاسات"><input className="in" value={np.sizes} onChange={(e) => setNp({ ...np, sizes: e.target.value })} placeholder="S, M, L, XL" /></Field>
         </div>
 
-        {/* قسم عروض الكميات الخاصة بهذا المنتج */}
         <div style={{ background: 'var(--s2)', padding: 14, borderRadius: 14, margin: '12px 0', border: '1px solid var(--ln)' }}>
           <div className="pls" style={{ padding: 0, border: 0, marginBottom: 8 }}>
-            <p><b>🎁 عروض الكميات التلقائية لهذا المنتج</b><small>تفعيل عرض قطعتين بسعر خاص و3 قطع</small></p>
+            <p><b>🎁 عروض الكميات التلقائية لهذا المنتج</b></p>
             <Tog on={np.bundleActive} set={(v) => setNp({ ...np, bundleActive: v })} />
           </div>
           {np.bundleActive && (
             <div className="row" style={{ marginTop: 8 }}>
-              <Field l="سعر قطعتين معاً (ج.م)"><input className="in num" type="number" value={np.item2Price} onChange={(e) => setNp({ ...np, item2Price: e.target.value })} /></Field>
-              <Field l="سعر 3 قطع معاً (ج.م)"><input className="in num" type="number" value={np.item3Price} onChange={(e) => setNp({ ...np, item3Price: e.target.value })} /></Field>
+              <Field l="سعر قطعتين (ج.م)"><input className="in num" type="number" value={np.item2Price} onChange={(e) => setNp({ ...np, item2Price: e.target.value })} /></Field>
+              <Field l="سعر 3 قطع (ج.م)"><input className="in num" type="number" value={np.item3Price} onChange={(e) => setNp({ ...np, item3Price: e.target.value })} /></Field>
             </div>
           )}
         </div>
 
-        {/* قسم كوبون الخصم الخاص بهذا المنتج */}
         <div style={{ background: 'var(--s2)', padding: 14, borderRadius: 14, margin: '12px 0', border: '1px solid var(--ln)' }}>
           <b style={{ display: 'block', marginBottom: 8 }}>🎟️ كود خصم خاص لهذا المنتج</b>
           <div className="row">
-            <Field l="كود الخصم (مثل SALE20)"><input className="in" value={np.couponCode} onChange={(e) => setNp({ ...np, couponCode: e.target.value })} /></Field>
+            <Field l="كود الخصم"><input className="in" value={np.couponCode} onChange={(e) => setNp({ ...np, couponCode: e.target.value })} /></Field>
             <Field l="نسبة الخصم (%)"><input className="in num" type="number" value={np.couponPct} onChange={(e) => setNp({ ...np, couponPct: e.target.value })} /></Field>
           </div>
         </div>
 
         <Field l="وصف صفحة الهبوط التسويقي"><textarea className="in" value={np.desc} onChange={(e) => setNp({ ...np, desc: e.target.value })} /></Field>
-        
-        <div className="row" style={{ background: 'var(--s2)', padding: 10, borderRadius: 12, justifyContent: 'space-between' }}>
-          <span>صافي الربح: <b style={{ color: '#2f855a' }}>{money(calcProfit)}</b></span>
-          {calcDiscountPct > 0 && <span>نسبة الخصم: <b style={{ color: '#e53e3e' }}>{calcDiscountPct}%</b></span>}
-        </div>
-
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ في الدาتابيز ونشر المنتج</button></form></Modal>)}
 
-      {/* مودال تعديل المنتج وعروضه */}
-      {editProduct && (<Modal t="تعديل المنتج وعروضه الخاصة" x={() => setEditProduct(null)}><form onSubmit={updateProduct}>
+      {/* مودال تعديل المنتج */}
+      {editProduct && (<Modal t="تعديل المنتج وعروضه في قاعدة البيانات" x={() => setEditProduct(null)}><form onSubmit={updateProduct}>
         <Field l="اسم المنتج"><input className="in" value={editProduct.name} onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })} /></Field>
         <div className="row">
           <Field l="التكلفة"><input className="in num" type="number" value={editProduct.cost} onChange={(e) => setEditProduct({ ...editProduct, cost: +e.target.value })} /></Field>
@@ -449,37 +443,15 @@ export default function MerchantDashboard() {
           <Field l="الألوان"><input className="in" value={editProduct.colors} onChange={(e) => setEditProduct({ ...editProduct, colors: e.target.value })} /></Field>
           <Field l="المقاسات"><input className="in" value={editProduct.sizes} onChange={(e) => setEditProduct({ ...editProduct, sizes: e.target.value })} /></Field>
         </div>
-
-        <div style={{ background: 'var(--s2)', padding: 14, borderRadius: 14, margin: '12px 0' }}>
-          <div className="pls" style={{ padding: 0, border: 0, marginBottom: 8 }}>
-            <p><b>🎁 عروض الكميات لهذا المنتج</b></p>
-            <Tog on={editProduct.bundleActive} set={(v) => setEditProduct({ ...editProduct, bundleActive: v })} />
-          </div>
-          {editProduct.bundleActive && (
-            <div className="row">
-              <Field l="سعر قطعتين"><input className="in num" type="number" value={editProduct.item2Price} onChange={(e) => setEditProduct({ ...editProduct, item2Price: +e.target.value })} /></Field>
-              <Field l="سعر 3 قطع"><input className="in num" type="number" value={editProduct.item3Price} onChange={(e) => setEditProduct({ ...editProduct, item3Price: +e.target.value })} /></Field>
-            </div>
-          )}
-        </div>
-
-        <div style={{ background: 'var(--s2)', padding: 14, borderRadius: 14, margin: '12px 0' }}>
-          <b style={{ display: 'block', marginBottom: 8 }}>🎟️ كوبون الخصم لهذا المنتج</b>
-          <div className="row">
-            <Field l="الكود"><input className="in" value={editProduct.couponCode} onChange={(e) => setEditProduct({ ...editProduct, couponCode: e.target.value })} /></Field>
-            <Field l="النسبة %"><input className="in num" type="number" value={editProduct.couponPct} onChange={(e) => setEditProduct({ ...editProduct, couponPct: +e.target.value })} /></Field>
-          </div>
-        </div>
-
         <Field l="الوصف"><textarea className="in" value={editProduct.desc} onChange={(e) => setEditProduct({ ...editProduct, desc: e.target.value })} /></Field>
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ التعديلات في قاعدة البيانات</button></form></Modal>)}
 
-      {/* معاينة صفحة الهبوط كعميل مع تفعيل عروض الكميات والكوبونات المخصصة للمنتج */}
+      {/* معاينة صفحة الهبوط وإتمام الطلب الحقيقي */}
       {previewProduct && (
         <div className="ov" onClick={() => setPreviewProduct(null)}>
           <div className="mod" style={{ maxWidth: 760, padding: 32, background: '#fff' }} onClick={(e) => e.stopPropagation()}>
             <div className="mh">
-              <span style={{ background: 'var(--b)', color: '#fff', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 800 }}>معاينة صفحة الهبوط (كعميل)</span>
+              <span style={{ background: 'var(--b)', color: '#fff', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 800 }}>معاينة المتجر كعميل (حقيقي)</span>
               <button className="btn sm" onClick={() => setPreviewProduct(null)}>إغلاق المعاينة ✕</button>
             </div>
             
@@ -499,14 +471,13 @@ export default function MerchantDashboard() {
               <div style={{ background: 'var(--s2)', padding: 16, borderRadius: 16, border: '1px solid var(--ln)', display: 'grid', gap: 8 }}>
                 <b style={{ fontSize: 14 }}>🛒 استمارة الشراء السريع (COD)</b>
                 
-                {/* عروض الكميات في صفحة العميل */}
                 {previewProduct.bundleActive && (
                   <div style={{ background: '#fff', border: '1px solid var(--b)', borderRadius: 12, padding: 8, fontSize: 12 }}>
-                    <div style={{ fontWeight: 800, marginBottom: 4, color: 'var(--b)' }}>🎁 اختر العرض الأوفر:</div>
+                    <div style={{ fontWeight: 800, marginBottom: 4, color: 'var(--b)' }}>🎁 عروض الكميات:</div>
                     <div style={{ display: 'grid', gap: 4 }}>
                       <button type="button" className={`btn sm ${clientOrder.qty === 1 ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, qty: 1})} style={{ justifyContent: 'space-between' }}><span>قطعة واحدة</span><span>{money(previewProduct.price)}</span></button>
-                      <button type="button" className={`btn sm ${clientOrder.qty === 2 ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, qty: 2})} style={{ justifyContent: 'space-between' }}><span>قطعتين (عرض خاص)</span><span>{money(previewProduct.item2Price)}</span></button>
-                      <button type="button" className={`btn sm ${clientOrder.qty === 3 ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, qty: 3})} style={{ justifyContent: 'space-between' }}><span>3 قطع (أفر سعر)</span><span>{money(previewProduct.item3Price)}</span></button>
+                      <button type="button" className={`btn sm ${clientOrder.qty === 2 ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, qty: 2})} style={{ justifyContent: 'space-between' }}><span>قطعتين</span><span>{money(previewProduct.item2Price)}</span></button>
+                      <button type="button" className={`btn sm ${clientOrder.qty === 3 ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, qty: 3})} style={{ justifyContent: 'space-between' }}><span>3 قطع</span><span>{money(previewProduct.item3Price)}</span></button>
                     </div>
                   </div>
                 )}
@@ -519,22 +490,21 @@ export default function MerchantDashboard() {
                   </select>
                   <input className="in sm" placeholder="العنوان بالتفصيل" value={clientOrder.address} onChange={e => setClientOrder({...clientOrder, address: e.target.value})} />
 
-                  {/* تطبيق الكوبون الخاص بالمنتج */}
                   {previewProduct.couponCode && (
                     <div style={{ display: 'flex', gap: 4 }}>
                       <input className="in sm" placeholder={`كوبون: ${previewProduct.couponCode}`} value={clientOrder.couponCodeInput} onChange={e => setClientOrder({...clientOrder, couponCodeInput: e.target.value})} />
                       <button type="button" className="btn sm p" onClick={() => {
                         if (clientOrder.couponCodeInput.trim().toUpperCase() === previewProduct.couponCode.toUpperCase()) {
                           setClientOrder({...clientOrder, appliedCoupon: { code: previewProduct.couponCode, pct: previewProduct.couponPct }});
-                          say(`✅ تم تطبيق خصم ${previewProduct.couponPct}% بنجاح!`);
+                          say(`✅ تم تطبيق خصم ${previewProduct.couponPct}%`);
                         } else {
-                          say('❌ كوبون غير صحيح لهذا المنتج');
+                          say('❌ كوبون خاطئ');
                         }
                       }}>تطبيق</button>
                     </div>
                   )}
 
-                  {clientOrder.appliedCoupon && <small style={{ color: '#2f855a', fontWeight: 800 }}>تم تطبيق خصم {clientOrder.appliedCoupon.pct}% بنجاح!</small>}
+                  {clientOrder.appliedCoupon && <small style={{ color: '#2f855a', fontWeight: 800 }}>تم تطبيق خصم {clientOrder.appliedCoupon.pct}%</small>}
 
                   {previewProduct.sizes && (
                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
