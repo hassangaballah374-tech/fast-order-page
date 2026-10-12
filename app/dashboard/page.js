@@ -70,9 +70,8 @@ export default function MerchantDashboard() {
   
   const [pm, setPm] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
-  const [previewProduct, setPreviewProduct] = useState(null); // نافذة معاينة كعميل
+  const [previewProduct, setPreviewProduct] = useState(null);
 
-  // حقول معاينة الشراء كعميل
   const [clientOrder, setClientOrder] = useState({ name: '', phone: '', address: '', gov: 'القاهرة والجيزة', selectedSize: '', selectedColor: '', qty: 1 });
 
   const [cmd, setCmd] = useState(false);
@@ -85,7 +84,6 @@ export default function MerchantDashboard() {
 
   const [nc, setNc] = useState({ code: '', pct: 10 });
 
-  // جلب البيانات الفعلية من Supabase للمستخدم الحالي
   useEffect(() => {
     let off = false;
     (async () => {
@@ -101,13 +99,11 @@ export default function MerchantDashboard() {
       }
       setUid(storeKey);
 
-      // جلب بيانات المتجر
       const { data: sp } = await supabase.from('store_profiles').select('*').eq('user_id', storeKey).maybeSingle();
       if (sp && !off) {
         setStore((s) => ({ ...s, name: sp.store_name || s.name, slug: sp.store_slug || s.slug }));
       }
 
-      // جلب المنتجات الحقيقية من Supabase
       const { data: dbProducts } = await supabase.from('products').select('*').eq('store_id', storeKey);
       if (dbProducts && dbProducts.length > 0 && !off) {
         setProducts(dbProducts.map(p => ({
@@ -125,7 +121,6 @@ export default function MerchantDashboard() {
         })));
       }
 
-      // جلب الطلبات الحقيقية من Supabase
       const { data: dbOrders } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
       if (dbOrders && !off) {
         setOrders(dbOrders.map(o => ({
@@ -174,7 +169,6 @@ export default function MerchantDashboard() {
   const calcProfit = (+np.price || 0) - (+np.cost || 0);
   const calcDiscountPct = np.comparePrice && np.price ? Math.round(((+np.comparePrice - +np.price) / +np.comparePrice) * 100) : 0;
 
-  // حفظ منتج جديد فعلياً في Supabase
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
@@ -216,7 +210,6 @@ export default function MerchantDashboard() {
     }
   };
 
-  // حفظ التعديلات على المنتج في Supabase
   const updateProduct = async (e) => {
     e.preventDefault();
     if (!editProduct) return;
@@ -241,7 +234,6 @@ export default function MerchantDashboard() {
     }
   };
 
-  // محاكاة إتمام طلب حقيقي كعميل من صفحة المعاينة
   const handleClientSubmitOrder = async (e) => {
     e.preventDefault();
     if (!clientOrder.name || !clientOrder.phone) return say('يرجى كتابة الاسم ورقم الهاتف لإتمام الطلب');
@@ -342,7 +334,7 @@ export default function MerchantDashboard() {
 
           {tab === 'products' && (<>
             <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h1>إدارة المنتجات وصفحات الهبوط <small>{products.length} منتج مسجل في الدาตาبيز</small></h1>
+              <h1>إدارة المنتجات وصفحات الهبوط <small>{products.length} منتج مسجل في الدาتابيز</small></h1>
               <button className="btn p" onClick={() => setPm(true)}>+ إضافة منتج جديد</button>
             </div>
             <div className="card tw"><table className="tbl"><thead><tr><th>المنتج والمقاسات</th><th>الأسعار</th><th>الربح</th><th>المخزون</th><th>الإجراءات والعميل</th></tr></thead>
@@ -391,7 +383,7 @@ export default function MerchantDashboard() {
           <span>صافي الربح: <b style={{ color: '#2f855a' }}>{money(calcProfit)}</b></span>
           {calcDiscountPct > 0 && <span>نسبة الخصم: <b style={{ color: '#e53e3e' }}>{calcDiscountPct}%</b></span>}
         </div>
-        <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ في الدาตาبيز ونشر المنتج</button></form></Modal>)}
+        <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ في الدาتابيز ونشر المنتج</button></form></Modal>)}
 
       {/* مودال تعديل المنتج */}
       {editProduct && (<Modal t="تعديل المنتج وحفظه في قاعدة البيانات" x={() => setEditProduct(null)}><form onSubmit={updateProduct}>
@@ -409,7 +401,7 @@ export default function MerchantDashboard() {
         <Field l="الوصف"><textarea className="in" value={editProduct.desc} onChange={(e) => setEditProduct({ ...editProduct, desc: e.target.value })} /></Field>
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ التعديلات في قاعدة البيانات</button></form></Modal>)}
 
-      {/* نافذة معاينة صفحة الهبوط كعميل وإمكانية إتمام الشراء الفعلي وتوليد طلب في الداشبورد */}
+      {/* معاينة صفحة الهبوط وإتمام الطلب الحقيقي */}
       {previewProduct && (
         <div className="ov" onClick={() => setPreviewProduct(null)}>
           <div className="mod" style={{ maxWidth: 760, padding: 32, background: '#fff' }} onClick={(e) => e.stopPropagation()}>
