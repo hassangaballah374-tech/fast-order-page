@@ -11,9 +11,9 @@ const money = (n, c = 'ج.م') => `${Math.round(n).toLocaleString('en-US')} ${c}
 const NAV = [
   ['home', 'الرئيسية', '🏠'],
   ['orders', 'الطلبات', '📦'],
-  ['products', 'المنتجات', '🏷️'],
+  ['products', 'المنتجات والهبوط', '🏷️'],
   ['carts', 'السلات المتروكة', '🛒'],
-  ['marketing', 'التسويق والعروض', '📣'],
+  ['marketing', 'التسويق وعروض الكميات', '📣'],
   ['themes', 'الثيمات وتصميم المتجر', '🎨'],
   ['settings', 'الإعدادات', '⚙️']
 ];
@@ -37,8 +37,8 @@ const seedOrders = [
 ];
 
 const seedProducts = [
-  { id: 1, name: 'تيشيرت قطن أوفر سايز', price: 340, comparePrice: 450, cost: 170, stock: 42, colors: 'أسود, أبيض', sizes: 'S, M, L, XL', showBadge: true, media: [], desc: 'تيشيرت عالي الجودة' },
-  { id: 2, name: 'هودي شتوي مبطن', price: 780, comparePrice: 990, cost: 410, stock: 4, colors: 'رمادي, كحلي', sizes: 'M, L, XL', showBadge: true, media: [], desc: 'هودي دافئ ومريح' },
+  { id: 1, name: 'تيشيرت قطن أوفر سايز', price: 340, comparePrice: 450, cost: 170, stock: 42, colors: 'أسود, أبيض', sizes: 'S, M, L, XL', showBadge: true, media: [], desc: 'تيشيرت عالي الجودة قطن 100% بتصميم عصري يناسب كافة الإطلالات.' },
+  { id: 2, name: 'هودي شتوي مبطن', price: 780, comparePrice: 990, cost: 410, stock: 4, colors: 'رمادي, كحلي', sizes: 'M, L, XL', showBadge: true, media: [], desc: 'هودي دافئ ومريح مصمم خصيصاً لأيام الشتاء الباردة.' },
 ];
 
 const seedCarts = [
@@ -77,35 +77,23 @@ export default function MerchantDashboard() {
   const [pay, setPay] = useState({ cod: true, wallet: false, card: false });
   const [fields, setFields] = useState({ phone2: false, email: false, note: true, codFast: true, fakeProtection: true });
   
-  // عروض الكميات (Bundle Offers)
-  const [bundles, setBundles] = useState({
-    active: true,
-    item2Price: 599, // سعر قطعتين
-    item3Price: 799, // سعر 3 قطع
-  });
-
+  const [bundles, setBundles] = useState({ active: true, item2Price: 599, item3Price: 799 });
   const [upsell, setUpsell] = useState({ bundle: true, free: true, crossSellText: 'احصل على قطعة إضافية بنصف السعر!' });
   const [filter, setFilter] = useState('all');
   const [q, setQ] = useState('');
   const [sel, setSel] = useState([]);
   const [wiz, setWiz] = useState(null);
-  const [pm, setPm] = useState(false);
+  
+  const [pm, setPm] = useState(false); // مودال إضافة منتج جديد
+  const [editProduct, setEditProduct] = useState(null); // منتج قيد التعديل
+  const [previewProduct, setPreviewProduct] = useState(null); // معاينة صفحة الهبوط الاحترافية للمنتج
+
   const [cmd, setCmd] = useState(false);
   const [cq, setCq] = useState('');
   const [toast, setToast] = useState('');
 
-  // نموذج المنتج الجديد المطور (4 خانات أسعار + ألوان ومقاسات + صور/فيديو + بادج الخصم)
   const [np, setNp] = useState({
-    name: '',
-    cost: '',          // 1. التكلفة
-    comparePrice: '',  // 2. السعر قبل الخصم
-    price: '',         // 3. السعر بعد الخصم (البيع)
-    stock: 10,
-    colors: 'أحمر, أزرق, أسود',
-    sizes: 'S, M, L, XL',
-    showBadge: true,   // إظهار نسبة الخصم
-    media: [],         // صور أو فيديوهات
-    desc: ''
+    name: '', cost: '', comparePrice: '', price: '', stock: 10, colors: 'أحمر, أسود', sizes: 'S, M, L, XL', showBadge: true, media: [], desc: ''
   });
 
   const [nc, setNc] = useState({ code: '', pct: 10 });
@@ -138,9 +126,9 @@ export default function MerchantDashboard() {
   }, []);
 
   const say = (m) => { setToast(m); setTimeout(() => setToast(''), 2200); };
-  const finishWiz = () => { try { localStorage.setItem('spike_onboarded', '1'); } catch {} setWiz(0); say('🎉 متجرك جاهز للبيع بميزات تفوق شوبيفاي!'); setTab('products'); };
+  const finishWiz = () => { try { localStorage.setItem('spike_onboarded', '1'); } catch {} setWiz(0); say('🎉 متجرك جاهز وقوي للبيع!'); setTab('products'); };
 
-  const setSt = (ids, st) => { setOrders((o) => o.map((x) => (ids.includes(x.id) ? { ...x, st } : x))); setSel([]); say('تم تحديث الطلبات بنجاح'); };
+  const setSt = (ids, st) => { setOrders((o) => o.map((x) => (ids.includes(x.id) ? { ...x, st } : x))); setSel([]); say('تم تحديث الطلبات'); };
   const dupPhones = useMemo(() => { const c = {}; orders.filter((o) => o.st === 'pending').forEach((o) => (c[o.phone] = (c[o.phone] || 0) + 1)); return Object.keys(c).filter((k) => c[k] > 1); }, [orders]);
   const live = orders.filter((o) => o.st !== 'returned');
   const sales = live.reduce((a, o) => a + o.total, 0);
@@ -154,24 +142,21 @@ export default function MerchantDashboard() {
 
   const steps = [
     ['أنشئ متجرك', true, () => setWiz(1)],
-    ['أضف أول منتج مع الصور والمقاسات', products.length > 0, () => { setTab('products'); setPm(true); }],
-    ['فعّل عروض الكميات (قطعتين بسعر كذا)', bundles.active, () => setTab('marketing')],
+    ['أضف أول منتج مع صفحة هبوط احترافية', products.length > 0, () => { setTab('products'); setPm(true); }],
+    ['فعّل عروض الكميات', bundles.active, () => setTab('marketing')],
     ['اضبط أسعار الشحن والحماية', zones.every((z) => z[1] > 0), () => setTab('settings')],
     ['اختر ثيم المتجر', !!store.themeId, () => setTab('themes')],
-    ['اربط بكسل التتبع', pixelCount > 0, () => setTab('marketing')],
   ];
   const done = steps.filter((s) => s[1]).length;
 
   const pulse = [
     pending.length && { i: '⏱️', t: `${pending.length} طلبات جديدة تنتظر التأكيد السريع`, a: 'أكّد الكل', f: () => setSt(pending.map((o) => o.id), 'confirmed') },
-    dupPhones.length > 0 && { i: '🛡️', t: 'تم رصد أرقام متكررة — نظام الحماية ضد الطلبات الوهمية عمل بنجاح', a: 'مراجعة', f: () => { setTab('orders'); setFilter('pending'); } },
-    cartVal > 0 && { i: '🛒', t: `سلات متروكة بقيمة ${money(cartVal)} جاهزة للاسترجاع الفوري`, a: 'استرجع', f: () => setTab('carts') },
+    dupPhones.length > 0 && { i: '🛡️', t: 'حماية سبايك رصدت تكراراً بالأرقام وتم تدارك الطلب الوهمي', a: 'مراجعة', f: () => { setTab('orders'); setFilter('pending'); } },
   ].filter(Boolean);
 
   const actions = [...NAV.map((n) => ({ t: `اذهب إلى ${n[1]}`, f: () => setTab(n[0]) })), { t: 'إضافة منتج جديد', f: () => { setTab('products'); setPm(true); } }];
   const cmds = actions.filter((a) => a.t.includes(cq));
 
-  // حساب الربح والخصم تلقائياً عند إضافة منتج
   const calcProfit = (+np.price || 0) - (+np.cost || 0);
   const calcDiscountPct = np.comparePrice && np.price ? Math.round(((+np.comparePrice - +np.price) / +np.comparePrice) * 100) : 0;
 
@@ -194,16 +179,24 @@ export default function MerchantDashboard() {
       colors: np.colors,
       sizes: np.sizes,
       showBadge: np.showBadge,
-      media: np.media,
+      media: np.media.length > 0 ? np.media : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
       desc: np.desc
     }, ...products]);
     setNp({ name: '', cost: '', comparePrice: '', price: '', stock: 10, colors: '', sizes: '', showBadge: true, media: [], desc: '' });
     setPm(false);
-    say('✅ تمت إضافة المنتج مع عروض الأسعار وصفحة الهبوط الذكية');
+    say('✅ تم نشر المنتج وإنشاء صفحة الهبوط بنجاح');
+  };
+
+  const updateProduct = (e) => {
+    e.preventDefault();
+    if (!editProduct) return;
+    setProducts(products.map((p) => p.id === editProduct.id ? editProduct : p));
+    setEditProduct(null);
+    say('✅ تم تحديث المنتج وصفحة الهبوط بنجاح');
   };
 
   if (!ready) {
-    return <div className="app" dir="rtl" style={{ '--b': store.color, alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>جاري تجهيز متجرك الأقوى في السوق...</div>;
+    return <div className="app" dir="rtl" style={{ '--b': store.color, alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>جاري تشغيل منصة مبيعاتك...</div>;
   }
 
   return (
@@ -218,7 +211,7 @@ export default function MerchantDashboard() {
             </button>
           ))}
         </nav>
-        <div className="prog"><small>جاهزية المتجر المتكامل {done}/{steps.length}</small><div className="bar"><i style={{ width: `${(done / steps.length) * 100}%` }} /></div></div>
+        <div className="prog"><small>اكتمال المتجر {done}/{steps.length}</small><div className="bar"><i style={{ width: `${(done / steps.length) * 100}%` }} /></div></div>
       </aside>
 
       <main className="main">
@@ -232,21 +225,21 @@ export default function MerchantDashboard() {
 
         <section className="pg">
           {tab === 'home' && (<>
-            <h1>أهلاً بك في منصة مبيعاتك الخارقة 🚀 <small>متجر متكامل يتفوق على شوبيفاي و WooCommerce</small></h1>
+            <h1>أهلاً بك في منصة مبيعاتك الخارقة 🚀 <small>متجر احترافي ينافس كبرى المتاجر العالمية</small></h1>
             <div className="grid4">
-              {[['إجمالي المبيعات', money(sales), [3, 5, 4, 7, 6, 9, 8]], ['صافي الأرباح', money(profit), [2, 3, 3, 4, 5, 5, 7]], ['نسبة تأكيد الطلبات', `${confirmRate}%`, [6, 5, 7, 6, 8, 7, 9]], ['طلبات جديدة (COD)', pending.length, [1, 3, 2, 4, 3, 5, 4]]].map(([t, v, d]) => (
+              {[['إجمالي المبيعات', money(sales), [3, 5, 4, 7, 6, 9, 8]], ['صافي الأرباح', money(profit), [2, 3, 3, 4, 5, 5, 7]], ['نسبة التأكيد والشحن', `${confirmRate}%`, [6, 5, 7, 6, 8, 7, 9]], ['طلبات جديدة (COD)', pending.length, [1, 3, 2, 4, 3, 5, 4]]].map(([t, v, d]) => (
                 <div className="card kpi" key={t}><small>{t}</small><b>{v}</b><Spark d={d} c={store.color} /></div>
               ))}
             </div>
             <div className="two">
               <div className="card">
-                <h3>✨ نظام الذكاء والتنبيهات <small>حماية من الطلبات الوهمية واسترجاع السلات</small></h3>
+                <h3>✨ نظام الذكاء والتنبيهات <small>حماية من الطلبات الوهمية</small></h3>
                 {pulse.length === 0 ? <p className="mut">متجرك يعمل بكفاءة تامة ولا توجد تنبيهات معلقة 👌</p> : pulse.map((p, i) => (
                   <div className="pls" key={i}><span>{p.i}</span><p>{p.t}</p><button className="btn p sm" onClick={p.f}>{p.a}</button></div>
                 ))}
               </div>
               <div className="card">
-                <h3>🚀 قائمة المهام للوصول للاحتراف <small>{done} من {steps.length}</small></h3>
+                <h3>🚀 قائمة الإعداد السريع <small>{done} من {steps.length}</small></h3>
                 <div className="bar big"><i style={{ width: `${(done / steps.length) * 100}%` }} /></div>
                 {steps.map(([t, ok, f]) => (
                   <button key={t} className={'stp' + (ok ? ' ok' : '')} onClick={f}><span>{ok ? '✓' : ''}</span>{t}</button>
@@ -256,79 +249,70 @@ export default function MerchantDashboard() {
           </>)}
 
           {tab === 'orders' && (<>
-            <h1>الطلبات (COD + الحماية من الوهمي) <small>تأكيد سريع ومتابعة الشحنات</small></h1>
+            <h1>الطلبات (COD + حماية الطلبات الوهمية)</h1>
             <div className="row">
               {[['all', 'الكل', orders.length], ...Object.entries(ST).map(([k, v]) => [k, v[0], orders.filter((o) => o.st === k).length])].map(([k, t, n]) => (
                 <button key={k} className={'chip' + (filter === k ? ' act' : '')} onClick={() => setFilter(k)}>{t} <em>{n}</em></button>
               ))}
               <input className="in" style={{ marginInlineStart: 'auto', maxWidth: 220 }} placeholder="بحث بالاسم أو الهاتف…" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-            {sel.length > 0 && (
-              <div className="bulk"><b>{sel.length} طلب محدد</b>
-                <button className="btn p sm" onClick={() => setSt(sel, 'confirmed')}>تأكيد جماعي</button>
-                <button className="btn sm" onClick={() => setSt(sel, 'shipped')}>تحويل للشحن</button>
-                <button className="btn sm" onClick={() => setSel([])}>إلغاء التحديد</button>
-              </div>)}
             <div className="card tw"><table className="tbl"><thead><tr><th /><th>#</th><th>العميل ورقم الهاتف</th><th>المحافظة</th><th>الإجمالي</th><th>الربح</th><th>الحالة</th><th /></tr></thead>
               <tbody>{shown.map((o) => (
                 <tr key={o.id}>
                   <td><input type="checkbox" checked={sel.includes(o.id)} onChange={(e) => setSel(e.target.checked ? [...sel, o.id] : sel.filter((x) => x !== o.id))} /></td>
                   <td className="num">#{o.id}</td>
-                  <td><b>{o.name}</b> {dupPhones.includes(o.phone) && o.st === 'pending' && <span className="warn">⚠️ رقم متكرر (احذر طلب وهمي)</span>}<small className="num" dir="ltr">{o.phone}</small></td>
+                  <td><b>{o.name}</b> {dupPhones.includes(o.phone) && o.st === 'pending' && <span className="warn">⚠️ رقم متكرر</span>}<small className="num" dir="ltr">{o.phone}</small></td>
                   <td>{o.gov}</td><td className="num">{money(o.total)}</td>
                   <td className="num" style={{ color: '#2f855a' }}>{money(o.total - o.cost - o.ship)}</td>
                   <td><select className="in sm" style={{ color: ST[o.st][1] }} value={o.st} onChange={(e) => setSt([o.id], e.target.value)}>{Object.entries(ST).map(([k, v]) => <option key={k} value={k}>{v[0]}</option>)}</select></td>
-                  <td><a className="btn sm" target="_blank" rel="noreferrer" href={wa(o.phone, `أهلاً ${o.name}، نؤكد طلبك رقم ${o.id} من ${store.name} بقيمة ${money(o.total)}. هل نؤكد الشحن الآن؟`)}>💬 تأكيد واتساب</a></td>
+                  <td><a className="btn sm" target="_blank" rel="noreferrer" href={wa(o.phone, `أهلاً ${o.name}، نؤكد طلبك رقم ${o.id} من ${store.name} بقيمة ${money(o.total)}. هل نؤكد الشحن؟`)}>💬 واتساب</a></td>
                 </tr>))}</tbody></table>
-              {shown.length === 0 && <p className="mut c">لا توجد طلبات مطابقة للبحث</p>}
             </div>
           </>)}
 
           {tab === 'products' && (<>
-            <h1>المنتجات والمقاسات والألوان <small>{products.length} منتج نشط مع إمكانية إضافة الصور والفيديوهات</small></h1>
-            <div className="card tw"><table className="tbl"><thead><tr><th>المنتج والمقاسات</th><th>السعر الأساسي</th><th>التكلفة والربح</th><th>المخزون</th><th /></tr></thead>
+            <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h1>المنتجات وصفحات الهبوط الاحترافية <small>{products.length} منتج نشط</small></h1>
+              <button className="btn p" onClick={() => setPm(true)}>+ إضافة منتج وصفحة هبوط</button>
+            </div>
+            <div className="card tw"><table className="tbl"><thead><tr><th>المنتج والمقاسات</th><th>الأسعار</th><th>الربح</th><th>المخزون</th><th>الإجراءات</th></tr></thead>
               <tbody>{products.map((p) => (
                 <tr key={p.id}>
-                  <td>
-                    <b>{p.name}</b>
-                    <small>اللوان: {p.colors || 'افتراضي'} · المقاسات: {p.sizes || 'افتراضي'}</small>
-                  </td>
-                  <td className="num">
-                    <span style={{ textDecoration: 'line-through', color: '#999', fontSize: 11, marginInlineEnd: 6 }}>{money(p.comparePrice)}</span>
-                    <b style={{ color: 'var(--b)' }}>{money(p.price)}</b>
-                    {p.showBadge && p.comparePrice > p.price && <span className="badge-off" style={{ background: '#e53e3e', color: '#fff', fontSize: 10, padding: '2px 6px', borderRadius: 6, marginInlineStart: 6 }}>خصم {Math.round(((p.comparePrice - p.price)/p.comparePrice)*100)}%</span>}
-                  </td>
-                  <td className="num">
-                    تكلفة: {money(p.cost)} <br />
-                    <span style={{ color: '#2f855a', fontWeight: 800 }}>ربح: {money(p.price - p.cost)}</span>
-                  </td>
+                  <td><b>{p.name}</b><small>ألوان: {p.colors || 'عام'} · مقاسات: {p.sizes || 'عام'}</small></td>
+                  <td className="num"><span style={{ textDecoration: 'line-through', color: '#999', fontSize: 11, marginInlineEnd: 6 }}>{money(p.comparePrice)}</span><b>{money(p.price)}</b></td>
+                  <td className="num" style={{ color: '#2f855a', fontWeight: 800 }}>{money(p.price - p.cost)}</td>
                   <td><div className="stk">
                     <button onClick={() => setProducts(products.map((x) => (x.id === p.id ? { ...x, stock: Math.max(0, x.stock - 1) } : x)))}>−</button>
                     <b className={p.stock <= 5 ? 'warn' : ''}>{p.stock}</b>
                     <button onClick={() => setProducts(products.map((x) => (x.id === p.id ? { ...x, stock: x.stock + 1 } : x)))}>+</button></div></td>
-                  <td><button className="btn sm" onClick={() => { setProducts(products.filter((x) => x.id !== p.id)); say('تم الحذف'); }}>حذف</button></td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="btn sm" onClick={() => setEditProduct({ ...p })}>✏️ تعديل</button>
+                      <button className="btn sm p" onClick={() => setPreviewProduct(p)}>🌐 معاينة الهبوط</button>
+                      <button className="btn sm" style={{ color: '#c53030' }} onClick={() => { setProducts(products.filter((x) => x.id !== p.id)); say('تم الحذف'); }}>حذف</button>
+                    </div>
+                  </td>
                 </tr>))}</tbody></table>
-              {products.length === 0 && <p className="mut c">لا توجد منتجات — أضف أول منتج لك الآن</p>}
             </div>
           </>)}
 
           {tab === 'carts' && (<>
-            <h1>السلات المتروكة <small>استرجع العملاء الذين لم يكملوا الطلب</small></h1>
+            <h1>السلات المتروكة</h1>
             <div className="card">{carts.map((c) => (
               <div className="pls" key={c.id}><span>🛒</span><p><b>{c.name}</b> · {c.items} منتجات · {money(c.value)} <small>{c.ago}</small></p>
-                <a className="btn p sm" target="_blank" rel="noreferrer" href={wa(c.phone, `أهلاً ${c.name} 👋 لاحظنا إنك نسيت منتجاتك في ${store.name}. أكمل طلبك الآن!`)}>استرجاع فوري بالواتساب</a></div>))}</div>
+                <a className="btn p sm" target="_blank" rel="noreferrer" href={wa(c.phone, `أهلاً ${c.name} 👋 أكمل طلبك الآن في ${store.name}!`)}>استرجاع فوري بالواتساب</a></div>))}</div>
           </>)}
 
           {tab === 'marketing' && (<>
             <h1>التسويق وعروض الكميات (Bundle Offers)</h1>
             <div className="two">
-              <div className="card"><h3>🎁 عرض الكميات التلقائي (قطعتين بسعر كذا)</h3>
-                <div className="pls"><p><b>تفعيل عروض الكميات في صفحة المنتج والدفع</b><small>مثل: اشتري قطعة بـ 400 أو قطعتين بـ 699</small></p><Tog on={bundles.active} set={(v) => setBundles({ ...bundles, active: v })} /></div>
+              <div className="card"><h3>🎁 عروض الكميات التلقائية</h3>
+                <div className="pls"><p><b>تفعيل عرض قطعتين بسعر خاص و3 قطع</b></p><Tog on={bundles.active} set={(v) => setBundles({ ...bundles, active: v })} /></div>
                 <Field l="سعر قطعتين معاً (ج.م)"><input className="in num" type="number" value={bundles.item2Price} onChange={(e) => setBundles({ ...bundles, item2Price: +e.target.value })} /></Field>
                 <Field l="سعر 3 قطع معاً (ج.م)"><input className="in num" type="number" value={bundles.item3Price} onChange={(e) => setBundles({ ...bundles, item3Price: +e.target.value })} /></Field>
               </div>
               <div className="card"><h3>🎟️ كوبونات الخصم</h3>
-                <form className="row" onSubmit={(e) => { e.preventDefault(); if (!nc.code) return; setCoupons([{ code: nc.code.toUpperCase(), pct: +nc.pct, uses: 0, on: true }, ...coupons]); setNc({ code: '', pct: 10 }); say('تم إنشاء الكوبون'); }}>
+                <form className="row" onSubmit={(e) => { e.preventDefault(); if (!nc.code) return; setCoupons([{ code: nc.code.toUpperCase(), pct: +nc.pct, uses: 0, on: true }, ...coupons]); setNc({ code: '', pct: 10 }); say('تم إضافة الكوبون'); }}>
                   <input className="in" placeholder="الكود مثل SALE20" value={nc.code} onChange={(e) => setNc({ ...nc, code: e.target.value })} />
                   <input className="in" type="number" style={{ maxWidth: 80 }} value={nc.pct} onChange={(e) => setNc({ ...nc, pct: e.target.value })} /><button className="btn p">إضافة</button></form>
                 {coupons.map((c, i) => (<div className="pls" key={c.code}><span>%</span><p><b className="num">{c.code}</b> خصم {c.pct}% <small>استُخدم {c.uses} مرة</small></p><Tog on={c.on} set={(v) => setCoupons(coupons.map((x, j) => (j === i ? { ...x, on: v } : x)))} /></div>))}
@@ -341,7 +325,7 @@ export default function MerchantDashboard() {
           </>)}
 
           {tab === 'themes' && (<>
-            <h1>الثيمات وتصميم المتجر (5 ثيمات فعلية) <small>اختر أو بدل بين التصاميم بضغطة زر</small></h1>
+            <h1>الثيمات وتصميم المتجر (5 ثيمات فعلية)</h1>
             <div className="grid4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
               {THEMES_LIST.map((th) => (
                 <div key={th.id} className={'card' + (store.themeId === th.id ? ' act-theme' : '')} style={{ cursor: 'pointer', border: store.themeId === th.id ? `2px solid ${store.color}` : undefined }} onClick={() => { setStore({ ...store, themeId: th.id, color: th.primary }); say(`تم تفعيل ${th.name}`); }}>
@@ -355,25 +339,17 @@ export default function MerchantDashboard() {
 
           {tab === 'settings' && (<>
             <h1>الإعدادات والحماية</h1>
-            <div className="two">
-              <div className="card"><h3>🏪 إعدادات المتجر</h3>
-                <Field l="اسم المتجر"><input className="in" value={store.name} onChange={(e) => setStore({ ...store, name: e.target.value })} /></Field>
-                <Field l="رابط المتجر"><input className="in num" dir="ltr" value={store.slug} onChange={(e) => setStore({ ...store, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} /></Field>
-                <Field l="لون الهوية"><input type="color" value={store.color} onChange={(e) => setStore({ ...store, color: e.target.value })} className="clr" /></Field>
-              </div>
-              <div className="card"><h3>🛡️ الحماية ضد الطلبات الوهمية والدفع السريع</h3>
-                <div className="pls"><p><b>نظام الحماية الذكي للطلبات الوهمية</b><small>حظر الأرقام المتكررة والعناوين غير المكتملة</small></p><Tog on={fields.fakeProtection} set={(v) => setFields({ ...fields, fakeProtection: v })} /></div>
-                <div className="pls"><p><b>طلب سريع 1-Click COD</b></p><Tog on={fields.codFast} set={(v) => setFields({ ...fields, codFast: v })} /></div>
-                <button className="btn p" style={{ marginTop: 14 }} onClick={() => say('✅ تم الحفظ')}>حفظ الإعدادات</button>
-              </div>
+            <div className="card"><h3>🛡️ الحماية ضد الطلبات الوهمية والدفع السريع</h3>
+              <div className="pls"><p><b>نظام الحماية الذكي للطلبات الوهمية</b><small>حظر الأرقام المتكررة والعناوين غير المكتملة</small></p><Tog on={fields.fakeProtection} set={(v) => setFields({ ...fields, fakeProtection: v })} /></div>
+              <button className="btn p" style={{ marginTop: 14 }} onClick={() => say('✅ تم الحفظ')}>حفظ الإعدادات</button>
             </div>
           </>)}
         </section>
       </main>
 
-      {/* مودال إضافة منتج متطور مع الصور ومقاسات وألوان و4 خانات أسعار */}
-      {pm && (<Modal t="إضافة منتج جديد (الصور، المقاسات، والأسعار)" x={() => setPm(false)}><form onSubmit={addProduct}>
-        <Field l="اسم المنتج"><input className="in" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} autoFocus placeholder="مثال: حذاء رياضي فاخر" /></Field>
+      {/* مودال إضافة منتج متطور */}
+      {pm && (<Modal t="إضافة منتج وصفحة هبوط جديدة" x={() => setPm(false)}><form onSubmit={addProduct}>
+        <Field l="اسم المنتج"><input className="in" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} autoFocus placeholder="اسم المنتج التسويقي" /></Field>
         
         <div className="row">
           <Field l="1. سعر التكلفة (ج.م)"><input className="in num" type="number" value={np.cost} onChange={(e) => setNp({ ...np, cost: e.target.value })} placeholder="150" /></Field>
@@ -383,47 +359,102 @@ export default function MerchantDashboard() {
 
         <div className="row">
           <Field l="المخزون المتوفر"><input className="in num" type="number" value={np.stock} onChange={(e) => setNp({ ...np, stock: e.target.value })} /></Field>
-          <Field l="الألوان المتاحة (بينها فاصلة)"><input className="in" value={np.colors} onChange={(e) => setNp({ ...np, colors: e.target.value })} placeholder="أسود، أبيض، رمادي" /></Field>
-          <Field l="المقاسات (بينها فاصلة)"><input className="in" value={np.sizes} onChange={(e) => setNp({ ...np, sizes: e.target.value })} placeholder="S, M, L, XL" /></Field>
+          <Field l="الألوان المتاحة"><input className="in" value={np.colors} onChange={(e) => setNp({ ...np, colors: e.target.value })} placeholder="أسود، أبيض" /></Field>
+          <Field l="المقاسات المتاحة"><input className="in" value={np.sizes} onChange={(e) => setNp({ ...np, sizes: e.target.value })} placeholder="S, M, L, XL" /></Field>
         </div>
 
-        <Field l="رفع صور أو فيديوهات للمنتج من الجهاز">
+        <Field l="رفع صور أو فيديوهات للمنتج">
           <input type="file" multiple accept="image/*,video/*" onChange={handleMediaUpload} className="in" style={{ padding: 8 }} />
         </Field>
 
-        {np.media.length > 0 && (
-          <div className="row" style={{ gap: 6, margin: '8px 0' }}>
-            {np.media.map((url, idx) => (
-              <img key={idx} src={url} alt="preview" style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--ln)' }} />
-            ))}
-          </div>
-        )}
-
         <div className="pls" style={{ margin: '8px 0' }}>
-          <p><b>إظهار شريط نسبة الخصم على المنتج</b><small>توليد شعار خصم تلقائي للعملاء</small></p>
+          <p><b>إظهار شريط نسبة الخصم على المنتج</b></p>
           <Tog on={np.showBadge} set={(v) => setNp({ ...np, showBadge: v })} />
         </div>
 
-        <Field l="وصف المنتج التفصيلي">
-          <textarea className="in" style={{ minHeight: 60 }} value={np.desc} onChange={(e) => setNp({ ...np, desc: e.target.value })} placeholder="اكتب المميزات التي تجعل العميل يشتري..." />
+        <Field l="وصف صفحة الهبوط التسويقي">
+          <textarea className="in" style={{ minHeight: 60 }} value={np.desc} onChange={(e) => setNp({ ...np, desc: e.target.value })} placeholder="تفاصيل ومميزات المنتج..." />
         </Field>
 
         <div className="row" style={{ background: 'var(--s2)', padding: 10, borderRadius: 12, justifyContent: 'space-between' }}>
           <span>صافي الربح المتوقع: <b style={{ color: '#2f855a' }}>{money(calcProfit)}</b></span>
-          {calcDiscountPct > 0 && <span>نسبة الخصم المعروضة: <b style={{ color: '#e53e3e' }}>{calcDiscountPct}%</b></span>}
+          {calcDiscountPct > 0 && <span>نسبة الخصم: <b style={{ color: '#e53e3e' }}>{calcDiscountPct}%</b></span>}
         </div>
 
-        <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ ونشر المنتج في المتجر</button></form></Modal>)}
+        <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ ونشر المنتج</button></form></Modal>)}
+
+      {/* مودال تعديل المنتج الحالي */}
+      {editProduct && (<Modal t="تعديل تفاصيل المنتج وصفحة الهبوط" x={() => setEditProduct(null)}><form onSubmit={updateProduct}>
+        <Field l="اسم المنتج"><input className="in" value={editProduct.name} onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })} /></Field>
+        <div className="row">
+          <Field l="التكلفة"><input className="in num" type="number" value={editProduct.cost} onChange={(e) => setEditProduct({ ...editProduct, cost: +e.target.value })} /></Field>
+          <Field l="السعر قبل الخصم"><input className="in num" type="number" value={editProduct.comparePrice} onChange={(e) => setEditProduct({ ...editProduct, comparePrice: +e.target.value })} /></Field>
+          <Field l="السعر بعد الخصم"><input className="in num" type="number" value={editProduct.price} onChange={(e) => setEditProduct({ ...editProduct, price: +e.target.value })} /></Field>
+        </div>
+        <div className="row">
+          <Field l="المخزون"><input className="in num" type="number" value={editProduct.stock} onChange={(e) => setEditProduct({ ...editProduct, stock: +e.target.value })} /></Field>
+          <Field l="الألوان"><input className="in" value={editProduct.colors} onChange={(e) => setEditProduct({ ...editProduct, colors: e.target.value })} /></Field>
+          <Field l="المقاسات"><input className="in" value={editProduct.sizes} onChange={(e) => setEditProduct({ ...editProduct, sizes: e.target.value })} /></Field>
+        </div>
+        <Field l="وصف المنتج التسويقي">
+          <textarea className="in" value={editProduct.desc} onChange={(e) => setEditProduct({ ...editProduct, desc: e.target.value })} />
+        </Field>
+        <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ التعديلات</button></form></Modal>)}
+
+      {/* مودال معاينة صفحة الهبوط الاحترافية (Professional Landing Page Preview) */}
+      {previewProduct && (
+        <div className="ov" onClick={() => setPreviewProduct(null)}>
+          <div className="mod" style={{ maxWidth: 680, padding: 32, background: '#fff' }} onClick={(e) => e.stopPropagation()}>
+            <div className="mh">
+              <span style={{ background: 'var(--b)', color: '#fff', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 800 }}>معاينة صفحة الهبوط المباشرة</span>
+              <button className="btn sm" onClick={() => setPreviewProduct(null)}>إغلاق المعاينة ✕</button>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 16 }}>
+              <div>
+                <img src={previewProduct.media?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'} alt="product" style={{ width: '100%', height: 280, objectFit: 'cover', borderRadius: 16, border: '1px solid var(--ln)' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <h2 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>{previewProduct.name}</h2>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <span className="num" style={{ fontSize: 20, fontWeight: 900, color: 'var(--b)' }}>{money(previewProduct.price)}</span>
+                  <span className="num" style={{ textDecoration: 'line-through', color: '#888', fontSize: 14 }}>{money(previewProduct.comparePrice)}</span>
+                </div>
+                <p style={{ color: '#666', fontSize: 13, lineHeight: 1.6, margin: 0 }}>{previewProduct.desc || 'لا يوجد وصف إضافي'}</p>
+                
+                {previewProduct.sizes && (
+                  <div>
+                    <small style={{ fontWeight: 700, color: '#444' }}>اختر المقاس:</small>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                      {previewProduct.sizes.split(',').map((s, idx) => (
+                        <button key={idx} className="btn sm" style={{ padding: '6px 12px' }}>{s.trim()}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {bundles.active && (
+                  <div style={{ background: 'color-mix(in srgb,var(--b) 10%, #fff)', border: '1px solid var(--b)', borderRadius: 12, padding: 10, fontSize: 12 }}>
+                    <b>🔥 عروض الكميات المتاحة:</b>
+                    <div>قطعتين بـ <span className="num" style={{ fontWeight: 800 }}>{money(bundles.item2Price)}</span></div>
+                    <div>3 قطع بـ <span className="num" style={{ fontWeight: 800 }}>{money(bundles.item3Price)}</span></div>
+                  </div>
+                )}
+
+                <button className="btn p" style={{ width: '100%', marginTop: 'auto', minHeight: 46, fontSize: 15 }}>اطلب الآن (الدفع عند الاستلام)</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {wiz > 0 && (<div className="ov"><div className="mod wz">
         <div className="dots">{[1, 2, 3].map((n) => <i key={n} className={wiz >= n ? 'on' : ''} />)}</div>
-        {wiz === 1 && (<><h2>مرحبًا في متجرك الأقوى في السوق 👋</h2><p className="mut">خطوات معدودة لتكون جاهزاً للبيع. ما اسم متجرك؟</p>
-          <Field l="اسم المتجر"><input className="in" value={store.name} onChange={(e) => setStore({ ...store, name: e.target.value })} /></Field>
-          <Field l="رابط المتجر"><input className="in num" dir="ltr" value={store.slug} onChange={(e) => setStore({ ...store, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} /></Field></>)}
-        {wiz === 2 && (<><h2>اختر الثيم والهوية البصرية 🎨</h2>
-          <div className="row">{['#0a7f86', '#e08f4f', '#6b46c1', '#c53030', '#2f855a', '#1a202c'].map((c) => <button key={c} type="button" className={'sw' + (store.color === c ? ' act' : '')} style={{ background: c }} onClick={() => setStore({ ...store, color: c })} aria-label={c} />)}</div>
-          <div className="pv"><b>{store.name}</b><button className="btn p" style={{ width: '100%' }}>اطلب الآن (COD)</button></div></>)}
-        {wiz === 3 && (<><h2>متجرك الخارق جاهز تماماً! 🎉</h2><p className="mut">رابط متجرك: <b className="num" dir="ltr">{store.slug}.spike.shop</b></p></>)}
+        {wiz === 1 && (<><h2>مرحبًا في متجرك الخارق 👋</h2><p className="mut">ما اسم متجرك؟</p>
+          <Field l="اسم المتجر"><input className="in" value={store.name} onChange={(e) => setStore({ ...store, name: e.target.value })} /></Field></>)}
+        {wiz === 2 && (<><h2>اختر الثيم 🎨</h2>
+          <div className="row">{['#0a7f86', '#e08f4f', '#6b46c1', '#c53030', '#2f855a'].map((c) => <button key={c} type="button" className={'sw' + (store.color === c ? ' act' : '')} style={{ background: c }} onClick={() => setStore({ ...store, color: c })} aria-label={c} />)}</div></>)}
+        {wiz === 3 && (<><h2>متجرك جاهز! 🎉</h2><p className="mut">رابط متجرك: <b className="num" dir="ltr">{store.slug}.spike.shop</b></p></>)}
         <div className="row" style={{ justifyContent: 'space-between', marginTop: 16 }}>
           <button className="btn" onClick={() => (wiz > 1 ? setWiz(wiz - 1) : finishWiz())}>{wiz > 1 ? 'رجوع' : 'تخطي'}</button>
           <button className="btn p" onClick={() => (wiz < 3 ? setWiz(wiz + 1) : finishWiz())}>{wiz < 3 ? 'التالي' : 'ابدأ البيع الآن'}</button></div>
@@ -466,9 +497,8 @@ export default function MerchantDashboard() {
         .stk{display:inline-flex;align-items:center;gap:8px}.stk button{width:28px;height:28px;border-radius:8px;border:1px solid var(--ln);background:var(--s2);cursor:pointer;font-weight:800}
         .tog{width:44px;height:26px;border-radius:99px;border:0;background:#cfd6d3;position:relative;cursor:pointer;flex:none;transition:.2s}.tog i{position:absolute;top:3px;inset-inline-start:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}.tog.on{background:var(--b)}.tog.on i{inset-inline-start:21px}
         .stp{display:flex;align-items:center;gap:10px;width:100%;padding:10px 4px;border:0;background:none;font:600 13.5px Cairo;color:var(--ink);cursor:pointer;text-align:start}.stp span{width:22px;height:22px;border-radius:50%;border:2px solid var(--ln);display:grid;place-items:center;font-size:12px;color:#fff}.stp.ok span{background:var(--b);border-color:var(--b)}.stp.ok{color:var(--mut);text-decoration:line-through}
-        .pv{border:1px dashed var(--ln);border-radius:16px;padding:14px;margin-bottom:12px;display:grid;gap:8px;background:var(--s2)}
         .ov{position:fixed;inset:0;z-index:50;background:rgba(5,35,38,.55);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px}.ov.top{align-items:start;padding-top:12vh}
-        .mod{width:100%;max-width:540px;max-height:90vh;overflow:auto;background:var(--s);border:1px solid var(--ln);border-radius:24px;padding:24px;box-shadow:0 30px 80px -20px rgba(3,30,33,.55);animation:pop .18s ease-out}.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+        .mod{width:100%;max-width:560px;max-height:90vh;overflow:auto;background:var(--s);border:1px solid var(--ln);border-radius:24px;padding:24px;box-shadow:0 30px 80px -20px rgba(3,30,33,.55);animation:pop .18s ease-out}.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
         .wz h2{margin:6px 0 4px;font-size:22px}.dots{display:flex;gap:6px;margin-bottom:10px}.dots i{height:5px;flex:1;border-radius:9px;background:var(--s2)}.dots i.on{background:var(--b)}
         .sw{width:42px;height:42px;border-radius:50%;border:3px solid var(--s);box-shadow:0 0 0 1px var(--ln);cursor:pointer}.sw.act{box-shadow:0 0 0 3px var(--ink)}.cm .nv{min-height:40px}
         .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:14px;font-weight:700;z-index:60}
