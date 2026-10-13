@@ -172,7 +172,7 @@ export default function MerchantDashboard() {
   const calcProfit = (+np.price || 0) - (+np.cost || 0);
   const calcDiscountPct = np.comparePrice && np.price ? Math.round(((+np.comparePrice - +np.price) / +np.comparePrice) * 100) : 0;
 
-  // الحفظ الآمن باستخدام الأعمدة الأساسية فقط لضمان عدم حدوث أي خطأ
+  // الحفظ الآمن باستخدام الأعمدة الأساسية والمضمونة في جدول المنتجات
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
