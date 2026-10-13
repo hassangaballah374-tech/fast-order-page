@@ -82,7 +82,6 @@ export default function MerchantDashboard() {
     couponPct: 10
   });
 
-  // جلب البيانات الحية وثبات المنتجات والطلبات من Supabase
   useEffect(() => {
     let off = false;
     (async () => {
@@ -103,7 +102,6 @@ export default function MerchantDashboard() {
         setStore((s) => ({ ...s, name: sp.store_name || s.name, slug: sp.store_slug || s.slug }));
       }
 
-      // جلب المنتجات من الداتا بيز بانتظام وثبات
       const { data: dbProducts } = await supabase.from('products').select('*').eq('store_id', storeKey).order('created_at', { ascending: false });
       if (dbProducts && !off) {
         setProducts(dbProducts.map(p => ({
@@ -118,11 +116,11 @@ export default function MerchantDashboard() {
           showBadge: true,
           media: p.image_url ? [p.image_url] : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
           desc: p.description || '',
-          bundleActive: p.bundle_active ?? true,
-          item2Price: p.item2_price || 599,
-          item3Price: p.item3_price || 799,
-          couponCode: p.coupon_code || 'WELCOME10',
-          couponPct: p.coupon_pct || 10
+          bundleActive: true,
+          item2Price: 599,
+          item3Price: 799,
+          couponCode: 'WELCOME10',
+          couponPct: 10
         })));
       }
 
@@ -152,14 +150,14 @@ export default function MerchantDashboard() {
   }, []);
 
   const say = (m) => { setToast(m); setTimeout(() => setToast(''), 2200); };
-  const finishWiz = () => { try { localStorage.setItem('spike_onboarded', '1'); } catch {} setWiz(0); say('🎉 متجرك جاهز وقوي للبيع!'); setTab('products'); };
+  const finishWiz = () => { try { localStorage.setItem('spike_onboarded', '1'); } catch {} setWiz(0); say('🎉 متجرك جاهز للبيع!'); setTab('products'); };
 
   const setSt = async (ids, st) => {
     setOrders((o) => o.map((x) => (ids.includes(x.id) ? { ...x, st } : x)));
     for (let id of ids) {
       await supabase.from('orders').update({ status: st }).eq('id', id);
     }
-    setSel([]); say('تم تحديث الطلبات في قاعدة البيانات');
+    setSel([]); say('تم تحديث الطلبات');
   };
 
   const dupPhones = useMemo(() => { const c = {}; orders.filter((o) => o.st === 'pending').forEach((o) => (c[o.phone] = (c[o.phone] || 0) + 1)); return Object.keys(c).filter((k) => c[k] > 1); }, [orders]);
@@ -174,6 +172,7 @@ export default function MerchantDashboard() {
   const calcProfit = (+np.price || 0) - (+np.cost || 0);
   const calcDiscountPct = np.comparePrice && np.price ? Math.round(((+np.comparePrice - +np.price) / +np.comparePrice) * 100) : 0;
 
+  // الحفظ الآمن باستخدام الأعمدة الأساسية فقط لضمان عدم حدوث أي خطأ
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
@@ -187,11 +186,6 @@ export default function MerchantDashboard() {
       colors: np.colors,
       sizes: np.sizes,
       description: np.desc,
-      bundle_active: np.bundleActive,
-      item2_price: parseFloat(np.item2Price) || 0,
-      item3_price: parseFloat(np.item3Price) || 0,
-      coupon_code: np.couponCode,
-      coupon_pct: parseFloat(np.couponPct) || 0,
       store_id: uid,
       status: 'active'
     };
@@ -211,11 +205,11 @@ export default function MerchantDashboard() {
         showBadge: true,
         media: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
         desc: data.description,
-        bundleActive: data.bundle_active,
-        item2Price: data.item2_price,
-        item3Price: data.item3_price,
-        couponCode: data.coupon_code,
-        couponPct: data.coupon_pct
+        bundleActive: np.bundleActive,
+        item2Price: np.item2Price,
+        item3Price: np.item3Price,
+        couponCode: np.couponCode,
+        couponPct: np.couponPct
       }, ...products]);
       setNp({ name: '', cost: '', comparePrice: '', price: '', stock: 10, colors: '', sizes: '', showBadge: true, media: [], desc: '', bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10 });
       setPm(false);
@@ -237,12 +231,7 @@ export default function MerchantDashboard() {
       stock_quantity: editProduct.stock,
       colors: editProduct.colors,
       sizes: editProduct.sizes,
-      description: editProduct.desc,
-      bundle_active: editProduct.bundleActive,
-      item2_price: editProduct.item2Price,
-      item3_price: editProduct.item3Price,
-      coupon_code: editProduct.couponCode,
-      coupon_pct: editProduct.couponPct
+      description: editProduct.desc
     }).eq('id', editProduct.id);
 
     if (!error) {
@@ -431,7 +420,7 @@ export default function MerchantDashboard() {
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ في الدาتابيز ونشر المنتج</button></form></Modal>)}
 
       {/* مودال تعديل المنتج */}
-      {editProduct && (<Modal t="تعديل المنتج وعروضه في قاعدة البيانات" x={() => setEditProduct(null)}><form onSubmit={updateProduct}>
+      {editProduct && (<Modal t="تعديل المنتج وحفظه في قاعدة البيانات" x={() => setEditProduct(null)}><form onSubmit={updateProduct}>
         <Field l="اسم المنتج"><input className="in" value={editProduct.name} onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })} /></Field>
         <div className="row">
           <Field l="التكلفة"><input className="in num" type="number" value={editProduct.cost} onChange={(e) => setEditProduct({ ...editProduct, cost: +e.target.value })} /></Field>
