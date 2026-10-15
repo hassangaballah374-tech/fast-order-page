@@ -111,14 +111,14 @@ export default function MerchantDashboard() {
         setProducts(dbProducts.map(p => ({
           id: p.id,
           name: p.title || p.name,
-          price: p.price,
-          comparePrice: p.price * 1.3,
+          price: p.price || 450,
+          comparePrice: (p.price || 450) * 1.3,
           cost: 150,
-          stock: p.stock_quantity || 10,
-          colors: p.colors || 'أسود',
-          sizes: p.sizes || 'M, L',
+          stock: 10,
+          colors: 'أسود',
+          sizes: 'M, L',
           showBadge: true,
-          media: p.image_url ? [p.image_url] : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
+          media: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
           desc: p.description || '',
           bundleActive: true,
           item2Price: 599,
@@ -165,7 +165,6 @@ export default function MerchantDashboard() {
   const shown = orders.filter((o) => (filter === 'all' || o.st === filter) && (!q || (o.name + o.phone + o.id).includes(q)));
   const wa = (phone, text) => `https://wa.me/2${phone}?text=${encodeURIComponent(text)}`;
 
-  // الحفظ الآمن 100% للأعمدة الأساسية فقط (بدون حقل status)
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
@@ -173,10 +172,7 @@ export default function MerchantDashboard() {
     const newProdData = {
       title: np.name,
       price: parseFloat(np.price) || 0,
-      stock_quantity: parseInt(np.stock) || 10,
-      colors: np.colors,
-      sizes: np.sizes,
-      description: np.desc,
+      description: np.desc || '',
       store_id: uid
     };
 
@@ -189,9 +185,9 @@ export default function MerchantDashboard() {
         price: data.price,
         comparePrice: data.price * 1.3,
         cost: parseFloat(np.cost) || 150,
-        stock: data.stock_quantity,
-        colors: data.colors,
-        sizes: data.sizes,
+        stock: parseInt(np.stock) || 10,
+        colors: np.colors,
+        sizes: np.sizes,
         showBadge: true,
         media: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
         desc: data.description,
@@ -216,9 +212,6 @@ export default function MerchantDashboard() {
     const { error } = await supabase.from('products').update({
       title: editProduct.name,
       price: editProduct.price,
-      stock_quantity: editProduct.stock,
-      colors: editProduct.colors,
-      sizes: editProduct.sizes,
       description: editProduct.desc
     }).eq('id', editProduct.id);
 
@@ -235,8 +228,7 @@ export default function MerchantDashboard() {
     e.preventDefault();
     const { error } = await supabase.from('store_profiles').update({
       store_name: store.name,
-      store_slug: store.slug,
-      free_shipping_limit: store.freeShip
+      store_slug: store.slug
     }).eq('user_id', uid);
 
     if (!error) {
@@ -424,7 +416,6 @@ export default function MerchantDashboard() {
             <form onSubmit={handleSaveStoreSettings} className="card" style={{ maxWidth: 600 }}>
               <Field l="اسم المتجر"><input className="in" value={store.name} onChange={(e) => setStore({ ...store, name: e.target.value })} /></Field>
               <Field l="رابط المتجر (Slug)"><input className="in num" dir="ltr" value={store.slug} onChange={(e) => setStore({ ...store, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })} /></Field>
-              <Field l="حد الشحن المجاني (ج.م)"><input className="in num" type="number" value={store.freeShip} onChange={(e) => setStore({ ...store, freeShip: +e.target.value })} /></Field>
               <button className="btn p" style={{ marginTop: 12 }}>حفظ الإعدادات في قاعدة البيانات</button>
             </form>
           </>)}
@@ -599,7 +590,7 @@ export default function MerchantDashboard() {
         .tw{padding:6px;overflow-x:auto}.tbl{width:100%;border-collapse:separate;border-spacing:0;min-width:680px}.tbl th{background:var(--s2);color:var(--mut);font-size:12px;padding:11px 12px;text-align:start}.tbl td{padding:13px 12px;border-bottom:1px solid var(--ln);vertical-align:middle}
         .warn{color:#c53030;font-weight:800;font-size:12px}.mut{color:var(--mut)}
         .stk{display:inline-flex;align-items:center;gap:8px}.stk button{width:28px;height:28px;border-radius:8px;border:1px solid var(--ln);background:var(--s2);cursor:pointer;font-weight:800}
-        .ov{position:fixed;inset:0;z-index:50;background:rgba(5,35,38,.55);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px}
+        .ov{position:fixed;inset:0;zIndex:50;background:rgba(5,35,38,.55);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px}
         .mod{width:100%;max-width:560px;max-height:90vh;overflow:auto;background:var(--s);border:1px solid var(--ln);border-radius:24px;padding:24px;box-shadow:0 30px 80px -20px rgba(3,30,33,.55)}
         .mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
         .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:14px;font-weight:700;z-index:60}
