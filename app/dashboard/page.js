@@ -99,7 +99,6 @@ export default function MerchantDashboard() {
     bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10
   });
 
-  // جلب المنتجات والطلبات من Supabase بانتظام وضمان ثباتها
   useEffect(() => {
     let off = false;
     (async () => {
@@ -126,7 +125,7 @@ export default function MerchantDashboard() {
         }));
       }
 
-      // جلب المنتجات الحقيقية من الداتا بيز
+      // جلب المنتجات الحقيقية من Supabase مع صورها المحفوظة
       const { data: dbProducts } = await supabase.from('products').select('*').eq('store_id', storeKey).order('created_at', { ascending: false });
       if (dbProducts && !off) {
         setProducts(dbProducts.map(p => ({
@@ -137,7 +136,7 @@ export default function MerchantDashboard() {
           stock: 10,
           colors: ['أسود', 'أبيض'],
           sizeRows: [{ size: 'M', price: p.price || 450 }, { size: 'L', price: p.price || 450 }],
-          media: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
+          media: p.image_url ? [p.image_url] : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
           desc: p.description || '',
           bundleActive: true,
           item2Price: 599,
@@ -196,15 +195,18 @@ export default function MerchantDashboard() {
     setNp(prev => ({ ...prev, mediaFiles: [...prev.mediaFiles, ...fileUrls] }));
   };
 
-  // الحفظ الحقيقي في Supabase ليظل المنتج ثابتاً ولا يختفي أبداً
+  // حفظ المنتج مع صورة الجهاز الحقيقية في Supabase
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
+
+    const mainImageUrl = np.mediaFiles.length > 0 ? np.mediaFiles[0] : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600';
 
     const newProdData = {
       name: np.name,
       price: parseFloat(np.price) || 0,
       description: np.desc || '',
+      image_url: mainImageUrl,
       store_id: uid
     };
 
@@ -219,7 +221,7 @@ export default function MerchantDashboard() {
         stock: parseInt(np.stock) || 10,
         colors: np.selectedColors,
         sizeRows: np.sizeRows,
-        media: np.mediaFiles.length > 0 ? np.mediaFiles : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
+        media: [data.image_url],
         desc: data.description,
         bundleActive: np.bundleActive,
         item2Price: np.item2Price,
@@ -229,7 +231,7 @@ export default function MerchantDashboard() {
       }, ...products]);
       setNp({ name: '', cost: '', price: '', stock: 10, selectedColors: ['أسود', 'أبيض'], sizeRows: [{ size: 'M', price: '' }, { size: 'L', price: '' }], unifiedPrice: true, mediaFiles: [], desc: '', bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10 });
       setPm(false);
-      say('✅ تم حفظ ونشر المنتج بنجاح في قاعدة البيانات ومتجرك');
+      say('✅ تم حفظ المنتج مع صورتك الحقيقية ونشره بنجاح!');
     } else {
       say('❌ خطأ أثناء الحفظ: ' + (error?.message || ''));
     }
@@ -410,16 +412,15 @@ export default function MerchantDashboard() {
                 )}
               </div>
             </div>
-            <div className="card tw"><table className="tbl"><thead><tr><th>المنتج والمقاسات</th><th>السعر</th><th>العروض الخاصة</th><th>الربح</th><th>الإجراءات</th></tr></thead>
+            <div className="card tw"><table className="tbl"><thead><tr><th>صورة المنتج</th><th>الاسم والمقاسات</th><th>السعر</th><th>العروض الخاصة</th><th>الإجراءات</th></tr></thead>
               <tbody>{products.map((p) => (
                 <tr key={p.id}>
+                  <td><img src={p.media?.[0]} alt="img" style={{ width: 42, height: 42, borderRadius: 8, objectFit: 'cover' }} /></td>
                   <td><b>{p.name}</b><small>ألوان: {p.colors?.join(', ') || 'عام'} · مقاسات: {p.sizeRows?.map(s => s.size).join(', ') || 'عام'}</small></td>
                   <td className="num"><b>{money(p.price)}</b></td>
                   <td>
                     <small style={{ color: 'var(--b)', fontWeight: 700 }}>{p.bundleActive ? '✓ عروض الكميات مفعلة' : '—'}</small>
-                    <small style={{ color: '#c53030' }}>{p.couponCode ? `كوبون: ${p.couponCode} (${p.couponPct}%)` : ''}</small>
                   </td>
-                  <td className="num" style={{ color: '#2f855a', fontWeight: 800 }}>{money(p.price - p.cost)}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       <button className="btn sm" onClick={() => setEditProduct({ ...p })}>✏️ تعديل</button>
@@ -486,7 +487,7 @@ export default function MerchantDashboard() {
         </section>
       </main>
 
-      {/* مودال إضافة منتج جديد وثابت في قاعدة البيانات */}
+      {/* مودال إضافة منتج جديد مع حفظ صورة الجهاز الحقيقية */}
       {pm && (<Modal t="إضافة منتج جديد وحفظه في قاعدة البيانات" x={() => setPm(false)}><form onSubmit={addProduct}>
         <Field l="اسم المنتج"><input className="in" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} autoFocus placeholder="اسم المنتج التسويقي" /></Field>
         <div className="row">
@@ -543,7 +544,7 @@ export default function MerchantDashboard() {
           </div>
         </div>
 
-        <Field l="رفع صور أو فيديوهات للمنتج من الجهاز">
+        <Field l="رفع صور أو فيديوهات للمنتج من الجهاز (صورتك ستظهر فوراً)">
           <input type="file" multiple accept="image/*,video/*" onChange={handleFileChange} className="in" style={{ padding: 8 }} />
         </Field>
 
@@ -611,7 +612,7 @@ export default function MerchantDashboard() {
         </div>
       )}
 
-      {/* صفحة معاينة المنتج للعميل */}
+      {/* صفحة معاينة المنتج للعميل بصورته الحقيقية */}
       {previewProduct && (
         <div className="ov" onClick={() => setPreviewProduct(null)}>
           <div className="mod" style={{ maxWidth: 840, padding: 32, background: '#fff' }} onClick={(e) => e.stopPropagation()}>
