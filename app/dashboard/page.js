@@ -69,7 +69,7 @@ export default function MerchantDashboard() {
   const [editProduct, setEditProduct] = useState(null);
   const [previewProduct, setPreviewProduct] = useState(null);
 
-  // سلة الشراء التفاعلية للعميل
+  // سلة الشراء برمز السلة التفاعلي
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -79,13 +79,13 @@ export default function MerchantDashboard() {
   const [cq, setCq] = useState('');
   const [toast, setToast] = useState('');
 
-  // نموذج إضافة منتج متطور مع الصور، الألوان، والمقاسات التفصيلية
+  // نموذج إضافة منتج برفع الملفات من الجهاز
   const [np, setNp] = useState({
     name: '', cost: '', price: '', stock: 10,
     colorsInput: 'أسود, أبيض',
     sizesInput: 'S, M, L, XL',
-    unifiedPrice: true, // توحيد السعر لكل المقاسات والألوان
-    mediaUrls: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
+    unifiedPrice: true,
+    mediaFiles: [], // ملفات الصور/الفيديو المرفوعة من الجهاز
     desc: '',
     bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10
   });
@@ -173,6 +173,12 @@ export default function MerchantDashboard() {
   const shown = orders.filter((o) => (filter === 'all' || o.st === filter) && (!q || (o.name + o.phone + o.id).includes(q)));
   const wa = (phone, text) => `https://wa.me/2${phone}?text=${encodeURIComponent(text)}`;
 
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    const fileUrls = files.map(file => URL.createObjectURL(file));
+    setNp(prev => ({ ...prev, mediaFiles: [...prev.mediaFiles, ...fileUrls] }));
+  };
+
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
@@ -198,7 +204,7 @@ export default function MerchantDashboard() {
         stock: parseInt(np.stock) || 10,
         colors: colorsArr,
         sizes: sizesArr,
-        media: np.mediaUrls,
+        media: np.mediaFiles.length > 0 ? np.mediaFiles : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
         desc: data.description,
         bundleActive: np.bundleActive,
         item2Price: np.item2Price,
@@ -206,7 +212,7 @@ export default function MerchantDashboard() {
         couponCode: np.couponCode,
         couponPct: np.couponPct
       }, ...products]);
-      setNp({ name: '', cost: '', price: '', stock: 10, colorsInput: 'أسود, أبيض', sizesInput: 'S, M, L, XL', unifiedPrice: true, mediaUrls: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'], desc: '', bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10 });
+      setNp({ name: '', cost: '', price: '', stock: 10, colorsInput: 'أسود, أبيض', sizesInput: 'S, M, L, XL', unifiedPrice: true, mediaFiles: [], desc: '', bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10 });
       setPm(false);
       say('✅ تم حفظ ونشر المنتج مع الصور والمقاسات في متجر سبايك');
     } else {
@@ -247,14 +253,12 @@ export default function MerchantDashboard() {
     }
   };
 
-  // إضافة منتج للسلة
   const addToCart = (product) => {
     setCart([...cart, { ...product, selectedColor: clientOrder.selectedColor || product.colors?.[0], selectedSize: clientOrder.selectedSize || product.sizes?.[0] }]);
     setIsCartOpen(true);
-    say('🛒 تمت إضافة المنتج إلى سلة الشراء بنجاح');
+    say('🛒 تمت إضافة المنتج إلى سلة الشراء');
   };
 
-  // إتمام الطلب الفعلي وتسجيله في قاعدة البيانات
   const handleClientSubmitOrder = async (e) => {
     e.preventDefault();
     if (!clientOrder.name || !clientOrder.phone) return say('يرجى كتابة الاسم ورقم الهاتف');
@@ -331,7 +335,12 @@ export default function MerchantDashboard() {
       <main className="main">
         <header className="top">
           <button className="srch" onClick={() => setCmd(true)}>🔎 ابحث في أدوات سبايك… <kbd>Ctrl K</kbd></button>
-          <button className="btn" onClick={() => setIsCartOpen(true)}>🛒 السلة ({cart.length})</button>
+          
+          {/* زر السلة التفاعلي برمز السلة */}
+          <button className="btn" onClick={() => setIsCartOpen(true)} style={{ position: 'relative' }}>
+            🛒 السلة <span style={{ background: '#e53e3e', color: '#fff', padding: '1px 6px', borderRadius: 99, fontSize: 11, marginInlineStart: 4 }}>{cart.length}</span>
+          </button>
+
           <a className="btn" href={`https://${store.slug}.spike.shop`} target="_blank" rel="noreferrer">👁️ معاينة متجر سبايك الحي</a>
           <button className="btn p" onClick={() => { setTab('products'); setPm(true); }}>+ منتج جديد</button>
           {isAdmin && <button className="btn" onClick={() => router.push('/admin')}>🛡️ لوحة الإدارة العليا</button>}
@@ -376,7 +385,12 @@ export default function MerchantDashboard() {
           {tab === 'products' && (<>
             <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h1>إدارة المنتجات والأقسام <small>{products.length} منتج مسجل في قاعدة البيانات</small></h1>
-              <button className="btn p" onClick={() => setPm(true)}>+ إضافة منتج جديد</button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn p" onClick={() => setPm(true)}>+ إضافة منتج جديد</button>
+                {products.length > 0 && (
+                  <button className="btn" onClick={() => setPreviewProduct(products[0])} style={{ background: '#2f855a', color: '#fff' }}>👁️ شاهد كعميل</button>
+                )}
+              </div>
             </div>
             <div className="card tw"><table className="tbl"><thead><tr><th>المنتج والمقاسات</th><th>السعر</th><th>العروض الخاصة</th><th>الربح</th><th>الإجراءات</th></tr></thead>
               <tbody>{products.map((p) => (
@@ -391,7 +405,7 @@ export default function MerchantDashboard() {
                   <td>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="btn sm" onClick={() => setEditProduct({ ...p })}>✏️ تعديل</button>
-                      <button className="btn sm p" onClick={() => setPreviewProduct(p)}>🌐 معاينة كعميل</button>
+                      <button className="btn sm p" onClick={() => setPreviewProduct(p)}>🌐 شاهد كعميل</button>
                       <button className="btn sm" style={{ color: '#c53030' }} onClick={async () => {
                         await supabase.from('products').delete().eq('id', p.id);
                         setProducts(products.filter((x) => x.id !== p.id));
@@ -453,24 +467,35 @@ export default function MerchantDashboard() {
         </section>
       </main>
 
-      {/* مودال إضافة منتج جديد مع الألوان والمقاسات والصور */}
-      {pm && (<Modal t="إضافة منتج جديد (الصور، الألوان، والمقاسات)" x={() => setPm(false)}><form onSubmit={addProduct}>
+      {/* مودال إضافة منتج جديد برفع الصور والفيديوهات من الجهاز */}
+      {pm && (<Modal t="إضافة منتج جديد (رفع الصور/الفيديوهات، الألوان، والمقاسات)" x={() => setPm(false)}><form onSubmit={addProduct}>
         <Field l="اسم المنتج"><input className="in" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} autoFocus placeholder="اسم المنتج التسويقي" /></Field>
         <div className="row">
           <Field l="التكلفة"><input className="in num" type="number" value={np.cost} onChange={(e) => setNp({ ...np, cost: e.target.value })} placeholder="150" /></Field>
           <Field l="سعر البيع"><input className="in num" type="number" value={np.price} onChange={(e) => setNp({ ...np, price: e.target.value })} placeholder="450" /></Field>
           <Field l="المخزون"><input className="in num" type="number" value={np.stock} onChange={(e) => setNp({ ...np, stock: e.target.value })} placeholder="10" /></Field>
         </div>
-
-        <Field l="الألوان المتاحة (مفصولة بفاصلة)"><input className="in" value={np.colorsInput} onChange={(e) => setNp({ ...np, colorsInput: e.target.value })} placeholder="أسود, أبيض, أحمر" /></Field>
-        <Field l="المقاسات المتاحة (مفصولة بفاصلة)"><input className="in" value={np.sizesInput} onChange={(e) => setNp({ ...np, sizesInput: e.target.value })} placeholder="S, M, L, XL" /></Field>
+        <div className="row">
+          <Field l="الألوان المتاحة (مفصولة بفاصلة)"><input className="in" value={np.colorsInput} onChange={(e) => setNp({ ...np, colorsInput: e.target.value })} placeholder="أسود, أبيض" /></Field>
+          <Field l="المقاسات المتاحة (مفصولة بفاصلة)"><input className="in" value={np.sizesInput} onChange={(e) => setNp({ ...np, sizesInput: e.target.value })} placeholder="S, M, L, XL" /></Field>
+        </div>
 
         <div className="pls" style={{ margin: '8px 0' }}>
           <p><b>توحيد السعر لكل المقاسات والألوان</b></p>
           <Tog on={np.unifiedPrice} set={(v) => setNp({ ...np, unifiedPrice: v })} />
         </div>
 
-        <Field l="روابط صور أو فيديوهات المنتج (مفصولة بفاصلة)"><input className="in" value={np.mediaUrls.join(', ')} onChange={(e) => setNp({ ...np, mediaUrls: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} placeholder="https://..." /></Field>
+        <Field l="رفع صور أو فيديوهات للمنتج من الجهاز">
+          <input type="file" multiple accept="image/*,video/*" onChange={handleFileChange} className="in" style={{ padding: 8 }} />
+        </Field>
+
+        {np.mediaFiles.length > 0 && (
+          <div className="row" style={{ gap: 6, margin: '8px 0' }}>
+            {np.mediaFiles.map((url, idx) => (
+              <img key={idx} src={url} alt="preview" style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--ln)' }} />
+            ))}
+          </div>
+        )}
 
         <div style={{ background: 'var(--s2)', padding: 14, borderRadius: 14, margin: '12px 0', border: '1px solid var(--ln)' }}>
           <div className="pls" style={{ padding: 0, border: 0, marginBottom: 8 }}>
@@ -499,12 +524,12 @@ export default function MerchantDashboard() {
         <Field l="الوصف"><textarea className="in" value={editProduct.desc} onChange={(e) => setEditProduct({ ...editProduct, desc: e.target.value })} /></Field>
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ التعديلات في قاعدة البيانات</button></form></Modal>)}
 
-      {/* معاينة صفحة الهبوط للعميل مع سلة الشراء وأزرار الإضافة السريعة */}
+      {/* معاينة صفحة الهبوط للتاجر والعميل مع زر الإضافة للسلة واتمام الطلب السريع */}
       {previewProduct && (
         <div className="ov" onClick={() => setPreviewProduct(null)}>
           <div className="mod" style={{ maxWidth: 800, padding: 32, background: '#fff' }} onClick={(e) => e.stopPropagation()}>
             <div className="mh">
-              <span style={{ background: 'var(--b)', color: '#fff', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 800 }}>معاينة متجر سبايك كعميل</span>
+              <span style={{ background: 'var(--b)', color: '#fff', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 800 }}>معاينة شكل المنتجات كعميل (Live Preview)</span>
               <button className="btn sm" onClick={() => setPreviewProduct(null)}>إغلاق المعاينة ✕</button>
             </div>
             
@@ -519,9 +544,8 @@ export default function MerchantDashboard() {
               </div>
 
               <div style={{ background: 'var(--s2)', padding: 16, borderRadius: 16, border: '1px solid var(--ln)', display: 'grid', gap: 10 }}>
-                <b style={{ fontSize: 14 }}>خيارات المنتج والاستمارة</b>
+                <b style={{ fontSize: 14 }}>خيارات المنتج والشراء السريع</b>
 
-                {/* اختيار الألوان */}
                 {previewProduct.colors?.length > 0 && (
                   <div>
                     <small style={{ fontWeight: 700 }}>اختر اللون:</small>
@@ -533,7 +557,6 @@ export default function MerchantDashboard() {
                   </div>
                 )}
 
-                {/* اختيار المقاسات */}
                 {previewProduct.sizes?.length > 0 && (
                   <div>
                     <small style={{ fontWeight: 700 }}>اختر المقاس:</small>
@@ -545,7 +568,6 @@ export default function MerchantDashboard() {
                   </div>
                 )}
 
-                {/* عروض الكميات */}
                 {previewProduct.bundleActive && (
                   <div style={{ background: '#fff', border: '1px solid var(--b)', borderRadius: 12, padding: 8, fontSize: 12 }}>
                     <div style={{ fontWeight: 800, marginBottom: 4, color: 'var(--b)' }}>🎁 عروض الكميات:</div>
@@ -557,17 +579,17 @@ export default function MerchantDashboard() {
                   </div>
                 )}
 
-                {/* أزرار الإضافة للسلة واتمام الطلب */}
+                {/* أزرار الإضافة للسلة واتمام الطلب السريع */}
                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                  <button type="button" className="btn sm" style={{ flex: 1 }} onClick={() => addToCart(previewProduct)}>➕ إضافة للسلة</button>
+                  <button type="button" className="btn sm" style={{ flex: 1 }} onClick={() => addToCart(previewProduct)}>🛒 إضافة للسلة</button>
                   <button type="button" className="btn sm p" style={{ flex: 1 }} onClick={() => {
                     setClientOrder(prev => ({
                       ...prev,
-                      name: 'عميل تجريبي',
+                      name: 'محمد أحمد',
                       phone: '01012345678',
-                      address: 'شارع الهرم، القاهرة'
+                      address: 'شارع الملك فهد، القاهرة'
                     }));
-                    say('✨ تم ملء البيانات تلقائياً، أكمل الشراء الآن');
+                    say('✨ تم ملء البيانات تلقائياً');
                   }}>⚡ اطلب بضغطة</button>
                 </div>
 
@@ -587,7 +609,7 @@ export default function MerchantDashboard() {
         </div>
       )}
 
-      {/* درج سلة الشراء التفاعلي (Cart Drawer) */}
+      {/* درج سلة الشراء برمز السلة */}
       {isCartOpen && (
         <div className="ov" onClick={() => setIsCartOpen(false)}>
           <div className="mod" style={{ maxWidth: 420, minHeight: '100vh', position: 'absolute', left: 0, top: 0, borderRadius: 0 }} onClick={(e) => e.stopPropagation()}>
