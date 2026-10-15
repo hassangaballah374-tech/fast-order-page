@@ -110,7 +110,7 @@ export default function MerchantDashboard() {
       if (dbProducts && !off) {
         setProducts(dbProducts.map(p => ({
           id: p.id,
-          name: p.title || p.name,
+          name: p.name || p.title,
           price: p.price || 450,
           comparePrice: (p.price || 450) * 1.3,
           cost: 150,
@@ -165,12 +165,13 @@ export default function MerchantDashboard() {
   const shown = orders.filter((o) => (filter === 'all' || o.st === filter) && (!q || (o.name + o.phone + o.id).includes(q)));
   const wa = (phone, text) => `https://wa.me/2${phone}?text=${encodeURIComponent(text)}`;
 
+  // الحفظ باستخدام حقل name المتوافق مع جدول المنتجات لديك
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
     
     const newProdData = {
-      title: np.name,
+      name: np.name,
       price: parseFloat(np.price) || 0,
       description: np.desc || '',
       store_id: uid
@@ -181,7 +182,7 @@ export default function MerchantDashboard() {
     if (!error && data) {
       setProducts([{
         id: data.id,
-        name: data.title,
+        name: data.name,
         price: data.price,
         comparePrice: data.price * 1.3,
         cost: parseFloat(np.cost) || 150,
@@ -210,7 +211,7 @@ export default function MerchantDashboard() {
     if (!editProduct) return;
 
     const { error } = await supabase.from('products').update({
-      title: editProduct.name,
+      name: editProduct.name,
       price: editProduct.price,
       description: editProduct.desc
     }).eq('id', editProduct.id);
