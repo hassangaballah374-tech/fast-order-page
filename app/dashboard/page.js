@@ -79,16 +79,14 @@ export default function MerchantDashboard() {
   const [pm, setPm] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
   const [previewProduct, setPreviewProduct] = useState(null);
-  const [isStorePreviewOpen, setIsStorePreviewOpen] = useState(false); // معاينة المتجر بالكامل
+  const [isStorePreviewOpen, setIsStorePreviewOpen] = useState(false);
 
-  // سلة المشتريات للعميل
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const [clientOrder, setClientOrder] = useState({ name: '', phone: '', address: '', gov: 'القاهرة والجيزة', selectedSize: '', selectedColor: '', qty: 1, appliedCoupon: null, couponCodeInput: '' });
 
   const [cmd, setCmd] = useState(false);
-  const [cq, setCq] = useState('');
   const [toast, setToast] = useState('');
 
   const [np, setNp] = useState({
@@ -101,6 +99,7 @@ export default function MerchantDashboard() {
     bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10
   });
 
+  // جلب المنتجات والطلبات من Supabase بانتظام وضمان ثباتها
   useEffect(() => {
     let off = false;
     (async () => {
@@ -127,11 +126,12 @@ export default function MerchantDashboard() {
         }));
       }
 
+      // جلب المنتجات الحقيقية من الداتا بيز
       const { data: dbProducts } = await supabase.from('products').select('*').eq('store_id', storeKey).order('created_at', { ascending: false });
       if (dbProducts && !off) {
         setProducts(dbProducts.map(p => ({
           id: p.id,
-          name: p.name || p.title,
+          name: p.name,
           price: p.price || 450,
           cost: 150,
           stock: 10,
@@ -196,6 +196,7 @@ export default function MerchantDashboard() {
     setNp(prev => ({ ...prev, mediaFiles: [...prev.mediaFiles, ...fileUrls] }));
   };
 
+  // الحفظ الحقيقي في Supabase ليظل المنتج ثابتاً ولا يختفي أبداً
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
@@ -228,7 +229,7 @@ export default function MerchantDashboard() {
       }, ...products]);
       setNp({ name: '', cost: '', price: '', stock: 10, selectedColors: ['أسود', 'أبيض'], sizeRows: [{ size: 'M', price: '' }, { size: 'L', price: '' }], unifiedPrice: true, mediaFiles: [], desc: '', bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10 });
       setPm(false);
-      say('✅ تم حفظ ونشر المنتج بنجاح في متجر سبايك');
+      say('✅ تم حفظ ونشر المنتج بنجاح في قاعدة البيانات ومتجرك');
     } else {
       say('❌ خطأ أثناء الحفظ: ' + (error?.message || ''));
     }
@@ -357,7 +358,6 @@ export default function MerchantDashboard() {
             🛒 السلة <span style={{ background: '#e53e3e', color: '#fff', padding: '1px 6px', borderRadius: 99, fontSize: 11, marginInlineStart: 4 }}>{cart.length}</span>
           </button>
 
-          {/* زر معاينة المتجر الحي داخل الداشبورد بدون أخطاء DNS */}
           <button className="btn p" onClick={() => setIsStorePreviewOpen(true)} style={{ background: '#0a7f86', color: '#fff' }}>👁️ معاينة المتجر الحي</button>
 
           <button className="btn" onClick={() => { setTab('products'); setPm(true); }}>+ منتج جديد</button>
@@ -402,7 +402,7 @@ export default function MerchantDashboard() {
 
           {tab === 'products' && (<>
             <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h1>إدارة المنتجات والأقسام <small>{products.length} منتج مسجل في قاعدة البيانات</small></h1>
+              <h1>إدارة المنتجات والأقسام <small>{products.length} منتج مسجل في قاعدة البيانات وثابت</small></h1>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn p" onClick={() => setPm(true)}>+ إضافة منتج جديد</button>
                 {products.length > 0 && (
@@ -486,8 +486,8 @@ export default function MerchantDashboard() {
         </section>
       </main>
 
-      {/* مودال إضافة منتج جديد مع قائمة الألوان التفاعلية وإضافة خانات المقاسات */}
-      {pm && (<Modal t="إضافة منتج جديد (قائمة الألوان، والمقاسات بالخانات)" x={() => setPm(false)}><form onSubmit={addProduct}>
+      {/* مودال إضافة منتج جديد وثابت في قاعدة البيانات */}
+      {pm && (<Modal t="إضافة منتج جديد وحفظه في قاعدة البيانات" x={() => setPm(false)}><form onSubmit={addProduct}>
         <Field l="اسم المنتج"><input className="in" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} autoFocus placeholder="اسم المنتج التسويقي" /></Field>
         <div className="row">
           <Field l="التكلفة"><input className="in num" type="number" value={np.cost} onChange={(e) => setNp({ ...np, cost: e.target.value })} placeholder="150" /></Field>
@@ -582,7 +582,7 @@ export default function MerchantDashboard() {
         <Field l="الوصف"><textarea className="in" value={editProduct.desc} onChange={(e) => setEditProduct({ ...editProduct, desc: e.target.value })} /></Field>
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ التعديلات في قاعدة البيانات</button></form></Modal>)}
 
-      {/* معاينة المتجر بالكامل (معاينة المتجر الحي) */}
+      {/* معاينة المتجر بالكامل */}
       {isStorePreviewOpen && (
         <div className="ov" onClick={() => setIsStorePreviewOpen(false)}>
           <div className="mod" style={{ maxWidth: 900, padding: 32, background: '#fcfbf7' }} onClick={(e) => e.stopPropagation()}>
@@ -595,7 +595,7 @@ export default function MerchantDashboard() {
                 <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 6 }}>{store.name}</h2>
                 <p className="mut">متجرك الإلكتروني الرسمي مدعوم بمنصة سبايك للدروبشيبينغ والتجارة السريعة</p>
               </div>
-              <h3 style={{ fontSize: 18, fontWeight: 800, marginTop: 10 }}>منتجات المتجر المتاحة للطلب:</h3>
+              <h3 style={{ fontSize: 18, fontWeight: 800, marginTop: 10 }}>منتجات المتجر الثابتة في قاعدة البيانات:</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
                 {products.map(p => (
                   <div key={p.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -611,7 +611,7 @@ export default function MerchantDashboard() {
         </div>
       )}
 
-      {/* صفحة معاينة المنتج كما يراه العميل تماماً */}
+      {/* صفحة معاينة المنتج للعميل */}
       {previewProduct && (
         <div className="ov" onClick={() => setPreviewProduct(null)}>
           <div className="mod" style={{ maxWidth: 840, padding: 32, background: '#fff' }} onClick={(e) => e.stopPropagation()}>
@@ -698,7 +698,7 @@ export default function MerchantDashboard() {
         </div>
       )}
 
-      {/* درج سلة المشتريات الخاص بالعميل */}
+      {/* درج سلة المشتريات للعميل */}
       {isCartOpen && (
         <div className="ov" onClick={() => setIsCartOpen(false)}>
           <div className="mod" style={{ maxWidth: 420, minHeight: '100vh', position: 'absolute', left: 0, top: 0, borderRadius: 0 }} onClick={(e) => e.stopPropagation()}>
