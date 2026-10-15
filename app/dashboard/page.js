@@ -32,6 +32,7 @@ const THEMES_LIST = [
 ];
 
 const ZONES = [['القاهرة والجيزة', 50], ['الإسكندرية', 60], ['الدلتا', 65], ['القناة', 70], ['الصعيد', 85], ['سيناء والبحر الأحمر', 110]];
+const PRESET_COLORS = ['أسود', 'أبيض', 'أحمر', 'كحلي', 'رمادي', 'بيج', 'زيتوني', 'برتقالي'];
 
 const Spark = ({ d, c }) => {
   const m = Math.max(...d), n = Math.min(...d);
@@ -67,9 +68,9 @@ export default function MerchantDashboard() {
   
   const [pm, setPm] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
-  const [previewProduct, setPreviewProduct] = useState(null);
+  const [previewProduct, setPreviewProduct] = useState(null); // نافذة معاينة شكل المنتج كما يراه العميل تماماً
 
-  // سلة الشراء برمز السلة التفاعلي
+  // سلة المشتريات الخاصة بالعميل
   const [cart, setCart] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -79,13 +80,13 @@ export default function MerchantDashboard() {
   const [cq, setCq] = useState('');
   const [toast, setToast] = useState('');
 
-  // نموذج إضافة منتج برفع الملفات من الجهاز
+  // نموذج إضافة منتج متطور مع الألوان والمقاسات الديناميكية ورفع الصور من الجهاز
   const [np, setNp] = useState({
     name: '', cost: '', price: '', stock: 10,
-    colorsInput: 'أسود, أبيض',
-    sizesInput: 'S, M, L, XL',
+    selectedColors: ['أسود', 'أبيض'],
+    sizeRows: [{ size: 'M', price: '' }, { size: 'L', price: '' }], // خانات المقاسات الفردية مع إمكانية تحديد سعر خاص
     unifiedPrice: true,
-    mediaFiles: [], // ملفات الصور/الفيديو المرفوعة من الجهاز
+    mediaFiles: [],
     desc: '',
     bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10
   });
@@ -125,7 +126,7 @@ export default function MerchantDashboard() {
           cost: 150,
           stock: 10,
           colors: ['أسود', 'أبيض'],
-          sizes: ['S', 'M', 'L', 'XL'],
+          sizeRows: [{ size: 'M', price: p.price || 450 }, { size: 'L', price: p.price || 450 }],
           media: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
           desc: p.description || '',
           bundleActive: true,
@@ -182,9 +183,6 @@ export default function MerchantDashboard() {
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
-    
-    const colorsArr = np.colorsInput.split(',').map(c => c.trim()).filter(Boolean);
-    const sizesArr = np.sizesInput.split(',').map(s => s.trim()).filter(Boolean);
 
     const newProdData = {
       name: np.name,
@@ -202,8 +200,8 @@ export default function MerchantDashboard() {
         price: data.price,
         cost: parseFloat(np.cost) || 150,
         stock: parseInt(np.stock) || 10,
-        colors: colorsArr,
-        sizes: sizesArr,
+        colors: np.selectedColors,
+        sizeRows: np.sizeRows,
         media: np.mediaFiles.length > 0 ? np.mediaFiles : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
         desc: data.description,
         bundleActive: np.bundleActive,
@@ -212,9 +210,9 @@ export default function MerchantDashboard() {
         couponCode: np.couponCode,
         couponPct: np.couponPct
       }, ...products]);
-      setNp({ name: '', cost: '', price: '', stock: 10, colorsInput: 'أسود, أبيض', sizesInput: 'S, M, L, XL', unifiedPrice: true, mediaFiles: [], desc: '', bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10 });
+      setNp({ name: '', cost: '', price: '', stock: 10, selectedColors: ['أسود', 'أبيض'], sizeRows: [{ size: 'M', price: '' }, { size: 'L', price: '' }], unifiedPrice: true, mediaFiles: [], desc: '', bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10 });
       setPm(false);
-      say('✅ تم حفظ ونشر المنتج مع الصور والمقاسات في متجر سبايك');
+      say('✅ تم حفظ ونشر المنتج بنجاح في متجر سبايك');
     } else {
       say('❌ خطأ أثناء الحفظ: ' + (error?.message || ''));
     }
@@ -254,9 +252,10 @@ export default function MerchantDashboard() {
   };
 
   const addToCart = (product) => {
-    setCart([...cart, { ...product, selectedColor: clientOrder.selectedColor || product.colors?.[0], selectedSize: clientOrder.selectedSize || product.sizes?.[0] }]);
+    const itemPrice = clientOrder.selectedSize ? (product.sizeRows?.find(s => s.size === clientOrder.selectedSize)?.price || product.price) : product.price;
+    setCart([...cart, { ...product, activePrice: +itemPrice, selectedColor: clientOrder.selectedColor || product.colors?.[0], selectedSize: clientOrder.selectedSize || product.sizeRows?.[0]?.size }]);
     setIsCartOpen(true);
-    say('🛒 تمت إضافة المنتج إلى سلة الشراء');
+    say('🛒 تمت إضافة المنتج إلى سلة العميل');
   };
 
   const handleClientSubmitOrder = async (e) => {
@@ -266,7 +265,8 @@ export default function MerchantDashboard() {
     const targetProduct = previewProduct || cart[0];
     if (!targetProduct) return say('السلة فارغة');
 
-    let finalTotal = targetProduct.price * clientOrder.qty;
+    const basePrice = clientOrder.selectedSize ? (targetProduct.sizeRows?.find(s => s.size === clientOrder.selectedSize)?.price || targetProduct.price) : targetProduct.price;
+    let finalTotal = basePrice * clientOrder.qty;
     if (clientOrder.appliedCoupon) {
       finalTotal = finalTotal * (1 - clientOrder.appliedCoupon.pct / 100);
     }
@@ -299,7 +299,7 @@ export default function MerchantDashboard() {
       setCart([]);
       setIsCartOpen(false);
       setClientOrder({ name: '', phone: '', address: '', gov: 'القاهرة والجيزة', selectedSize: '', selectedColor: '', qty: 1, appliedCoupon: null, couponCodeInput: '' });
-      say('🎉 تم تأكيد طلبك بنجاح وسُجل في لوحة تحكم سبايك!');
+      say('🎉 تم تأكيد الطلب بنجاح وسُجل في لوحة التحكم!');
       setTab('orders');
     } else {
       say('❌ خطأ في إتمام الطلب');
@@ -336,7 +336,7 @@ export default function MerchantDashboard() {
         <header className="top">
           <button className="srch" onClick={() => setCmd(true)}>🔎 ابحث في أدوات سبايك… <kbd>Ctrl K</kbd></button>
           
-          {/* زر السلة التفاعلي برمز السلة */}
+          {/* أيقونة سلة الشراء العلوية (تظهر للعميل في متجره) */}
           <button className="btn" onClick={() => setIsCartOpen(true)} style={{ position: 'relative' }}>
             🛒 السلة <span style={{ background: '#e53e3e', color: '#fff', padding: '1px 6px', borderRadius: 99, fontSize: 11, marginInlineStart: 4 }}>{cart.length}</span>
           </button>
@@ -388,14 +388,14 @@ export default function MerchantDashboard() {
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="btn p" onClick={() => setPm(true)}>+ إضافة منتج جديد</button>
                 {products.length > 0 && (
-                  <button className="btn" onClick={() => setPreviewProduct(products[0])} style={{ background: '#2f855a', color: '#fff' }}>👁️ شاهد كعميل</button>
+                  <button className="btn" onClick={() => setPreviewProduct(products[0])} style={{ background: '#2f855a', color: '#fff' }}>👁️ معاينة شكل المنتج للعميل</button>
                 )}
               </div>
             </div>
             <div className="card tw"><table className="tbl"><thead><tr><th>المنتج والمقاسات</th><th>السعر</th><th>العروض الخاصة</th><th>الربح</th><th>الإجراءات</th></tr></thead>
               <tbody>{products.map((p) => (
                 <tr key={p.id}>
-                  <td><b>{p.name}</b><small>ألوان: {p.colors?.join(', ') || 'عام'} · مقاسات: {p.sizes?.join(', ') || 'عام'}</small></td>
+                  <td><b>{p.name}</b><small>ألوان: {p.colors?.join(', ') || 'عام'} · مقاسات: {p.sizeRows?.map(s => s.size).join(', ') || 'عام'}</small></td>
                   <td className="num"><b>{money(p.price)}</b></td>
                   <td>
                     <small style={{ color: 'var(--b)', fontWeight: 700 }}>{p.bundleActive ? '✓ عروض الكميات مفعلة' : '—'}</small>
@@ -405,7 +405,7 @@ export default function MerchantDashboard() {
                   <td>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button className="btn sm" onClick={() => setEditProduct({ ...p })}>✏️ تعديل</button>
-                      <button className="btn sm p" onClick={() => setPreviewProduct(p)}>🌐 شاهد كعميل</button>
+                      <button className="btn sm p" onClick={() => setPreviewProduct(p)}>👁️ شاهد شكل العميل</button>
                       <button className="btn sm" style={{ color: '#c53030' }} onClick={async () => {
                         await supabase.from('products').delete().eq('id', p.id);
                         setProducts(products.filter((x) => x.id !== p.id));
@@ -467,22 +467,55 @@ export default function MerchantDashboard() {
         </section>
       </main>
 
-      {/* مودال إضافة منتج جديد برفع الصور والفيديوهات من الجهاز */}
-      {pm && (<Modal t="إضافة منتج جديد (رفع الصور/الفيديوهات، الألوان، والمقاسات)" x={() => setPm(false)}><form onSubmit={addProduct}>
+      {/* مودال إضافة منتج جديد (قائمة الألوان، وإضافة خانات المقاسات وتحديد الأسعار الخاصة) */}
+      {pm && (<Modal t="إضافة منتج جديد (الألوان، المقاسات، والأسعار الخاصة)" x={() => setPm(false)}><form onSubmit={addProduct}>
         <Field l="اسم المنتج"><input className="in" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} autoFocus placeholder="اسم المنتج التسويقي" /></Field>
         <div className="row">
           <Field l="التكلفة"><input className="in num" type="number" value={np.cost} onChange={(e) => setNp({ ...np, cost: e.target.value })} placeholder="150" /></Field>
-          <Field l="سعر البيع"><input className="in num" type="number" value={np.price} onChange={(e) => setNp({ ...np, price: e.target.value })} placeholder="450" /></Field>
+          <Field l="سعر البيع الأساسي"><input className="in num" type="number" value={np.price} onChange={(e) => setNp({ ...np, price: e.target.value })} placeholder="450" /></Field>
           <Field l="المخزون"><input className="in num" type="number" value={np.stock} onChange={(e) => setNp({ ...np, stock: e.target.value })} placeholder="10" /></Field>
         </div>
-        <div className="row">
-          <Field l="الألوان المتاحة (مفصولة بفاصلة)"><input className="in" value={np.colorsInput} onChange={(e) => setNp({ ...np, colorsInput: e.target.value })} placeholder="أسود, أبيض" /></Field>
-          <Field l="المقاسات المتاحة (مفصولة بفاصلة)"><input className="in" value={np.sizesInput} onChange={(e) => setNp({ ...np, sizesInput: e.target.value })} placeholder="S, M, L, XL" /></Field>
+
+        {/* اختيار الألوان من قائمة أو إضافتها */}
+        <div style={{ background: 'var(--s2)', padding: 14, borderRadius: 14, margin: '12px 0', border: '1px solid var(--ln)' }}>
+          <b style={{ display: 'block', marginBottom: 6 }}>🎨 قائمة الألوان المتاحة</b>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+            {PRESET_COLORS.map(c => (
+              <button key={c} type="button" className={`btn sm ${np.selectedColors.includes(c) ? 'p' : ''}`} onClick={() => {
+                const exists = np.selectedColors.includes(c);
+                setNp({ ...np, selectedColors: exists ? np.selectedColors.filter(x => x !== c) : [...np.selectedColors, c] });
+              }}>{c}</button>
+            ))}
+          </div>
         </div>
 
-        <div className="pls" style={{ margin: '8px 0' }}>
-          <p><b>توحيد السعر لكل المقاسات والألوان</b></p>
-          <Tog on={np.unifiedPrice} set={(v) => setNp({ ...np, unifiedPrice: v })} />
+        {/* إضافة المقاسات خانة بخانة مع إمكانية تحديد سعر مختلف */}
+        <div style={{ background: 'var(--s2)', padding: 14, borderRadius: 14, margin: '12px 0', border: '1px solid var(--ln)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <b>📏 المقاسات والأسعار الخاصة</b>
+            <button type="button" className="btn sm p" onClick={() => setNp({ ...np, sizeRows: [...np.sizeRows, { size: '', price: '' }] })}>+ إضافة خانة مقاس</button>
+          </div>
+          
+          <div className="pls" style={{ padding: 0, border: 0, marginBottom: 8 }}>
+            <p><b>توحيد السعر لكل المقاسات (استخدام سعر البيع الأساسي)</b></p>
+            <Tog on={np.unifiedPrice} set={(v) => setNp({ ...np, unifiedPrice: v })} />
+          </div>
+
+          <div style={{ display: 'grid', gap: 6 }}>
+            {np.sizeRows.map((row, idx) => (
+              <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input className="in sm" placeholder="المقاس (مثل: M أو 42)" value={row.size} onChange={e => {
+                  const rows = [...np.sizeRows]; rows[idx].size = e.target.value; setNp({...np, sizeRows: rows});
+                }} />
+                {!np.unifiedPrice && (
+                  <input className="in sm num" type="number" placeholder="سعر خاص للمقاس" value={row.price} onChange={e => {
+                    const rows = [...np.sizeRows]; rows[idx].price = e.target.value; setNp({...np, sizeRows: rows});
+                  }} />
+                )}
+                <button type="button" className="btn sm" style={{ color: '#c53030' }} onClick={() => setNp({...np, sizeRows: np.sizeRows.filter((_, i) => i !== idx)})}>✕</button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <Field l="رفع صور أو فيديوهات للمنتج من الجهاز">
@@ -524,12 +557,12 @@ export default function MerchantDashboard() {
         <Field l="الوصف"><textarea className="in" value={editProduct.desc} onChange={(e) => setEditProduct({ ...editProduct, desc: e.target.value })} /></Field>
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ التعديلات في قاعدة البيانات</button></form></Modal>)}
 
-      {/* معاينة صفحة الهبوط للتاجر والعميل مع زر الإضافة للسلة واتمام الطلب السريع */}
+      {/* معاينة شكل المنتج تماماً كما يراه العميل (Live Customer Preview) */}
       {previewProduct && (
         <div className="ov" onClick={() => setPreviewProduct(null)}>
           <div className="mod" style={{ maxWidth: 800, padding: 32, background: '#fff' }} onClick={(e) => e.stopPropagation()}>
             <div className="mh">
-              <span style={{ background: 'var(--b)', color: '#fff', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 800 }}>معاينة شكل المنتجات كعميل (Live Preview)</span>
+              <span style={{ background: 'var(--b)', color: '#fff', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 800 }}>👁️ المعاينة الحية لشكل المنتج عند العميل</span>
               <button className="btn sm" onClick={() => setPreviewProduct(null)}>إغلاق المعاينة ✕</button>
             </div>
             
@@ -538,14 +571,15 @@ export default function MerchantDashboard() {
                 <img src={previewProduct.media?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'} alt="product" style={{ width: '100%', height: 280, objectFit: 'cover', borderRadius: 16, border: '1px solid var(--ln)' }} />
                 <h2 style={{ fontSize: 20, fontWeight: 900, margin: '10px 0 4px' }}>{previewProduct.name}</h2>
                 <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--b)', marginBottom: 8 }}>
-                  {money(clientOrder.qty === 2 && previewProduct.bundleActive ? previewProduct.item2Price : clientOrder.qty === 3 && previewProduct.bundleActive ? previewProduct.item3Price : previewProduct.price * clientOrder.qty)}
+                  {money(clientOrder.qty === 2 && previewProduct.bundleActive ? previewProduct.item2Price : clientOrder.qty === 3 && previewProduct.bundleActive ? previewProduct.item3Price : (clientOrder.selectedSize ? (previewProduct.sizeRows?.find(s => s.size === clientOrder.selectedSize)?.price || previewProduct.price) : previewProduct.price) * clientOrder.qty)}
                 </div>
                 <p style={{ color: '#666', fontSize: 12, lineHeight: 1.4 }}>{previewProduct.desc || 'لا يوجد وصف مضاف'}</p>
               </div>
 
               <div style={{ background: 'var(--s2)', padding: 16, borderRadius: 16, border: '1px solid var(--ln)', display: 'grid', gap: 10 }}>
-                <b style={{ fontSize: 14 }}>خيارات المنتج والشراء السريع</b>
+                <b style={{ fontSize: 14 }}>خيارات الشراء (عرض العميل)</b>
 
+                {/* ألوان العميل التفاعلية */}
                 {previewProduct.colors?.length > 0 && (
                   <div>
                     <small style={{ fontWeight: 700 }}>اختر اللون:</small>
@@ -557,12 +591,13 @@ export default function MerchantDashboard() {
                   </div>
                 )}
 
-                {previewProduct.sizes?.length > 0 && (
+                {/* مقاسات العميل */}
+                {previewProduct.sizeRows?.length > 0 && (
                   <div>
                     <small style={{ fontWeight: 700 }}>اختر المقاس:</small>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-                      {previewProduct.sizes.map((s, idx) => (
-                        <button key={idx} type="button" className={`btn sm ${clientOrder.selectedSize === s ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, selectedSize: s})}>{s}</button>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                      {previewProduct.sizeRows.map((sRow, idx) => (
+                        <button key={idx} type="button" className={`btn sm ${clientOrder.selectedSize === sRow.size ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, selectedSize: sRow.size})}>{sRow.size} ({money(sRow.price || previewProduct.price)})</button>
                       ))}
                     </div>
                   </div>
@@ -579,7 +614,6 @@ export default function MerchantDashboard() {
                   </div>
                 )}
 
-                {/* أزرار الإضافة للسلة واتمام الطلب السريع */}
                 <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                   <button type="button" className="btn sm" style={{ flex: 1 }} onClick={() => addToCart(previewProduct)}>🛒 إضافة للسلة</button>
                   <button type="button" className="btn sm p" style={{ flex: 1 }} onClick={() => {
@@ -609,17 +643,17 @@ export default function MerchantDashboard() {
         </div>
       )}
 
-      {/* درج سلة الشراء برمز السلة */}
+      {/* درج سلة المشتريات الخاص بالعميل */}
       {isCartOpen && (
         <div className="ov" onClick={() => setIsCartOpen(false)}>
           <div className="mod" style={{ maxWidth: 420, minHeight: '100vh', position: 'absolute', left: 0, top: 0, borderRadius: 0 }} onClick={(e) => e.stopPropagation()}>
-            <div className="mh"><b>🛒 سلة المشتريات</b><button className="btn sm" onClick={() => setIsCartOpen(false)}>✕</button></div>
+            <div className="mh"><b>🛒 سلة مشتريات العميل</b><button className="btn sm" onClick={() => setIsCartOpen(false)}>✕</button></div>
             {cart.length === 0 ? <p className="mut c">السلة فارغة حالياً</p> : (
               <div style={{ display: 'grid', gap: 12 }}>
                 {cart.map((item, idx) => (
                   <div key={idx} className="pls">
                     <p><b>{item.name}</b><small>{item.selectedColor} · {item.selectedSize}</small></p>
-                    <span className="num" style={{ fontWeight: 800 }}>{money(item.price)}</span>
+                    <span className="num" style={{ fontWeight: 800 }}>{money(item.activePrice)}</span>
                   </div>
                 ))}
                 <button className="btn p" style={{ width: '100%', marginTop: 16 }} onClick={() => { setPreviewProduct(cart[0]); setIsCartOpen(false); }}>إتمام الشراء لكافة منتجات السلة</button>
