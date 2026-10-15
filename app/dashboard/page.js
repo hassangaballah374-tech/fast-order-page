@@ -94,7 +94,7 @@ export default function MerchantDashboard() {
     selectedColors: ['أسود', 'أبيض'],
     sizeRows: [{ size: 'M', price: '' }, { size: 'L', price: '' }],
     unifiedPrice: true,
-    mediaFiles: [],
+    imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600',
     desc: '',
     bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10
   });
@@ -135,7 +135,7 @@ export default function MerchantDashboard() {
           stock: 10,
           colors: ['أسود', 'أبيض'],
           sizeRows: [{ size: 'M', price: p.price || 450 }, { size: 'L', price: p.price || 450 }],
-          media: p.image_url ? [p.image_url] : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
+          media: [p.image_url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
           desc: p.description || '',
           bundleActive: true,
           item2Price: 599,
@@ -188,31 +188,15 @@ export default function MerchantDashboard() {
   const shown = orders.filter((o) => (filter === 'all' || o.st === filter) && (!q || (o.name + o.phone + o.id).includes(q)));
   const wa = (phone, text) => `https://wa.me/2${phone}?text=${encodeURIComponent(text)}`;
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    const fileUrls = files.map(file => URL.createObjectURL(file));
-    setNp(prev => ({ ...prev, mediaFiles: [...prev.mediaFiles, ...fileUrls] }));
-  };
-
-  const handleEditFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file && editProduct) {
-      const url = URL.createObjectURL(file);
-      setEditProduct({ ...editProduct, media: [url] });
-    }
-  };
-
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
-
-    const mainImageUrl = np.mediaFiles.length > 0 ? np.mediaFiles[0] : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600';
 
     const newProdData = {
       name: np.name,
       price: parseFloat(np.price) || 0,
       description: np.desc || '',
-      image_url: mainImageUrl,
+      image_url: np.imageUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600',
       store_id: uid
     };
 
@@ -235,9 +219,9 @@ export default function MerchantDashboard() {
         couponCode: np.couponCode,
         couponPct: np.couponPct
       }, ...products]);
-      setNp({ name: '', cost: '', price: '', stock: 10, selectedColors: ['أسود', 'أبيض'], sizeRows: [{ size: 'M', price: '' }, { size: 'L', price: '' }], unifiedPrice: true, mediaFiles: [], desc: '', bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10 });
+      setNp({ name: '', cost: '', price: '', stock: 10, selectedColors: ['أسود', 'أبيض'], sizeRows: [{ size: 'M', price: '' }, { size: 'L', price: '' }], unifiedPrice: true, imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600', desc: '', bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10 });
       setPm(false);
-      say('✅ تم حفظ المنتج مع صورتك الحقيقية ونشره بنجاح!');
+      say('✅ تم حفظ ونشر المنتج برابط صورته بنجاح!');
     } else {
       say('❌ خطأ أثناء الحفظ: ' + (error?.message || ''));
     }
@@ -247,13 +231,11 @@ export default function MerchantDashboard() {
     e.preventDefault();
     if (!editProduct) return;
 
-    const newImg = editProduct.media?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600';
-
     const { error } = await supabase.from('products').update({
       name: editProduct.name,
       price: editProduct.price,
       description: editProduct.desc,
-      image_url: newImg
+      image_url: editProduct.media?.[0]
     }).eq('id', editProduct.id);
 
     if (!error) {
@@ -390,7 +372,7 @@ export default function MerchantDashboard() {
           </>)}
 
           {tab === 'orders' && (<>
-            <h1>إدارة الطلبات الحية <small>سجل طلبات الدفع عند الاستلام والحماية الذكية</small></h1>
+            <h1>إدارة الطلبات الحية <small>سجل طلبات الدفع عند الاستلاستلام والحماية الذكية</small></h1>
             <div className="row">
               {[['all', 'كل الطلبات', orders.length], ...Object.entries(ST).map(([k, v]) => [k, v[0], orders.filter((o) => o.st === k).length])].map(([k, t, n]) => (
                 <button key={k} className={'chip' + (filter === k ? ' act' : '')} onClick={() => setFilter(k)}>{t} <em>{n}</em></button>
@@ -424,7 +406,7 @@ export default function MerchantDashboard() {
             <div className="card tw"><table className="tbl"><thead><tr><th>صورة المنتج</th><th>الاسم والمقاسات</th><th>السعر</th><th>العروض الخاصة</th><th>الإجراءات</th></tr></thead>
               <tbody>{products.map((p) => (
                 <tr key={p.id}>
-                  <td><img src={p.media?.[0]} alt="img" style={{ width: 42, height: 42, borderRadius: 8, objectFit: 'cover' }} /></td>
+                  <td><img src={p.media?.[0]} alt="img" style={{ width: 42, height: 42, borderRadius: 8, objectFit: 'cover' }} onError={(e)=>{e.target.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'}} /></td>
                   <td><b>{p.name}</b><small>ألوان: {p.colors?.join(', ') || 'عام'} · مقاسات: {p.sizeRows?.map(s => s.size).join(', ') || 'عام'}</small></td>
                   <td className="num"><b>{money(p.price)}</b></td>
                   <td>
@@ -496,7 +478,7 @@ export default function MerchantDashboard() {
         </section>
       </main>
 
-      {/* مودال إضافة منتج جديد */}
+      {/* مودال إضافة منتج جديد برابط الصورة الثابت */}
       {pm && (<Modal t="إضافة منتج جديد وحفظه في قاعدة البيانات" x={() => setPm(false)}><form onSubmit={addProduct}>
         <Field l="اسم المنتج"><input className="in" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} autoFocus placeholder="اسم المنتج التسويقي" /></Field>
         <div className="row">
@@ -548,36 +530,35 @@ export default function MerchantDashboard() {
           </div>
         </div>
 
-        <Field l="رفع صورة المنتج من الجهاز">
-          <input type="file" accept="image/*" onChange={handleFileChange} className="in" style={{ padding: 8 }} />
+        <Field l="رابط صورة المنتج المباشر (ثابت لا يتلف)">
+          <input className="in num" dir="ltr" value={np.imageUrl} onChange={e => setNp({...np, imageUrl: e.target.value})} placeholder="https://images.unsplash.com/..." />
         </Field>
 
-        {np.mediaFiles.length > 0 && (
-          <div className="row" style={{ gap: 6, margin: '8px 0' }}>
-            {np.mediaFiles.map((url, idx) => (
-              <img key={idx} src={url} alt="preview" style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--ln)' }} />
-            ))}
+        {np.imageUrl && (
+          <div style={{ margin: '8px 0' }}>
+            <img src={np.imageUrl} alt="preview" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--ln)' }} onError={(e)=>{e.target.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'}} />
+            <small className="mut" style={{ display: 'block', marginTop: 4 }}>معاينة الصورة</small>
           </div>
         )}
 
         <Field l="وصف صفحة الهبوط التسويقي"><textarea className="in" value={np.desc} onChange={(e) => setNp({ ...np, desc: e.target.value })} /></Field>
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ في قاعدة البيانات ونشر المنتج</button></form></Modal>)}
 
-      {/* مودال تعديل المنتج (مع إمكانية تغيير الصورة) */}
+      {/* مودال تعديل المنتج وصورته */}
       {editProduct && (<Modal t="تعديل المنتج وصورته في قاعدة البيانات" x={() => setEditProduct(null)}><form onSubmit={updateProduct}>
         <Field l="اسم المنتج"><input className="in" value={editProduct.name} onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })} /></Field>
         <div className="row">
           <Field l="سعر البيع"><input className="in num" type="number" value={editProduct.price} onChange={(e) => setEditProduct({ ...editProduct, price: +e.target.value })} /></Field>
         </div>
 
-        <Field l="تغيير صورة المنتج (اختر صورة جديدة من جهازك)">
-          <input type="file" accept="image/*" onChange={handleEditFileChange} className="in" style={{ padding: 8 }} />
+        <Field l="رابط الصورة المباشر الجديد">
+          <input className="in num" dir="ltr" value={editProduct.media?.[0] || ''} onChange={e => setEditProduct({...editProduct, media: [e.target.value]})} placeholder="https://..." />
         </Field>
 
         {editProduct.media?.[0] && (
           <div style={{ margin: '8px 0' }}>
-            <img src={editProduct.media[0]} alt="current" style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--ln)' }} />
-            <small className="mut" style={{ display: 'block', marginTop: 4 }}>الصورة الحالية للمنتج</small>
+            <img src={editProduct.media[0]} alt="current" style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--ln)' }} onError={(e)=>{e.target.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'}} />
+            <small className="mut" style={{ display: 'block', marginTop: 4 }}>معاينة الصورة الحالية</small>
           </div>
         )}
 
@@ -601,7 +582,7 @@ export default function MerchantDashboard() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
                 {products.map(p => (
                   <div key={p.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <img src={p.media?.[0]} alt="p" style={{ width: '100%', height: 150, objectFit: 'cover', borderRadius: 10 }} />
+                    <img src={p.media?.[0]} alt="p" style={{ width: '100%', height: 150, objectFit: 'cover', borderRadius: 10 }} onError={(e)=>{e.target.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'}} />
                     <b>{p.name}</b>
                     <span className="num" style={{ color: 'var(--b)', fontWeight: 800 }}>{money(p.price)}</span>
                     <button className="btn p sm" onClick={() => { setIsStorePreviewOpen(false); setPreviewProduct(p); }}>معاينة المنتج والشراء</button>
@@ -627,7 +608,7 @@ export default function MerchantDashboard() {
             
             <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24, marginTop: 16 }}>
               <div>
-                <img src={previewProduct.media?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'} alt="product" style={{ width: '100%', height: 280, objectFit: 'cover', borderRadius: 16, border: '1px solid var(--ln)' }} />
+                <img src={previewProduct.media?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'} alt="product" style={{ width: '100%', height: 280, objectFit: 'cover', borderRadius: 16, border: '1px solid var(--ln)' }} onError={(e)=>{e.target.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'}} />
                 <h2 style={{ fontSize: 20, fontWeight: 900, margin: '10px 0 4px' }}>{previewProduct.name}</h2>
                 <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--b)', marginBottom: 8 }}>
                   {money(clientOrder.qty === 2 && previewProduct.bundleActive ? previewProduct.item2Price : clientOrder.qty === 3 && previewProduct.bundleActive ? previewProduct.item3Price : (clientOrder.selectedSize ? (previewProduct.sizeRows?.find(s => s.size === clientOrder.selectedSize)?.price || previewProduct.price) : previewProduct.price) * clientOrder.qty)}
