@@ -79,6 +79,7 @@ export default function MerchantDashboard() {
   const [pm, setPm] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
   const [previewProduct, setPreviewProduct] = useState(null);
+  const [isStorePreviewOpen, setIsStorePreviewOpen] = useState(false); // معاينة المتجر بالكامل
 
   // سلة المشتريات للعميل
   const [cart, setCart] = useState([]);
@@ -90,7 +91,6 @@ export default function MerchantDashboard() {
   const [cq, setCq] = useState('');
   const [toast, setToast] = useState('');
 
-  // نموذج المنتج الجديد مع قائمة الألوان والمقاسات الديناميكية
   const [np, setNp] = useState({
     name: '', cost: '', price: '', stock: 10,
     selectedColors: ['أسود', 'أبيض'],
@@ -169,7 +169,7 @@ export default function MerchantDashboard() {
   const say = (m) => { setToast(m); setTimeout(() => setToast(''), 2200); };
 
   const copyProductLink = (productId) => {
-    const link = `https://${store.slug}.spike.shop/product/${productId}`;
+    const link = `${window.location.origin}/store/${store.slug}/product/${productId}`;
     navigator.clipboard.writeText(link);
     say('🔗 تم نسخ رابط معاينة العميل بنجاح!');
   };
@@ -312,6 +312,7 @@ export default function MerchantDashboard() {
       }, ...orders]);
 
       setPreviewProduct(null);
+      setIsStorePreviewOpen(false);
       setCart([]);
       setIsCartOpen(false);
       setClientOrder({ name: '', phone: '', address: '', gov: 'القاهرة والجيزة', selectedSize: '', selectedColor: '', qty: 1, appliedCoupon: null, couponCodeInput: '' });
@@ -356,8 +357,10 @@ export default function MerchantDashboard() {
             🛒 السلة <span style={{ background: '#e53e3e', color: '#fff', padding: '1px 6px', borderRadius: 99, fontSize: 11, marginInlineStart: 4 }}>{cart.length}</span>
           </button>
 
-          <a className="btn" href={`https://${store.slug}.spike.shop`} target="_blank" rel="noreferrer">👁️ معاينة متجر سبايك الحي</a>
-          <button className="btn p" onClick={() => { setTab('products'); setPm(true); }}>+ منتج جديد</button>
+          {/* زر معاينة المتجر الحي داخل الداشبورد بدون أخطاء DNS */}
+          <button className="btn p" onClick={() => setIsStorePreviewOpen(true)} style={{ background: '#0a7f86', color: '#fff' }}>👁️ معاينة المتجر الحي</button>
+
+          <button className="btn" onClick={() => { setTab('products'); setPm(true); }}>+ منتج جديد</button>
           {isAdmin && <button className="btn" onClick={() => router.push('/admin')}>🛡️ لوحة الإدارة العليا</button>}
           <button className="btn" style={{ color: '#c53030' }} onClick={() => spikeLogout(router)}>🚪 خروج</button>
         </header>
@@ -579,7 +582,36 @@ export default function MerchantDashboard() {
         <Field l="الوصف"><textarea className="in" value={editProduct.desc} onChange={(e) => setEditProduct({ ...editProduct, desc: e.target.value })} /></Field>
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ التعديلات في قاعدة البيانات</button></form></Modal>)}
 
-      {/* صفحة معاينة شكل المنتج تماماً كما يراه العميل (Customer Live Preview) */}
+      {/* معاينة المتجر بالكامل (معاينة المتجر الحي) */}
+      {isStorePreviewOpen && (
+        <div className="ov" onClick={() => setIsStorePreviewOpen(false)}>
+          <div className="mod" style={{ maxWidth: 900, padding: 32, background: '#fcfbf7' }} onClick={(e) => e.stopPropagation()}>
+            <div className="mh">
+              <span style={{ background: 'var(--b)', color: '#fff', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 800 }}>🌐 معاينة متجر سبايك الحي ({store.name})</span>
+              <button className="btn sm" onClick={() => setIsStorePreviewOpen(false)}>إغلاق المعاينة ✕</button>
+            </div>
+            <div style={{ marginTop: 16, display: 'grid', gap: 16 }}>
+              <div style={{ padding: 20, background: 'var(--s)', borderRadius: 16, border: '1px solid var(--ln)', textAlign: 'center' }}>
+                <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 6 }}>{store.name}</h2>
+                <p className="mut">متجرك الإلكتروني الرسمي مدعوم بمنصة سبايك للدروبشيبينغ والتجارة السريعة</p>
+              </div>
+              <h3 style={{ fontSize: 18, fontWeight: 800, marginTop: 10 }}>منتجات المتجر المتاحة للطلب:</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+                {products.map(p => (
+                  <div key={p.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <img src={p.media?.[0]} alt="p" style={{ width: '100%', height: 150, objectFit: 'cover', borderRadius: 10 }} />
+                    <b>{p.name}</b>
+                    <span className="num" style={{ color: 'var(--b)', fontWeight: 800 }}>{money(p.price)}</span>
+                    <button className="btn p sm" onClick={() => { setIsStorePreviewOpen(false); setPreviewProduct(p); }}>معاينة المنتج والشراء</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* صفحة معاينة المنتج كما يراه العميل تماماً */}
       {previewProduct && (
         <div className="ov" onClick={() => setPreviewProduct(null)}>
           <div className="mod" style={{ maxWidth: 840, padding: 32, background: '#fff' }} onClick={(e) => e.stopPropagation()}>
@@ -604,7 +636,6 @@ export default function MerchantDashboard() {
               <div style={{ background: 'var(--s2)', padding: 16, borderRadius: 16, border: '1px solid var(--ln)', display: 'grid', gap: 10 }}>
                 <b style={{ fontSize: 14 }}>خيارات الشراء (عرض العميل التفاعلي)</b>
 
-                {/* ألوان العميل */}
                 {previewProduct.colors?.length > 0 && (
                   <div>
                     <small style={{ fontWeight: 700 }}>اختر اللون:</small>
@@ -616,7 +647,6 @@ export default function MerchantDashboard() {
                   </div>
                 )}
 
-                {/* مقاسات العميل */}
                 {previewProduct.sizeRows?.length > 0 && (
                   <div>
                     <small style={{ fontWeight: 700 }}>اختر المقاس:</small>
