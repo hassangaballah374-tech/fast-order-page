@@ -125,7 +125,6 @@ export default function MerchantDashboard() {
         }));
       }
 
-      // جلب المنتجات الحقيقية من Supabase مع صورها المحفوظة
       const { data: dbProducts } = await supabase.from('products').select('*').eq('store_id', storeKey).order('created_at', { ascending: false });
       if (dbProducts && !off) {
         setProducts(dbProducts.map(p => ({
@@ -195,7 +194,14 @@ export default function MerchantDashboard() {
     setNp(prev => ({ ...prev, mediaFiles: [...prev.mediaFiles, ...fileUrls] }));
   };
 
-  // حفظ المنتج مع صورة الجهاز الحقيقية في Supabase
+  const handleEditFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && editProduct) {
+      const url = URL.createObjectURL(file);
+      setEditProduct({ ...editProduct, media: [url] });
+    }
+  };
+
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
@@ -241,16 +247,19 @@ export default function MerchantDashboard() {
     e.preventDefault();
     if (!editProduct) return;
 
+    const newImg = editProduct.media?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600';
+
     const { error } = await supabase.from('products').update({
       name: editProduct.name,
       price: editProduct.price,
-      description: editProduct.desc
+      description: editProduct.desc,
+      image_url: newImg
     }).eq('id', editProduct.id);
 
     if (!error) {
       setProducts(products.map((p) => p.id === editProduct.id ? editProduct : p));
       setEditProduct(null);
-      say('✅ تم تحديث المنتج وحفظه بنجاح');
+      say('✅ تم تحديث المنتج وصورته وحفظهما بنجاح');
     } else {
       say('❌ خطأ في التحديث');
     }
@@ -487,7 +496,7 @@ export default function MerchantDashboard() {
         </section>
       </main>
 
-      {/* مودال إضافة منتج جديد مع حفظ صورة الجهاز الحقيقية */}
+      {/* مودال إضافة منتج جديد */}
       {pm && (<Modal t="إضافة منتج جديد وحفظه في قاعدة البيانات" x={() => setPm(false)}><form onSubmit={addProduct}>
         <Field l="اسم المنتج"><input className="in" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} autoFocus placeholder="اسم المنتج التسويقي" /></Field>
         <div className="row">
@@ -496,7 +505,6 @@ export default function MerchantDashboard() {
           <Field l="المخزون"><input className="in num" type="number" value={np.stock} onChange={(e) => setNp({ ...np, stock: e.target.value })} placeholder="10" /></Field>
         </div>
 
-        {/* قائمة الألوان التفاعلية */}
         <div style={{ background: 'var(--s2)', padding: 14, borderRadius: 14, margin: '12px 0', border: '1px solid var(--ln)' }}>
           <b style={{ display: 'block', marginBottom: 8 }}>🎨 اختر الألوان المتاحة للمنتج:</b>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
@@ -512,25 +520,21 @@ export default function MerchantDashboard() {
               );
             })}
           </div>
-          <small className="mut">الألوان المُختارة حالياً: <b>{np.selectedColors.join(', ') || 'لا توجد ألوان'}</b></small>
         </div>
 
-        {/* إضافة المقاسات خانة بخانة */}
         <div style={{ background: 'var(--s2)', padding: 14, borderRadius: 14, margin: '12px 0', border: '1px solid var(--ln)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <b>📏 المقاسات والأسعار الخاصة</b>
             <button type="button" className="btn sm p" onClick={() => setNp({ ...np, sizeRows: [...np.sizeRows, { size: '', price: '' }] })}>+ إضافة خانة مقاس</button>
           </div>
-          
           <div className="pls" style={{ padding: 0, border: 0, marginBottom: 8 }}>
-            <p><b>توحيد السعر لكل المقاسات (استخدام سعر البيع الأساسي)</b></p>
+            <p><b>توحيد السعر لكل المقاسات</b></p>
             <Tog on={np.unifiedPrice} set={(v) => setNp({ ...np, unifiedPrice: v })} />
           </div>
-
           <div style={{ display: 'grid', gap: 6 }}>
             {np.sizeRows.map((row, idx) => (
               <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input className="in sm" placeholder="المقاس (مثل: S, M, L, XL)" value={row.size} onChange={e => {
+                <input className="in sm" placeholder="المقاس (مثل: S, M, L)" value={row.size} onChange={e => {
                   const rows = [...np.sizeRows]; rows[idx].size = e.target.value; setNp({...np, sizeRows: rows});
                 }} />
                 {!np.unifiedPrice && (
@@ -544,8 +548,8 @@ export default function MerchantDashboard() {
           </div>
         </div>
 
-        <Field l="رفع صور أو فيديوهات للمنتج من الجهاز (صورتك ستظهر فوراً)">
-          <input type="file" multiple accept="image/*,video/*" onChange={handleFileChange} className="in" style={{ padding: 8 }} />
+        <Field l="رفع صورة المنتج من الجهاز">
+          <input type="file" accept="image/*" onChange={handleFileChange} className="in" style={{ padding: 8 }} />
         </Field>
 
         {np.mediaFiles.length > 0 && (
@@ -556,30 +560,27 @@ export default function MerchantDashboard() {
           </div>
         )}
 
-        <div style={{ background: 'var(--s2)', padding: 14, borderRadius: 14, margin: '12px 0', border: '1px solid var(--ln)' }}>
-          <div className="pls" style={{ padding: 0, border: 0, marginBottom: 8 }}>
-            <p><b>🎁 عروض الكميات التلقائية لهذا المنتج</b></p>
-            <Tog on={np.bundleActive} set={(v) => setNp({ ...np, bundleActive: v })} />
-          </div>
-          {np.bundleActive && (
-            <div className="row" style={{ marginTop: 8 }}>
-              <Field l="سعر قطعتين (ج.م)"><input className="in num" type="number" value={np.item2Price} onChange={(e) => setNp({ ...np, item2Price: e.target.value })} /></Field>
-              <Field l="سعر 3 قطع (ج.م)"><input className="in num" type="number" value={np.item3Price} onChange={(e) => setNp({ ...np, item3Price: e.target.value })} /></Field>
-            </div>
-          )}
-        </div>
-
         <Field l="وصف صفحة الهبوط التسويقي"><textarea className="in" value={np.desc} onChange={(e) => setNp({ ...np, desc: e.target.value })} /></Field>
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ في قاعدة البيانات ونشر المنتج</button></form></Modal>)}
 
-      {/* مودال تعديل المنتج */}
-      {editProduct && (<Modal t="تعديل المنتج وحفظه في قاعدة البيانات" x={() => setEditProduct(null)}><form onSubmit={updateProduct}>
+      {/* مودال تعديل المنتج (مع إمكانية تغيير الصورة) */}
+      {editProduct && (<Modal t="تعديل المنتج وصورته في قاعدة البيانات" x={() => setEditProduct(null)}><form onSubmit={updateProduct}>
         <Field l="اسم المنتج"><input className="in" value={editProduct.name} onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })} /></Field>
         <div className="row">
-          <Field l="التكلفة"><input className="in num" type="number" value={editProduct.cost} onChange={(e) => setEditProduct({ ...editProduct, cost: +e.target.value })} /></Field>
           <Field l="سعر البيع"><input className="in num" type="number" value={editProduct.price} onChange={(e) => setEditProduct({ ...editProduct, price: +e.target.value })} /></Field>
-          <Field l="المخزون"><input className="in num" type="number" value={editProduct.stock} onChange={(e) => setEditProduct({ ...editProduct, stock: +e.target.value })} /></Field>
         </div>
+
+        <Field l="تغيير صورة المنتج (اختر صورة جديدة من جهازك)">
+          <input type="file" accept="image/*" onChange={handleEditFileChange} className="in" style={{ padding: 8 }} />
+        </Field>
+
+        {editProduct.media?.[0] && (
+          <div style={{ margin: '8px 0' }}>
+            <img src={editProduct.media[0]} alt="current" style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 10, border: '1px solid var(--ln)' }} />
+            <small className="mut" style={{ display: 'block', marginTop: 4 }}>الصورة الحالية للمنتج</small>
+          </div>
+        )}
+
         <Field l="الوصف"><textarea className="in" value={editProduct.desc} onChange={(e) => setEditProduct({ ...editProduct, desc: e.target.value })} /></Field>
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ التعديلات في قاعدة البيانات</button></form></Modal>)}
 
@@ -594,7 +595,7 @@ export default function MerchantDashboard() {
             <div style={{ marginTop: 16, display: 'grid', gap: 16 }}>
               <div style={{ padding: 20, background: 'var(--s)', borderRadius: 16, border: '1px solid var(--ln)', textAlign: 'center' }}>
                 <h2 style={{ fontSize: 24, fontWeight: 900, marginBottom: 6 }}>{store.name}</h2>
-                <p className="mut">متجرك الإلكتروني الرسمي مدعوم بمنصة سبايك للدروبشيبينغ والتجارة السريعة</p>
+                <p className="mut">متجرك الإلكتروني الرسمي مدعوم بمنصة سبايك للتجارة السريعة</p>
               </div>
               <h3 style={{ fontSize: 18, fontWeight: 800, marginTop: 10 }}>منتجات المتجر الثابتة في قاعدة البيانات:</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
@@ -612,7 +613,7 @@ export default function MerchantDashboard() {
         </div>
       )}
 
-      {/* صفحة معاينة المنتج للعميل بصورته الحقيقية */}
+      {/* صفحة معاينة المنتج للعميل */}
       {previewProduct && (
         <div className="ov" onClick={() => setPreviewProduct(null)}>
           <div className="mod" style={{ maxWidth: 840, padding: 32, background: '#fff' }} onClick={(e) => e.stopPropagation()}>
