@@ -165,11 +165,11 @@ export default function MerchantDashboard() {
   const shown = orders.filter((o) => (filter === 'all' || o.st === filter) && (!q || (o.name + o.phone + o.id).includes(q)));
   const wa = (phone, text) => `https://wa.me/2${phone}?text=${encodeURIComponent(text)}`;
 
+  // الحفظ الآمن 100% للأعمدة الأساسية فقط (بدون حقل status)
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
     
-    // إرسال الأعمدة القياسية والمضمونة فقط في جدول products
     const newProdData = {
       title: np.name,
       price: parseFloat(np.price) || 0,
@@ -177,8 +177,7 @@ export default function MerchantDashboard() {
       colors: np.colors,
       sizes: np.sizes,
       description: np.desc,
-      store_id: uid,
-      status: 'active'
+      store_id: uid
     };
 
     const { data, error } = await supabase.from('products').insert([newProdData]).select().single();
@@ -446,7 +445,7 @@ export default function MerchantDashboard() {
         <div className="row">
           <Field l="التكلفة"><input className="in num" type="number" value={np.cost} onChange={(e) => setNp({ ...np, cost: e.target.value })} placeholder="150" /></Field>
           <Field l="سعر البيع"><input className="in num" type="number" value={np.price} onChange={(e) => setNp({ ...np, price: e.target.value })} placeholder="450" /></Field>
-          <Field l="المخزون"><input className="in num" type="number" value={np.stock} onChange={(e) => setNp({ ...np, stock: e.target.value })} /></Field>
+          <Field l="المخزون"><input className="in num" type="number" value={np.stock} onChange={(e) => setNp({ ...np, stock: e.target.value })} placeholder="10" /></Field>
         </div>
         <div className="row">
           <Field l="الألوان"><input className="in" value={np.colors} onChange={(e) => setNp({ ...np, colors: e.target.value })} placeholder="أحمر، أسود" /></Field>
