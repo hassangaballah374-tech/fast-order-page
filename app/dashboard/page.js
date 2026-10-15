@@ -9,6 +9,7 @@ const ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
 const money = (n, c = 'ج.م') => `${Math.round(n).toLocaleString('en-US')} ${c}`;
 
+// القوائم الاحترافية الكاملة والتفرعات المطابقة للصور مع هوية سبايك
 const NAV_GROUPS = [
   { section: 'الرئيسية', items: [['home', 'لوحة الإحصائيات', '📊']] },
   { section: 'الطلبات', items: [['orders', 'كل الطلبات', '📦'], ['lost_orders', 'الطلبات المفقودة', '⚠️'], ['blocked_phones', 'الأرقام المحظورة من الطلب', '🚫'], ['otp_blocked', 'الارقام المحظورة OTP', '🔒'], ['newsletter', 'NewsLetter', '✉️', true]] },
@@ -112,7 +113,7 @@ export default function MerchantDashboard() {
           id: p.id,
           name: p.title || p.name,
           price: p.price,
-          comparePrice: p.price * 1.3,
+          comparePrice: p.compare_price || p.price * 1.3,
           cost: p.cost_price || 0,
           stock: p.stock_quantity || 10,
           colors: p.colors || 'أسود',
@@ -166,8 +167,8 @@ export default function MerchantDashboard() {
   const wa = (phone, text) => `https://wa.me/2${phone}?text=${encodeURIComponent(text)}`;
 
   const calcProfit = (+np.price || 0) - (+np.cost || 0);
+  const calcDiscountPct = np.comparePrice && np.price ? Math.round(((+np.comparePrice - +np.price) / +np.comparePrice) * 100) : 0;
 
-  // حفظ آمن 100% للأعمدة الأساسية فقط في قاعدة البيانات
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
@@ -175,6 +176,7 @@ export default function MerchantDashboard() {
     const newProdData = {
       title: np.name,
       price: parseFloat(np.price) || 0,
+      compare_price: parseFloat(np.comparePrice) || parseFloat(np.price),
       cost_price: parseFloat(np.cost) || 0,
       stock_quantity: parseInt(np.stock) || 10,
       colors: np.colors,
@@ -191,7 +193,7 @@ export default function MerchantDashboard() {
         id: data.id,
         name: data.title,
         price: data.price,
-        comparePrice: data.price * 1.3,
+        comparePrice: data.compare_price,
         cost: data.cost_price,
         stock: data.stock_quantity,
         colors: data.colors,
@@ -220,6 +222,7 @@ export default function MerchantDashboard() {
     const { error } = await supabase.from('products').update({
       title: editProduct.name,
       price: editProduct.price,
+      compare_price: editProduct.comparePrice,
       cost_price: editProduct.cost,
       stock_quantity: editProduct.stock,
       colors: editProduct.colors,
@@ -342,7 +345,7 @@ export default function MerchantDashboard() {
           </>)}
 
           {tab === 'orders' && (<>
-            <h1>إدارة الطلبات الحية <small>سجل طلبات الدفع عند الاستلام والحماية الذكية</small></h1>
+            <h1>إدارة الطلبات الحية <small>سجل طلبات الدفع عند الاستلاستلام والحماية الذكية</small></h1>
             <div className="row">
               {[['all', 'كل الطلبات', orders.length], ...Object.entries(ST).map(([k, v]) => [k, v[0], orders.filter((o) => o.st === k).length])].map(([k, t, n]) => (
                 <button key={k} className={'chip' + (filter === k ? ' act' : '')} onClick={() => setFilter(k)}>{t} <em>{n}</em></button>
@@ -368,11 +371,11 @@ export default function MerchantDashboard() {
               <h1>إدارة المنتجات والأقسام <small>{products.length} منتج مسجل في قاعدة البيانات</small></h1>
               <button className="btn p" onClick={() => setPm(true)}>+ إضافة منتج جديد</button>
             </div>
-            <div className="card tw"><table className="tbl"><thead><tr><th>المنتج والمقاسات</th><th>السعر</th><th>العروض الخاصة</th><th>الربح</th><th>الإجراءات</th></tr></thead>
+            <div className="card tw"><table className="tbl"><thead><tr><th>المنتج والمقاسات</th><th>الأسعار</th><th>العروض الخاصة</th><th>الربح</th><th>الإجراءات</th></tr></thead>
               <tbody>{products.map((p) => (
                 <tr key={p.id}>
                   <td><b>{p.name}</b><small>ألوان: {p.colors || 'عام'} · مقاسات: {p.sizes || 'عام'}</small></td>
-                  <td className="num"><b>{money(p.price)}</b></td>
+                  <td className="num"><span style={{ textDecoration: 'line-through', color: '#999', fontSize: 11, marginInlineEnd: 6 }}>{money(p.comparePrice)}</span><b>{money(p.price)}</b></td>
                   <td>
                     <small style={{ color: 'var(--b)', fontWeight: 700 }}>{p.bundleActive ? '✓ عروض الكميات مفعلة' : '—'}</small>
                     <small style={{ color: '#c53030' }}>{p.couponCode ? `كوبون: ${p.couponCode} (${p.couponPct}%)` : ''}</small>
@@ -448,11 +451,12 @@ export default function MerchantDashboard() {
       {pm && (<Modal t="إضافة منتج جديد وحفظه في قاعدة البيانات" x={() => setPm(false)}><form onSubmit={addProduct}>
         <Field l="اسم المنتج"><input className="in" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} autoFocus placeholder="اسم المنتج التسويقي" /></Field>
         <div className="row">
-          <Field l="التكلفة"><input className="in num" type="number" value={np.cost} onChange={(e) => setNp({ ...np, cost: e.target.value })} placeholder="150" /></Field>
-          <Field l="سعر البيع"><input className="in num" type="number" value={np.price} onChange={(e) => setNp({ ...np, price: e.target.value })} placeholder="450" /></Field>
-          <Field l="المخزون"><input className="in num" type="number" value={np.stock} onChange={(e) => setNp({ ...np, stock: e.target.value })} /></Field>
+          <Field l="1. التكلفة"><input className="in num" type="number" value={np.cost} onChange={(e) => setNp({ ...np, cost: e.target.value })} placeholder="150" /></Field>
+          <Field l="2. قبل الخصم"><input className="in num" type="number" value={np.comparePrice} onChange={(e) => setNp({ ...np, comparePrice: e.target.value })} placeholder="600" /></Field>
+          <Field l="3. بعد الخصم (سعر البيع)"><input className="in num" type="number" value={np.price} onChange={(e) => setNp({ ...np, price: e.target.value })} placeholder="450" /></Field>
         </div>
         <div className="row">
+          <Field l="المخزون"><input className="in num" type="number" value={np.stock} onChange={(e) => setNp({ ...np, stock: e.target.value })} /></Field>
           <Field l="الألوان"><input className="in" value={np.colors} onChange={(e) => setNp({ ...np, colors: e.target.value })} placeholder="أحمر، أسود" /></Field>
           <Field l="المقاسات"><input className="in" value={np.sizes} onChange={(e) => setNp({ ...np, sizes: e.target.value })} placeholder="S, M, L, XL" /></Field>
         </div>
@@ -486,10 +490,11 @@ export default function MerchantDashboard() {
         <Field l="اسم المنتج"><input className="in" value={editProduct.name} onChange={(e) => setEditProduct({ ...editProduct, name: e.target.value })} /></Field>
         <div className="row">
           <Field l="التكلفة"><input className="in num" type="number" value={editProduct.cost} onChange={(e) => setEditProduct({ ...editProduct, cost: +e.target.value })} /></Field>
-          <Field l="سعر البيع"><input className="in num" type="number" value={editProduct.price} onChange={(e) => setEditProduct({ ...editProduct, price: +e.target.value })} /></Field>
-          <Field l="المخزون"><input className="in num" type="number" value={editProduct.stock} onChange={(e) => setEditProduct({ ...editProduct, stock: +e.target.value })} /></Field>
+          <Field l="قبل الخصم"><input className="in num" type="number" value={editProduct.comparePrice} onChange={(e) => setEditProduct({ ...editProduct, comparePrice: +e.target.value })} /></Field>
+          <Field l="بعد الخصم"><input className="in num" type="number" value={editProduct.price} onChange={(e) => setEditProduct({ ...editProduct, price: +e.target.value })} /></Field>
         </div>
         <div className="row">
+          <Field l="المخزون"><input className="in num" type="number" value={editProduct.stock} onChange={(e) => setEditProduct({ ...editProduct, stock: +e.target.value })} /></Field>
           <Field l="الألوان"><input className="in" value={editProduct.colors} onChange={(e) => setEditProduct({ ...editProduct, colors: e.target.value })} /></Field>
           <Field l="المقاسات"><input className="in" value={editProduct.sizes} onChange={(e) => setEditProduct({ ...editProduct, sizes: e.target.value })} /></Field>
         </div>
@@ -513,6 +518,7 @@ export default function MerchantDashboard() {
                   <span className="num" style={{ fontSize: 18, fontWeight: 900, color: 'var(--b)' }}>
                     {money(clientOrder.qty === 2 && previewProduct.bundleActive ? previewProduct.item2Price : clientOrder.qty === 3 && previewProduct.bundleActive ? previewProduct.item3Price : previewProduct.price * clientOrder.qty)}
                   </span>
+                  <span className="num" style={{ textDecoration: 'line-through', color: '#888', fontSize: 13 }}>{money(previewProduct.comparePrice * clientOrder.qty)}</span>
                 </div>
                 <p style={{ color: '#666', fontSize: 12, lineHeight: 1.4 }}>{previewProduct.desc || 'لا يوجد وصف مضاف'}</p>
               </div>
@@ -564,7 +570,7 @@ export default function MerchantDashboard() {
                     </div>
                   )}
 
-                  <button className="btn p" style={{ width: '100%', marginTop: 4, minHeight: 40 }}>تأكيد وإتمام الطلب (الدفع عند الاستلام)</button>
+                  <button className="btn p" style={{ width: '100%', marginTop: 4, minHeight: 40 }}>تأكيد وإتمام الطلب (الدفع عند الاستلاستلام)</button>
                 </form>
               </div>
             </div>
