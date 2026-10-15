@@ -69,14 +69,24 @@ export default function MerchantDashboard() {
   const [editProduct, setEditProduct] = useState(null);
   const [previewProduct, setPreviewProduct] = useState(null);
 
+  // سلة الشراء التفاعلية للعميل
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
   const [clientOrder, setClientOrder] = useState({ name: '', phone: '', address: '', gov: 'القاهرة والجيزة', selectedSize: '', selectedColor: '', qty: 1, appliedCoupon: null, couponCodeInput: '' });
 
   const [cmd, setCmd] = useState(false);
   const [cq, setCq] = useState('');
   const [toast, setToast] = useState('');
 
+  // نموذج إضافة منتج متطور مع الصور، الألوان، والمقاسات التفصيلية
   const [np, setNp] = useState({
-    name: '', cost: '', price: '', stock: 10, colors: 'أسود, أبيض', sizes: 'S, M, L, XL', showBadge: true, media: [], desc: '',
+    name: '', cost: '', price: '', stock: 10,
+    colorsInput: 'أسود, أبيض',
+    sizesInput: 'S, M, L, XL',
+    unifiedPrice: true, // توحيد السعر لكل المقاسات والألوان
+    mediaUrls: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
+    desc: '',
     bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10
   });
 
@@ -112,12 +122,10 @@ export default function MerchantDashboard() {
           id: p.id,
           name: p.name || p.title,
           price: p.price || 450,
-          comparePrice: (p.price || 450) * 1.3,
           cost: 150,
           stock: 10,
-          colors: 'أسود',
-          sizes: 'M, L',
-          showBadge: true,
+          colors: ['أسود', 'أبيض'],
+          sizes: ['S', 'M', 'L', 'XL'],
           media: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
           desc: p.description || '',
           bundleActive: true,
@@ -154,7 +162,7 @@ export default function MerchantDashboard() {
     for (let id of ids) {
       await supabase.from('orders').update({ status: st }).eq('id', id);
     }
-    setSel([]); say('تم تحديث الطلبات وحفظها في قاعدة البيانات');
+    setSel([]); say('تم تحديث الطلبات في قاعدة البيانات');
   };
 
   const live = orders.filter((o) => o.st !== 'returned');
@@ -165,11 +173,13 @@ export default function MerchantDashboard() {
   const shown = orders.filter((o) => (filter === 'all' || o.st === filter) && (!q || (o.name + o.phone + o.id).includes(q)));
   const wa = (phone, text) => `https://wa.me/2${phone}?text=${encodeURIComponent(text)}`;
 
-  // الحفظ باستخدام حقل name المتوافق مع جدول المنتجات لديك
   const addProduct = async (e) => {
     e.preventDefault();
     if (!np.name || !np.price) return say('اكتب اسم المنتج وسعر البيع');
     
+    const colorsArr = np.colorsInput.split(',').map(c => c.trim()).filter(Boolean);
+    const sizesArr = np.sizesInput.split(',').map(s => s.trim()).filter(Boolean);
+
     const newProdData = {
       name: np.name,
       price: parseFloat(np.price) || 0,
@@ -184,13 +194,11 @@ export default function MerchantDashboard() {
         id: data.id,
         name: data.name,
         price: data.price,
-        comparePrice: data.price * 1.3,
         cost: parseFloat(np.cost) || 150,
         stock: parseInt(np.stock) || 10,
-        colors: np.colors,
-        sizes: np.sizes,
-        showBadge: true,
-        media: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'],
+        colors: colorsArr,
+        sizes: sizesArr,
+        media: np.mediaUrls,
         desc: data.description,
         bundleActive: np.bundleActive,
         item2Price: np.item2Price,
@@ -198,9 +206,9 @@ export default function MerchantDashboard() {
         couponCode: np.couponCode,
         couponPct: np.couponPct
       }, ...products]);
-      setNp({ name: '', cost: '', price: '', stock: 10, colors: '', sizes: '', showBadge: true, media: [], desc: '', bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10 });
+      setNp({ name: '', cost: '', price: '', stock: 10, colorsInput: 'أسود, أبيض', sizesInput: 'S, M, L, XL', unifiedPrice: true, mediaUrls: ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'], desc: '', bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10 });
       setPm(false);
-      say('✅ تم حفظ ونشر المنتج بنجاح في متجر سبايك');
+      say('✅ تم حفظ ونشر المنتج مع الصور والمقاسات في متجر سبايك');
     } else {
       say('❌ خطأ أثناء الحفظ: ' + (error?.message || ''));
     }
@@ -233,17 +241,28 @@ export default function MerchantDashboard() {
     }).eq('user_id', uid);
 
     if (!error) {
-      say('✅ تم حفظ إعدادات متجر سبايك بنجاح في قاعدة البيانات');
+      say('✅ تم حفظ إعدادات متجر سبايك بنجاح');
     } else {
       say('❌ خطأ في الحفظ');
     }
   };
 
+  // إضافة منتج للسلة
+  const addToCart = (product) => {
+    setCart([...cart, { ...product, selectedColor: clientOrder.selectedColor || product.colors?.[0], selectedSize: clientOrder.selectedSize || product.sizes?.[0] }]);
+    setIsCartOpen(true);
+    say('🛒 تمت إضافة المنتج إلى سلة الشراء بنجاح');
+  };
+
+  // إتمام الطلب الفعلي وتسجيله في قاعدة البيانات
   const handleClientSubmitOrder = async (e) => {
     e.preventDefault();
     if (!clientOrder.name || !clientOrder.phone) return say('يرجى كتابة الاسم ورقم الهاتف');
 
-    let finalTotal = previewProduct.price * clientOrder.qty;
+    const targetProduct = previewProduct || cart[0];
+    if (!targetProduct) return say('السلة فارغة');
+
+    let finalTotal = targetProduct.price * clientOrder.qty;
     if (clientOrder.appliedCoupon) {
       finalTotal = finalTotal * (1 - clientOrder.appliedCoupon.pct / 100);
     }
@@ -267,17 +286,19 @@ export default function MerchantDashboard() {
         phone: data.customer_phone,
         gov: data.governorate,
         total: data.total_price,
-        cost: previewProduct.cost,
+        cost: targetProduct.cost || 150,
         ship: 50,
         st: 'pending'
       }, ...orders]);
 
       setPreviewProduct(null);
+      setCart([]);
+      setIsCartOpen(false);
       setClientOrder({ name: '', phone: '', address: '', gov: 'القاهرة والجيزة', selectedSize: '', selectedColor: '', qty: 1, appliedCoupon: null, couponCodeInput: '' });
-      say('🎉 تم استلام طلبك بنجاح وتسجيله في لوحة تحكم سبايك');
+      say('🎉 تم تأكيد طلبك بنجاح وسُجل في لوحة تحكم سبايك!');
       setTab('orders');
     } else {
-      say('❌ خطأ في الطلب');
+      say('❌ خطأ في إتمام الطلب');
     }
   };
 
@@ -310,6 +331,7 @@ export default function MerchantDashboard() {
       <main className="main">
         <header className="top">
           <button className="srch" onClick={() => setCmd(true)}>🔎 ابحث في أدوات سبايك… <kbd>Ctrl K</kbd></button>
+          <button className="btn" onClick={() => setIsCartOpen(true)}>🛒 السلة ({cart.length})</button>
           <a className="btn" href={`https://${store.slug}.spike.shop`} target="_blank" rel="noreferrer">👁️ معاينة متجر سبايك الحي</a>
           <button className="btn p" onClick={() => { setTab('products'); setPm(true); }}>+ منتج جديد</button>
           {isAdmin && <button className="btn" onClick={() => router.push('/admin')}>🛡️ لوحة الإدارة العليا</button>}
@@ -359,7 +381,7 @@ export default function MerchantDashboard() {
             <div className="card tw"><table className="tbl"><thead><tr><th>المنتج والمقاسات</th><th>السعر</th><th>العروض الخاصة</th><th>الربح</th><th>الإجراءات</th></tr></thead>
               <tbody>{products.map((p) => (
                 <tr key={p.id}>
-                  <td><b>{p.name}</b><small>ألوان: {p.colors || 'عام'} · مقاسات: {p.sizes || 'عام'}</small></td>
+                  <td><b>{p.name}</b><small>ألوان: {p.colors?.join(', ') || 'عام'} · مقاسات: {p.sizes?.join(', ') || 'عام'}</small></td>
                   <td className="num"><b>{money(p.price)}</b></td>
                   <td>
                     <small style={{ color: 'var(--b)', fontWeight: 700 }}>{p.bundleActive ? '✓ عروض الكميات مفعلة' : '—'}</small>
@@ -431,18 +453,24 @@ export default function MerchantDashboard() {
         </section>
       </main>
 
-      {/* مودال إضافة منتج جديد متكامل */}
-      {pm && (<Modal t="إضافة منتج جديد وحفظه في قاعدة البيانات" x={() => setPm(false)}><form onSubmit={addProduct}>
+      {/* مودال إضافة منتج جديد مع الألوان والمقاسات والصور */}
+      {pm && (<Modal t="إضافة منتج جديد (الصور، الألوان، والمقاسات)" x={() => setPm(false)}><form onSubmit={addProduct}>
         <Field l="اسم المنتج"><input className="in" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} autoFocus placeholder="اسم المنتج التسويقي" /></Field>
         <div className="row">
           <Field l="التكلفة"><input className="in num" type="number" value={np.cost} onChange={(e) => setNp({ ...np, cost: e.target.value })} placeholder="150" /></Field>
           <Field l="سعر البيع"><input className="in num" type="number" value={np.price} onChange={(e) => setNp({ ...np, price: e.target.value })} placeholder="450" /></Field>
           <Field l="المخزون"><input className="in num" type="number" value={np.stock} onChange={(e) => setNp({ ...np, stock: e.target.value })} placeholder="10" /></Field>
         </div>
-        <div className="row">
-          <Field l="الألوان"><input className="in" value={np.colors} onChange={(e) => setNp({ ...np, colors: e.target.value })} placeholder="أحمر، أسود" /></Field>
-          <Field l="المقاسات"><input className="in" value={np.sizes} onChange={(e) => setNp({ ...np, sizes: e.target.value })} placeholder="S, M, L, XL" /></Field>
+
+        <Field l="الألوان المتاحة (مفصولة بفاصلة)"><input className="in" value={np.colorsInput} onChange={(e) => setNp({ ...np, colorsInput: e.target.value })} placeholder="أسود, أبيض, أحمر" /></Field>
+        <Field l="المقاسات المتاحة (مفصولة بفاصلة)"><input className="in" value={np.sizesInput} onChange={(e) => setNp({ ...np, sizesInput: e.target.value })} placeholder="S, M, L, XL" /></Field>
+
+        <div className="pls" style={{ margin: '8px 0' }}>
+          <p><b>توحيد السعر لكل المقاسات والألوان</b></p>
+          <Tog on={np.unifiedPrice} set={(v) => setNp({ ...np, unifiedPrice: v })} />
         </div>
+
+        <Field l="روابط صور أو فيديوهات المنتج (مفصولة بفاصلة)"><input className="in" value={np.mediaUrls.join(', ')} onChange={(e) => setNp({ ...np, mediaUrls: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })} placeholder="https://..." /></Field>
 
         <div style={{ background: 'var(--s2)', padding: 14, borderRadius: 14, margin: '12px 0', border: '1px solid var(--ln)' }}>
           <div className="pls" style={{ padding: 0, border: 0, marginBottom: 8 }}>
@@ -457,14 +485,6 @@ export default function MerchantDashboard() {
           )}
         </div>
 
-        <div style={{ background: 'var(--s2)', padding: 14, borderRadius: 14, margin: '12px 0', border: '1px solid var(--ln)' }}>
-          <b style={{ display: 'block', marginBottom: 8 }}>🎟️ كود خصم خاص لهذا المنتج</b>
-          <div className="row">
-            <Field l="كود الخصم"><input className="in" value={np.couponCode} onChange={(e) => setNp({ ...np, couponCode: e.target.value })} /></Field>
-            <Field l="نسبة الخصم (%)"><input className="in num" type="number" value={np.couponPct} onChange={(e) => setNp({ ...np, couponPct: e.target.value })} /></Field>
-          </div>
-        </div>
-
         <Field l="وصف صفحة الهبوط التسويقي"><textarea className="in" value={np.desc} onChange={(e) => setNp({ ...np, desc: e.target.value })} /></Field>
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ في قاعدة البيانات ونشر المنتج</button></form></Modal>)}
 
@@ -476,49 +496,82 @@ export default function MerchantDashboard() {
           <Field l="سعر البيع"><input className="in num" type="number" value={editProduct.price} onChange={(e) => setEditProduct({ ...editProduct, price: +e.target.value })} /></Field>
           <Field l="المخزون"><input className="in num" type="number" value={editProduct.stock} onChange={(e) => setEditProduct({ ...editProduct, stock: +e.target.value })} /></Field>
         </div>
-        <div className="row">
-          <Field l="الألوان"><input className="in" value={editProduct.colors} onChange={(e) => setEditProduct({ ...editProduct, colors: e.target.value })} /></Field>
-          <Field l="المقاسات"><input className="in" value={editProduct.sizes} onChange={(e) => setEditProduct({ ...editProduct, sizes: e.target.value })} /></Field>
-        </div>
         <Field l="الوصف"><textarea className="in" value={editProduct.desc} onChange={(e) => setEditProduct({ ...editProduct, desc: e.target.value })} /></Field>
         <button className="btn p" style={{ width: '100%', marginTop: 12 }}>حفظ التعديلات في قاعدة البيانات</button></form></Modal>)}
 
-      {/* معاينة صفحة الهبوط وإتمام الطلب الحقيقي */}
+      {/* معاينة صفحة الهبوط للعميل مع سلة الشراء وأزرار الإضافة السريعة */}
       {previewProduct && (
         <div className="ov" onClick={() => setPreviewProduct(null)}>
-          <div className="mod" style={{ maxWidth: 760, padding: 32, background: '#fff' }} onClick={(e) => e.stopPropagation()}>
+          <div className="mod" style={{ maxWidth: 800, padding: 32, background: '#fff' }} onClick={(e) => e.stopPropagation()}>
             <div className="mh">
               <span style={{ background: 'var(--b)', color: '#fff', padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 800 }}>معاينة متجر سبايك كعميل</span>
               <button className="btn sm" onClick={() => setPreviewProduct(null)}>إغلاق المعاينة ✕</button>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24, marginTop: 16 }}>
               <div>
-                <img src={previewProduct.media?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'} alt="product" style={{ width: '100%', height: 240, objectFit: 'cover', borderRadius: 16, border: '1px solid var(--ln)' }} />
+                <img src={previewProduct.media?.[0] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600'} alt="product" style={{ width: '100%', height: 280, objectFit: 'cover', borderRadius: 16, border: '1px solid var(--ln)' }} />
                 <h2 style={{ fontSize: 20, fontWeight: 900, margin: '10px 0 4px' }}>{previewProduct.name}</h2>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 6 }}>
-                  <span className="num" style={{ fontSize: 18, fontWeight: 900, color: 'var(--b)' }}>
-                    {money(clientOrder.qty === 2 && previewProduct.bundleActive ? previewProduct.item2Price : clientOrder.qty === 3 && previewProduct.bundleActive ? previewProduct.item3Price : previewProduct.price * clientOrder.qty)}
-                  </span>
+                <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--b)', marginBottom: 8 }}>
+                  {money(clientOrder.qty === 2 && previewProduct.bundleActive ? previewProduct.item2Price : clientOrder.qty === 3 && previewProduct.bundleActive ? previewProduct.item3Price : previewProduct.price * clientOrder.qty)}
                 </div>
                 <p style={{ color: '#666', fontSize: 12, lineHeight: 1.4 }}>{previewProduct.desc || 'لا يوجد وصف مضاف'}</p>
               </div>
 
-              <div style={{ background: 'var(--s2)', padding: 16, borderRadius: 16, border: '1px solid var(--ln)', display: 'grid', gap: 8 }}>
-                <b style={{ fontSize: 14 }}>🛒 استمارة الشراء السريع (COD)</b>
-                
-                {previewProduct.bundleActive && (
-                  <div style={{ background: '#fff', border: '1px solid var(--b)', borderRadius: 12, padding: 8, fontSize: 12 }}>
-                    <div style={{ fontWeight: 800, marginBottom: 4, color: 'var(--b)' }}>🎁 عروض الكميات:</div>
-                    <div style={{ display: 'grid', gap: 4 }}>
-                      <button type="button" className={`btn sm ${clientOrder.qty === 1 ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, qty: 1})} style={{ justifyContent: 'space-between' }}><span>قطعة واحدة</span><span>{money(previewProduct.price)}</span></button>
-                      <button type="button" className={`btn sm ${clientOrder.qty === 2 ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, qty: 2})} style={{ justifyContent: 'space-between' }}><span>قطعتين</span><span>{money(previewProduct.item2Price)}</span></button>
-                      <button type="button" className={`btn sm ${clientOrder.qty === 3 ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, qty: 3})} style={{ justifyContent: 'space-between' }}><span>3 قطع</span><span>{money(previewProduct.item3Price)}</span></button>
+              <div style={{ background: 'var(--s2)', padding: 16, borderRadius: 16, border: '1px solid var(--ln)', display: 'grid', gap: 10 }}>
+                <b style={{ fontSize: 14 }}>خيارات المنتج والاستمارة</b>
+
+                {/* اختيار الألوان */}
+                {previewProduct.colors?.length > 0 && (
+                  <div>
+                    <small style={{ fontWeight: 700 }}>اختر اللون:</small>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                      {previewProduct.colors.map((c, idx) => (
+                        <button key={idx} type="button" className={`btn sm ${clientOrder.selectedColor === c ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, selectedColor: c})}>{c}</button>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                <form onSubmit={handleClientSubmitOrder} style={{ display: 'grid', gap: 6 }}>
+                {/* اختيار المقاسات */}
+                {previewProduct.sizes?.length > 0 && (
+                  <div>
+                    <small style={{ fontWeight: 700 }}>اختر المقاس:</small>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+                      {previewProduct.sizes.map((s, idx) => (
+                        <button key={idx} type="button" className={`btn sm ${clientOrder.selectedSize === s ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, selectedSize: s})}>{s}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* عروض الكميات */}
+                {previewProduct.bundleActive && (
+                  <div style={{ background: '#fff', border: '1px solid var(--b)', borderRadius: 12, padding: 8, fontSize: 12 }}>
+                    <div style={{ fontWeight: 800, marginBottom: 4, color: 'var(--b)' }}>🎁 عروض الكميات:</div>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button type="button" className={`btn sm ${clientOrder.qty === 1 ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, qty: 1})}>قطعة</button>
+                      <button type="button" className={`btn sm ${clientOrder.qty === 2 ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, qty: 2})}>قطعتين</button>
+                      <button type="button" className={`btn sm ${clientOrder.qty === 3 ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, qty: 3})}>3 قطع</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* أزرار الإضافة للسلة واتمام الطلب */}
+                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                  <button type="button" className="btn sm" style={{ flex: 1 }} onClick={() => addToCart(previewProduct)}>➕ إضافة للسلة</button>
+                  <button type="button" className="btn sm p" style={{ flex: 1 }} onClick={() => {
+                    setClientOrder(prev => ({
+                      ...prev,
+                      name: 'عميل تجريبي',
+                      phone: '01012345678',
+                      address: 'شارع الهرم، القاهرة'
+                    }));
+                    say('✨ تم ملء البيانات تلقائياً، أكمل الشراء الآن');
+                  }}>⚡ اطلب بضغطة</button>
+                </div>
+
+                <form onSubmit={handleClientSubmitOrder} style={{ display: 'grid', gap: 6, borderTop: '1px solid var(--ln)', paddingTop: 10 }}>
                   <input className="in sm" required placeholder="الاسم الكامل" value={clientOrder.name} onChange={e => setClientOrder({...clientOrder, name: e.target.value})} />
                   <input className="in sm num" required placeholder="رقم الهاتف (واتساب)" dir="ltr" value={clientOrder.phone} onChange={e => setClientOrder({...clientOrder, phone: e.target.value})} />
                   <select className="in sm" value={clientOrder.gov} onChange={e => setClientOrder({...clientOrder, gov: e.target.value})}>
@@ -526,35 +579,30 @@ export default function MerchantDashboard() {
                   </select>
                   <input className="in sm" placeholder="العنوان بالتفصيل" value={clientOrder.address} onChange={e => setClientOrder({...clientOrder, address: e.target.value})} />
 
-                  {previewProduct.couponCode && (
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      <input className="in sm" placeholder={`كوبون: ${previewProduct.couponCode}`} value={clientOrder.couponCodeInput} onChange={e => setClientOrder({...clientOrder, couponCodeInput: e.target.value})} />
-                      <button type="button" className="btn sm p" onClick={() => {
-                        if (clientOrder.couponCodeInput.trim().toUpperCase() === previewProduct.couponCode.toUpperCase()) {
-                          setClientOrder({...clientOrder, appliedCoupon: { code: previewProduct.couponCode, pct: previewProduct.couponPct }});
-                          say(`✅ تم تطبيق خصم ${previewProduct.couponPct}%`);
-                        } else {
-                          say('❌ كوبون خاطئ');
-                        }
-                      }}>تطبيق</button>
-                    </div>
-                  )}
-
-                  {clientOrder.appliedCoupon && <small style={{ color: '#2f855a', fontWeight: 800 }}>تم تطبيق خصم {clientOrder.appliedCoupon.pct}%</small>}
-
-                  {previewProduct.sizes && (
-                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                      <small style={{ fontWeight: 700 }}>المقاس:</small>
-                      {previewProduct.sizes.split(',').map((s, idx) => (
-                        <button key={idx} type="button" className={`btn sm ${clientOrder.selectedSize === s.trim() ? 'p' : ''}`} onClick={() => setClientOrder({...clientOrder, selectedSize: s.trim()})}>{s.trim()}</button>
-                      ))}
-                    </div>
-                  )}
-
-                  <button className="btn p" style={{ width: '100%', marginTop: 4, minHeight: 40 }}>تأكيد وإتمام الطلب (الدفع عند الاستلام)</button>
+                  <button className="btn p" style={{ width: '100%', marginTop: 4, minHeight: 42 }}>إتمام الشراء وبدء الطلب (COD)</button>
                 </form>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* درج سلة الشراء التفاعلي (Cart Drawer) */}
+      {isCartOpen && (
+        <div className="ov" onClick={() => setIsCartOpen(false)}>
+          <div className="mod" style={{ maxWidth: 420, minHeight: '100vh', position: 'absolute', left: 0, top: 0, borderRadius: 0 }} onClick={(e) => e.stopPropagation()}>
+            <div className="mh"><b>🛒 سلة المشتريات</b><button className="btn sm" onClick={() => setIsCartOpen(false)}>✕</button></div>
+            {cart.length === 0 ? <p className="mut c">السلة فارغة حالياً</p> : (
+              <div style={{ display: 'grid', gap: 12 }}>
+                {cart.map((item, idx) => (
+                  <div key={idx} className="pls">
+                    <p><b>{item.name}</b><small>{item.selectedColor} · {item.selectedSize}</small></p>
+                    <span className="num" style={{ fontWeight: 800 }}>{money(item.price)}</span>
+                  </div>
+                ))}
+                <button className="btn p" style={{ width: '100%', marginTop: 16 }} onClick={() => { setPreviewProduct(cart[0]); setIsCartOpen(false); }}>إتمام الشراء لكافة منتجات السلة</button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -573,7 +621,6 @@ export default function MerchantDashboard() {
         .nv{display:flex;align-items:center;gap:10px;width:100%;min-height:38px;padding:0 10px;border:0;border-radius:10px;background:none;color:var(--ink);font:600 13px Cairo;cursor:pointer;text-align:start}
         .nv:hover{background:var(--s2)}.nv.act{background:var(--b);color:#fff}
         .badge-new{margin-inline-start:auto;background:#2f855a;color:#fff;font-size:10px;padding:1px 6px;border-radius:6px;font-weight:700}
-        .prog small{color:var(--mut)}.bar{height:7px;border-radius:9px;background:var(--s2);overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--b);border-radius:9px;transition:width .4s}
         .main{flex:1;min-width:0}.top{position:sticky;top:0;z-index:5;display:flex;gap:10px;align-items:center;padding:12px 28px;background:color-mix(in srgb,var(--s) 90%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--ln)}
         .srch{flex:1;max-width:460px;text-align:start;height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--ln);background:var(--s);color:var(--mut);font:600 13px Cairo;cursor:pointer}
         .srch kbd{float:left;font-size:11px;background:var(--s2);padding:2px 7px;border-radius:6px}
