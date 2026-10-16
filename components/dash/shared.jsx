@@ -101,7 +101,7 @@ export function useWa() {
     order_no: o.order_no ?? '', total: o.total !== undefined ? money(o.total, cfg.currency) : '', tracking: o.tracking || '',
     coupon_line: cfg.retarget.coupon_code ? ` واستخدم كود ${cfg.retarget.coupon_code} لخصم إضافي` : '',
   });
-  const message = (tplKey, o) => fillTemplate(cfg.wa_templates[tplKey] ?? tplKey, vars(o));
+  const message = (tplKey, o) => fillTemplate(tplKey === 'verify' ? cfg.verify.message : (cfg.wa_templates[tplKey] ?? tplKey), vars(o));
   const url = (phone, text) => waLink(phone, text);
   const log = async (phone, template) => {
     try { await supabase.from('store_wa_log').insert([{ store_id: uid, phone, template }]); } catch { /* تجاهل */ }
