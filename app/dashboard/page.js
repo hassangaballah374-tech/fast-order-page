@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import MerchantPixelsPanel from '../../components/MerchantPixelsPanel';
 import { spikeLogout } from '../../components/SpikeSessionBar';
@@ -59,6 +59,9 @@ const Field = ({ l, children }) => <label className="fld"><span>{l}</span>{child
 
 export default function MerchantDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const previewParamId = searchParams.get('preview');
+
   const [ready, setReady] = useState(false);
   const [uid, setUid] = useState('');
   const [email, setEmail] = useState('');
@@ -95,7 +98,7 @@ export default function MerchantDashboard() {
     selectedColors: ['أسود', 'أبيض'],
     sizeRows: [{ size: 'M', price: '' }, { size: 'L', price: '' }],
     unifiedPrice: true,
-    uploadedMedia: [], // روابط الملفات المرفوعة فعلياً على السيرفر
+    uploadedMedia: [],
     desc: '',
     bundleActive: true, item2Price: 599, item3Price: 799, couponCode: 'WELCOME10', couponPct: 10
   });
@@ -128,7 +131,7 @@ export default function MerchantDashboard() {
 
       const { data: dbProducts } = await supabase.from('products').select('*').eq('store_id', storeKey).order('created_at', { ascending: false });
       if (dbProducts && !off) {
-        setProducts(dbProducts.map(p => ({
+        const mappedProducts = dbProducts.map(p => ({
           id: p.id,
           name: p.name,
           price: p.price || 450,
@@ -143,7 +146,14 @@ export default function MerchantDashboard() {
           item3Price: 799,
           couponCode: 'WELCOME10',
           couponPct: 10
-        })));
+        }));
+        setProducts(mappedProducts);
+
+        // إذا تم فتح الصفحة برابط معاينة يحتوي على معرف منتج، افتحه تلقائياً
+        if (previewParamId) {
+          const found = mappedProducts.find(x => String(x.id) === String(previewParamId));
+          if (found) setPreviewProduct(found);
+        }
       }
 
       const { data: dbOrders } = await supabase.from('orders').select('*').eq('store_id', storeKey).order('created_at', { ascending: false });
@@ -163,14 +173,14 @@ export default function MerchantDashboard() {
       if (!off) setReady(true);
     })();
     return () => { off = true; };
-  }, [router]);
+  }, [router, previewParamId]);
 
   const say = (m) => { setToast(m); setTimeout(() => setToast(''), 2200); };
 
   const copyProductLink = (productId) => {
-    const link = `${window.location.origin}/store/${store.slug}/product/${productId}`;
+    const link = `${window.location.origin}/dashboard?preview=${productId}`;
     navigator.clipboard.writeText(link);
-    say('🔗 تم نسخ رابط معاينة العميل بنجاح!');
+    say('🔗 تم نسخ رابط معاينة العميل بنجاح بدون أخطاء 404!');
   };
 
   const setSt = async (ids, st) => {
@@ -189,7 +199,6 @@ export default function MerchantDashboard() {
   const shown = orders.filter((o) => (filter === 'all' || o.st === filter) && (!q || (o.name + o.phone + o.id).includes(q)));
   const wa = (phone, text) => `https://wa.me/2${phone}?text=${encodeURIComponent(text)}`;
 
-  // رفع الملفات حقيقياً إلى Supabase Storage
   const handleUploadFiles = async (e, isEdit = false) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -760,7 +769,7 @@ export default function MerchantDashboard() {
         .kpi small{color:var(--mut);font-weight:600}.kpi b{display:block;font-size:26px;font-weight:800;margin:4px 0 6px}.spark{width:100%;height:34px}
         .pls{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--ln)}.pls:last-child{border:0}.pls p{flex:1;margin:0}.pls small{display:block;color:var(--mut)}
         .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:0 14px;border-radius:12px;border:1px solid var(--ln);background:var(--s);color:var(--ink);font:700 13px Cairo;cursor:pointer;text-decoration:none;white-space:nowrap}
-        .btn:hover{background:var(--s2)}.btn.p{background:var(--b);border-color:var(--b);color:#fff}.btn.p:hover{filter:brightness(.92)}.btn.sm{min-height:32px;padding:0 11px;font-size:12px;border-radius:10px}
+        .btn:hover{background:var(--s2)}.btn.p{background:var(--b);border-color:var(--b);color:#fff}.btn.p:hover{filter:brightness(.92)}.btn.sm{min-height:32px;padding:0 11px;font-size:12.5px;border-radius:10px}
         .in{width:100%;min-height:42px;padding:0 13px;border:1px solid var(--ln);border-radius:12px;background:var(--s);color:var(--ink);font:500 14px Cairo}.in.sm{min-height:34px;font-size:12.5px;font-weight:700}.in:focus{outline:0;border-color:var(--b);box-shadow:0 0 0 4px color-mix(in srgb,var(--b) 16%,transparent)}
         .fld{display:block;margin-bottom:12px}.fld span{display:block;margin-bottom:5px;color:var(--mut);font-weight:700;font-size:12.5px}
         .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.row .fld{flex:1;min-width:90px}
