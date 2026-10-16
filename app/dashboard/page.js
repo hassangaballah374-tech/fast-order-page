@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import MerchantPixelsPanel from '../../components/MerchantPixelsPanel';
@@ -57,7 +57,7 @@ const Modal = ({ t, x, children }) => (
 );
 const Field = ({ l, children }) => <label className="fld"><span>{l}</span>{children}</label>;
 
-export default function MerchantDashboard() {
+function MerchantDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const previewParamId = searchParams.get('preview');
@@ -783,5 +783,12 @@ export default function MerchantDashboard() {
         .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:14px;font-weight:700;z-index:60}
       `}</style>
     </div>
+  );
+}
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', fontWeight: 800 }}>جاري التحميل...</div>}>
+      <MerchantDashboard />
+    </Suspense>
   );
 }
