@@ -10,7 +10,8 @@ import {
 } from '../../components/SpikeCharts';
 import SpikeIntegrations from '../../components/SpikeIntegrations';
 import { spikeLogout } from '../../components/SpikeSessionBar';
-
+import AdminBilling from '../../components/admin/AdminBilling';
+import AdminBell from '../../components/admin/AdminBell';
 const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
 export default function SpikeSuperAdminDashboard() {
@@ -88,6 +89,7 @@ export default function SpikeSuperAdminDashboard() {
     orders: 'manage_orders',
     rates: 'manage_finance',
     plans: 'manage_finance',
+    billing: 'manage_finance',
     admins: 'manage_admins',
     audit: 'manage_admins',
     broadcast: 'manage_admins',
@@ -540,6 +542,7 @@ export default function SpikeSuperAdminDashboard() {
   const navItemsAll = [
     { id: 'overview', title: t.navOverview, icon: '📊', count: null },
     { id: 'merchants', title: t.navStores, icon: '🏬', count: totalStoresCount },
+    { id: 'billing', title: 'الحصص والاشتراكات', icon: '💳', count: null },
     { id: 'orders', title: t.navOrders, icon: '📦', count: orders.length },
     { id: 'inventory', title: t.navInventory, icon: '🏷️', count: products.length },
     { id: 'integrations', title: t.navIntegrations, icon: '🔌', count: null },
@@ -816,6 +819,7 @@ export default function SpikeSuperAdminDashboard() {
             </button>
 
             <button
+             <AdminBell isDark={isDark} onNewOrder={fetchAllData} onOpenTab={(id) => setActiveTab(id)} />
               onClick={fetchAllData}
               disabled={refreshing}
               className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1 transition cursor-pointer ${
@@ -1372,26 +1376,8 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           )}
 
-          {/* تبويب الباقات */}
-          {shown('plans') && (
-            <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
-              <h3 className="text-lg font-black mb-4">باقات الاشتراك المتاحة</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                <div className="p-4 border rounded-xl space-y-2">
-                  <h4 className="font-black text-sm">الباقة المبتدئة (Starter)</h4>
-                  <p className="text-slate-500 dark:text-slate-400">مجاناً - عمولة 2.5% على كل طلب ناجح</p>
-                </div>
-                <div className="p-4 border rounded-xl border-[#00B050] space-y-2">
-                  <h4 className="font-black text-sm text-[#00B050]">باقة النمو (Pro)</h4>
-                  <p className="text-slate-500 dark:text-slate-400">29$ شهرياً - عمولة 1% فقط + دعم فني مخصص</p>
-                </div>
-                <div className="p-4 border rounded-xl space-y-2">
-                  <h4 className="font-black text-sm">باقة الشركات (Scale)</h4>
-                  <p className="text-slate-500 dark:text-slate-400">79$ شهرياً - 0% عمولة + خوادم مستقلة فائقة السرعة</p>
-                </div>
-              </div>
-            </div>
-          )}
+                   {shown('plans') && <AdminBilling isDark={isDark} initial="plans" onChanged={fetchAllData} />}
+          {shown('billing') && <AdminBilling isDark={isDark} initial="stores" onChanged={fetchAllData} />}
 
           {/* تبويب سجل الحركات */}
           {shown('audit') && (
