@@ -820,6 +820,7 @@ export default function SpikeSuperAdminDashboard() {
             </button>
 
             <button
+            <AdminBell isDark={isDark} onNewOrder={fetchAllData} onOpenTab={(id) => setActiveTab(id)} />
               onClick={fetchAllData}
               disabled={refreshing}
               className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1 transition cursor-pointer ${
