@@ -10,7 +10,7 @@ const ss = (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } cat
 /* نموذج الطلب المشترك (صفحة المنتج، السلة، الفانيل).
    items: [{product_id,title,image,price,qty,options}]، bump: {product_id}|null */
 export default function Checkout({ items, bump, buttonText, onSuccess, funnel, title = 'بيانات الشحن' }) {
-  const { slug, cfg, cur, zones, base } = useShop();
+  const { slug, cfg, cur, zones, base, live } = useShop();
   const router = useRouter();
   const co = cfg.checkout || {};
   const [f, setF] = useState({ name: '', phone: '', phone2: '', email: '', governorate: '', address: '', address2: '', notes: '' });
@@ -71,6 +71,7 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
     e.preventDefault();
     if (busy) return;
     setErr('');
+    if (!live) { setErr('المتجر غير مفعّل حالياً، الطلبات متوقفة مؤقتاً'); return; }
     if (!items.length) { setErr('السلة فارغة'); return; }
     if (f.name.trim().length < 2) { setErr('اكتب اسمك بالكامل'); return; }
     if (!isValidEgPhone(normalizePhone(f.phone))) { setErr('رقم الموبايل غير صحيح (مثال: 01012345678)'); return; }
@@ -151,7 +152,7 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
       ) : null}
 
       {err ? <div className="err">{err}</div> : null}
-      <button className="b p blk" type="submit" disabled={busy || !items.length}>{busy ? 'جاري إرسال الطلب...' : (buttonText || co.button_text || 'اطلب الآن')}</button>
+      <button className="b p blk" type="submit" disabled={busy || !items.length || !live}>{busy ? 'جاري إرسال الطلب...' : (buttonText || co.button_text || 'اطلب الآن')}</button>
       {co.trust_text ? <p className="mut center" style={{ fontSize: 13 }}>🔒 {co.trust_text}</p> : null}
       {co.terms_text ? <p className="mut center" style={{ fontSize: 12 }}>{co.terms_text}</p> : null}
     </form>
