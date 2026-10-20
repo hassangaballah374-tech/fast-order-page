@@ -22,6 +22,7 @@ export async function POST(req) {
 
   const store = await getStoreBySlug(sb, body.slug);
   if (!store) return fail('المتجر غير متاح', 404);
+  if (!store.live) return fail(store.reason === 'inactive' ? 'المتجر لم يتم تفعيله بعد، الطلبات متوقفة مؤقتاً.' : 'المتجر متوقف مؤقتاً عن استقبال الطلبات. تواصل مع صاحب المتجر.', 403);
   const sid = storeKey(store);
   const cfg = await getConfig(sb, sid);
   const prot = cfg.protection;
