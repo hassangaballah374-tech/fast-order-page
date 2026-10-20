@@ -18,6 +18,7 @@ export async function POST(req) {
   try { sb = adminClient(); } catch { return NextResponse.json({ ok: false }, { status: 500 }); }
   const store = await getStoreBySlug(sb, body.slug);
   if (!store) return NextResponse.json({ ok: false }, { status: 404 });
+  if (!store.live) return NextResponse.json({ ok: true, skipped: true });
   const sid = storeKey(store);
   await sb.rpc('bump_store_stat', { p_store: sid, p_visits: e[0], p_carts: e[1], p_checkouts: e[2], p_cross: e[3] });
   if (body.event === 'visit' && body.ref && /^[A-Za-z0-9_-]{2,40}$/.test(String(body.ref))) {
