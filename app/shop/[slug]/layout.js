@@ -48,15 +48,17 @@ export default async function ShopLayout({ children, params }) {
     '--r': `${radius}px`, '--cols': cols, '--font': `'${font}'`,
   };
   const cls = `spk ${b.card_style === 'outline' ? 'outline' : b.card_style === 'flat' ? 'flat' : 'soft'}`;
-  const gtm = GTM_RE.test(String(cfg.tracking.gtm_id || '').trim()) ? String(cfg.tracking.gtm_id).trim() : '';
+  const gtm = store.live && GTM_RE.test(String(cfg.tracking.gtm_id || '').trim()) ? String(cfg.tracking.gtm_id).trim() : '';
+  const pubCfg = publicCfg(cfg);
+  if (store.whatsapp_button === false) pubCfg.whatsapp = { ...pubCfg.whatsapp, enabled: false };
   const footerPages = pages.filter((p) => p.in_footer).map((p) => ({ title: p.title, slug: p.slug }));
 
   return (
     <div className={cls} style={style} dir="rtl" lang="ar">
       <style dangerouslySetInnerHTML={{ __html: SHOP_CSS }} />
       <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}:wght@400;600;700;800;900&display=swap`} />
-      <StoreProvider slug={store.store_slug} name={store.store_name || ''} cfg={publicCfg(cfg)} pages={footerPages} categories={categories} zones={zones}>
-        <Tracker pixels={pixels} gtm={gtm} />
+      <StoreProvider slug={store.store_slug} name={store.store_name || ''} cfg={pubCfg} pages={footerPages} categories={categories} zones={zones} live={store.live} reason={store.reason}>
+        <Tracker pixels={store.live ? pixels : []} gtm={gtm} />
         <Shell footerExtra={<Blocks list={blocks.filter((x) => x.placement === 'footer')} />}>{children}</Shell>
       </StoreProvider>
     </div>
