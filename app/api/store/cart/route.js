@@ -16,6 +16,7 @@ export async function POST(req) {
   try { sb = adminClient(); } catch { return NextResponse.json({ ok: false }, { status: 500 }); }
   const store = await getStoreBySlug(sb, body.slug);
   if (!store) return NextResponse.json({ ok: false }, { status: 404 });
+  if (!store.live) return NextResponse.json({ ok: true, skipped: true });
   const sid = storeKey(store);
 
   const phone = normalizePhone(body.phone);
