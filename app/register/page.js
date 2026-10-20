@@ -114,7 +114,7 @@ export default function SpikeRegisterAndAuthPage() {
       owner_name: meta.full_name || '',
       phone,
       wallet_balance_usd: 5.0,
-      is_active: true,
+      is_active: false,
       subscription_status: 'active',
       plan_type: 'starter',
     }]);
