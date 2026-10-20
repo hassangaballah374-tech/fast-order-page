@@ -15,6 +15,7 @@ export default function SpikeRegisterAndAuthPage() {
 
   const [isLoginMode, setIsLoginMode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const t = {
     ar: {
@@ -23,21 +24,23 @@ export default function SpikeRegisterAndAuthPage() {
       pricing: 'الأسعار',
       subscribeBtn: 'اشترك الآن',
       loginTitle: 'تسجيل الدخول إلى حسابك',
-      registerTitle: 'انشئ حساب مجاني',
+      registerTitle: 'Sign Up Account',
+      registerSubtitle: 'Enter your personal data to create your account',
+      firstNameLabel: 'First Name',
+      lastNameLabel: 'Last Name',
       storeNameLabel: 'اسم موقعك',
       currencyLabel: 'العملة الأساسية',
-      nameLabel: 'اسمك واسم العائلة',
-      phoneLabel: 'رقم الهاتف',
-      emailLabel: 'البريد الالكتروني',
-      passLabel: 'الرقم السري',
+      emailLabel: 'Email',
+      passLabel: 'Password',
       confirmPassLabel: 'اعد كتابة الرقم السري',
-      submitRegister: 'انشاء حساب',
+      submitRegister: 'Sign Up',
       submitLogin: 'تسجيل الدخول',
       processing: 'جاري المعالجة...',
       noAccount: 'ليس لديك حساب بعد؟',
-      hasAccount: 'لديك حساب بالفعل؟',
+      hasAccount: 'Already have an account?',
       switchRegister: 'انشئ حساب مجاني جديد',
-      switchLogin: 'تسجيل الدخول',
+      switchLogin: 'Log in',
+      orText: 'Or',
       aboutTitle: 'عن سبايك',
       aboutDesc: 'حلّق بتجارتك الإلكترونية بمعدل يصل إلى 200% عن منافسيك، منظومة سبايك تفهم متطلباتك وسلوك عملائك.',
       academyTitle: 'الأكاديمية',
@@ -51,21 +54,23 @@ export default function SpikeRegisterAndAuthPage() {
       pricing: 'Pricing',
       subscribeBtn: 'Start Free',
       loginTitle: 'Sign In to Your Account',
-      registerTitle: 'Create Free Account',
+      registerTitle: 'Sign Up Account',
+      registerSubtitle: 'Enter your personal data to create your account',
+      firstNameLabel: 'First Name',
+      lastNameLabel: 'Last Name',
       storeNameLabel: 'Your Store Name',
       currencyLabel: 'Base Currency',
-      nameLabel: 'Full Name',
-      phoneLabel: 'Phone Number',
-      emailLabel: 'Email Address',
+      emailLabel: 'Email',
       passLabel: 'Password',
       confirmPassLabel: 'Confirm Password',
-      submitRegister: 'Create Account',
+      submitRegister: 'Sign Up',
       submitLogin: 'Sign In',
       processing: 'Processing...',
       noAccount: "Don't have an account?",
       hasAccount: 'Already have an account?',
       switchRegister: 'Create a new free account',
-      switchLogin: 'Sign In',
+      switchLogin: 'Log in',
+      orText: 'Or',
       aboutTitle: 'About SPIKE',
       aboutDesc: 'Scale your eCommerce business up to 200% over competitors. SPIKE understands your needs and customer behaviors.',
       academyTitle: 'Academy',
@@ -76,10 +81,10 @@ export default function SpikeRegisterAndAuthPage() {
   }[lang || 'ar'];
 
   const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
     storeSlug: '',
     currency: 'USD',
-    fullName: '',
-    phone: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -91,10 +96,8 @@ export default function SpikeRegisterAndAuthPage() {
 
   const emailNow = formData.email.trim().toLowerCase();
   const isAdminEmail = emailNow === SUPER_ADMIN_EMAIL.toLowerCase();
-  // لو كتب إيميل الأدمن، الفورم يتحول لدخول تلقائياً (من غير حقول التسجيل)
   const showRegisterFields = !isLoginMode && !isAdminEmail;
 
-  // ينشئ صفحة المتجر للتاجر أول مرة يدخل (بيانات المتجر محفوظة مع الحساب وقت التسجيل)
   const ensureStore = async (user) => {
     const meta = user.user_metadata || {};
     const { data: existing } = await supabase
@@ -105,13 +108,13 @@ export default function SpikeRegisterAndAuthPage() {
     if (existing || !meta.store_slug) return;
 
     const cleanSlug = String(meta.store_slug).trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
-    const phone = '+20' + String(meta.phone || '').replace(/^0+/, '');
+    const phone = '+201000000000';
 
     const { error: spErr } = await supabase.from('store_profiles').insert([{
       user_id: user.id,
       store_name: meta.store_slug,
       store_slug: cleanSlug,
-      owner_name: meta.full_name || '',
+      owner_name: `${meta.first_name || ''} ${meta.last_name || ''}`.trim() || 'Store Owner',
       phone,
       wallet_balance_usd: 5.0,
       is_active: false,
@@ -123,7 +126,7 @@ export default function SpikeRegisterAndAuthPage() {
     await supabase.from('merchant_settings').insert([{
       user_id: user.id,
       store_name: meta.store_slug,
-      owner_name: meta.full_name || '',
+      owner_name: `${meta.first_name || ''} ${meta.last_name || ''}`.trim(),
       store_email: user.email,
       support_phone: phone,
       about_us: 'Official verified store powered by SPIKE.',
@@ -145,7 +148,6 @@ export default function SpikeRegisterAndAuthPage() {
     try {
       const emailInput = formData.email.trim().toLowerCase();
 
-      // ===== دخول (للأدمن من أي وضع، وللتاجر في وضع الدخول) =====
       if (isLoginMode || emailInput === SUPER_ADMIN_EMAIL.toLowerCase()) {
         if (!emailInput || !formData.password) {
           alert(isAr ? 'يرجى كتابة البريد الإلكتروني وكلمة المرور' : 'Please enter email and password');
@@ -164,7 +166,6 @@ export default function SpikeRegisterAndAuthPage() {
           return;
         }
 
-        // الأدمن: دخول مباشر على الإدارة (الجلسة حقيقية، والتحقق الفعلي في صفحة الإدارة وقاعدة البيانات)
         if (emailInput === SUPER_ADMIN_EMAIL.toLowerCase()) {
           rememberSession(data.user, true);
           router.replace('/admin');
@@ -177,15 +178,10 @@ export default function SpikeRegisterAndAuthPage() {
         return;
       }
 
-      // ===== إنشاء حساب تاجر جديد =====
-      if (!formData.storeSlug || !formData.fullName || !formData.phone || !emailInput || !formData.password) {
-        alert(isAr ? 'يرجى ملء كافة الحقول المطلوبة' : 'Please fill all required fields');
-        setLoading(false);
-        return;
-      }
+      const generatedSlug = formData.storeSlug.trim() || `${formData.firstName.toLowerCase() || 'store'}-${Math.floor(Math.random() * 900 + 100)}`;
 
-      if (formData.password !== formData.confirmPassword) {
-        alert(isAr ? 'كلمتا المرور غير متطابقتين!' : 'Passwords do not match!');
+      if (!formData.firstName || !emailInput || !formData.password) {
+        alert(isAr ? 'يرجى ملء الحقول الأساسية (الاسم، الإيميل، الباسورد)' : 'Please fill required fields');
         setLoading(false);
         return;
       }
@@ -196,16 +192,16 @@ export default function SpikeRegisterAndAuthPage() {
         return;
       }
 
-      const cleanSlug = formData.storeSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
+      const cleanSlug = generatedSlug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
 
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: emailInput,
         password: formData.password,
         options: {
           data: {
-            store_slug: formData.storeSlug.trim(),
-            full_name: formData.fullName.trim(),
-            phone: formData.phone.trim(),
+            store_slug: cleanSlug,
+            first_name: formData.firstName.trim(),
+            last_name: formData.lastName.trim(),
             currency: formData.currency,
           },
         },
@@ -217,7 +213,6 @@ export default function SpikeRegisterAndAuthPage() {
         return;
       }
 
-      // الإيميل مسجل من قبل (Supabase بيرجع مستخدم من غير هويات)
       if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
         alert(isAr ? 'هذا البريد مسجل بالفعل، سجّل الدخول بدلاً من ذلك.' : 'Email already registered. Please sign in.');
         setIsLoginMode(true);
@@ -225,7 +220,6 @@ export default function SpikeRegisterAndAuthPage() {
         return;
       }
 
-      // لو تأكيد البريد مفعّل في Supabase، مفيش جلسة لحد ما يؤكد
       if (!data?.session) {
         alert(isAr
           ? '📧 تم إنشاء حسابك. افتح بريدك واضغط رابط التأكيد، ثم سجّل الدخول وسيُنشأ متجرك تلقائياً.'
@@ -249,247 +243,171 @@ export default function SpikeRegisterAndAuthPage() {
 
   return (
     <div 
-      className={`min-h-screen font-sans flex flex-col justify-between selection:bg-[#00B050] selection:text-white transition-colors duration-200 overflow-x-hidden ${
-        isDark ? 'bg-[#0B132B] text-slate-100' : 'bg-[#F4F6F9] text-slate-800'
-      }`} 
+      className="min-h-screen font-sans flex flex-col justify-between selection:bg-[#00B050] selection:text-white transition-colors duration-200 overflow-x-hidden bg-[#0A1118] text-slate-100" 
       dir={isAr ? 'rtl' : 'ltr'}
     >
-
-      <header className={`px-4 sm:px-8 py-3 border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${
-        isDark ? 'bg-[#091222]/95 border-slate-800' : 'bg-white/95 border-slate-200/90 shadow-2xs'
-      }`}>
+      <header className="px-4 sm:px-8 py-3 border-b border-slate-800/80 sticky top-0 z-40 backdrop-blur-md bg-[#0A1118]/90">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
-          
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <img
-              src={SPIKE_LOGO_URL}
-              alt="SPIKE"
-              className="h-8 w-auto object-contain rounded-lg shadow-xs"
-            />
-            <span className={`text-lg font-black tracking-tight ${isDark ? 'text-white' : 'text-[#0E1E38]'}`}>
-              {t.brand}
-            </span>
+            <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-8 w-auto object-contain rounded-lg shadow-xs" />
+            <span className="text-lg font-black tracking-tight text-white">{t.brand}</span>
           </Link>
 
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={toggleLanguage}
-              className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition cursor-pointer shrink-0 ${
-                isDark 
-                  ? 'border-slate-700 bg-slate-800 text-slate-200' 
-                  : 'border-slate-200 bg-slate-50 text-slate-700'
-              }`}
+              className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-slate-800 bg-[#121B26] text-slate-200 transition cursor-pointer"
             >
-              <span>🌐</span>
-              <span className="font-mono">{isAr ? 'EN' : 'عربي'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className={`w-8 h-8 rounded-lg border flex items-center justify-center text-xs transition cursor-pointer shrink-0 ${
-                isDark 
-                  ? 'border-slate-700 bg-slate-800 text-amber-300' 
-                  : 'border-slate-200 bg-slate-50 text-slate-700'
-              }`}
-              title={isDark ? 'الوضع النهاري' : 'الوضع الليلي'}
-            >
-              {isDark ? '☀️' : '🌙'}
+              <span>🌐</span> <span className="font-mono">{isAr ? 'EN' : 'عربي'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsLoginMode(false)}
-              className="bg-[#00B050] hover:bg-[#009644] text-white px-3 sm:px-4 py-1.5 rounded-lg text-xs font-black shadow-xs transition shrink-0 cursor-pointer"
+              className="bg-[#00B050] hover:bg-[#009644] text-white px-3 sm:px-4 py-1.5 rounded-lg text-xs font-black shadow-xs transition cursor-pointer"
             >
               {t.subscribeBtn}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsLoginMode(true)}
-              className={`w-8 h-8 rounded-lg border flex items-center justify-center text-xs transition shrink-0 cursor-pointer ${
-                isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'
-              }`}
-              title={t.submitLogin}
-            >
-              👤
             </button>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-10 w-full max-w-lg mx-auto">
-        
-        <div className="text-center space-y-2 mb-5">
-          <div className="flex justify-center">
-            <img
-              src={SPIKE_LOGO_URL}
-              alt="SPIKE"
-              className="h-14 w-auto object-contain rounded-2xl shadow-sm"
-            />
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-8 w-full max-w-md mx-auto">
+        <div className="w-full rounded-[28px] border border-slate-800 bg-[#111A24]/90 p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+          
+          {/* تأثيرات الإضاءة الخلفية المتدرجة مثل التصميم */}
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#00B050]/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div className="text-center space-y-1.5 mb-6 relative z-10">
+            <div className="flex justify-center mb-2">
+              <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-10 w-auto object-contain rounded-xl" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+              {(isLoginMode || isAdminEmail) ? t.loginTitle : t.registerTitle}
+            </h2>
+            {!isLoginMode && !isAdminEmail && (
+              <p className="text-slate-400 text-[11px]">{t.registerSubtitle}</p>
+            )}
           </div>
 
-          <div className="flex items-center justify-center gap-1.5 font-black text-xl">
-            <span className={isDark ? 'text-white' : 'text-[#0E1E38]'}>سبايك</span>
-            <span className="text-slate-400 font-light">|</span>
-            <span className="text-[#00B050] font-mono tracking-wider">SPIKE</span>
-          </div>
+          {/* أزرار التسجيل السريع (Google & Github) مطابقة للصورة */}
+          {showRegisterFields && (
+            <div className="grid grid-cols-2 gap-3 mb-5 relative z-10">
+              <button
+                type="button"
+                onClick={() => alert(isAr ? 'التسجيل بواسطة Google قيد الإعداد' : 'Google sign up coming soon')}
+                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-700/80 bg-[#182433] hover:bg-[#1E2D3D] text-white text-xs font-bold transition cursor-pointer shadow-xs"
+              >
+                <span className="text-sm">🌐</span> Google
+              </button>
+              <button
+                type="button"
+                onClick={() => alert(isAr ? 'التسجيل بواسطة Github قيد الإعداد' : 'Github sign up coming soon')}
+                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-700/80 bg-[#182433] hover:bg-[#1E2D3D] text-white text-xs font-bold transition cursor-pointer shadow-xs"
+              >
+                <span className="text-sm">🐙</span> Github
+              </button>
 
-          <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            {(isLoginMode || isAdminEmail) ? t.loginTitle : t.registerTitle}
-          </h2>
-        </div>
+              <div className="col-span-2 flex items-center my-1">
+                <div className="flex-1 border-t border-slate-800"></div>
+                <span className="px-3 text-[11px] text-slate-500 font-mono">{t.orText}</span>
+                <div className="flex-1 border-t border-slate-800"></div>
+              </div>
+            </div>
+          )}
 
-        <div className={`w-full rounded-2xl border p-5 sm:p-8 shadow-sm transition-colors ${
-          isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'
-        }`}>
-          <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
+          <form onSubmit={handleSubmit} className="space-y-3.5 text-xs font-bold relative z-10">
             
             {showRegisterFields && (
               <>
-                <div className="space-y-1.5">
-                  <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.storeNameLabel}</label>
-                  <div className={`flex items-stretch rounded-xl border overflow-hidden transition-all ${
-                    isDark ? 'border-slate-700 bg-slate-900 focus-within:border-[#00B050]' : 'border-slate-300 bg-slate-50 focus-within:border-[#00B050] focus-within:bg-white'
-                  }`} dir="ltr">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-slate-400 text-[11px] font-medium">{t.firstNameLabel}</label>
                     <input
                       type="text"
                       required
-                      placeholder="store-name"
-                      value={formData.storeSlug}
-                      onChange={(e) => handleChange('storeSlug', e.target.value)}
-                      className={`flex-1 p-3 outline-none font-mono text-xs text-left bg-transparent ${
-                        isDark ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'
-                      }`}
+                      placeholder="e.g. Hassan"
+                      value={formData.firstName}
+                      onChange={(e) => handleChange('firstName', e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-700/80 bg-[#182433] text-white placeholder-slate-500 outline-none text-xs focus:border-[#00B050] transition"
                     />
-                    <span className={`px-3 flex items-center font-mono text-xs select-none border-l ${
-                      isDark ? 'bg-slate-800 text-slate-400 border-slate-700' : 'bg-slate-200 text-slate-600 border-slate-300'
-                    }`}>
-                      .spike.shop
-                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 text-[11px] font-medium">{t.lastNameLabel}</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Hosny"
+                      value={formData.lastName}
+                      onChange={(e) => handleChange('lastName', e.target.value)}
+                      className="w-full p-3 rounded-xl border border-slate-700/80 bg-[#182433] text-white placeholder-slate-500 outline-none text-xs focus:border-[#00B050] transition"
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.currencyLabel}</label>
-                  <select
-                    value={formData.currency}
-                    onChange={(e) => handleChange('currency', e.target.value)}
-                    className={`w-full p-3 rounded-xl border outline-none text-xs font-bold transition-all ${
-                      isDark ? 'bg-slate-900 border-slate-700 text-white focus:border-[#00B050]' : 'bg-slate-50 border-slate-300 text-slate-800 focus:border-[#00B050] focus:bg-white'
-                    }`}
-                  >
-                    <option value="USD">{isAr ? 'دولار أمريكي - USD' : 'US Dollar - USD'}</option>
-                    <option value="EGP">{isAr ? 'جنيه مصري - EGP' : 'Egyptian Pound - EGP'}</option>
-                    <option value="SAR">{isAr ? 'ريال سعودي - SAR' : 'Saudi Riyal - SAR'}</option>
-                    <option value="AED">{isAr ? 'درهم إماراتي - AED' : 'UAE Dirham - AED'}</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.nameLabel}</label>
+                <div className="space-y-1">
+                  <label className="text-slate-400 text-[11px] font-medium">{t.storeNameLabel}</label>
                   <input
                     type="text"
-                    required
-                    placeholder={isAr ? 'مثال: أحمد محمد' : 'e.g. John Doe'}
-                    value={formData.fullName}
-                    onChange={(e) => handleChange('fullName', e.target.value)}
-                    className={`w-full p-3 rounded-xl border outline-none text-xs transition-all ${
-                      isDark ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-500 focus:border-[#00B050]' : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-[#00B050] focus:bg-white'
-                    }`}
+                    placeholder="my-store-slug"
+                    value={formData.storeSlug}
+                    onChange={(e) => handleChange('storeSlug', e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-700/80 bg-[#182433] text-white placeholder-slate-500 outline-none text-xs font-mono focus:border-[#00B050] transition"
                   />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.phoneLabel}</label>
-                  <div className={`flex items-stretch rounded-xl border overflow-hidden transition-all ${
-                    isDark ? 'border-slate-700 bg-slate-900 focus-within:border-[#00B050]' : 'border-slate-300 bg-slate-50 focus-within:border-[#00B050] focus-within:bg-white'
-                  }`} dir="ltr">
-                    <div className={`px-3 flex items-center gap-1.5 font-mono text-xs select-none border-r ${
-                      isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-200 text-slate-700 border-slate-300'
-                    }`}>
-                      <span>🇪🇬</span>
-                      <span>+20</span>
-                    </div>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="01xxxxxxxxx"
-                      value={formData.phone}
-                      onChange={(e) => handleChange('phone', e.target.value)}
-                      className={`flex-1 p-3 outline-none font-mono text-xs text-left bg-transparent ${
-                        isDark ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'
-                      }`}
-                    />
-                  </div>
                 </div>
               </>
             )}
 
-            <div className="space-y-1.5">
-              <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.emailLabel}</label>
+            <div className="space-y-1">
+              <label className="text-slate-400 text-[11px] font-medium">{t.emailLabel}</label>
               <input
                 type="email"
                 required
                 dir="ltr"
-                placeholder="name@example.com"
+                placeholder="eg. assardev58@gmail.com"
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
-                className={`w-full p-3 rounded-xl border outline-none text-xs font-mono text-left transition-all ${
-                  isDark ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-500 focus:border-[#00B050]' : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-[#00B050] focus:bg-white'
-                }`}
+                className="w-full p-3 rounded-xl border border-slate-700/80 bg-[#182433] text-white placeholder-slate-500 outline-none text-xs font-mono text-left focus:border-[#00B050] transition"
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.passLabel}</label>
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) => handleChange('password', e.target.value)}
-                className={`w-full p-3 rounded-xl border outline-none text-xs transition-all ${
-                  isDark ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-500 focus:border-[#00B050]' : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-[#00B050] focus:bg-white'
-                }`}
-              />
-            </div>
-
-            {showRegisterFields && (
-              <div className="space-y-1.5">
-                <label className={isDark ? 'text-slate-300' : 'text-slate-700'}>{t.confirmPassLabel}</label>
+            <div className="space-y-1 relative">
+              <label className="text-slate-400 text-[11px] font-medium">{t.passLabel}</label>
+              <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
-                  placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleChange('confirmPassword', e.target.value)}
-                  className={`w-full p-3 rounded-xl border outline-none text-xs transition-all ${
-                    isDark ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-500 focus:border-[#00B050]' : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:border-[#00B050] focus:bg-white'
-                  }`}
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  className="w-full p-3 rounded-xl border border-slate-700/80 bg-[#182433] text-white placeholder-slate-500 outline-none text-xs focus:border-[#00B050] transition pr-10"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-sm cursor-pointer"
+                >
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
               </div>
-            )}
+            </div>
 
-            <div className="pt-3 space-y-3">
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-sm font-black transition-all shadow-sm active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-white hover:bg-slate-100 text-[#0A1118] rounded-xl text-xs font-black transition-all shadow-md active:scale-98 cursor-pointer flex items-center justify-center gap-2"
               >
                 {loading ? t.processing : (isLoginMode || isAdminEmail) ? t.submitLogin : t.submitRegister}
               </button>
 
-              <div className="text-center pt-1">
-                <span className="text-slate-400 text-xs block mb-2 font-normal">
-                  {isLoginMode ? t.noAccount : t.hasAccount}
-                </span>
+              <div className="text-center pt-3 text-slate-400 text-[11px] flex items-center justify-center gap-1">
+                <span>{isLoginMode ? t.noAccount : t.hasAccount}</span>
                 <button
                   type="button"
                   onClick={() => setIsLoginMode(!isLoginMode)}
-                  className="w-full py-2.5 border-2 border-[#00B050] text-[#00B050] hover:bg-[#00B050]/10 rounded-xl text-xs font-black transition cursor-pointer"
+                  className="text-[#00B050] hover:underline font-bold cursor-pointer"
                 >
                   {isLoginMode ? t.switchRegister : t.switchLogin}
                 </button>
@@ -500,80 +418,14 @@ export default function SpikeRegisterAndAuthPage() {
         </div>
       </main>
 
-      <footer className="bg-[#121824] text-white pt-8 pb-6 px-4 sm:px-8 border-t border-slate-800 text-xs">
-        <div className="max-w-6xl mx-auto space-y-6">
-          
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 items-start">
-            <div className="space-y-2">
-              <h4 className="font-black text-xs text-white">{t.aboutTitle}</h4>
-              <ul className="space-y-1.5 text-slate-400 text-[11px]">
-                <li><Link href="/" className="hover:text-white transition">{t.home}</Link></li>
-                <li><Link href="/#pricing" className="hover:text-white transition">{t.pricing}</Link></li>
-              </ul>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="font-black text-xs text-white">{t.academyTitle}</h4>
-              <ul className="space-y-1.5 text-slate-400 text-[11px]">
-                <li><span className="hover:text-white transition cursor-pointer">شروحات COD</span></li>
-              </ul>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="font-black text-xs text-white">{t.devsTitle}</h4>
-              <ul className="space-y-1.5 text-slate-400 text-[11px] font-mono">
-                <li><span className="hover:text-white cursor-pointer">Public API</span></li>
-                <li><span className="hover:text-white cursor-pointer">Webhooks</span></li>
-              </ul>
-            </div>
-
-            <div className="space-y-2">
-              <h4 className="font-black text-xs text-white">{t.appTitle}</h4>
-              <div className="space-y-1.5">
-                <div className="border border-slate-700 bg-black/40 rounded-lg p-1.5 flex items-center gap-2 cursor-pointer">
-                  <span className="text-base">🍏</span>
-                  <div>
-                    <span className="text-[8px] text-slate-400 block leading-none">Download on</span>
-                    <strong className="text-[10px] font-mono">App Store</strong>
-                  </div>
-                </div>
-                <div className="border border-slate-700 bg-black/40 rounded-lg p-1.5 flex items-center gap-2 cursor-pointer">
-                  <span className="text-base">▶️</span>
-                  <div>
-                    <span className="text-[8px] text-slate-400 block leading-none">GET IT ON</span>
-                    <strong className="text-[10px] font-mono">Google Play</strong>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <footer className="bg-[#080E14] text-white pt-6 pb-4 px-4 sm:px-8 border-t border-slate-800/80 text-xs">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-slate-500 text-[10px]">
+          <div>{t.rights}</div>
+          <div className="flex items-center gap-2 font-bold text-slate-400">
+            <span className="text-white">EG</span> • <span>SA</span> • <span>AE</span>
           </div>
-
-          <div className="border-t border-slate-800/80 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-slate-500 text-[10px]">
-            <div>{t.rights}</div>
-            <div className="flex items-center gap-2 font-bold text-slate-400">
-              <span className="text-white">EG</span>
-              <span>•</span>
-              <span>MA</span>
-              <span>•</span>
-              <span>DZ</span>
-              <span>•</span>
-              <span>SA</span>
-            </div>
-          </div>
-
         </div>
       </footer>
-
-      <a
-        href="https://wa.me/201000000000"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-4 left-4 z-50 w-11 h-11 rounded-full bg-[#25D366] hover:bg-[#20ba59] text-white flex items-center justify-center text-xl shadow-xl transition-transform active:scale-90 cursor-pointer"
-        title="WhatsApp Support"
-      >
-        💬
-      </a>
-
     </div>
   );
 }
