@@ -134,7 +134,7 @@ function WelcomeBack() {
 }
 
 export default function Shell({ children, footerExtra }) {
-  const { name, cfg, base, count, pages } = useShop();
+  const { name, cfg, base, count, pages, live, reason } = useShop();
   const b = cfg.brand || {};
   const c = cfg.contact || {};
   const social = cfg.social || {};
@@ -145,6 +145,7 @@ export default function Shell({ children, footerExtra }) {
   return (
     <>
       <HitAndUtm />
+      {!live ? <div className="ann" style={{ background: '#b45309', color: '#fff' }}>{reason === 'inactive' ? 'المتجر في وضع الإعداد: لم يتم تفعيله بعد، الطلبات متوقفة مؤقتاً' : 'المتجر متوقف مؤقتاً عن استقبال الطلبات'}</div> : null}
       {b.announcement ? <div className="ann">{annLink ? <a href={annLink}>{b.announcement}</a> : b.announcement}</div> : null}
       <header className="hd">
         <div className="wrap hd-in">
