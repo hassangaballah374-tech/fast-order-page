@@ -8,6 +8,7 @@ import { SCREENS } from '../../components/dash/registry';
 import { DASH_CSS } from '../../components/dash/style';
 import { mergeConfig } from '../../lib/storeKit';
 import { spikeLogout } from '../../components/SpikeSessionBar';
+import { MerchantBell, UsageBanner } from '../../components/dash/MerchantBell';
 
 const ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 const FLAT = flatMenu();
@@ -257,6 +258,7 @@ export default function MerchantDashboard() {
             <button type="button" className="btn menubtn" aria-label="القائمة" onClick={() => setSide(true)}>☰</button>
             <button type="button" className="srch" onClick={() => setCmd(true)}>🔎 ابحث عن أي شاشة أو إعداد… <kbd>Ctrl K</kbd></button>
             <span style={{ flex: 1 }} />
+            <MerchantBell />
             {storeUrl && <a className="btn" href={storeUrl} target="_blank" rel="noreferrer">معاينة المتجر ↗</a>}
             <button type="button" className="btn p" onClick={() => go('products')}>+ منتج</button>
             {isAdmin && <button type="button" className="btn" onClick={() => router.push('/admin')}>🛡️ الإدارة</button>}
@@ -264,6 +266,7 @@ export default function MerchantDashboard() {
           </div>
 
           <section className="pg">
+          <UsageBanner />
             {isAdmin && uid !== authId && (
               <div className="card" style={{ marginBottom: 14, background: '#fff8e8', borderColor: '#f0d9a8' }}>
                 أنت تدير متجراً آخر بصلاحية الأدمن: <b>{store?.store_name || uid}</b>
