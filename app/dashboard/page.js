@@ -263,6 +263,7 @@ export default function MerchantDashboard() {
             <button type="button" className="srch" onClick={() => setCmd(true)}>🔎 ابحث عن أي شاشة أو إعداد… <kbd>Ctrl K</kbd></button>
             <span style={{ flex: 1 }} />
             <MerchantBell />
+            <button type="button" className="btn" onClick={toggleDark} title={dark ? 'الوضع النهاري' : 'الوضع الداكن'}>{dark ? '☀️' : '🌙'}</button>
             {storeUrl && <a className="btn" href={storeUrl} target="_blank" rel="noreferrer">معاينة المتجر ↗</a>}
             <button type="button" className="btn p" onClick={() => go('products')}>+ منتج</button>
             {isAdmin && <button type="button" className="btn" onClick={() => router.push('/admin')}>🛡️ الإدارة</button>}
