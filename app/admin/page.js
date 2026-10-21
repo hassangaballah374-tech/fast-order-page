@@ -1379,7 +1379,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {/* تبويب الباقات */}
-          {shown('plans') && <><PaymentNote isDark={isDark} /><ThemeColors isDark={isDark} /><AdminBilling … /></>}
+          {shown('plans') && <><PaymentNote isDark={isDark} /><AdminBilling isDark={isDark} initial="plans" onChanged={fetchAllData} /></>}
           {shown('billing') && <AdminBilling isDark={isDark} initial="stores" onChanged={fetchAllData} />}
 
           {/* تبويب سجل الحركات */}
