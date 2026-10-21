@@ -13,6 +13,7 @@ import { spikeLogout } from '../../components/SpikeSessionBar';
 import AdminBilling from '../../components/admin/AdminBilling';
 import AdminBell from '../../components/admin/AdminBell';
 import PaymentNote from '../../components/admin/PaymentNote';
+import ThemeColors from '../../components/admin/ThemeColors';  
 
 const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
@@ -1378,7 +1379,7 @@ export default function SpikeSuperAdminDashboard() {
           )}
 
           {/* تبويب الباقات */}
-          {shown('plans') && <><PaymentNote isDark={isDark} /><AdminBilling isDark={isDark} initial="plans" onChanged={fetchAllData} /></>}
+          {shown('plans') && <><PaymentNote isDark={isDark} /><ThemeColors isDark={isDark} /><AdminBilling … /></>}
           {shown('billing') && <AdminBilling isDark={isDark} initial="stores" onChanged={fetchAllData} />}
 
           {/* تبويب سجل الحركات */}
