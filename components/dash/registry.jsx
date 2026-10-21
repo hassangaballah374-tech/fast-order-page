@@ -75,8 +75,10 @@ const base = {
   downsell: L(M, 'DownsellScreen'),
   scarcity: L(M, 'ScarcityScreen'),
 
-  balance: L(A, 'BalanceScreen'),
-  tx: L(A, 'TxScreen'),
+   balance: L(B, 'BalanceScreen'),
+  tx: L(B, 'TxScreen'),
+  plans: L(B, 'PlansScreen'),
+  notifs: L(B, 'NotifsScreen'),
   shipping: L(A, 'ShippingScreen'),
   apps: L(A, 'AppsScreen'),
   services: L(A, 'ServicesScreen'),
