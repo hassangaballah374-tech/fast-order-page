@@ -2,6 +2,8 @@
    badge: 'جديد' يظهر بجانب العنصر.  spike: true = إضافة حصرية من سبايك. */
 export const MENU = [
   { id: 'stats', t: 'لوحة الإحصائيات', i: '📊' },
+     { id: 'plans', t: 'الباقات والاشتراك', i: '💎', badge: 'جديد' },
+  { id: 'notifs', t: 'الإشعارات', i: '🔔' },
   {
     g: 'orders', t: 'الطلبات', i: '📦', items: [
       { id: 'orders', t: 'كل الطلبات' },
