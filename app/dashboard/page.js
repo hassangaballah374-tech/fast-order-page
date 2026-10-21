@@ -6,6 +6,7 @@ import { DashCtx, Spin, Field } from '../../components/dash/ui';
 import { MENU, flatMenu, groupOf } from '../../components/dash/menu';
 import { SCREENS } from '../../components/dash/registry';
 import { DASH_CSS } from '../../components/dash/style';
+import { DARK_CSS } from '../../components/dash/dark';
 import { mergeConfig } from '../../lib/storeKit';
 import { spikeLogout } from '../../components/SpikeSessionBar';
 import { MerchantBell, UsageBanner } from '../../components/dash/MerchantBell';
@@ -56,6 +57,9 @@ export default function MerchantDashboard() {
   const [open, setOpen] = useState({});
   const [toast, setToast] = useState('');
   const [side, setSide] = useState(false);
+  const [dark, setDark] = useState(false);
+  useEffect(() => { try { setDark(localStorage.getItem('spike_dash_dark') === '1'); } catch { /* تجاهل */ } }, []);
+  const toggleDark = () => setDark((d) => { const v = !d; try { localStorage.setItem('spike_dash_dark', v ? '1' : '0'); } catch { /* تجاهل */ } return v; });
   const [cmd, setCmd] = useState(false);
   const [cq, setCq] = useState('');
   const [origin, setOrigin] = useState('');
@@ -211,8 +215,8 @@ export default function MerchantDashboard() {
 
   return (
     <DashCtx.Provider value={ctx}>
-      <div className="app" dir="rtl">
-        <style>{DASH_CSS}</style>
+     <div className={'app' + (dark ? ' dk' : '')} dir="rtl">
+      <style>{DASH_CSS + DARK_CSS}</style>
         <div className={'scrim' + (side ? ' on' : '')} onClick={() => setSide(false)} />
 
         <aside className={'side' + (side ? ' open' : '')} aria-label="القائمة الرئيسية">
