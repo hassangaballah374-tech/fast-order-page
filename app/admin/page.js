@@ -821,8 +821,8 @@ export default function SpikeSuperAdminDashboard() {
               <span className="hidden sm:inline">{isDark ? 'نهاري' : 'ليلي'}</span>
             </button>
 
-            <button 
             <AdminBell isDark={isDark} onNewOrder={fetchAllData} onOpenTab={(id) => setActiveTab(id)} />
+            <button 
               onClick={fetchAllData}
               disabled={refreshing}
               className={`px-3 py-2 rounded-xl border text-xs font-bold flex items-center gap-1 transition cursor-pointer ${
