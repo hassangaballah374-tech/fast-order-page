@@ -85,6 +85,7 @@ const base = {
   mservices: L(A, 'MServicesScreen'),
   affiliate: L(A, 'AffiliateScreen'),
   settings: L(A, 'SettingsScreen'),
+  domains: L(() => import('./screens/Domains'), 'DomainsScreen'),
 };
 
 /* أي شاشة غير موجودة تعرض "قريباً" بدل ما الصفحة تقع */
