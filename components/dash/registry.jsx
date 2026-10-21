@@ -25,6 +25,7 @@ const T = () => import('./screens/Tracking');
 const M = () => import('./screens/Marketing');
 const G = () => import('./screens/Growth');
 const A = () => import('./screens/Account');
+const B = () => import('./screens/Billing');
 
 const base = {
   stats: L(() => import('./screens/Stats'), 'StatsScreen'),
