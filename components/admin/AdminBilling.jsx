@@ -1,4 +1,3 @@
-```javascript
 'use client';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
@@ -333,5 +332,3 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
     </div>
   );
 }
-
-```
