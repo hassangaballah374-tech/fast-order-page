@@ -3,25 +3,33 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useDash, PageHead, Field, Empty, Spin, Badge, Stat } from '../ui';
 import { useTable, uploadAsset } from '../hooks';
 import { fdate } from '../shared';
+import { storeStateOf, commissionOf, ordersLeft, ordersCovered, monthlyActive, toEgp, egpFmt, setPlatformCommission } from '../../../lib/billing';
+import { useUsdRate } from '../../useUsdRate';
 import { supabase } from '../../../lib/supabase';
 
 const n = (v) => Number(v) || 0;
 const usd = (v) => `$${n(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const TX_STATUS = { pending: ['قيد المراجعة', '#d97706'], done: ['تم', '#16a34a'], rejected: ['مرفوض', '#dc2626'], approved: ['تمت الموافقة', '#16a34a'] };
 
-export function storeState(s) {
-  if (!s) return 'inactive';
-  if (s.is_active !== true) return 'inactive';
-  if (s.orders_quota != null && n(s.orders_used) >= n(s.orders_quota)) return 'quota';
-  if (s.subscription_ends_at && new Date(s.subscription_ends_at).getTime() < Date.now()) return 'expired';
-  return 'ok';
-}
+export const storeState = (s) => storeStateOf(s);
 const STATE_MSG = {
   ok: ['متجرك يعمل ✅', '#16a34a'],
   inactive: ['متجرك لم يُفعَّل بعد من الإدارة. يمكنك بناء متجرك وبياناتك، لكن البيع والبكسل متوقفان لحين التفعيل.', '#d97706'],
-  quota: ['انتهت طلبات باقتك. المتجر متوقف عن البيع حتى تجدد اشتراكك أو تشحن.', '#dc2626'],
+  quota: ['رصيدك خلص. المتجر متوقف عن البيع حتى تشحن رصيدك أو تشترك في الباقة الشهرية.', '#dc2626'],
   expired: ['انتهى اشتراكك. المتجر متوقف عن البيع حتى التجديد.', '#dc2626'],
 };
+
+/* عمولة المنصة من الإعدادات */
+function usePlatformCommission() {
+  const [c, setC] = useState(0);
+  useEffect(() => {
+    supabase.from('platform_kv').select('value').eq('key', 'commission_usd').maybeSingle().then(({ data }) => {
+      const v = Number(data?.value) || 0;
+      setPlatformCommission(v); setC(v);
+    });
+  }, []);
+  return c;
+}
 
 /* رفع صورة من الجهاز مع معاينة */
 function ImagePick({ value, onChange, uid, folder }) {
@@ -54,12 +62,43 @@ function usePaymentNote() {
   return t;
 }
 
+/* بطاقات الرصيد: بالدولار والجنيه + الطلبات الكلية والمتبقية */
+function WalletStats({ store, rate, pc }) {
+  const c = commissionOf(store, pc);
+  const left = ordersLeft(store, pc);
+  const covered = ordersCovered(store, pc);
+  const monthly = monthlyActive(store);
+  return (
+    <>
+      <div className="grid4" style={{ marginBottom: 12 }}>
+        <Stat label="رصيدك" value={usd(store?.wallet_balance_usd)} hint={rate ? `≈ ${egpFmt(toEgp(store?.wallet_balance_usd, rate))}` : ''} color="#0a7f86" />
+        <Stat label="إجمالي ما شحنته" value={usd(store?.wallet_topped_usd)} hint={`يغطي ${covered} طلب`} />
+        <Stat label="الطلبات المتبقية" value={left == null ? 'غير محدود' : left} hint={monthly ? `الباقة الشهرية حتى ${new Date(store.subscription_ends_at).toLocaleDateString('ar-EG')}` : `عمولة الطلب ${usd(c)}`} color={left === 0 ? '#dc2626' : '#0a7f86'} />
+        <Stat label="الطلبات المستخدمة" value={n(store?.orders_used)} />
+      </div>
+      {!monthly && covered > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div style={{ height: 10, background: '#e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
+            <div style={{ width: `${Math.max(0, Math.min(100, Math.round(((left || 0) / covered) * 100)))}%`, height: '100%', background: (left || 0) / covered < 0.1 ? '#dc2626' : '#0a7f86' }} />
+          </div>
+          <p className="mut dsc" style={{ marginTop: 6 }}>
+            باقي {left} طلب من أصل {covered}{left > 0 && left <= 10 ? ' — اشحن رصيدك قبل ما المتجر يقف' : ''}
+            {rate ? ` · سعر الدولار الآن ${rate} ج.م (يتحدّث تلقائياً)` : ''}
+          </p>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ====================== الباقات والاشتراك ====================== */
 export function PlansScreen() {
-  const { store, uid, say, reloadStore } = useDash();
+  const { store, uid, say } = useDash();
   const [plans, setPlans] = useState(null);
   const reqs = useTable('plan_requests', { order: 'created_at', limit: 50, filter: { store_id: uid } });
   const note = usePaymentNote();
+  const pc = usePlatformCommission();
+  const { rate } = useUsdRate();
   const [sel, setSel] = useState(null);
   const [proof, setProof] = useState('');
   const [txt, setTxt] = useState('');
@@ -68,18 +107,18 @@ export function PlansScreen() {
   useEffect(() => { supabase.from('platform_plans').select('*').eq('enabled', true).order('sort_order').then(({ data }) => setPlans(data || [])); }, []);
 
   const st = storeState(store);
-  const quota = store?.orders_quota;
-  const used = n(store?.orders_used);
-  const remaining = quota == null ? null : Math.max(0, n(quota) - used);
-  const pct = quota == null || !n(quota) ? 0 : Math.min(100, Math.round((used / n(quota)) * 100));
+  const c = commissionOf(store, pc);
   const hasPending = reqs.rows.some((r) => r.status === 'pending');
 
   const send = async () => {
     if (!sel) return;
     if (n(sel.price) > 0 && !proof) { say('ارفع صورة إثبات التحويل أولاً'); return; }
     setBusy(true);
-    const { error } = await supabase.from('plan_requests').insert([{ store_id: String(uid), plan_id: sel.id, amount: n(sel.price), proof_url: proof || null, note: txt.trim().slice(0, 300) || null, status: 'pending' }]);
-    if (!error) await supabase.from('platform_notifications').insert([{ audience: 'admin', kind: 'plan', title: 'طلب اشتراك جديد', body: `${store?.store_name || uid} · ${sel.name}` }]).then(() => {});
+    const egp = rate ? toEgp(sel.price, rate) : 0;
+    const auto = egp ? `المبلغ المحوَّل بالجنيه: ${egp} (سعر الدولار ${rate})` : '';
+    const noteAll = [auto, txt.trim()].filter(Boolean).join(' | ').slice(0, 300);
+    const { error } = await supabase.from('plan_requests').insert([{ store_id: String(uid), plan_id: sel.id, amount: n(sel.price), proof_url: proof || null, note: noteAll || null, status: 'pending' }]);
+    if (!error) await supabase.from('platform_notifications').insert([{ audience: 'admin', kind: 'plan', title: 'طلب شحن/اشتراك جديد', body: `${store?.store_name || uid} · ${sel.name}${egp ? ` · ${egp} ج.م` : ''}` }]).then(() => {});
     setBusy(false);
     if (error) { say(error.message); return; }
     setSel(null); setProof(''); setTxt('');
@@ -89,44 +128,38 @@ export function PlansScreen() {
 
   return (
     <>
-      <PageHead title="الباقات والاشتراك" sub="اشترك أو جدّد من هنا" />
+      <PageHead title="الباقات والشحن" sub="اشحن رصيدك أو اشترك في الباقة الشهرية" />
       <div className="card" style={{ marginBottom: 16, borderColor: STATE_MSG[st][1] }}>
         <b style={{ color: STATE_MSG[st][1] }}>{STATE_MSG[st][0]}</b>
       </div>
-      <div className="grid4" style={{ marginBottom: 16 }}>
-        <Stat label="الباقة الحالية" value={store?.plan_type || '—'} />
-        <Stat label="الطلبات المستهلكة" value={quota == null ? used : `${used} / ${quota}`} />
-        <Stat label="المتبقي من الطلبات" value={remaining == null ? 'غير محدود' : remaining} color={remaining === 0 ? '#dc2626' : '#0a7f86'} />
-        <Stat label="ينتهي الاشتراك" value={store?.subscription_ends_at ? new Date(store.subscription_ends_at).toLocaleDateString('ar-EG') : '—'} />
-      </div>
-      {quota != null && (
-        <div className="card" style={{ marginBottom: 16 }}>
-          <div style={{ height: 10, background: '#e2e8f0', borderRadius: 8, overflow: 'hidden' }}><div style={{ width: `${pct}%`, height: '100%', background: pct >= 90 ? '#dc2626' : '#0a7f86' }} /></div>
-          <p className="mut dsc" style={{ marginTop: 6 }}>استهلكت {pct}% من طلباتك{remaining != null && remaining <= 10 && remaining > 0 ? ` — باقي ${remaining} طلب فقط، جدّد قبل ما المتجر يقف` : ''}</p>
-        </div>
-      )}
+      <WalletStats store={store} rate={rate} pc={pc} />
 
       <h3 style={{ margin: '8px 0' }}>اختر باقتك</h3>
       {plans === null ? <div className="c"><Spin /></div> : plans.length === 0 ? <Empty icon="💎" t="لا توجد باقات متاحة حالياً" /> : (
         <div className="grid3" style={{ marginBottom: 16 }}>
-          {plans.map((p) => (
-            <div key={p.id} className="card" style={{ borderColor: p.highlight ? '#0a7f86' : undefined, borderWidth: p.highlight ? 2 : 1 }}>
-              <b style={{ fontSize: 17 }}>{p.name}</b>
-              <div style={{ fontSize: 26, fontWeight: 900, color: '#0a7f86', margin: '6px 0' }}>{n(p.price) > 0 ? `${p.price} ${p.currency || ''}` : 'مجاناً'}</div>
-              <p className="mut dsc">{p.orders_included} طلب{n(p.per_order_price) > 0 ? ` + ${p.per_order_price} لكل طلب إضافي` : ''} · 30 يوم</p>
-              <ul style={{ margin: '8px 0 12px', paddingInlineStart: 18, fontSize: 13 }}>{(p.features || []).map((f, i) => <li key={i}>{f}</li>)}</ul>
-              <button type="button" className={'btn ' + (p.highlight ? 'p' : '')} style={{ width: '100%' }} disabled={hasPending} onClick={() => { setSel(p); setProof(''); }}>{hasPending ? 'لديك طلب قيد المراجعة' : (st === 'ok' ? 'تجديد / ترقية' : 'اشترك الآن')}</button>
-            </div>
-          ))}
+          {plans.map((p) => {
+            const monthly = p.kind === 'monthly';
+            return (
+              <div key={p.id} className="card" style={{ borderColor: p.highlight ? '#0a7f86' : undefined, borderWidth: p.highlight ? 2 : 1 }}>
+                <b style={{ fontSize: 17 }}>{p.name}</b>
+                <div style={{ fontSize: 26, fontWeight: 900, color: '#0a7f86', margin: '6px 0 0' }}>{usd(p.price)}</div>
+                {rate ? <div className="mut dsc" style={{ margin: '0 0 6px' }}>≈ {egpFmt(toEgp(p.price, rate))}</div> : null}
+                <p className="mut dsc">{monthly ? 'طلبات غير محدودة · 30 يوم' : `≈ ${Math.floor(n(p.price) / c)} طلب (عمولة ${usd(c)} للطلب)`}</p>
+                <ul style={{ margin: '8px 0 12px', paddingInlineStart: 18, fontSize: 13 }}>{(p.features || []).map((f, i) => <li key={i}>{f}</li>)}</ul>
+                <button type="button" className={'btn ' + (p.highlight ? 'p' : '')} style={{ width: '100%' }} disabled={hasPending} onClick={() => { setSel(p); setProof(''); }}>{hasPending ? 'لديك طلب قيد المراجعة' : (monthly ? 'اشترك شهرياً' : 'اشحن الآن')}</button>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {sel && (
         <div className="card" style={{ marginBottom: 16, borderColor: '#0a7f86' }}>
-          <h3>طلب اشتراك: {sel.name} ({n(sel.price) > 0 ? `${sel.price} ${sel.currency || ''}` : 'مجاناً'})</h3>
+          <h3>{sel.name} — {usd(sel.price)}{rate ? ` ≈ ${egpFmt(toEgp(sel.price, rate))}` : ''}</h3>
+          <p className="mut dsc">حوّل المبلغ بالجنيه المصري بحسب سعر الدولار الحالي ثم ارفع صورة التحويل.</p>
           {note ? <p className="mut dsc" style={{ whiteSpace: 'pre-line' }}>{note}</p> : null}
-          <Field l={n(sel.price) > 0 ? 'صورة إثبات التحويل' : 'صورة (اختياري)'}><ImagePick value={proof} onChange={setProof} uid={uid} folder="proofs" /></Field>
-          <Field l="ملاحظات (اختياري)"><input className="in" maxLength={300} value={txt} onChange={(e) => setTxt(e.target.value)} /></Field>
+          <Field l="صورة إثبات التحويل"><ImagePick value={proof} onChange={setProof} uid={uid} folder="proofs" /></Field>
+          <Field l="ملاحظات (اختياري)"><input className="in" maxLength={200} value={txt} onChange={(e) => setTxt(e.target.value)} /></Field>
           <div className="row" style={{ marginBottom: 0 }}>
             <button type="button" className="btn p" disabled={busy} onClick={send}>{busy ? '...' : 'إرسال الطلب'}</button>
             <button type="button" className="btn" onClick={() => setSel(null)}>إلغاء</button>
@@ -136,13 +169,13 @@ export function PlansScreen() {
 
       <div className="card tw">
         <h3 style={{ padding: '12px 14px 0' }}>طلباتي السابقة</h3>
-        {reqs.rows.length === 0 ? <Empty icon="🧾" t="لا توجد طلبات اشتراك بعد" /> : (
+        {reqs.rows.length === 0 ? <Empty icon="🧾" t="لا توجد طلبات بعد" /> : (
           <table className="tbl">
             <thead><tr><th>الباقة</th><th>المبلغ</th><th>الحالة</th><th>ملاحظة</th><th>التاريخ</th></tr></thead>
             <tbody>
               {reqs.rows.map((r) => {
-                const [l, c] = TX_STATUS[r.status] || [r.status, '#718096'];
-                return <tr key={r.id}><td>{(plans || []).find((p) => p.id === r.plan_id)?.name || '—'}</td><td className="num">{r.amount}</td><td><Badge c={c}>{l}</Badge></td><td>{r.note}</td><td>{fdate(r.created_at)}</td></tr>;
+                const [l, cc] = TX_STATUS[r.status] || [r.status, '#718096'];
+                return <tr key={r.id}><td>{(plans || []).find((p) => p.id === r.plan_id)?.name || '—'}</td><td className="num">{usd(r.amount)}</td><td><Badge c={cc}>{l}</Badge></td><td>{r.note}</td><td>{fdate(r.created_at)}</td></tr>;
               })}
             </tbody>
           </table>
@@ -157,6 +190,8 @@ export function BalanceScreen() {
   const { store, uid, say, go } = useDash();
   const t = useTable('store_wallet_tx', { order: 'created_at', limit: 50 });
   const note = usePaymentNote();
+  const pc = usePlatformCommission();
+  const { rate } = useUsdRate();
   const [amount, setAmount] = useState('');
   const [txt, setTxt] = useState('');
   const [proof, setProof] = useState('');
@@ -179,15 +214,13 @@ export function BalanceScreen() {
   return (
     <>
       <PageHead title="رصيدك" sub="محفظة سبايك" />
-      <div className="grid4" style={{ marginBottom: 16 }}>
-        <Stat label="الرصيد الحالي" value={usd(store?.wallet_balance_usd)} color="#0a7f86" />
-        <Stat label="طلبات شحن قيد المراجعة" value={pending.length} hint={pending.length ? usd(pending.reduce((a, x) => a + n(x.amount_usd), 0)) : ''} />
-      </div>
+      <WalletStats store={store} rate={rate} pc={pc} />
+      {pending.length > 0 && <div className="card" style={{ marginBottom: 16 }}>طلبات شحن قيد المراجعة: <b>{pending.length}</b> ({usd(pending.reduce((a, x) => a + n(x.amount_usd), 0))})</div>}
       <div className="card">
         <h3>طلب شحن رصيد</h3>
         {note ? <p className="mut dsc" style={{ whiteSpace: 'pre-line' }}>{note}</p> : <p className="mut dsc">حوّل المبلغ ثم ارفع صورة التحويل. يُضاف الرصيد بعد تأكيد الإدارة.</p>}
         <div className="fgrid">
-          <Field l="المبلغ (دولار)"><input className="in num" type="number" min="1" max="10000" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
+          <Field l="المبلغ (دولار)" hint={n(amount) > 0 && rate ? `≈ ${egpFmt(toEgp(amount, rate))} · يغطي ${Math.floor(n(amount) / commissionOf(store, pc))} طلب` : 'مثال: 10'}><input className="in num" type="number" min="1" max="10000" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
           <Field l="ملاحظات (اختياري)" hint="مثال: رقم العملية"><input className="in" value={txt} maxLength={300} onChange={(e) => setTxt(e.target.value)} /></Field>
         </div>
         <Field l="صورة إثبات التحويل"><ImagePick value={proof} onChange={setProof} uid={uid} folder="proofs" /></Field>
