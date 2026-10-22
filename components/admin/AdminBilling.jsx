@@ -1,24 +1,19 @@
 'use client';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { storeStateOf, commissionOf, ordersLeft, monthlyActive, toEgp, egpFmt, usdFmt, setPlatformCommission } from '../../lib/billing';
+import { useUsdRate } from '../useUsdRate';
 
 const n = (v) => Number(v) || 0;
 const money = (v) => Math.round(n(v) * 100) / 100;
 
-export function storeState(s) {
-  if (s.is_active !== true) return 'inactive';
-  if (s.orders_quota != null && n(s.orders_used) >= n(s.orders_quota)) return 'quota';
-  if (s.subscription_ends_at && new Date(s.subscription_ends_at).getTime() < Date.now()) return 'expired';
-  return 'ok';
-}
+export const storeState = (s) => storeStateOf(s);
 const STATE = {
   ok: ['يعمل', 'bg-emerald-500/15 text-emerald-600'],
   inactive: ['غير مفعّل', 'bg-slate-500/15 text-slate-500'],
-  quota: ['انتهت الطلبات', 'bg-rose-500/15 text-rose-500'],
+  quota: ['الرصيد خلص', 'bg-rose-500/15 text-rose-500'],
   expired: ['انتهى الاشتراك', 'bg-amber-500/15 text-amber-600'],
 };
-const remainingOf = (s) => (s.orders_quota == null ? null : Math.max(0, n(s.orders_quota) - n(s.orders_used)));
-const owedOf = (s) => (n(s.price_per_order) > 0 ? Math.max(0, money(n(s.orders_used) * n(s.price_per_order) - n(s.amount_paid))) : 0);
 
 function Card({ title, value, sub, tone }) {
   return (
@@ -40,13 +35,21 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState('all');
   const [draft, setDraft] = useState({});
+  const [pc, setPc] = useState('0.03');
+  const [manual, setManual] = useState('');
+  const { rate, source } = useUsdRate();
 
   const load = useCallback(async () => {
-    const [a, b, c] = await Promise.all([
+    const [a, b, c, k] = await Promise.all([
       supabase.from('store_profiles').select('*').order('created_at', { ascending: false }),
       supabase.from('platform_plans').select('*').order('sort_order'),
       supabase.from('plan_requests').select('*').order('created_at', { ascending: false }).limit(200),
+      supabase.from('platform_kv').select('key,value').in('key', ['commission_usd', 'usd_egp_manual']),
     ]);
+    (k.data || []).forEach((x) => {
+      if (x.key === 'commission_usd') { setPc(x.value || '0.03'); setPlatformCommission(Number(x.value) || 0); }
+      if (x.key === 'usd_egp_manual') setManual((cur) => (cur === '' ? x.value || '' : cur));
+    });
     if (a.error) setMsg('تعذر تحميل المتاجر: ' + a.error.message);
     setStores(a.data || []); setPlans(b.data || []); setReqs(c.data || []);
   }, []);
@@ -72,33 +75,28 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
   };
 
   const toggle = (s) => patch(s, s.is_active === true ? { is_active: false } : { is_active: true, activated_at: s.activated_at || new Date().toISOString() }, s.is_active === true ? 'تم تعطيل المتجر' : 'تم تفعيل المتجر');
-  const addOrders = (s) => {
-    const v = prompt('كم طلب تضيف لباقة هذا التاجر؟', '100');
+  const addBalance = (s) => {
+    const v = prompt('كم دولار تضيف لرصيد هذا التاجر؟ (المبلغ الذي حوّله)', '10');
     if (v === null) return;
-    const add = Math.floor(n(v));
+    const add = money(n(v));
     if (add <= 0) return;
-    patch(s, { orders_quota: n(s.orders_used) + (remainingOf(s) || 0) + add }, `تمت إضافة ${add} طلب`);
+    patch(s, { wallet_balance_usd: money(n(s.wallet_balance_usd) + add), amount_paid: money(n(s.amount_paid) + add) }, `تمت إضافة ${usdFmt(add)} للرصيد`);
   };
-  const setQuota = (s) => {
-    const v = prompt('إجمالي الطلبات المسموحة (اتركه فارغاً = بلا حد):', s.orders_quota ?? '');
+  const setBalance = (s) => {
+    const v = prompt('اضبط الرصيد الحالي بالدولار (تصحيح):', money(s.wallet_balance_usd));
     if (v === null) return;
-    patch(s, { orders_quota: v.trim() === '' ? null : Math.max(0, Math.floor(n(v))) }, 'تم تحديث الحصة');
+    patch(s, { wallet_balance_usd: Math.max(0, money(n(v))) }, 'تم ضبط الرصيد');
   };
-  const setPrice = (s) => {
-    const v = prompt('سعر الطلب الواحد المستحق على التاجر:', s.price_per_order ?? 0);
+  const setCommission = (s) => {
+    const v = prompt('عمولة الطلب لهذا التاجر بالدولار (فارغ = عمولة المنصة):', s.commission_usd ?? '');
     if (v === null) return;
-    patch(s, { price_per_order: Math.max(0, n(v)) }, 'تم تحديث سعر الطلب');
-  };
-  const pay = (s) => {
-    const v = prompt('المبلغ الذي دفعه التاجر الآن:', '0');
-    if (v === null || n(v) <= 0) return;
-    patch(s, { amount_paid: money(n(s.amount_paid) + n(v)) }, 'تم تسجيل الدفعة');
+    patch(s, { commission_usd: v.trim() === '' ? null : Math.max(0, n(v)) }, 'تم تحديث العمولة');
   };
   const renew = (s) => {
-    const v = prompt('مدّ الاشتراك كم يوم من الآن؟ (0 = بلا تاريخ انتهاء)', '30');
+    const v = prompt('اشتراك شهري: مدّ كم يوم من الآن؟ (0 = إلغاء الاشتراك الشهري)', '30');
     if (v === null) return;
     const d = Math.floor(n(v));
-    patch(s, { subscription_ends_at: d > 0 ? new Date(Date.now() + d * 86400000).toISOString() : null }, 'تم تحديث الاشتراك');
+    patch(s, { subscription_ends_at: d > 0 ? new Date(Date.now() + d * 86400000).toISOString() : null }, 'تم تحديث الاشتراك الشهري');
   };
   const toggleWa = (s) => patch(s, { whatsapp_button: s.whatsapp_button === false }, s.whatsapp_button === false ? 'تم إظهار زر الواتساب' : 'تم إخفاء زر الواتساب');
 
@@ -110,11 +108,11 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
   }), [stores, q, filter]);
 
   const totals = useMemo(() => {
-    const t = { stores: stores.length, ok: 0, inactive: 0, quota: 0, expired: 0, used: 0, remaining: 0, paid: 0, owed: 0, payers: 0 };
+    const t = { stores: stores.length, ok: 0, inactive: 0, quota: 0, expired: 0, used: 0, remaining: 0, balance: 0, topped: 0, payers: 0, monthly: 0 };
     stores.forEach((s) => {
       t[storeState(s)] += 1;
-      t.used += n(s.orders_used); t.paid += n(s.amount_paid); t.owed += owedOf(s);
-      const r = remainingOf(s); if (r != null) t.remaining += r;
+      t.used += n(s.orders_used); t.balance += n(s.wallet_balance_usd); t.topped += n(s.wallet_topped_usd);
+      const r = ordersLeft(s); if (r != null) t.remaining += r; else t.monthly += 1;
       if (n(s.amount_paid) > 0) t.payers += 1;
     });
     return t;
@@ -128,7 +126,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
     const { error } = await supabase.rpc('approve_plan_request', { p_id: r.id });
     setBusy(false);
     if (error) { flash('خطأ: ' + error.message); return; }
-    await after('تمت الموافقة وتفعيل المتجر');
+    await after('تمت الموافقة: أُضيف الرصيد/الاشتراك وفُعّل المتجر');
   };
   const reject = async (r) => {
     const note = prompt('سبب الرفض (يصل للتاجر):', '');
@@ -146,7 +144,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
     const d = draft[p.id] || {};
     const row = { ...d };
     if ('features' in d) row.features = String(d.features).split('\n').map((x) => x.trim()).filter(Boolean);
-    ['price', 'orders_included', 'per_order_price', 'sort_order'].forEach((k) => { if (k in row) row[k] = n(row[k]); });
+    ['price', 'sort_order'].forEach((k) => { if (k in row) row[k] = n(row[k]); });
     if (!Object.keys(row).length) return;
     setBusy(true);
     const { error } = await supabase.from('platform_plans').update(row).eq('id', p.id);
@@ -158,7 +156,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
   const addPlan = async () => {
     const code = (prompt('كود الباقة بالإنجليزية (مثال: gold):', '') || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
     if (!code) return;
-    const { error } = await supabase.from('platform_plans').insert([{ code, name: code, price: 0, orders_included: 100, sort_order: plans.length + 1 }]);
+    const { error } = await supabase.from('platform_plans').insert([{ code, name: code, price: 0, currency: 'USD', kind: 'topup', sort_order: plans.length + 1 }]);
     if (error) { flash('خطأ: ' + error.message); return; }
     await after('تمت إضافة الباقة');
   };
@@ -169,6 +167,20 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
     await after('تم حذف الباقة');
   };
 
+  const savePricing = async () => {
+    const c = n(pc);
+    if (!(c > 0 && c < 5)) { flash('عمولة غير صحيحة'); return; }
+    const m = String(manual).trim();
+    if (m !== '' && !(n(m) > 1)) { flash('سعر الدولار اليدوي غير صحيح'); return; }
+    const { error } = await supabase.from('platform_kv').upsert([
+      { key: 'commission_usd', value: String(c), updated_at: new Date().toISOString() },
+      { key: 'usd_egp_manual', value: m, updated_at: new Date().toISOString() },
+    ], { onConflict: 'key' });
+    if (error) { flash('خطأ: ' + error.message); return; }
+    setPlatformCommission(c);
+    await after('تم حفظ التسعير');
+  };
+
   const box = `rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`;
   const inp = 'w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent text-xs outline-none focus:border-[#00B050]';
   const btn = 'px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-[11px] font-bold cursor-pointer hover:bg-slate-500/10 disabled:opacity-50';
@@ -177,7 +189,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2 items-center">
-        {[['stores', 'المتاجر والحصص'], ['reqs', `طلبات الاشتراك${pending ? ` (${pending})` : ''}`], ['plans', 'الباقات والأسعار']].map(([id, l]) => (
+        {[['stores', 'المتاجر والأرصدة'], ['reqs', `طلبات الاشتراك${pending ? ` (${pending})` : ''}`], ['plans', 'الباقات والأسعار']].map(([id, l]) => (
           <button key={id} onClick={() => setTab(id)} className={`px-4 py-2 rounded-xl text-xs font-black cursor-pointer border ${tab === id ? 'bg-[#00B050] text-white border-[#00B050]' : 'border-slate-300 dark:border-slate-700'}`}>{l}</button>
         ))}
         {msg ? <span className="text-xs font-bold text-[#00B050] mx-2">{msg}</span> : null}
@@ -186,11 +198,12 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
       {tab === 'stores' && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <Card title="إجمالي التجار" value={totals.stores} sub={`${totals.ok} يعمل · ${totals.inactive} غير مفعّل`} />
-            <Card title="دفعوا اشتراكاً" value={totals.payers} sub={`إجمالي المدفوع ${money(totals.paid)}`} tone="text-emerald-600" />
-            <Card title="إجمالي الطلبات المستهلكة" value={totals.used} sub={`المتبقي لدى التجار ${totals.remaining}`} />
-            <Card title="متاجر متوقفة (طلبات/اشتراك)" value={totals.quota + totals.expired} sub={`${totals.quota} انتهت طلباتهم · ${totals.expired} انتهى اشتراكهم`} tone="text-rose-500" />
-            <Card title="إجمالي المستحق على التجار" value={money(totals.owed)} tone="text-amber-600" />
+            <Card title="إجمالي التجار" value={totals.stores} sub={`${totals.ok} يعمل · ${totals.inactive} غير مفعّل · ${totals.monthly} اشتراك شهري`} />
+            <Card title="دفعوا / شحنوا رصيداً" value={totals.payers} sub={`إجمالي المشحون ${usdFmt(totals.topped)}${rate ? ` ≈ ${egpFmt(toEgp(totals.topped, rate))}` : ''}`} tone="text-emerald-600" />
+            <Card title="إجمالي الطلبات المستخدمة" value={totals.used} sub={`المتبقي لدى التجار ${totals.remaining} طلب`} />
+            <Card title="متاجر متوقفة (الرصيد خلص)" value={totals.quota} sub={`${totals.inactive} غير مفعّل`} tone="text-rose-500" />
+            <Card title="إجمالي أرصدة التجار" value={usdFmt(totals.balance)} sub={rate ? `≈ ${egpFmt(toEgp(totals.balance, rate))}` : ''} tone="text-amber-600" />
+            <Card title="سعر الدولار الآن" value={rate ? `${rate} ج.م` : '...'} sub={source === 'manual' ? 'سعر يدوي من الأدمن' : source ? `تلقائي (${source})` : ''} />
           </div>
 
           <div className={`${box} p-4`}>
@@ -206,30 +219,29 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                    {['المتجر', 'الحالة', 'الطلبات', 'المتبقي', 'ينتهي', 'سعر الطلب', 'المدفوع', 'المستحق', 'إجراءات'].map((h) => <th key={h} className="p-2 text-right whitespace-nowrap">{h}</th>)}
+                    {['المتجر', 'الحالة', 'الرصيد', 'إجمالي الشحن', 'الطلبات', 'المتبقي', 'الاشتراك الشهري', 'العمولة', 'إجراءات'].map((h) => <th key={h} className="p-2 text-right whitespace-nowrap">{h}</th>)}
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((s) => {
-                    const st = storeState(s); const rem = remainingOf(s);
+                    const st = storeState(s); const rem = ordersLeft(s);
                     return (
                       <tr key={s.id} className="border-b border-slate-100 dark:border-slate-800/60 align-top">
                         <td className="p-2"><b>{s.store_name || s.store_slug}</b><div className="text-[10px] text-slate-400" dir="ltr">{s.store_slug} · {s.phone || ''}</div></td>
                         <td className="p-2"><span className={`px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${STATE[st][1]}`}>{STATE[st][0]}</span></td>
-                        <td className="p-2 font-mono">{n(s.orders_used)}{s.orders_quota != null ? ` / ${s.orders_quota}` : ' / ∞'}</td>
+                        <td className="p-2 font-mono">{usdFmt(s.wallet_balance_usd)}{rate ? <div className="text-[10px] text-slate-400">{egpFmt(toEgp(s.wallet_balance_usd, rate))}</div> : null}</td>
+                        <td className="p-2 font-mono">{usdFmt(s.wallet_topped_usd)}</td>
+                        <td className="p-2 font-mono">{n(s.orders_used)}</td>
                         <td className={`p-2 font-mono font-bold ${rem === 0 ? 'text-rose-500' : ''}`}>{rem == null ? '∞' : rem}</td>
-                        <td className="p-2 whitespace-nowrap font-mono">{s.subscription_ends_at ? new Date(s.subscription_ends_at).toLocaleDateString() : '—'}</td>
-                        <td className="p-2 font-mono">{money(s.price_per_order)}</td>
-                        <td className="p-2 font-mono">{money(s.amount_paid)}</td>
-                        <td className={`p-2 font-mono font-bold ${owedOf(s) > 0 ? 'text-amber-600' : ''}`}>{owedOf(s)}</td>
+                        <td className="p-2 whitespace-nowrap font-mono">{monthlyActive(s) ? new Date(s.subscription_ends_at).toLocaleDateString() : '—'}</td>
+                        <td className="p-2 font-mono">{usdFmt(commissionOf(s))}{s.commission_usd ? <div className="text-[10px] text-slate-400">خاصة</div> : null}</td>
                         <td className="p-2">
                           <div className="flex flex-wrap gap-1 min-w-[260px]">
                             <button disabled={busy} className={`${btn} ${s.is_active === true ? 'text-rose-500' : 'text-emerald-600'}`} onClick={() => toggle(s)}>{s.is_active === true ? 'تعطيل' : 'تفعيل'}</button>
-                            <button disabled={busy} className={btn} onClick={() => addOrders(s)}>+ طلبات</button>
-                            <button disabled={busy} className={btn} onClick={() => setQuota(s)}>الحصة</button>
-                            <button disabled={busy} className={btn} onClick={() => setPrice(s)}>سعر الطلب</button>
-                            <button disabled={busy} className={btn} onClick={() => pay(s)}>تسجيل دفعة</button>
-                            <button disabled={busy} className={btn} onClick={() => renew(s)}>تجديد</button>
+                            <button disabled={busy} className={btn} onClick={() => addBalance(s)}>+ رصيد $</button>
+                            <button disabled={busy} className={btn} onClick={() => setBalance(s)}>ضبط الرصيد</button>
+                            <button disabled={busy} className={btn} onClick={() => setCommission(s)}>العمولة</button>
+                            <button disabled={busy} className={btn} onClick={() => renew(s)}>اشتراك شهري</button>
                             <button disabled={busy} className={btn} onClick={() => toggleWa(s)}>واتساب: {s.whatsapp_button === false ? 'مخفي' : 'ظاهر'}</button>
                           </div>
                         </td>
@@ -240,7 +252,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
                 </tbody>
               </table>
             </div>
-            <p className="text-[10px] text-slate-400 mt-3">المستحق = (الطلبات المستهلكة × سعر الطلب) − المدفوع. المتجر يتوقف تلقائياً (لا طلبات ولا بكسل) عند نفاد الحصة أو انتهاء الاشتراك أو عدم التفعيل، ويرجع تلقائياً بمجرد التجديد أو إضافة طلبات.</p>
+            <p className="text-[10px] text-slate-400 mt-3">كل طلب يخصم العمولة من رصيد التاجر. المتجر يتوقف تلقائياً (لا طلبات ولا بكسل) لو الرصيد أقل من عمولة طلب ولا يوجد اشتراك شهري ساري أو لم يُفعَّل، ويرجع تلقائياً بمجرد الشحن. الاشتراك الشهري الساري = طلبات بلا خصم.</p>
           </div>
         </>
       )}
@@ -272,6 +284,17 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
       )}
 
       {tab === 'plans' && (
+        <div className={`${box} p-4 mb-4`}>
+          <h3 className="font-black mb-3">التسعير العام</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs items-end">
+            <label>عمولة الطلب بالدولار (الافتراضي 0.03 = 3 سنت)<input className={inp} type="number" step="0.001" min="0" value={pc} onChange={(e) => setPc(e.target.value)} /></label>
+            <label>سعر الدولار يدوي بالجنيه (فارغ = تلقائي، الآن {rate || '...'})<input className={inp} type="number" step="0.01" min="0" value={manual} onChange={(e) => setManual(e.target.value)} placeholder="اتركه فارغاً للسعر التلقائي" /></label>
+            <button className="py-2 bg-[#00B050] text-white rounded-lg font-bold cursor-pointer" onClick={savePricing}>حفظ التسعير</button>
+          </div>
+        </div>
+      )}
+
+      {tab === 'plans' && (
         <div className={`${box} p-4`}>
           <div className="flex justify-between items-center mb-3">
             <h3 className="font-black">الباقات وأسعارها (تظهر للتاجر داخل لوحته)</h3>
@@ -283,10 +306,9 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
                 <div className="flex justify-between items-center"><span className="font-mono text-slate-400" dir="ltr">{p.code}</span><button className="text-rose-500 font-bold cursor-pointer" onClick={() => delPlan(p)}>حذف</button></div>
                 <label className="block">الاسم<input className={inp} value={dv(p, 'name')} onChange={(e) => setD(p, 'name', e.target.value)} /></label>
                 <div className="grid grid-cols-2 gap-2">
-                  <label>السعر<input className={inp} type="number" min="0" value={dv(p, 'price')} onChange={(e) => setD(p, 'price', e.target.value)} /></label>
-                  <label>العملة<input className={inp} value={dv(p, 'currency')} onChange={(e) => setD(p, 'currency', e.target.value)} /></label>
-                  <label>الطلبات المشمولة<input className={inp} type="number" min="0" value={dv(p, 'orders_included')} onChange={(e) => setD(p, 'orders_included', e.target.value)} /></label>
-                  <label>سعر الطلب الإضافي<input className={inp} type="number" min="0" value={dv(p, 'per_order_price')} onChange={(e) => setD(p, 'per_order_price', e.target.value)} /></label>
+                  <label>السعر ($)<input className={inp} type="number" min="0" value={dv(p, 'price')} onChange={(e) => setD(p, 'price', e.target.value)} /></label>
+                  <label>النوع<select className={inp} value={dv(p, 'kind') || 'topup'} onChange={(e) => setD(p, 'kind', e.target.value)}><option value="topup">شحن رصيد</option><option value="monthly">اشتراك شهري (30 يوم)</option></select></label>
+                  <label>الترتيب<input className={inp} type="number" value={dv(p, 'sort_order')} onChange={(e) => setD(p, 'sort_order', e.target.value)} /></label>
                 </div>
                 <label className="block">المميزات (سطر لكل ميزة)<textarea rows={4} className={inp} value={dv(p, 'features')} onChange={(e) => setD(p, 'features', e.target.value)} /></label>
                 <div className="flex gap-4">
