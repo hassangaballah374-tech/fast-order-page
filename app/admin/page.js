@@ -13,7 +13,8 @@ import { spikeLogout } from '../../components/SpikeSessionBar';
 import AdminBilling from '../../components/admin/AdminBilling';
 import AdminBell from '../../components/admin/AdminBell';
 import PaymentNote from '../../components/admin/PaymentNote';
-import ThemeColors from '../../components/admin/ThemeColors';  
+import ThemeColors from '../../components/admin/ThemeColors'; 
+import AdminPromos from '../../components/admin/AdminPromos';
 
 const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
