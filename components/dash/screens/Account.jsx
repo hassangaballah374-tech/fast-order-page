@@ -192,7 +192,7 @@ export function ShippingScreen() {
 }
 
 /* ====================== التطبيقات ====================== */
-function BostaCard() {
+export function BostaCard() {
   const { uid, say } = useDash();
   const [row, setRow] = useState(undefined);
   const [key, setKey] = useState('');
