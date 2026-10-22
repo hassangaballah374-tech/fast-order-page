@@ -82,6 +82,13 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
     if (add <= 0) return;
     patch(s, { wallet_balance_usd: money(n(s.wallet_balance_usd) + add), amount_paid: money(n(s.amount_paid) + add) }, `تمت إضافة ${usdFmt(add)} للرصيد`);
   };
+    const addFree = (s) => {
+    const v = prompt('كم طلب مجاني تضيف لهذا التاجر؟', '25');
+    if (v === null) return;
+    const add = Math.floor(n(v));
+    if (add <= 0) return;
+    patch(s, { free_orders_left: n(s.free_orders_left) + add, free_orders_total: n(s.free_orders_total) + add }, `تمت إضافة ${add} طلب مجاني`);
+  };
   const setBalance = (s) => {
     const v = prompt('اضبط الرصيد الحالي بالدولار (تصحيح):', money(s.wallet_balance_usd));
     if (v === null) return;
@@ -232,13 +239,14 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
                         <td className="p-2 font-mono">{usdFmt(s.wallet_balance_usd)}{rate ? <div className="text-[10px] text-slate-400">{egpFmt(toEgp(s.wallet_balance_usd, rate))}</div> : null}</td>
                         <td className="p-2 font-mono">{usdFmt(s.wallet_topped_usd)}</td>
                         <td className="p-2 font-mono">{n(s.orders_used)}</td>
-                        <td className={`p-2 font-mono font-bold ${rem === 0 ? 'text-rose-500' : ''}`}>{rem == null ? '∞' : rem}</td>
+                        <td className={`p-2 font-mono font-bold ${rem === 0 ? 'text-rose-500' : ''}`}>{rem == null ? '∞' : rem}{n(s.free_orders_left) > 0 ? <div className="text-[10px] text-slate-400 font-normal">منها {n(s.free_orders_left)} مجاني</div> : null}</td>
                         <td className="p-2 whitespace-nowrap font-mono">{monthlyActive(s) ? new Date(s.subscription_ends_at).toLocaleDateString() : '—'}</td>
                         <td className="p-2 font-mono">{usdFmt(commissionOf(s))}{s.commission_usd ? <div className="text-[10px] text-slate-400">خاصة</div> : null}</td>
                         <td className="p-2">
                           <div className="flex flex-wrap gap-1 min-w-[260px]">
                             <button disabled={busy} className={`${btn} ${s.is_active === true ? 'text-rose-500' : 'text-emerald-600'}`} onClick={() => toggle(s)}>{s.is_active === true ? 'تعطيل' : 'تفعيل'}</button>
                             <button disabled={busy} className={btn} onClick={() => addBalance(s)}>+ رصيد $</button>
+                            <button disabled={busy} className={btn} onClick={() => addFree(s)}>+ طلبات مجانية</button>
                             <button disabled={busy} className={btn} onClick={() => setBalance(s)}>ضبط الرصيد</button>
                             <button disabled={busy} className={btn} onClick={() => setCommission(s)}>العمولة</button>
                             <button disabled={busy} className={btn} onClick={() => renew(s)}>اشتراك شهري</button>
