@@ -71,7 +71,7 @@ export default function SpikeRegisterAndAuthPage() {
     },
   }[lang || 'ar'];
 
- const [formData, setFormData] = useState({ storeSlug: '', currency: 'USD', fullName: '', phone: '', email: '', password: '', confirmPassword: '', promo: '' });
+  const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     storeSlug: '',
