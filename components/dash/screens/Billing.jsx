@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useDash, PageHead, Field, Empty, Spin, Badge, Stat } from '../ui';
 import { useTable, uploadAsset } from '../hooks';
 import { fdate } from '../shared';
-import { storeStateOf, commissionOf, ordersLeft, ordersCovered, monthlyActive, toEgp, egpFmt, setPlatformCommission } from '../../../lib/billing';
+import { storeStateOf, commissionOf, ordersLeft, freeLeft, ordersCovered, monthlyActive, toEgp, egpFmt, setPlatformCommission } from '../../../lib/billing';
 import { useUsdRate } from '../../useUsdRate';
 import { supabase } from '../../../lib/supabase';
 
@@ -68,12 +68,13 @@ function WalletStats({ store, rate, pc }) {
   const left = ordersLeft(store, pc);
   const covered = ordersCovered(store, pc);
   const monthly = monthlyActive(store);
+  const free = freeLeft(store);
   return (
     <>
       <div className="grid4" style={{ marginBottom: 12 }}>
         <Stat label="رصيدك" value={usd(store?.wallet_balance_usd)} hint={rate ? `≈ ${egpFmt(toEgp(store?.wallet_balance_usd, rate))}` : ''} color="#0a7f86" />
         <Stat label="إجمالي ما شحنته" value={usd(store?.wallet_topped_usd)} hint={`يغطي ${covered} طلب`} />
-        <Stat label="الطلبات المتبقية" value={left == null ? 'غير محدود' : left} hint={monthly ? `الباقة الشهرية حتى ${new Date(store.subscription_ends_at).toLocaleDateString('ar-EG')}` : `عمولة الطلب ${usd(c)}`} color={left === 0 ? '#dc2626' : '#0a7f86'} />
+        <Stat label="الطلبات المتبقية" value={left == null ? 'غير محدود' : left} hint={monthly ? `الباقة الشهرية حتى ${new Date(store.subscription_ends_at).toLocaleDateString('ar-EG')}` : `عمولة الطلب ${usd(c)}${free ? ` · منها ${free} مجاني 🎁` : ''} color={left === 0 ? '#dc2626' : '#0a7f86'} />
         <Stat label="الطلبات المستخدمة" value={n(store?.orders_used)} />
       </div>
       {!monthly && covered > 0 && (
@@ -88,6 +89,32 @@ function WalletStats({ store, rate, pc }) {
         </div>
       )}
     </>
+  );
+}
+/* كود ترحيبي: يضيف طلبات مجانية */
+function PromoBox() {
+  const { say, reloadStore } = useDash();
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const redeem = async () => {
+    const c = code.trim();
+    if (!c) { say('اكتب الكود'); return; }
+    setBusy(true);
+    const { data, error } = await supabase.rpc('redeem_promo', { p_code: c });
+    setBusy(false);
+    if (error) { say(error.message); return; }
+    if (!data?.ok) { say(data?.error || 'الكود غير صالح'); return; }
+    setCode(''); reloadStore();
+    say(`🎁 تمت إضافة ${data.free_orders} طلب مجاني لمتجرك`);
+  };
+  return (
+    <div className="card" style={{ marginBottom: 16 }}>
+      <h3>🎁 عندك كود؟</h3>
+      <div className="row" style={{ marginBottom: 0 }}>
+        <input className="in num" dir="ltr" style={{ maxWidth: 240 }} placeholder="WELCOME" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} />
+        <button type="button" className="btn p" disabled={busy} onClick={redeem}>{busy ? '...' : 'تفعيل الكود'}</button>
+      </div>
+    </div>
   );
 }
 
@@ -133,6 +160,7 @@ export function PlansScreen() {
         <b style={{ color: STATE_MSG[st][1] }}>{STATE_MSG[st][0]}</b>
       </div>
       <WalletStats store={store} rate={rate} pc={pc} />
+      <PromoBox />
 
       <h3 style={{ margin: '8px 0' }}>اختر باقتك</h3>
       {plans === null ? <div className="c"><Spin /></div> : plans.length === 0 ? <Empty icon="💎" t="لا توجد باقات متاحة حالياً" /> : (
