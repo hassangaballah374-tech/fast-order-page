@@ -15,6 +15,7 @@ import AdminBell from '../../components/admin/AdminBell';
 import PaymentNote from '../../components/admin/PaymentNote';
 import ThemeColors from '../../components/admin/ThemeColors'; 
 import AdminPromos from '../../components/admin/AdminPromos';
+import AdminApps from '../../components/admin/AdminApps';
 
 const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
@@ -1383,6 +1384,7 @@ export default function SpikeSuperAdminDashboard() {
           {/* تبويب الباقات */}
          {shown('plans') && <><PaymentNote isDark={isDark} /><ThemeColors isDark={isDark} /><AdminBilling isDark={isDark} initial="plans" onChanged={fetchAllData} /></>}
           <AdminPromos isDark={isDark} />.
+          <AdminApps isDark={isDark} />
           {shown('billing') && <AdminBilling isDark={isDark} initial="stores" onChanged={fetchAllData} />}
 
           {/* تبويب سجل الحركات */}
