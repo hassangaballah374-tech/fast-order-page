@@ -80,7 +80,7 @@ const base = {
   plans: L(B, 'PlansScreen'),
   notifs: L(B, 'NotifsScreen'),
   shipping: L(A, 'ShippingScreen'),
-  apps: L(A, 'AppsScreen'),
+  apps: L(() => import('./screens/Apps'), 'AppsScreen'),
   services: L(A, 'ServicesScreen'),
   mservices: L(A, 'MServicesScreen'),
   affiliate: L(A, 'AffiliateScreen'),
