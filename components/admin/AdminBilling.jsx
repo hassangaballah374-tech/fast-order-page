@@ -1,3 +1,4 @@
+```javascript
 'use client';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
@@ -82,7 +83,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
     if (add <= 0) return;
     patch(s, { wallet_balance_usd: money(n(s.wallet_balance_usd) + add), amount_paid: money(n(s.amount_paid) + add) }, `تمت إضافة ${usdFmt(add)} للرصيد`);
   };
-    const addFree = (s) => {
+  const addFree = (s) => {
     const v = prompt('كم طلب مجاني تضيف لهذا التاجر؟', '25');
     if (v === null) return;
     const add = Math.floor(n(v));
@@ -332,3 +333,5 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
     </div>
   );
 }
+
+```
