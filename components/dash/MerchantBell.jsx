@@ -54,13 +54,13 @@ export function UsageBanner() {
   const { store, go } = useDash();
   if (!store) return null;
   const st = storeState(store);
-  const rem = store.orders_quota == null ? null : Math.max(0, n(store.orders_quota) - n(store.orders_used));
+  const rem = ordersLeft(store);
   let msg = '';
   let color = '#d97706';
   if (st === 'inactive') msg = 'متجرك لم يُفعَّل بعد من الإدارة. تقدر تبني متجرك وبياناتك، لكن البيع والبكسل متوقفان لحين التفعيل.';
-  else if (st === 'quota') { msg = 'انتهت طلبات باقتك، المتجر متوقف عن البيع. جدّد اشتراكك لتشغيله.'; color = '#dc2626'; }
+  else if (st === 'quota') { msg = 'رصيدك خلص والمتجر متوقف عن البيع. اشحن رصيدك لتشغيله.'; color = '#dc2626'; }
   else if (st === 'expired') { msg = 'انتهى اشتراكك، المتجر متوقف عن البيع. جدّد اشتراكك لتشغيله.'; color = '#dc2626'; }
-  else if (rem != null && rem <= 10) msg = `باقي ${rem} طلب فقط في باقتك. جدّد قبل ما المتجر يقف.`;
+  else if (rem != null && rem <= 10) msg = `باقى ما المتجر يقف. ${rem} طلب فقط في رصيدك. اشحن قبل.`;
   if (!msg) return null;
   return (
     <div className="card" style={{ marginBottom: 14, borderColor: color, background: `${color}12` }}>
