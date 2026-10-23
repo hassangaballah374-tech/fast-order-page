@@ -83,6 +83,7 @@ export const FLAG_LABEL = {
   repeat_today: 'طلب متكرر اليوم',
   returns_history: 'سجل مرتجعات/إلغاءات',
   needs_verify: 'يحتاج توثيق',
+  duplicate_hold: 'طلب مكرر خلال فترة المنع: معلّق لحين موافقتك (غيّر الحالة إلى «مؤكد»)',
   otp_blocked: 'رقم في قائمة OTP المحظورة',
 };
 
