@@ -83,7 +83,7 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug, customer: f, items: items.map((i) => ({ product_id: i.product_id, qty: i.qty, options: i.options })),
-          bump: bump || undefined, coupon: appliedCode || undefined, utm: getUtm(slug), hp, t: Math.round((Date.now() - t0.current) / 1000),
+          bump: bump || undefined, coupon: appliedCode || undefined, utm: { ...getUtm(slug), ...(funnel ? { funnel } : {}) }, hp, t: Math.round((Date.now() - t0.current) / 1000),
         }),
       });
       const j = await r.json();
