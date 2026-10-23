@@ -23,7 +23,7 @@ export default function ThankYouView() {
     fired.current = true;
     let done = false;
     try { done = sessionStorage.getItem(`spike_purchased_${slug}_${o.order_no}`) === '1'; sessionStorage.setItem(`spike_purchased_${slug}_${o.order_no}`, '1'); } catch { /* تجاهل */ }
-    if (!done) track('Purchase', { value: o.total, items: o.items || [] }, o.event_id);
+    if (!done && !o.held) track('Purchase', { value: o.total, items: o.items || [] }, o.event_id);
     clear();
     const url = safeUrl(ty.redirect_url);
     if (!url) return undefined;
@@ -56,7 +56,16 @@ export default function ThankYouView() {
   };
 
   return (
-    <div className="wrap ty">
+     <div className="wrap ty">
+      {o.held ? (
+     <div className="card" style={{ margin: '0 0 14px', padding: 14, textAlign: 'center', border: '1px solid #b7791f' }}>
+          <div style={{ fontSize: 34 }}>⏳</div>
+          <b>طلبك تحت التنفيذ</b>
+          <p className="mut" style={{ margin: '6px 0 0' }}>
+            لقينا طلب سابق بنفس الرقم لنفس المنتج، فطلبك هذا بيتراجع من فريقنا وهنتواصل معاك للتأكيد قريباً.
+          </p>
+        </div>
+      ) : null}
       <div className="ic">🎉</div>
       <h1 style={{ margin: '10px 0' }}>{ty.title || 'تم استلام طلبك 🎉'}</h1>
       <p className="mut" style={{ maxWidth: 520, margin: '0 auto 18px' }}>{ty.message}</p>
