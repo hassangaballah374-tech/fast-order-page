@@ -107,10 +107,11 @@ export async function POST(req) {
     return fail(`تعذر تسجيل الطلب، حاول مرة أخرى (${error.message})`, 500);
   }
 
-  if (priced.coupon?.code) await sb.rpc('claim_coupon', { p_store: sid, p_code: priced.coupon.code });
-  await sb.from('abandoned_carts').update({ recovered: true, updated_at: new Date().toISOString() }).eq('store_id', sid).eq('phone', phone);
-  await sb.rpc('bump_store_stat', { p_store: sid, p_visits: 0, p_carts: 0, p_checkouts: 0, p_cross: priced.lines.some((l) => l.bump) ? 1 : 0 });
-
+  await Promise.all([
+    priced.coupon?.code ? sb.rpc('claim_coupon', { p_store: sid, p_code: priced.coupon.code }) : null,
+    sb.from('abandoned_carts').update({ recovered: true, updated_at: new Date().toISOString() }).eq('store_id', sid).eq('phone', phone),
+    sb.rpc('bump_store_stat', { p_store: sid, p_visits: 0, p_carts: 0, p_checkouts: 0, p_cross: priced.lines.some((l) => l.bump) ? 1 : 0 }),
+  ]);
   const eventId = `order-${created.order_no}`;
   try {
     await sendCapiPurchase(sb, sid, {
