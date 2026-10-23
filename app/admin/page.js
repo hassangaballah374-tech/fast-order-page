@@ -33,6 +33,8 @@ export default function SpikeSuperAdminDashboard() {
   const [currentPermissions, setCurrentPermissions] = useState({});
 
   const [stores, setStores] = useState([]);
+  const [pickStore, setPickStore] = useState(false);
+  const [pickQ, setPickQ] = useState('');
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
@@ -715,10 +717,7 @@ export default function SpikeSuperAdminDashboard() {
           {/* 👑 متاجر الأدمن الخاصة — داخل السكرول */}
           <button
             data-admin-stores
-            onClick={() => {
-              localStorage.setItem('merchant_user_id', 'main_flagship_owner');
-              router.push('/dashboard');
-            }}
+            onClick={() => { setPickQ(''); setPickStore(true); }}
             className="w-full py-2 mt-3 bg-gradient-to-r from-[#00B050] to-emerald-600 text-white rounded-xl text-xs font-black shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
             title="الدخول إلى متاجر الأدمن الخاصة بك"
           >
@@ -752,6 +751,60 @@ export default function SpikeSuperAdminDashboard() {
         </nav>
 
       </aside>
+      {pickStore && (
+        <div
+          onClick={() => setPickStore(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={isDark ? 'bg-[#0E1E38] text-white' : 'bg-white text-slate-900'}
+            style={{ width: '100%', maxWidth: 520, maxHeight: '80vh', borderRadius: 16, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
+          >
+            <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(127,127,127,.25)' }}>
+              <b>{isAr ? 'اختر متجراً للدخول إليه' : 'Choose a store'} ({stores.length})</b>
+              <button type="button" onClick={() => setPickStore(false)} className="cursor-pointer" style={{ fontSize: 18 }}>✕</button>
+            </div>
+            <div style={{ padding: '10px 16px' }}>
+              <input
+                value={pickQ}
+                onChange={(e) => setPickQ(e.target.value)}
+                placeholder={isAr ? 'ابحث باسم المتجر أو المالك...' : 'Search...'}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1px solid rgba(127,127,127,.35)', background: 'transparent', color: 'inherit' }}
+              />
+            </div>
+            <div style={{ overflowY: 'auto', padding: '0 16px 16px', display: 'grid', gap: 8 }}>
+              <button
+                type="button"
+                className="cursor-pointer"
+                onClick={() => { localStorage.setItem('merchant_user_id', 'main_flagship_owner'); router.push('/dashboard'); }}
+                style={{ textAlign: 'right', padding: 12, borderRadius: 12, border: '1px solid #00B050', background: 'rgba(0,176,80,.1)' }}
+              >
+                <b>👑 {isAr ? 'متجر الأدمن الرئيسي' : 'Main admin store'}</b>
+              </button>
+              {stores
+                .filter((s) => `${s.store_name || ''} ${s.owner_name || ''} ${s.store_slug || ''}`.toLowerCase().includes(pickQ.trim().toLowerCase()))
+                .map((s) => (
+                  <button
+                    key={s.id || s.user_id}
+                    type="button"
+                    className="cursor-pointer"
+                    onClick={() => { localStorage.setItem('merchant_user_id', s.user_id); router.push('/dashboard'); }}
+                    style={{ textAlign: 'right', padding: 12, borderRadius: 12, border: '1px solid rgba(127,127,127,.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}
+                  >
+                    <span>
+                      <b style={{ display: 'block' }}>{s.store_name || '—'}</b>
+                      <span className="text-[10px] text-slate-400 font-mono" dir="ltr">{s.store_slug}.spike.shop</span>
+                    </span>
+                    <span className="text-[11px]" style={{ color: s.is_active !== false ? '#00B050' : '#e11d48' }}>
+                      {s.is_active !== false ? (isAr ? 'مفعل' : 'Active') : (isAr ? 'معطل' : 'Off')}
+                    </span>
+                  </button>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* منطقة المحتوى الرئيسية */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
