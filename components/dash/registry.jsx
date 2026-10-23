@@ -53,6 +53,7 @@ const base = {
   assets: L(D, 'AssetsScreen'),
 
   funnels: L(G, 'FunnelsScreen'),
+  landing: L(() => import('./screens/Landing'), 'LandingScreen'),
   campaigns: L(G, 'CampaignsScreen'),
   referrals: L(G, 'ReferralsScreen'),
   reports: L(G, 'ReportsScreen'),
