@@ -90,7 +90,7 @@ export async function POST(req) {
   const token = crypto.randomBytes(16).toString('hex');
   const utm = body.utm && typeof body.utm === 'object' ? body.utm : {};
   const safeUtm = {};
-  for (const k of ['source', 'medium', 'campaign', 'content', 'ref']) if (utm[k]) safeUtm[k] = String(utm[k]).slice(0, 80);
+  for (const k of ['source', 'medium', 'campaign', 'content', 'ref', 'funnel']) if (utm[k]) safeUtm[k] = String(utm[k]).slice(0, 80);
 
   const row = {
     store_id: sid, customer_name: name, customer_phone: phone, phone2: phone2 || null, email: email || null,
