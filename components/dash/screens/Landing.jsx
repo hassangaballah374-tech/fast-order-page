@@ -1,5 +1,6 @@
 'use client';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { supabase } from '../../../lib/supabase';
 import { useDash, PageHead, Empty, Spin, Tabs, Field, Tog } from '../ui';
 import { useTable, useProducts } from '../hooks';
 import { ImageInput } from '../forms';
@@ -237,7 +238,7 @@ function Editor({ page, onSave, onBack, storeUrl, prods }) {
 }
 
 export function LandingScreen() {
-  const { storeUrl, say } = useDash();
+   const { storeUrl, say, uid } = useDash();
   const t = useTable('store_funnels', { order: 'created_at' });
   const prods = useProducts();
   const [edit, setEdit] = useState(null);
@@ -245,6 +246,26 @@ export function LandingScreen() {
   const [nm, setNm] = useState('');
   const [tpl, setTpl] = useState('full');
   const [pid, setPid] = useState('');
+  const [orderCounts, setOrderCounts] = useState({});
+
+  useEffect(() => {
+    if (!uid) return;
+    supabase.from('orders').select('utm').eq('store_id', uid).limit(5000).then(({ data }) => {
+      const m = {};
+      (data || []).forEach((o) => { const f = o.utm && o.utm.funnel; if (f) m[f] = (m[f] || 0) + 1; });
+      setOrderCounts(m);
+    });
+  }, [uid, t.rows.length]);
+
+  const duplicate = async (r) => {
+    const sl = `${r.slug}-copy-${uid8().slice(0, 3)}`;
+    const row = await t.insert({
+      name: `${r.name} (نسخة)`, slug: sl, product_id: r.product_id, enabled: false, bullets: r.bullets || [], countdown_minutes: r.countdown_minutes || 0,
+      cta_text: r.cta_text, video_url: r.video_url, headline: r.headline, subheadline: r.subheadline,
+      sections: (r.sections || []).map((s) => ({ ...s, id: uid8() })), theme: r.theme || {}, seo: r.seo || {}, settings: r.settings || {},
+    });
+    if (row) say('تم نسخ الصفحة (مخفية، انشرها بعد التعديل)');
+  };
 
   if (t.loading) return <Spin />;
   if (edit) {
@@ -300,7 +321,7 @@ export function LandingScreen() {
       <div className="card">
         {t.rows.length === 0 ? <Empty icon="🚀" t="لا توجد صفحات هبوط بعد" d="اضغط «صفحة جديدة» واختر قالباً" /> : (
           <div className="tw"><table className="tbl">
-            <thead><tr><th>الصفحة</th><th>الرابط</th><th>الأقسام</th><th>المشاهدات</th><th>الحالة</th><th /></tr></thead>
+            <thead><tr><th>الصفحة</th><th>الرابط</th><th>الأقسام</th><th>المشاهدات</th><th>الطلبات</th><th>التحويل</th><th>الحالة</th><th /></tr></thead>
             <tbody>
               {t.rows.map((r) => (
                 <tr key={r.id}>
@@ -308,10 +329,13 @@ export function LandingScreen() {
                   <td><a className="num" dir="ltr" href={`${storeUrl}/f/${r.slug}`} target="_blank" rel="noreferrer">/f/{r.slug}</a></td>
                   <td className="num">{Array.isArray(r.sections) && r.sections.length ? r.sections.length : 'قديمة'}</td>
                   <td className="num">{r.views || 0}</td>
+                  <td className="num">{orderCounts[r.slug] || 0}</td>
+                  <td className="num">{r.views > 0 ? `${(((orderCounts[r.slug] || 0) / r.views) * 100).toFixed(1)}%` : '—'}</td>
                   <td>{r.enabled === false ? 'مخفية' : 'منشورة'}</td>
                   <td>
                     <button type="button" className="btn sm p" onClick={() => setEdit(r.id)}>تعديل</button>{' '}
                     <button type="button" className="btn sm" onClick={async () => { await t.update(r.id, { enabled: r.enabled === false }); }}>{r.enabled === false ? 'نشر' : 'إخفاء'}</button>{' '}
+                    <button type="button" className="btn sm" onClick={() => duplicate(r)}>نسخ</button>{' '}
                     <button type="button" className="btn sm dng" onClick={async () => { if (window.confirm('حذف الصفحة نهائياً؟')) await t.remove(r.id); }}>حذف</button>
                   </td>
                 </tr>
