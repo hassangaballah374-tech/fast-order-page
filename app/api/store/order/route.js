@@ -43,18 +43,23 @@ export async function POST(req) {
   if (!governorate) return fail('اختر المحافظة');
   if (address.length < 6) return fail('اكتب العنوان بالتفصيل');
 
-  const { data: blocked } = await sb.from('store_blocklist').select('id').eq('store_id', sid).eq('phone', phone).eq('kind', 'order').maybeSingle();
-  if (blocked) return fail('تعذر إتمام الطلب حالياً. تواصل معنا عبر واتساب.', 403);
-
-  const priced = await priceCart(sb, store, cfg, { items: body.items, bump: body.bump, governorate, coupon: body.coupon });
-  if (priced.errors?.length) return fail(priced.errors[0]);
-
   const since = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString();
-  const { data: recent } = await sb.from('orders')
-    .select('id, status, items, public_token, order_no, created_at')
-    .eq('store_id', sid).eq('customer_phone', phone)
-    .gte('created_at', since(Math.max(24, Number(prot.block_duplicate_hours) || 12)))
-    .order('created_at', { ascending: false }).limit(30);
+  const [blockedRes, priced, recentRes, historyRes, otpRes] = await Promise.all([
+    sb.from('store_blocklist').select('id').eq('store_id', sid).eq('phone', phone).eq('kind', 'order').maybeSingle(),
+    priceCart(sb, store, cfg, { items: body.items, bump: body.bump, governorate, coupon: body.coupon }),
+    sb.from('orders')
+      .select('id, status, items, public_token, order_no, created_at')
+      .eq('store_id', sid).eq('customer_phone', phone)
+      .gte('created_at', since(Math.max(24, Number(prot.block_duplicate_hours) || 12)))
+      .order('created_at', { ascending: false }).limit(30),
+    sb.from('orders').select('status').eq('store_id', sid).eq('customer_phone', phone).in('status', ['returned', 'cancelled']).limit(5),
+    sb.from('store_blocklist').select('id').eq('store_id', sid).eq('phone', phone).eq('kind', 'otp').maybeSingle(),
+  ]);
+  if (blockedRes.data) return fail('تعذر إتمام الطلب حالياً. تواصل معنا عبر واتساب.', 403);
+  if (priced.errors?.length) return fail(priced.errors[0]);
+  const recent = recentRes.data;
+  const history = historyRes.data;
+  const otpHit = otpRes.data;
 
   const recentList = recent || [];
   let heldUntil = null;
@@ -78,9 +83,7 @@ export async function POST(req) {
   if (name.length < 4 || /\d/.test(name)) { risk += 15; flags.push('weird_name'); }
   if (address.length < 12) { risk += 15; flags.push('short_address'); }
   if (todayCount >= 1) { risk += 15; flags.push('repeat_today'); }
-  const { data: history } = await sb.from('orders').select('status').eq('store_id', sid).eq('customer_phone', phone).in('status', ['returned', 'cancelled']).limit(5);
   if ((history || []).length >= 2) { risk += 40; flags.push('returns_history'); }
-  const { data: otpHit } = await sb.from('store_blocklist').select('id').eq('store_id', sid).eq('phone', phone).eq('kind', 'otp').maybeSingle();
   if (otpHit) { risk += 40; flags.push('otp_blocked'); }
   risk = Math.min(100, risk);
   if (heldUntil) { flags.push('duplicate_hold'); risk = Math.min(100, risk + 20); }
@@ -106,7 +109,7 @@ export async function POST(req) {
   if (error) {
     for (const l of stock.taken) await sb.rpc('take_stock', { p_product: l.product_id, p_qty: -l.qty });
     console.error('ORDER_INSERT_ERROR', error.message, error.details, error.hint);
-    return fail(`تعذر تسجيل الطلب، حاول مرة أخرى (${error.message})`, 500);
+    return fail('تعذر تسجيل الطلب، حاول مرة أخرى', 500);
   }
 
   await Promise.all([
@@ -114,6 +117,7 @@ export async function POST(req) {
     sb.from('abandoned_carts').update({ recovered: true, updated_at: new Date().toISOString() }).eq('store_id', sid).eq('phone', phone),
     sb.rpc('bump_store_stat', { p_store: sid, p_visits: 0, p_carts: 0, p_checkouts: 0, p_cross: priced.lines.some((l) => l.bump) ? 1 : 0 }),
   ]);
+
   const eventId = `order-${created.order_no}`;
   try {
     await sendCapiPurchase(sb, sid, {
