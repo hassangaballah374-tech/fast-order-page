@@ -57,12 +57,13 @@ export async function POST(req) {
     .order('created_at', { ascending: false }).limit(30);
 
   const recentList = recent || [];
+  let heldUntil = null;
   const dupHours = Number(prot.block_duplicate_hours) || 0;
   const myIds = priced.lines.map((l) => l.product_id).sort().join(',');
   if (dupHours > 0) {
     const dup = recentList.find((o) => o.status !== 'cancelled' && new Date(o.created_at) > new Date(since(dupHours))
       && (Array.isArray(o.items) ? o.items.map((i) => String(i.product_id)).sort().join(',') : '') === myIds);
-    if (dup) return NextResponse.json({ ok: true, duplicate: true, order_no: dup.order_no, token: dup.public_token, total: priced.total, event_id: `order-${dup.order_no}` });
+    if (dup) heldUntil = new Date(Date.now() + dupHours * 3600 * 1000).toISOString();
   }
 
   const todayCount = recentList.filter((o) => new Date(o.created_at) > new Date(since(24))).length;
@@ -82,6 +83,7 @@ export async function POST(req) {
   const { data: otpHit } = await sb.from('store_blocklist').select('id').eq('store_id', sid).eq('phone', phone).eq('kind', 'otp').maybeSingle();
   if (otpHit) { risk += 40; flags.push('otp_blocked'); }
   risk = Math.min(100, risk);
+  if (heldUntil) { flags.push('duplicate_hold'); risk = Math.min(100, risk + 20); }
   if ((cfg.verify.flag_risk && risk >= (Number(cfg.verify.threshold) || 40)) || otpHit) flags.push('needs_verify');
 
   const stock = await takeStockForLines(sb, priced.lines);
@@ -97,7 +99,7 @@ export async function POST(req) {
     governorate, address, notes: notes || null,
     items: orderRowItems(priced.lines),
     subtotal: priced.subtotal, discount: priced.discount, shipping_cost: priced.shipping, cod_fee: priced.codFee, total_price: priced.total, cost_total: priced.cost,
-    coupon_code: priced.coupon?.code || null, utm: safeUtm, risk_score: risk, flags, status: 'pending', source: 'storefront', public_token: token,
+    coupon_code: priced.coupon?.code || null, utm: safeUtm, risk_score: risk, flags, status: 'pending', source: 'storefront', public_token: token, hold_until: heldUntil,
   };
 
   const { data: created, error } = await sb.from('orders').insert([row]).select('order_no, public_token').single();
@@ -122,5 +124,5 @@ export async function POST(req) {
     });
   } catch { /* لا نوقف الطلب */ }
 
-  return NextResponse.json({ ok: true, order_no: created.order_no, token: created.public_token, total: priced.total, event_id: eventId });
+  return NextResponse.json({ ok: true, order_no: created.order_no, token: created.public_token, total: priced.total, event_id: eventId, held: !!heldUntil, hold_until: heldUntil });
 }
