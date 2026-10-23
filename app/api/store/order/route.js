@@ -103,7 +103,8 @@ export async function POST(req) {
   const { data: created, error } = await sb.from('orders').insert([row]).select('order_no, public_token').single();
   if (error) {
     for (const l of stock.taken) await sb.rpc('take_stock', { p_product: l.product_id, p_qty: -l.qty });
-    return fail('تعذر تسجيل الطلب، حاول مرة أخرى', 500);
+    console.error('ORDER_INSERT_ERROR', error.message, error.details, error.hint);
+    return fail(`تعذر تسجيل الطلب، حاول مرة أخرى (${error.message})`, 500);
   }
 
   if (priced.coupon?.code) await sb.rpc('claim_coupon', { p_store: sid, p_code: priced.coupon.code });
