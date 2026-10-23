@@ -88,7 +88,7 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
       });
       const j = await r.json();
       if (!j.ok) { setErr(j.error || 'تعذر إرسال الطلب، حاول مرة أخرى'); setBusy(false); return; }
-      ss(`spike_last_${slug}`, { order_no: j.order_no, token: j.token, total: j.total, event_id: j.event_id, name: f.name, phone: f.phone, items: items.map((i) => ({ id: i.product_id, title: i.title, price: i.price, qty: i.qty })) });
+      ss(`spike_last_${slug}`, { held: !!j.held, hold_until: j.hold_until || null, order_no: j.order_no, token: j.token, total: j.total, event_id: j.event_id, name: f.name, phone: f.phone, items: items.map((i) => ({ id: i.product_id, title: i.title, price: i.price, qty: i.qty })) });
       if (onSuccess) onSuccess(j);
       router.push(`${base}/thank-you`);
     } catch { setErr('تعذر الاتصال، حاول مرة أخرى'); setBusy(false); }
