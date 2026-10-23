@@ -36,7 +36,8 @@ export const MENU = [
       { id: 'assets', t: 'رفع ملفات التصاميم' },
     ],
   },
-  { id: 'funnels', t: 'Funnels', i: '🔻' },
+  { id: 'landing', t: 'صفحات الهبوط', i: '🚀' },
+  { id: 'funnels', t: 'Funnels (بسيط)', i: '🔻' },
   {
     g: 'tracking', t: 'أدوات التتبع', i: '🎯', items: [
       { id: 'pixels', t: 'إعدادات البكسل' },
