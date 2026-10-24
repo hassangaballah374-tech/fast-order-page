@@ -211,28 +211,17 @@ export default function SpikeLandingPage() {
             <span>{t.liveBadge}</span>
           </div>
 
-          {/* اللوجو المركزي مع هالة ضوئية متوهجة */}
+           {/* اللوجو الكامل بالاسم: هالة متوهجة + طفو + تكبير عند التحويم */}
+          <style>{`@keyframes spikeFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}`}</style>
+          <h1 className="sr-only">SPIKE | سبايك</h1>
           <div className="flex justify-center">
-            <div className="relative inline-flex items-center justify-center">
-              <div className="absolute -inset-4 bg-gradient-to-r from-[#E86A53] via-emerald-400 to-[#E86A53] rounded-full blur-2xl opacity-35 animate-pulse" />
+            <div className="relative inline-flex items-center justify-center" style={{ animation: 'spikeFloat 6s ease-in-out infinite' }}>
+              <div className="absolute -inset-6 bg-gradient-to-r from-[#E86A53] via-emerald-400 to-[#E86A53] rounded-full blur-3xl opacity-35 animate-pulse" />
               <img
-                src={SPIKE_LOGO_URL}
-                alt="SPIKE Logo"
-                className="relative h-32 sm:h-44 w-auto object-contain rounded-3xl shadow-2xl transition-transform duration-500 hover:scale-110 cursor-pointer"
+                src="https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding/logo.png?v=1"
+                alt="SPIKE | سبايك - Shop Smarter"
+                className={`relative h-56 sm:h-80 lg:h-96 w-auto object-contain transition-transform duration-500 hover:scale-110 cursor-pointer drop-shadow-2xl ${isDark ? 'bg-white/95 rounded-3xl p-4' : ''}`}
               />
-            </div>
-          </div>
-
-          {/* كلمة SPIKE عملاقة بأنيميشن كتابة حي متبوعة بمؤشر ينبض */}
-          <div className="w-full flex items-center justify-center my-1">
-            <div className="relative inline-flex items-center justify-center">
-              <h1 className="text-6xl sm:text-8xl lg:text-9xl font-black italic tracking-widest uppercase select-none transition-all duration-300 font-sans bg-gradient-to-r from-[#E86A53] via-orange-400 to-[#E86A53] bg-clip-text text-transparent drop-shadow-[0_12px_40px_rgba(232,106,83,0.40)]">
-                {typedText}
-              </h1>
-
-              {!isTypingDone && (
-                <span className="inline-block w-2.5 sm:w-4 h-14 sm:h-24 bg-[#E86A53] ml-2 animate-pulse rounded-full" />
-              )}
             </div>
           </div>
 
