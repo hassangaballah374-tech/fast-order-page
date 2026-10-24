@@ -216,7 +216,7 @@ export default function SpikeRegisterAndAuthPage() {
       <header className={`px-4 sm:px-8 py-3 border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${isDark ? 'bg-[#091222]/95 border-slate-800' : 'bg-white/95 border-slate-200/90 shadow-2xs'}`}>
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-8 w-auto object-contain rounded-lg shadow-xs" />
+            <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-12 w-auto object-contain" />
             <span className={`text-lg font-black tracking-tight ${isDark ? 'text-white' : 'text-[#0E1E38]'}`}>{t.brand}</span>
           </Link>
           <div className="flex items-center gap-1.5 sm:gap-2.5">
@@ -234,7 +234,7 @@ export default function SpikeRegisterAndAuthPage() {
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-10 w-full max-w-lg mx-auto">
         <div className="text-center space-y-2 mb-5">
-          <div className="flex justify-center"><img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-14 w-auto object-contain rounded-2xl shadow-sm" /></div>
+          <div className="flex justify-center"><img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-24 w-auto object-contain" /></div>
           <div className="flex items-center justify-center gap-1.5 font-black text-xl">
             <span className={isDark ? 'text-white' : 'text-[#0E1E38]'}>سبايك</span>
             <span className="text-slate-400 font-light">|</span>
@@ -344,7 +344,7 @@ export default function SpikeRegisterAndAuthPage() {
 
       <footer className="bg-[#121824] text-white pt-8 pb-6 px-4 sm:px-8 border-t border-slate-800 text-xs">
         <div className="max-w-6xl mx-auto space-y-6">
-
+          
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 items-start">
             <div className="space-y-2">
               <h4 className="font-black text-xs text-white">{t.aboutTitle}</h4>
