@@ -29,6 +29,7 @@ export function ProductCard({ p }) {
       {out ? <span className="bdg so">نفدت الكمية</span> : off > 0 ? <span className="bdg">خصم {off}%</span> : null}
       <div className="pc-b">
         <Link href={`${base}/p/${p.id}`} className="pc-t">{p.title}</Link>
+        {p.rating_count > 0 ? <div className="pc-r"><Stars value={p.rating_avg} /> <span className="mut num">{p.rating_avg} ({p.rating_count})</span></div> : null}
         <div className="pc-p">
           <b className="num">{money(price, cur)}</b>
           {onSale && <span className="old num">{money(p.compare_price, cur)}</span>}
