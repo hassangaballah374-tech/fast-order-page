@@ -668,7 +668,7 @@ export default function SpikeSuperAdminDashboard() {
               <img
                 src={SPIKE_LOGO_URL}
                 alt="SPIKE"
-                className="h-8 sm:h-9 w-auto object-contain rounded-lg shadow-xs"
+                className="h-11 sm:h-12 w-auto object-contain"
               />
             </Link>
           </div>
