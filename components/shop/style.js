@@ -65,6 +65,9 @@ export const SHOP_CSS = `
 .spk .pc-b{padding:11px 12px 13px;display:flex;flex-direction:column;gap:4px;flex:1}
 .spk .pc-t{font-size:14px;font-weight:700;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
 .spk .pc-p{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.spk .pc-fav{position:absolute;top:8px;inset-inline-start:8px;z-index:3;width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.92);color:#64748b;font-size:19px;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.spk .pc-fav.on{color:#e11d48}
+.spk .pc-fav.big{position:static;display:inline-grid;place-items:center;margin-inline-start:8px;vertical-align:middle}
 .spk .pc-r{display:flex;gap:6px;align-items:center;font-size:12px;margin:2px 0 4px}
 .spk .pc-p b{font-size:16px;color:var(--c)}
 .spk .old{color:var(--mut);text-decoration:line-through;font-size:13px}
