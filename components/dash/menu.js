@@ -7,6 +7,7 @@ export const MENU = [
   {
     g: 'orders', t: 'الطلبات', i: '📦', items: [
       { id: 'orders', t: 'كل الطلبات' },
+      { id: 'confirm', t: 'تأكيد الطلبات' },
       { id: 'abandoned', t: 'الطلبات المفقودة' },
       { id: 'blocked_orders', t: 'الأرقام المحظورة من الطلب' },
       { id: 'blocked_otp', t: 'الأرقام المحظورة OTP' },
