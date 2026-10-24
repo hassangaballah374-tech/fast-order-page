@@ -13,3 +13,4 @@ export default async function FavoritesPage({ params }) {
   const { sb, sid } = ctx;
   const catalog = await getProducts(sb, sid, { limit: 200 });
   return <FavoritesView catalog={catalog} />;
+}
