@@ -60,10 +60,29 @@ export async function api(path, body) {
   }
 }
 
+/* ضغط الصورة قبل الرفع: أقصى عرض 1600px وصيغة WebP. يتخطى GIF وSVG والصور الصغيرة */
+async function compressImage(file) {
+  try {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 200 * 1024) return file;
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const w = Math.max(1, Math.round(bmp.width * scale));
+    const h = Math.max(1, Math.round(bmp.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
+    if (bmp.close) bmp.close();
+    const blob = await new Promise((res) => canvas.toBlob(res, 'image/webp', 0.82));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.webp', { type: 'image/webp' });
+  } catch { return file; }
+}
+
 /* رفع ملف إلى bucket اسمه store-assets داخل مجلد المتجر */
-export async function uploadAsset(uid, file, folder = 'misc') {
-  if (!file) throw new Error('لم يتم اختيار ملف');
-  if (file.size > 8 * 1024 * 1024) throw new Error('الحد الأقصى لحجم الملف 8MB');
+export async function uploadAsset(uid, original, folder = 'misc') {
+  if (!original) throw new Error('لم يتم اختيار ملف');
+  if (original.size > 12 * 1024 * 1024) throw new Error('الحد الأقصى لحجم الملف 12MB');
+  const file = await compressImage(original);
   const ext = ((file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5)) || 'png';
   const path = `${uid}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await supabase.storage.from('store-assets').upload(path, file, { cacheControl: '31536000', upsert: false, contentType: file.type || undefined });
