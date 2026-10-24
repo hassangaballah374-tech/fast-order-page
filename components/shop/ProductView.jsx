@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useShop, hit } from './StoreContext';
 import { track } from './tracker';
+import { useFavs, pushViewed, readViewed } from './favs';
 import Checkout from './Checkout';
 import { Stars, ProductCard, Blocks, soldOut } from './ui';
 import { money, effectivePrice, saleActive, applyOffer, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
@@ -65,6 +66,10 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const scarce = cfg.scarcity?.enabled && p.track_stock && p.stock_quantity > 0 && p.stock_quantity <= (Number(cfg.scarcity.threshold) || 5);
   const item = useMemo(() => ({ key: p.id, product_id: p.id, title: p.title, image: p.images[0] || '', price, qty, options: opts }), [p.id, qty, opts, price]);
   const sent = useRef({ scroll: false });
+  const fav = useFavs(slug);
+  const [viewed, setViewed] = useState([]);
+  useEffect(() => { setViewed(readViewed(slug).filter((x) => x !== p.id)); pushViewed(slug, p.id); }, [slug, p.id]);
+  const viewedList = viewed.map((id) => catalog.find((x) => x.id === id)).filter(Boolean).slice(0, 8);
 
   useEffect(() => {
     track('ViewContent', { value: price, items: [{ id: p.id, title: p.title, price, qty: 1 }] });
@@ -104,7 +109,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
         </div>
 
         <div className="info">
-          <h1>{p.title}</h1>
+          <h1>{p.title} <button type="button" className={'pc-fav big' + (fav.has(p.id) ? ' on' : '')} aria-label="المفضلة" onClick={() => fav.toggle(p.id)}>{fav.has(p.id) ? '♥' : '♡'}</button></h1>
           {stats.count > 0 && <div><Stars value={stats.avg} /> <span className="mut" style={{ fontSize: 13 }}>({stats.count} تقييم)</span></div>}
           <div className="price">
             <b className="num">{money(price, cur)}</b>
@@ -166,7 +171,13 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
           <Checkout items={optsOk ? [item] : []} bump={bumpOn && bumpProd ? { product_id: bumpProd.id } : null} title="اطلب الآن · الدفع عند الاستلام" />
         </div>
       )}
-
+    
+      {viewedList.length > 0 && (
+        <section className="sec">
+          <div className="sh"><h2>شاهدت مؤخراً</h2></div>
+          <div className="grid">{viewedList.map((x) => <ProductCard key={x.id} p={x} />)}</div>
+        </section>
+      )}
       {cross.length > 0 && (
         <section className="sec">
           <div className="sh"><h2>{cfg.cross?.title || 'كمّل طلبك بـ'}</h2></div>
