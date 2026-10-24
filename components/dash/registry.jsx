@@ -30,6 +30,7 @@ const B = () => import('./screens/Billing');
 const base = {
   stats: L(() => import('./screens/Stats'), 'StatsScreen'),
   orders: L(O, 'OrdersScreen'),
+  confirm: L(() => import('./screens/Confirm'), 'ConfirmScreen'),
   abandoned: L(O, 'AbandonedScreen'),
   blocked_orders: BlockedOrders,
   blocked_otp: BlockedOtp,
