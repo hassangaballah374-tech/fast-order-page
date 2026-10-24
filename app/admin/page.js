@@ -10,6 +10,7 @@ import {
 } from '../../components/SpikeCharts';
 import SpikeIntegrations from '../../components/SpikeIntegrations';
 import AdminAnalytics from '../../components/admin/AdminAnalytics';
+import AdminAlerts from '../../components/admin/AdminAlerts';
 import { spikeLogout } from '../../components/SpikeSessionBar';
 import AdminBilling from '../../components/admin/AdminBilling';
 import AdminBell from '../../components/admin/AdminBell';
@@ -1440,7 +1441,12 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           )}
           {/* تبويب إحصائيات المنصة */}
-          {shown('analytics') && <AdminAnalytics isDark={isDark} />}
+          {shown('analytics') && (
+            <>
+              <AdminAnalytics isDark={isDark} />
+              <AdminAlerts isDark={isDark} />
+            </>
+          )}
 
           {/* تبويب الباقات */}
 
