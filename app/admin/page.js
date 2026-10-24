@@ -656,20 +656,13 @@ export default function SpikeSuperAdminDashboard() {
               S.A
             </span>
 
-            <Link href="/" className="flex items-center gap-2">
-              <div className="text-right">
-                <div className="flex items-center gap-1 font-black text-base sm:text-lg leading-tight">
-                  <span className={isDark ? 'text-white' : 'text-slate-900'}>سبايك</span>
-                  <span className="text-slate-400 font-light">|</span>
-                  <span className="font-mono text-xs tracking-wider text-[#00B050]">SPIKE</span>
-                </div>
-                <span className="text-[9px] text-slate-400 block font-medium">لوحة التحكم والإدارة</span>
-              </div>
+              <Link href="/" className="flex flex-col items-center gap-1">
               <img
-                src={SPIKE_LOGO_URL}
-                alt="SPIKE"
-                className="h-11 sm:h-12 w-auto object-contain"
+                src="https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding/logo.png?v=1"
+                alt="SPIKE | سبايك"
+                className={`h-16 sm:h-20 w-auto object-contain ${isDark ? 'bg-white/95 rounded-xl p-1.5' : ''}`}
               />
+              <span className="text-[10px] text-slate-400 block font-bold">لوحة التحكم والإدارة</span>
             </Link>
           </div>
 
