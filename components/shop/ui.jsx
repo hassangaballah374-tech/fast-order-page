@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useShop } from './StoreContext';
 import { track } from './tracker';
+import { useFavs } from './favs';
 import { money, effectivePrice, saleActive, safeUrl, youtubeId } from '../../lib/storeKit';
 
 const HEX = /^#[0-9a-fA-F]{3,8}$/;
@@ -16,7 +17,8 @@ export function Stars({ value = 5 }) {
 export const soldOut = (p) => p.track_stock && p.stock_quantity <= 0;
 
 export function ProductCard({ p }) {
-  const { base, cur } = useShop();
+  const { base, cur, slug } = useShop();
+  const fav = useFavs(slug);
   const price = effectivePrice(p);
   const onSale = saleActive(p) && p.compare_price > price;
   const off = onSale ? Math.round((1 - price / p.compare_price) * 100) : 0;
@@ -26,6 +28,7 @@ export function ProductCard({ p }) {
       <Link href={`${base}/p/${p.id}`} className="pc-img" aria-label={p.title}>
         {p.images[0] ? <img src={p.images[0]} alt={p.title} loading="lazy" /> : null}
       </Link>
+      <button type="button" className={'pc-fav' + (fav.has(p.id) ? ' on' : '')} aria-label="المفضلة" onClick={() => fav.toggle(p.id)}>{fav.has(p.id) ? '♥' : '♡'}</button>
       {out ? <span className="bdg so">نفدت الكمية</span> : off > 0 ? <span className="bdg">خصم {off}%</span> : null}
       <div className="pc-b">
         <Link href={`${base}/p/${p.id}`} className="pc-t">{p.title}</Link>
