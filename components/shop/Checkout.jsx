@@ -117,8 +117,12 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
       <div className="fld"><label>المحافظة</label>
         <select className="in" value={f.governorate} onChange={set('governorate')}>
           <option value="">اختر المحافظة</option>
-          {govs.map((g) => <option key={g} value={g}>{g}</option>)}
+        {govs.map((g) => <option key={g} value={g}>{g}</option>)}
         </select>
+        {(() => {
+          const z = (zones || []).find((x) => x.governorate === f.governorate);
+          return z && z.eta ? <p className="mut" style={{ fontSize: 13, marginTop: 6 }}>🚚 مدة التوصيل المتوقعة: <b>{z.eta}</b></p> : null;
+        })()}
       </div>
       <div className="fld"><label>العنوان بالتفصيل</label><input className="in" autoComplete="street-address" value={f.address} onChange={set('address')} /></div>
       {co.address2 ? <div className="fld"><label>علامة مميزة / عنوان إضافي</label><input className="in" value={f.address2} onChange={set('address2')} /></div> : null}
