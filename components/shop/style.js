@@ -19,7 +19,7 @@ export const SHOP_CSS = `
 .spk .hd{position:sticky;top:0;z-index:40;background:var(--card);border-bottom:1px solid var(--ln)}
 .spk .hd-in{display:flex;align-items:center;gap:14px;height:62px}
 .spk .logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:18px}
-.spk .logo img{width:34px;height:34px;border-radius:10px;object-fit:cover}
+.spk .logo img{width:46px;height:46px;border-radius:12px;object-fit:cover}
 .spk .nav{display:flex;gap:18px;margin-inline-start:18px;font-weight:700;font-size:14px}
 .spk .nav a{color:var(--mut)}.spk .nav a:hover{color:var(--ink)}
 .spk .hd-sp{flex:1}
