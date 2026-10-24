@@ -44,6 +44,14 @@ export default function SpikeSuperAdminDashboard() {
 
   const [exchangeRate, setExchangeRate] = useState(50.0);
   const [platformCommission, setPlatformCommission] = useState(2.5);
+  const [ledgerStats, setLedgerStats] = useState(null);
+  useEffect(() => {
+    let off = false;
+    supabase
+      .rpc('admin_stats_period', { p_from: '2020-01-01T00:00:00Z', p_to: new Date(Date.now() + 60000).toISOString() })
+      .then(({ data, error }) => { if (!off && !error) setLedgerStats(data); });
+    return () => { off = true; };
+  }, []);
   const [withdrawThreshold, setWithdrawThreshold] = useState(100);
 
   const [newStoreModal, setNewStoreModal] = useState(false);
@@ -512,6 +520,8 @@ export default function SpikeSuperAdminDashboard() {
 
   const deliveredSales = sumPrice(orders.filter((o) => o.status === 'delivered'));
   const commissionEarned = (deliveredSales * (Number(platformCommission) || 0)) / 100;
+  const ledgerUsd = ledgerStats ? Number(ledgerStats.commission_usd) || 0 : null;
+  const ledgerOrders = ledgerStats ? Number(ledgerStats.commission_orders) || 0 : 0;
   const avgOrderValue = orders.length ? totalSalesAmount / orders.length : 0;
   const walletsTotalUsd = stores.reduce((a, s) => a + (Number(s.wallet_balance_usd) || 0), 0);
   const lowStockCount = products.filter((p) => (Number(p.stock_quantity) || 0) <= 5).length;
@@ -945,7 +955,7 @@ export default function SpikeSuperAdminDashboard() {
               {/* مؤشرات مالية ثانوية */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                 {[
-                  { icon: '🏦', label: isAr ? 'عمولة المنصة (طلبات مسلّمة)' : 'Platform commission', val: `${fmt(commissionEarned, 2)} ج.م` },
+                  { icon: '🏦', label: isAr ? `عمولة المنصة الفعلية (${ledgerOrders} طلب)` : `Platform commission (${ledgerOrders} orders)`, val: ledgerUsd === null ? '—' : `$${fmt(ledgerUsd, 2)} ≈ ${fmt(ledgerUsd * (Number(exchangeRate) || 0), 0)} ج.م` },
                   { icon: '🧾', label: isAr ? 'متوسط قيمة الطلب' : 'Avg order value', val: `${fmt(avgOrderValue, 2)} ج.م` },
                   { icon: '👛', label: isAr ? 'إجمالي محافظ التجار' : 'Merchant wallets', val: `$${fmt(walletsTotalUsd, 2)}` },
                   { icon: '⚠️', label: isAr ? 'منتجات مخزونها ≤ 5' : 'Low stock items', val: String(lowStockCount) },
