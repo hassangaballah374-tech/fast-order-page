@@ -100,7 +100,7 @@ export default function SpikeLandingPage() {
       }`}>
         <div className="flex items-center gap-8">
           <Link href="/">
-            <SpikeBrandHeader height="h-11" showSlogan={true} />
+          <SpikeBrandHeader height="h-16" showSlogan={true} />
           </Link>
 
           <div className="hidden lg:flex items-center gap-6 text-sm font-bold">
