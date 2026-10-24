@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-export const SPIKE_LOGO_URL = 'https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding/WhatsApp%20Image%202026-10-06%20at%2011.48.20%20PM.jpeg';
+export const SPIKE_LOGO_URL = 'https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding/icon.png?v=1';
 
 export default function SpikeBrandHeader({ 
   height = 'h-11', 
@@ -14,7 +14,7 @@ export default function SpikeBrandHeader({
       <img
         src={SPIKE_LOGO_URL}
         alt="سبايك | SPIKE"
-        className={`${height} w-auto object-contain rounded-lg shadow-sm`}
+        className={`${height} w-auto object-contain`}
         loading="eager"
       />
       <div className="flex flex-col justify-center leading-none">
