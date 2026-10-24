@@ -153,6 +153,7 @@ export default function Shell({ children, footerExtra }) {
           <nav className="nav" aria-label="القائمة">
             <Link href={base}>الرئيسية</Link>
             <Link href={`${base}/products`}>كل المنتجات</Link>
+            <Link href={`${base}/favorites`}>♥ المفضلة</Link>
             <Link href={`${base}/track`}>تتبع طلبك</Link>
           </nav>
           <span className="hd-sp" />
