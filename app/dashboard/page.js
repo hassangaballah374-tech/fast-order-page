@@ -9,6 +9,7 @@ import { DASH_CSS } from '../../components/dash/style';
 import { DARK_CSS } from '../../components/dash/dark';
 import { mergeConfig } from '../../lib/storeKit';
 import { spikeLogout } from '../../components/SpikeSessionBar';
+import { SPIKE_LOGO_URL } from '../../components/SpikeLogo';
 import { MerchantBell, UsageBanner } from '../../components/dash/MerchantBell';
 
 const ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
@@ -220,6 +221,10 @@ export default function MerchantDashboard() {
         <div className={'scrim' + (side ? ' on' : '')} onClick={() => setSide(false)} />
 
         <aside className={'side' + (side ? ' open' : '')} aria-label="القائمة الرئيسية">
+        <div style={{ padding: '12px 14px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <img src={SPIKE_LOGO_URL} alt="سبايك" style={{ height: 52, width: 'auto' }} />
+            <b style={{ fontSize: 18, letterSpacing: 1 }}>SPIKE</b>
+          </div>
           <div className="sidehd">
             <div className="lg">{cfg.brand.logo ? <img src={cfg.brand.logo} alt="" /> : initial}</div>
             <div style={{ minWidth: 0 }}>
