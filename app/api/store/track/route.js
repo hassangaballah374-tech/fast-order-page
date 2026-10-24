@@ -17,6 +17,23 @@ export async function POST(req) {
   const store = await getStoreBySlug(sb, body.slug);
   if (!store) return NextResponse.json({ ok: false, error: 'المتجر غير متاح' }, { status: 404 });
 
+  /* بحث بالموبايل فقط: آخر 5 طلبات (بدون الاسم أو العنوان) */
+  if (!body.token && !String(body.order_no || '').replace(/\D/g, '')) {
+    const ph = normalizePhone(body.phone);
+    if (!ph || ph.length < 10) return NextResponse.json({ ok: false, error: 'اكتب رقم الموبايل الذي طلبت به' });
+    const { data: list } = await sb.from('orders')
+      .select('order_no, status, items, total_price, courier, tracking_number, created_at')
+      .eq('store_id', storeKey(store)).eq('customer_phone', ph).order('created_at', { ascending: false }).limit(5);
+    if (!list || !list.length) return NextResponse.json({ ok: false, error: 'لم نجد طلبات بهذا الرقم' });
+    return NextResponse.json({
+      ok: true,
+      list: list.map((o) => ({
+        order_no: o.order_no, status: o.status, total: o.total_price, courier: o.courier, tracking_number: o.tracking_number, created_at: o.created_at,
+        items: (Array.isArray(o.items) ? o.items : []).map((i) => ({ title: i.title, qty: i.qty, options: i.options })),
+      })),
+    });
+  }
+
   let q = sb.from('orders').select('order_no, status, items, total_price, courier, tracking_number, created_at, updated_at, governorate, customer_name').eq('store_id', storeKey(store));
   if (body.token) q = q.eq('public_token', String(body.token));
   else {
