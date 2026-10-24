@@ -9,15 +9,16 @@ export default function TrackView() {
   const { slug, cur } = useShop();
   const [f, setF] = useState({ order_no: '', phone: '' });
   const [res, setRes] = useState(null);
+  const [list, setList] = useState(null);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
   const query = async (body) => {
-    setBusy(true); setErr(''); setRes(null);
+    setBusy(true); setErr(''); setRes(null); setList(null);
     try {
       const r = await fetch('/api/store/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, ...body }) });
       const j = await r.json();
-      if (j.ok) setRes(j.order); else setErr(j.error || 'لم نجد الطلب');
+      if (j.ok && j.list) setList(j.list); else if (j.ok) setRes(j.order); else setErr(j.error || 'لم نجد الطلب');
     } catch { setErr('تعذر الاتصال، حاول مرة أخرى'); }
     setBusy(false);
   };
@@ -31,7 +32,7 @@ export default function TrackView() {
 
   const submit = (e) => {
     e.preventDefault();
-    if (!f.order_no.trim() || !normalizePhone(f.phone)) { setErr('اكتب رقم الطلب ورقم الموبايل'); return; }
+    if (!normalizePhone(f.phone)) { setErr('اكتب رقم الموبايل الذي طلبت به'); return; }
     query({ order_no: f.order_no, phone: f.phone });
   };
 
@@ -41,15 +42,32 @@ export default function TrackView() {
 
   return (
     <section className="wrap sec" style={{ maxWidth: 640 }}>
-      <div className="sh"><h2>تتبع طلبك</h2><p>اكتب رقم الطلب ورقم الموبايل الذي طلبت به</p></div>
+      <div className="sh"><h2>تتبع طلبك</h2><p>اكتب رقم الموبايل الذي طلبت به (ورقم الطلب لو معاك)</p></div>
       <form className="frm" onSubmit={submit}>
         <div className="r2">
-          <div className="fld"><label>رقم الطلب</label><input className="in num" dir="ltr" inputMode="numeric" value={f.order_no} onChange={(e) => setF({ ...f, order_no: e.target.value })} /></div>
+          <div className="fld"><label>رقم الطلب (اختياري)</label><input className="in num" dir="ltr" inputMode="numeric" value={f.order_no} onChange={(e) => setF({ ...f, order_no: e.target.value })} /></div>
           <div className="fld"><label>رقم الموبايل</label><input className="in num" dir="ltr" inputMode="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
         </div>
         <button className="b p blk" type="submit" disabled={busy}>{busy ? 'جاري البحث...' : 'تتبع'}</button>
         {err ? <div className="err">{err}</div> : null}
       </form>
+
+      {list && (
+        <div style={{ marginTop: 16, display: 'grid', gap: 10 }}>
+          {list.map((o) => {
+            const s2 = STATUS[o.status] || STATUS.pending;
+            const lk = trackUrl(o.courier, o.tracking_number);
+            return (
+              <div className="card" key={o.order_no}>
+                <h3>طلب #{o.order_no} <span style={{ color: s2.color, fontSize: 14 }}>({s2.ar})</span></h3>
+                {(o.items || []).map((i, k) => <p key={k}>{i.title} × <span className="num">{i.qty}</span></p>)}
+                <p className="mut">الإجمالي: <b className="num">{Math.round(o.total)} {cur}</b></p>
+                {o.tracking_number ? <p>رقم الشحنة: <b className="num" dir="ltr">{o.tracking_number}</b>{lk ? <> · <a href={lk} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--c)', fontWeight: 800 }}>تتبع عند شركة الشحن</a></> : null}</p> : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {res && (
         <div className="card" style={{ marginTop: 16 }}>
