@@ -9,6 +9,7 @@ import {
   ChartCard, Segmented, Sparkline, AreaChart, BarChart, HBarList, Donut, ProgressBar, fmt, fmtK,
 } from '../../components/SpikeCharts';
 import SpikeIntegrations from '../../components/SpikeIntegrations';
+import AdminAnalytics from '../../components/admin/AdminAnalytics';
 import { spikeLogout } from '../../components/SpikeSessionBar';
 import AdminBilling from '../../components/admin/AdminBilling';
 import AdminBell from '../../components/admin/AdminBell';
@@ -96,6 +97,7 @@ export default function SpikeSuperAdminDashboard() {
     orders: 'manage_orders',
     rates: 'manage_finance',
     plans: 'manage_finance',
+    analytics: 'manage_finance',
     billing: 'manage_finance',
     admins: 'manage_admins',
     audit: 'manage_admins',
@@ -557,6 +559,7 @@ export default function SpikeSuperAdminDashboard() {
     { id: 'rates', title: t.navRates, icon: '💱', count: null },
     { id: 'domains', title: t.navDomains, icon: '🌐', count: domains.length },
     { id: 'plans', title: t.navPlans, icon: '💎', count: null },
+    { id: 'analytics', title: isAr ? 'إحصائيات المنصة' : 'Platform analytics', icon: '📈', count: null },
     { id: 'audit', title: t.navLogs, icon: '📑', count: auditLogs.length },
     { id: 'broadcast', title: t.navBroadcast, icon: '📢', count: null },
   ];
@@ -1426,6 +1429,10 @@ export default function SpikeSuperAdminDashboard() {
               )}
             </div>
           )}
+          {/* تبويب إحصائيات المنصة */}
+          {shown('analytics') && <AdminAnalytics isDark={isDark} />}
+
+          {/* تبويب الباقات */}
 
           {/* تبويب الباقات */}
          {shown('plans') && <><PaymentNote isDark={isDark} /><ThemeColors isDark={isDark} /><AdminBilling isDark={isDark} initial="plans" onChanged={fetchAllData} /></>}
