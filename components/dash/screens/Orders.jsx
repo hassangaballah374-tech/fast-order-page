@@ -60,15 +60,15 @@ export function OrdersScreen() {
   }, [t.rows]);
 
   const counts = useMemo(() => {
-    const c = { all: t.rows.length };
+    const c = { all: 0, archived: 0 };
     Object.keys(STATUS).forEach((k) => { c[k] = 0; });
-    t.rows.forEach((o) => { const k = o.status || 'pending'; c[k] = (c[k] || 0) + 1; });
+    t.rows.forEach((o) => { if (o.archived_at) { c.archived += 1; return; } c.all += 1; const k = o.status || 'pending'; c[k] = (c[k] || 0) + 1; });
     return c;
   }, [t.rows]);
 
   const list = useMemo(() => {
     const s = dq.trim().toLowerCase();
-    return t.rows.filter((o) => (st === 'all' || (o.status || 'pending') === st)
+    return t.rows.filter((o) => (st === 'archived' ? !!o.archived_at : (!o.archived_at && (st === 'all' || (o.status || 'pending') === st)))
       && inRange(o.created_at, r.from)
       && (!s || [o.order_no, o.customer_name, o.customer_phone, o.governorate, o.tracking_number].some((v) => String(v ?? '').toLowerCase().includes(s))));
   }, [t.rows, st, dq, r.key, r.from]);
@@ -136,7 +136,7 @@ export function OrdersScreen() {
 
       <Tabs
         value={st} onChange={setSt}
-        tabs={[['all', 'الكل', counts.all], ...Object.entries(STATUS).map(([k, v]) => [k, v.ar, counts[k] || 0])]}
+        tabs={[['all', 'الكل', counts.all], ...Object.entries(STATUS).map(([k, v]) => [k, v.ar, counts[k] || 0]), ['archived', '📦 الأرشيف', counts.archived || 0]]}
       />
       <div className="tl">
         <input className="in" placeholder="بحث بالاسم أو الهاتف أو رقم الطلب…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -205,6 +205,13 @@ function OrderView({ order: o, onClose, onStatus, onBosta, onPrint, onChanged, o
   const wa = useWa();
   const [note, setNote] = useState(o.internal_note || '');
   const [savingNote, setSavingNote] = useState(false);
+  const [hist, setHist] = useState([]);
+  useEffect(() => {
+    let off = false;
+    supabase.from('order_status_log').select('from_status,to_status,by_role,created_at').eq('order_id', String(o.id)).order('created_at', { ascending: true })
+      .then(({ data }) => { if (!off) setHist(data || []); });
+    return () => { off = true; };
+  }, [o.id, o.status]);
   const st = o.status || 'pending';
   const items = Array.isArray(o.items) ? o.items : [];
   const courier = Number(cfg.shipping.courier_cost) || 0;
@@ -227,9 +234,10 @@ function OrderView({ order: o, onClose, onStatus, onBosta, onPrint, onChanged, o
     say(error ? error.message : '🚫 تم حظر الرقم');
   };
   const del = async () => {
-    if (!window.confirm('حذف هذا الطلب الملغي نهائياً؟')) return;
-    const { error } = await supabase.from('orders').delete().eq('id', o.id).eq('store_id', uid);
-    if (error) say(`تعذر الحذف: ${error.message}`); else { say('تم الحذف'); onDeleted(); }
+    const archiving = !o.archived_at;
+    if (!window.confirm(archiving ? 'أرشفة هذا الطلب؟ هيختفي من القايمة ويظهر في تبويب الأرشيف.' : 'إرجاع الطلب من الأرشيف؟')) return;
+    const { error } = await supabase.from('orders').update({ archived_at: archiving ? new Date().toISOString() : null }).eq('id', o.id).eq('store_id', uid);
+    if (error) say(`تعذر التنفيذ: ${error.message}`); else { say(archiving ? '📦 تمت الأرشفة' : '↩️ تم الإرجاع'); onDeleted(); }
   };
   const openWa = (key) => {
     const text = wa.message(key, waVars);
@@ -320,11 +328,21 @@ function OrderView({ order: o, onClose, onStatus, onBosta, onPrint, onChanged, o
       </div>
 
       <div className="card" style={{ marginTop: 14 }}>
+        {hist.length > 0 && (
+          <div style={{ marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid var(--ln, #e2e8f0)' }}>
+            <h3>🕓 سجل الحالة <small>لا يمكن تعديله</small></h3>
+            {hist.map((h, i) => (
+              <p key={i} className="mut" style={{ margin: '4px 0', fontSize: 12 }}>
+                {fdate(h.created_at)} — {h.from_status ? `${STATUS[h.from_status]?.ar || h.from_status} ← ` : ''}<b>{STATUS[h.to_status]?.ar || h.to_status}</b> ({h.by_role === 'merchant' ? 'أنت' : h.by_role === 'admin' ? 'الأدمن' : 'النظام'})
+              </p>
+            ))}
+          </div>
+        )}
         <h3>🗒️ ملاحظة داخلية <small>لا تظهر للعميل</small></h3>
         <textarea className="in ta" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
         <div className="row" style={{ marginTop: 10, marginBottom: 0 }}>
           <button type="button" className="btn p sm" disabled={savingNote || note === (o.internal_note || '')} onClick={saveNote}>حفظ الملاحظة</button>
-          {st === 'cancelled' && <button type="button" className="btn dng sm" onClick={del}>حذف الطلب</button>}
+          {(o.archived_at || ['cancelled', 'returned', 'delivered'].includes(st)) && <button type="button" className="btn sm" onClick={del}>{o.archived_at ? '↩️ إرجاع من الأرشيف' : '📦 أرشفة الطلب'}</button>}
         </div>
       </div>
     </Modal>
