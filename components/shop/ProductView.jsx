@@ -86,7 +86,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
 
   const addToCart = () => {
     setMsg('');
-    if (sold) return;
+    if (sold) return; 
     if (!optsOk) { setMsg(`اختر ${groups.filter((g) => !opts[g.name]).map((g) => g.name).join(' و ')} أولاً`); return; }
     add({ product_id: p.id, title: p.title, image: p.images[0] || '', price, qty, options: opts });
     saveBump(bumpOn && bumpProd ? { product_id: bumpProd.id } : null);
