@@ -266,7 +266,7 @@ export default function MerchantDashboard() {
         <main className="main">
           <div className="top">
             <button type="button" className="btn menubtn" aria-label="القائمة" onClick={() => setSide(true)}>☰</button>
-            <button type="button" className="srch" onClick={() => setCmd(true)}>🔎 ابحث عن أي شاشة أو إعداد… <kbd>Ctrl K</kbd></button>
+            <button type="button" className="srch" onClick={() => setCmd(true)}><span className="srt">🔎 ابحث عن أي شاشة أو إعداد…</span><kbd>Ctrl K</kbd></button>
             <span style={{ flex: 1 }} />
             <MerchantBell />
             <button type="button" className="btn" onClick={toggleDark} title={dark ? 'الوضع النهاري' : 'الوضع الداكن'}>{dark ? '☀️' : '🌙'}</button>
@@ -279,7 +279,7 @@ export default function MerchantDashboard() {
           <section className="pg">
           <UsageBanner />
             {isAdmin && uid !== authId && (
-              <div className="card" style={{ marginBottom: 14, background: '#fff8e8', borderColor: '#f0d9a8' }}>
+              <div className="card" style={{ marginBottom: 14, background: '#fff8e8', borderColor: '#f0d9a8', color: '#5b3e00', fontWeight: 700 }}>
                 أنت تدير متجراً آخر بصلاحية الأدمن: <b>{store?.store_name || uid}</b>
               </div>
             )}
