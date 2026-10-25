@@ -152,6 +152,8 @@ export const SHOP_CSS = `
 .spk .soc{display:flex;gap:10px;flex-wrap:wrap}
 .spk .soc a{display:inline-block;border:1px solid var(--ln);border-radius:999px;padding:3px 14px}
 .spk .pw{text-align:center;color:var(--mut);font-size:12px;margin-top:18px}
+.spk .pwl{display:flex;justify-content:center;margin-top:18px}
+.spk .pwl img{height:40px;width:auto;opacity:.95;display:block}
 
 .spk .waf{position:fixed;bottom:18px;inset-inline-end:16px;z-index:45;width:54px;height:54px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 8px 22px rgba(0,0,0,.28)}
 .spk .pop{position:fixed;bottom:84px;z-index:46;max-width:min(340px,calc(100vw - 32px));background:var(--card);color:var(--ink);border:1px solid var(--ln);border-radius:16px;padding:12px 38px 12px 14px;box-shadow:0 14px 30px -10px rgba(0,0,0,.35);font-size:13px;animation:spkin .35s ease}
