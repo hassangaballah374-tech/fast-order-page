@@ -34,6 +34,15 @@ function PassField({ id, label, value, onChange, shown, setShown, autoComplete, 
   );
 }
 
+const Ic = ({ d, className = 'w-[18px] h-[18px]', sw = 1.8 }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">{d}</svg>
+);
+const IGlobe = () => <Ic d={<><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.6 2.7 4 5.7 4 9s-1.4 6.3-4 9c-2.6-2.7-4-5.7-4-9s1.4-6.3 4-9z" /></>} />;
+const ISun = () => <Ic d={<><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>} />;
+const IMoon = () => <Ic d={<path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" />} />;
+const IUser = () => <Ic d={<><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></>} />;
+const IArrow = ({ flip }) => <Ic className={`w-4 h-4 ${flip ? 'rotate-180' : ''}`} sw={2.2} d={<path d="M5 12h14M13 6l6 6-6 6" />} />;
+
 /* ===== حركة وخلفية صفحة التسجيل والدخول ===== */
 const RG_CSS = `
 .rg-aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
@@ -45,8 +54,6 @@ const RG_CSS = `
 @keyframes rgf2{to{transform:translate(-160px,-90px) scale(1.12)}}
 @keyframes rgf3{to{transform:translate(-120px,70px) scale(.85)}}
 .rg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(148,163,184,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.08) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(ellipse at center,#000 25%,transparent 75%);mask-image:radial-gradient(ellipse at center,#000 25%,transparent 75%)}
-.rg-float{position:absolute;font-size:28px;opacity:.45;animation:rgup 9s ease-in-out infinite}
-@keyframes rgup{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-28px) rotate(8deg)}}
 .rg-card{animation:rgcard .95s cubic-bezier(.2,.9,.25,1) both;box-shadow:0 30px 80px -30px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.04) inset}
 @keyframes rgcard{from{opacity:0;transform:translateY(70px) scale(.95);filter:blur(10px)}to{opacity:1;transform:none;filter:blur(0)}}
 .rg-glass{-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
@@ -61,7 +68,19 @@ const RG_CSS = `
 .rg-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
 .rg-btn::after{content:'';position:absolute;top:0;bottom:0;width:60%;left:-80%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);animation:rgshine 3.4s ease-in-out 1.6s infinite}
 @keyframes rgshine{0%{left:-80%}55%,100%{left:140%}}
-@media (prefers-reduced-motion:reduce){.rg-blob,.rg-float,.rg-card,.rg-drop,.rg-in,.rg-logo,.rg-btn::after{animation:none!important}}
+.rg-nav{position:relative;padding:8px 14px;font-weight:800;font-size:13px;opacity:.78;transition:opacity .2s}
+.rg-nav::after{content:'';position:absolute;left:14px;right:14px;bottom:2px;height:2px;border-radius:2px;background:linear-gradient(90deg,#00d4c8,var(--ac));transform:scaleX(0);transform-origin:center;transition:transform .25s}
+.rg-nav:hover{opacity:1}.rg-nav:hover::after{transform:scaleX(1)}
+.rg-head{box-shadow:0 1px 0 rgba(0,212,200,.18),0 18px 40px -28px rgba(0,0,0,.6)}
+.rg-ibtn{width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;border-radius:14px;border:1px solid;transition:transform .2s,background .2s,border-color .2s;cursor:pointer}
+.rg-ibtn:hover{transform:translateY(-2px);border-color:#22d3ee}
+.rg-ring{position:absolute;border-radius:50%;border:1px solid rgba(34,211,238,.28);animation:rgspin 40s linear infinite}
+.rg-ring::after{content:'';position:absolute;top:-4px;left:50%;width:8px;height:8px;border-radius:50%;background:#22d3ee;box-shadow:0 0 14px 3px rgba(34,211,238,.7)}
+.rg-r1{width:620px;height:620px;top:-210px;inset-inline-end:-190px}
+.rg-r2{width:420px;height:420px;bottom:-120px;inset-inline-start:-110px;animation-duration:55s;animation-direction:reverse;border-color:rgba(0,176,80,.3)}
+.rg-r2::after{background:#00B050;box-shadow:0 0 14px 3px rgba(0,176,80,.7)}
+@keyframes rgspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.rg-blob,.rg-ring,.rg-card,.rg-drop,.rg-in,.rg-logo,.rg-btn::after{animation:none!important}}
 `;
 
 export default function SpikeRegisterAndAuthPage() {
@@ -135,8 +154,14 @@ export default function SpikeRegisterAndAuthPage() {
 
   const emailNow = formData.email.trim().toLowerCase();
   const isAdminEmail = emailNow === SUPER_ADMIN_EMAIL.toLowerCase();
-  const showRegisterFields = mode === 'register' && !isAdminEmail;
-  const showLogin = mode === 'login' || (mode === 'register' && isAdminEmail);
+  const showRegisterFields = mode === 'register';
+  const showLogin = mode === 'login';
+
+  /* تبديل الوضع: عند الذهاب لإنشاء حساب جديد نفرّغ البريد المحفوظ وكلمة المرور */
+  const switchMode = (m) => {
+    if (m === 'register') setFormData((p) => ({ ...p, email: '', password: '', confirmPassword: '' }));
+    setMode(m);
+  };
 
   const ensureStore = async (user) => {
     const meta = user.user_metadata || {};
@@ -181,7 +206,7 @@ export default function SpikeRegisterAndAuthPage() {
       if (mode === 'forgot') { await handleForgot(); setLoading(false); return; }
       const emailInput = formData.email.trim().toLowerCase();
 
-      if (mode === 'login' || emailInput === SUPER_ADMIN_EMAIL.toLowerCase()) {
+      if (mode === 'login') {
         if (!emailInput || !formData.password) { alert(isAr ? 'يرجى كتابة البريد الإلكتروني وكلمة المرور' : 'Please enter email and password'); setLoading(false); return; }
         const { data, error: loginError } = await supabase.auth.signInWithPassword({ email: emailInput, password: formData.password });
         if (loginError || !data?.user) { alert((isAr ? 'خطأ في البريد أو كلمة المرور: ' : 'Login Error: ') + (loginError?.message || '')); setLoading(false); return; }
@@ -255,27 +280,39 @@ export default function SpikeRegisterAndAuthPage() {
         <span className="rg-blob rg-b2" />
         <span className="rg-blob rg-b3" />
         <span className="rg-grid" />
-        <span className="rg-float" style={{ top: '16%', insetInlineStart: '8%', animationDelay: '0s' }}>🛒</span>
-        <span className="rg-float" style={{ top: '62%', insetInlineStart: '5%', animationDelay: '-3s' }}>📦</span>
-        <span className="rg-float" style={{ top: '22%', insetInlineEnd: '7%', animationDelay: '-5s' }}>⚡</span>
-        <span className="rg-float" style={{ top: '70%', insetInlineEnd: '9%', animationDelay: '-2s' }}>🚚</span>
+        <span className="rg-ring rg-r1" />
+        <span className="rg-ring rg-r2" />
       </div>
 
-      <header className={`px-4 sm:px-8 py-3 border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${isDark ? 'bg-[#091222]/70 border-slate-800' : 'bg-white/70 border-slate-200/90'}`}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-12 w-auto object-contain" />
-            <span className={`text-lg font-black tracking-tight ${isDark ? 'text-white' : 'text-[#0E1E38]'}`}>{t.brand}</span>
+      <header className={`rg-head sticky top-0 z-40 border-b backdrop-blur-xl transition-colors ${isDark ? 'bg-[#060d1f]/75 border-white/10' : 'bg-white/80 border-slate-200/80'}`}>
+        <div className="max-w-7xl mx-auto h-[72px] px-4 sm:px-8 flex items-center justify-between gap-4">
+          <Link href="/" className="flex items-center gap-3 shrink-0 group">
+            <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
+            <span className="hidden sm:flex flex-col leading-none">
+              <span className={`text-xl font-black tracking-[0.2em] ${isDark ? 'text-white' : 'text-[#0E1E38]'}`}>SPIKE</span>
+              <span className="text-[10px] font-bold tracking-[0.14em] text-[var(--ac)] mt-1.5">{isAr ? 'منصة التجارة بالدفع عند الاستلام' : 'COD COMMERCE PLATFORM'}</span>
+            </span>
           </Link>
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
-            <button type="button" onClick={toggleLanguage} className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition cursor-pointer shrink-0 ${isDark ? 'border-slate-700 bg-slate-800 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
-              <span>🌐</span> <span className="font-mono">{isAr ? 'EN' : 'عربي'}</span>
+
+          <nav className={`hidden md:flex items-center gap-1 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+            <Link href="/" className="rg-nav">{t.home}</Link>
+            <Link href="/#pricing" className="rg-nav">{t.pricing}</Link>
+            <Link href="/terms" className="rg-nav">{isAr ? 'الشروط والسياسات' : 'Terms'}</Link>
+          </nav>
+
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={toggleLanguage} title={isAr ? 'English' : 'العربية'} aria-label="language" className={`rg-ibtn ${isDark ? 'border-white/15 bg-white/5 text-slate-200' : 'border-slate-200 bg-white text-slate-700'}`}>
+              <IGlobe />
             </button>
-            <button type="button" onClick={toggleTheme} className={`w-8 h-8 rounded-lg border flex items-center justify-center text-xs transition cursor-pointer shrink-0 ${isDark ? 'border-slate-700 bg-slate-800 text-amber-300' : 'border-slate-200 bg-slate-50 text-slate-700'}`} title={isDark ? 'الوضع النهاري' : 'الوضع الليلي'}>
-              {isDark ? '☀️' : '🌙'}
+            <button type="button" onClick={toggleTheme} title={isDark ? 'الوضع النهاري' : 'الوضع الليلي'} aria-label="theme" className={`rg-ibtn ${isDark ? 'border-white/15 bg-white/5 text-amber-300' : 'border-slate-200 bg-white text-slate-700'}`}>
+              {isDark ? <ISun /> : <IMoon />}
             </button>
-            <button type="button" onClick={() => setMode('register')} className="bg-[var(--ac)] hover:opacity-90 text-white px-3 sm:px-4 py-1.5 rounded-lg text-xs font-black shadow-xs transition shrink-0 cursor-pointer">{t.subscribeBtn}</button>
-            <button type="button" onClick={() => setMode('login')} className={`w-8 h-8 rounded-lg border flex items-center justify-center text-xs transition shrink-0 cursor-pointer ${isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'}`} title={t.submitLogin}>👤</button>
+            <button type="button" onClick={() => switchMode('login')} className={`hidden sm:inline-flex items-center gap-2 h-[42px] px-4 rounded-[14px] border text-xs font-black cursor-pointer transition-all hover:-translate-y-0.5 ${mode === 'login' ? 'border-[var(--ac)] text-[var(--ac)]' : isDark ? 'border-white/15 bg-white/5 text-slate-100' : 'border-slate-200 bg-white text-slate-800'}`}>
+              <IUser />{t.submitLogin}
+            </button>
+            <button type="button" onClick={() => switchMode('register')} className="rg-btn inline-flex items-center gap-2 h-[42px] px-4 sm:px-5 rounded-[14px] text-xs font-black text-white cursor-pointer transition-all">
+              <span className="relative z-10">{t.subscribeBtn}</span><span className="relative z-10"><IArrow flip={isAr} /></span>
+            </button>
           </div>
         </div>
       </header>
@@ -289,14 +326,21 @@ export default function SpikeRegisterAndAuthPage() {
               <span className="text-slate-400 font-light">|</span>
               <span className="text-[var(--ac)] font-mono tracking-wider">SPIKE</span>
             </div>
-            <h2 className={`rg-in text-xl sm:text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`} style={{ '--i': 1 }}>{theme.headline && mode === 'register' && !isAdminEmail ? theme.headline : title}</h2>
-            {theme.subline && mode === 'register' && !isAdminEmail ? <p className="rg-in text-xs text-slate-500" style={{ '--i': 2 }}>{theme.subline}</p> : null}
+            <h2 className={`rg-in text-xl sm:text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`} style={{ '--i': 1 }}>{theme.headline && mode === 'register' ? theme.headline : title}</h2>
+            {theme.subline && mode === 'register' ? <p className="rg-in text-xs text-slate-500" style={{ '--i': 2 }}>{theme.subline}</p> : null}
           </div>
         </div>
 
         <div className="rg-card rg-glass w-full rounded-3xl border p-5 sm:p-8 transition-colors" style={{ backgroundColor: isDark ? 'rgba(14,30,56,.72)' : 'rgba(255,255,255,.78)', borderColor: isDark ? 'rgba(148,163,184,.18)' : 'rgba(226,232,240,.9)' }}>
           <form key={mode} onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
             {mode === 'forgot' && <p className="rg-in font-normal text-slate-500" style={st()}>{t.forgotHint}</p>}
+
+            {mode === 'register' && isAdminEmail && (
+              <div className="rounded-xl border border-amber-400/40 bg-amber-400/10 text-amber-500 p-3 text-[11px] font-bold flex items-center justify-between gap-2">
+                <span>{isAr ? 'هذا بريد الإدارة، مكانه تسجيل الدخول.' : 'This is the admin email — use Sign in.'}</span>
+                <button type="button" onClick={() => switchMode('login')} className="underline cursor-pointer shrink-0">{t.submitLogin}</button>
+              </div>
+            )}
 
             {showRegisterFields && (
               <>
@@ -357,7 +401,7 @@ export default function SpikeRegisterAndAuthPage() {
                   <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="w-4 h-4 accent-[var(--ac)]" />
                   <span className={lbl}>{t.remember}</span>
                 </label>
-                {!isAdminEmail && <button type="button" onClick={() => setMode('forgot')} className="text-[var(--ac)] font-black cursor-pointer hover:underline">{t.forgot}</button>}
+                <button type="button" onClick={() => setMode('forgot')} className="text-[var(--ac)] font-black cursor-pointer hover:underline">{t.forgot}</button>
               </div>
             )}
 
@@ -387,7 +431,7 @@ export default function SpikeRegisterAndAuthPage() {
                 ) : (
                   <>
                     <span className="text-slate-400 text-xs block mb-2 font-normal">{isLoginMode ? t.noAccount : t.hasAccount}</span>
-                    <button type="button" onClick={() => setMode(isLoginMode ? 'register' : 'login')} className="w-full py-2.5 border-2 border-[var(--ac)] text-[var(--ac)] hover:opacity-80 rounded-xl text-xs font-black transition cursor-pointer">
+                    <button type="button" onClick={() => switchMode(isLoginMode ? 'register' : 'login')} className="w-full py-2.5 border-2 border-[var(--ac)] text-[var(--ac)] hover:opacity-80 rounded-xl text-xs font-black transition cursor-pointer">
                       {isLoginMode ? t.switchRegister : t.switchLogin}
                     </button>
                   </>
@@ -400,7 +444,7 @@ export default function SpikeRegisterAndAuthPage() {
 
       <footer className="bg-[#121824] text-white pt-8 pb-6 px-4 sm:px-8 border-t border-slate-800 text-xs">
         <div className="max-w-6xl mx-auto space-y-6">
-          
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 items-start">
             <div className="space-y-2">
               <h4 className="font-black text-xs text-white">{t.aboutTitle}</h4>
