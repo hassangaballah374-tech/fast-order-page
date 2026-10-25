@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useShop, captureUtm, hit } from './StoreContext';
 import { track } from './tracker';
+import SearchBox from './SearchBox';
 import { fillTemplate, ago, safeUrl, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 const sget = (k) => { try { return sessionStorage.getItem(k); } catch { return null; } };
@@ -157,6 +158,7 @@ export default function Shell({ children, footerExtra }) {
             <Link href={`${base}/track`}>تتبع طلبك</Link>
           </nav>
           <span className="hd-sp" />
+          <SearchBox />
           <Link href={`${base}/cart`} className="cartb" aria-label="السلة">🛒 السلة{count > 0 ? <span className="cnt num">{count}</span> : null}</Link>
         </div>
       </header>
