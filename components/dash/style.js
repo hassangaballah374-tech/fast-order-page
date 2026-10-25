@@ -17,8 +17,8 @@ export const DASH_CSS = `
 .spkbrand{display:flex;justify-content:center;background:#fff;border-radius:14px;padding:8px 12px;margin:0 0 12px;border:1px solid rgba(0,0,0,.06)}
 .spkbrand img{height:44px;width:auto;max-width:100%;object-fit:contain;display:block}
 .lg img{width:100%;height:100%;object-fit:cover}
-.sidehd b{display:block;font-size:15px;line-height:1.2}
-.sidehd small{display:block;color:var(--mut);font-size:11.5px}
+.sidehd b{display:block;font-size:15px;line-height:1.5;padding-top:2px}
+.sidehd small{display:block;color:var(--mut);font-size:11.5px;line-height:1.5;margin-top:2px}
 .nvs{flex:1;overflow:auto;padding:6px 10px 14px;display:flex;flex-direction:column;gap:2px;scrollbar-width:thin}
 .nv{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:0 12px;border:0;border-radius:12px;background:none;color:var(--ink);font:600 13.5px 'Cairo',sans-serif;cursor:pointer;text-align:start;text-decoration:none}
 .nv:hover{background:var(--s2)}
@@ -42,7 +42,7 @@ export const DASH_CSS = `
 /* ---------- المحتوى ---------- */
 .main{flex:1;min-width:0}
 .top{position:sticky;top:0;z-index:30;display:flex;gap:10px;align-items:center;padding:11px 26px;background:color-mix(in srgb,var(--s) 90%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--ln)}
-.srch{flex:1;max-width:420px;text-align:start;height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--ln);background:var(--s);color:var(--mut);font:600 13px 'Cairo',sans-serif;cursor:pointer}
+.srch kbd{flex:none;font-size:11px;background:var(--s2);padding:2px 7px;border-radius:6px;font-family:Inter,sans-serif}
 .srch kbd{float:left;font-size:11px;background:var(--s2);padding:2px 7px;border-radius:6px;font-family:Inter,sans-serif}
 .menubtn{display:none}
 .pg{padding:24px 26px 70px;max-width:1240px}
