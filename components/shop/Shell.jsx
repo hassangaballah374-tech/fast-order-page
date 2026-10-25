@@ -188,6 +188,7 @@ export default function Shell({ children, footerExtra }) {
             {waOk ? <p style={{ marginTop: 10 }}><a className="b wa sm" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer">💬 تواصل معنا على واتساب</a></p> : null}
           </div>
         </div>
+        <a className="pwl" href="/" target="_blank" rel="noopener noreferrer" title="سبايك"><img src="https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding/logo.png?v=3" alt="سبايك" loading="lazy" /></a>
         <p className="pw">متجر مبني على منصة سبايك · الدفع عند الاستلام</p>
       </footer>
 
