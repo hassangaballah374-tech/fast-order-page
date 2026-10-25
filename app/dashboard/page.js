@@ -221,6 +221,7 @@ export default function MerchantDashboard() {
         <div className={'scrim' + (side ? ' on' : '')} onClick={() => setSide(false)} />
 
         <aside className={'side' + (side ? ' open' : '')} aria-label="القائمة الرئيسية">
+          <a href="/" className="spkbrand" title="سبايك"><img src="https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding/logo.png?v=3" alt="سبايك" /></a>
         <div style={{ padding: '12px 14px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
             <img src={SPIKE_LOGO_URL} alt="سبايك" style={{ height: 52, width: 'auto' }} />
             <b style={{ fontSize: 18, letterSpacing: 1 }}>SPIKE</b>
