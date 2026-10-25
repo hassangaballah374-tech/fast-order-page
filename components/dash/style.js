@@ -14,7 +14,7 @@ export const DASH_CSS = `
 .side{width:268px;flex:none;background:var(--s);border-inline-start:1px solid var(--ln);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;z-index:40}
 .sidehd{padding:16px 14px 8px;display:flex;gap:10px;align-items:center}
 .lg{width:40px;height:40px;border-radius:12px;background:var(--b);color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px;overflow:hidden;flex:none}
-.spkbrand{display:flex;justify-content:center;background:#fff;border-radius:14px;padding:8px 12px;margin:0 0 12px;border:1px solid rgba(0,0,0,.06)}
+.spkbrand{display:flex;justify-content:center;background:transparent;padding:10px 12px 4px;margin:0}
 .spkbrand img{height:44px;width:auto;max-width:100%;object-fit:contain;display:block}
 .lg img{width:100%;height:100%;object-fit:cover}
 .sidehd b{display:block;font-size:15px;line-height:1.5;padding-top:2px}
@@ -95,7 +95,7 @@ select.in{padding-inline-end:8px}
 .tog.on i{inset-inline-start:21px}
 .tog:disabled{opacity:.5;cursor:not-allowed}
 .chip{border:1px solid var(--ln);background:var(--s);border-radius:99px;padding:6px 14px;font:700 12.5px 'Cairo',sans-serif;cursor:pointer;color:var(--ink)}
-.chip.act{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip.act{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .chip em{font-style:normal;opacity:.6;margin-inline-start:4px}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
@@ -177,7 +177,7 @@ select.in{padding-inline-end:8px}
 .mh b{font-size:16px}
 .mb{padding:10px 22px 14px;overflow:auto;flex:1}
 .mf{display:flex;gap:8px;justify-content:flex-end;padding:12px 22px 18px;border-top:1px solid var(--ln)}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 20px;border-radius:14px;font-weight:700;z-index:90;max-width:90vw;text-align:center}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:14px;font-weight:700;z-index:90;max-width:90vw;text-align:center}
 @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 
 /* ---------- الرسوم ---------- */
