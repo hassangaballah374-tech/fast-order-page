@@ -23,6 +23,17 @@ export const SHOP_CSS = `
 .spk .nav{display:flex;gap:18px;margin-inline-start:18px;font-weight:700;font-size:14px}
 .spk .nav a{color:var(--mut)}.spk .nav a:hover{color:var(--ink)}
 .spk .hd-sp{flex:1}
+.spk .sbx{position:relative;display:flex;align-items:center}
+.spk .sbx-ic{display:none;background:none;border:0;font-size:18px;cursor:pointer;padding:6px}
+.spk .sbx-in{width:210px;max-width:100%;border:1px solid var(--ln);background:var(--bg);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:14px}
+.spk .sbx-dd{position:absolute;top:calc(100% + 8px);inset-inline-start:0;width:min(360px,92vw);background:var(--card);border:1px solid var(--ln);border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.14);z-index:60;overflow:hidden}
+.spk .sbx-it{display:flex;align-items:center;gap:10px;padding:8px 12px;color:var(--ink);font-size:13px}
+.spk .sbx-it:hover{background:rgba(0,0,0,.04)}
+.spk .sbx-it img,.spk .sbx-ph{width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--ln);flex:none}
+.spk .sbx-tt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spk .sbx-em{padding:12px;color:var(--mut);font-size:13px;text-align:center}
+.spk .sbx-all{display:block;text-align:center;padding:10px;font-weight:800;font-size:13px;border-top:1px solid var(--ln);color:var(--c)}
+@media(max-width:699px){.spk .sbx{position:static}.spk .sbx-ic{display:block}.spk .sbx-f{display:none}.spk .sbx.mob .sbx-f{display:block;position:absolute;top:100%;left:0;right:0;padding:10px 14px;background:var(--card);border-bottom:1px solid var(--ln)}.spk .sbx.mob .sbx-in{width:100%;border-radius:12px}.spk .sbx-dd{top:calc(100% + 58px);left:8px;right:8px;width:auto;inset-inline-start:auto}}
 .spk .cartb{position:relative;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--ln);border-radius:999px;font-weight:800;font-size:14px;background:var(--bg)}
 .spk .cnt{background:var(--c);color:var(--onc);border-radius:999px;font-size:11px;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
 
