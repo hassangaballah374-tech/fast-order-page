@@ -34,6 +34,36 @@ function PassField({ id, label, value, onChange, shown, setShown, autoComplete, 
   );
 }
 
+/* ===== حركة وخلفية صفحة التسجيل والدخول ===== */
+const RG_CSS = `
+.rg-aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.rg-blob{position:absolute;border-radius:50%;filter:blur(80px);will-change:transform}
+.rg-b1{width:540px;height:540px;top:-170px;inset-inline-start:-130px;opacity:.5;background:radial-gradient(circle,#00d4c8,transparent 70%);animation:rgf1 14s ease-in-out infinite alternate}
+.rg-b2{width:600px;height:600px;bottom:-230px;inset-inline-end:-150px;opacity:.5;background:radial-gradient(circle,var(--ac),transparent 70%);animation:rgf2 17s ease-in-out infinite alternate}
+.rg-b3{width:400px;height:400px;top:38%;inset-inline-start:52%;opacity:.28;background:radial-gradient(circle,#2563eb,transparent 70%);animation:rgf3 21s ease-in-out infinite alternate}
+@keyframes rgf1{to{transform:translate(140px,110px) scale(1.18)}}
+@keyframes rgf2{to{transform:translate(-160px,-90px) scale(1.12)}}
+@keyframes rgf3{to{transform:translate(-120px,70px) scale(.85)}}
+.rg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(148,163,184,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,184,.08) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(ellipse at center,#000 25%,transparent 75%);mask-image:radial-gradient(ellipse at center,#000 25%,transparent 75%)}
+.rg-float{position:absolute;font-size:28px;opacity:.45;animation:rgup 9s ease-in-out infinite}
+@keyframes rgup{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-28px) rotate(8deg)}}
+.rg-card{animation:rgcard .95s cubic-bezier(.2,.9,.25,1) both;box-shadow:0 30px 80px -30px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.04) inset}
+@keyframes rgcard{from{opacity:0;transform:translateY(70px) scale(.95);filter:blur(10px)}to{opacity:1;transform:none;filter:blur(0)}}
+.rg-glass{-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.rg-drop{animation:rgdrop 1.1s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes rgdrop{from{opacity:0;transform:translateY(-90px) scale(.55)}to{opacity:1;transform:none}}
+.rg-logo{filter:drop-shadow(0 8px 22px rgba(0,212,200,.35));animation:rgpulse 4s ease-in-out 1.2s infinite}
+@keyframes rgpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+.rg-in{animation:rgin .65s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 75ms + 250ms)}
+@keyframes rgin{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.rg-inp:focus,.rg-inp:focus-within{box-shadow:0 0 0 3px rgba(34,211,238,.28);border-color:#22d3ee}
+.rg-btn{position:relative;overflow:hidden;background:linear-gradient(135deg,#00d4c8,var(--ac));box-shadow:0 10px 28px -10px var(--ac)}
+.rg-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.rg-btn::after{content:'';position:absolute;top:0;bottom:0;width:60%;left:-80%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);animation:rgshine 3.4s ease-in-out 1.6s infinite}
+@keyframes rgshine{0%{left:-80%}55%,100%{left:140%}}
+@media (prefers-reduced-motion:reduce){.rg-blob,.rg-float,.rg-card,.rg-drop,.rg-in,.rg-logo,.rg-btn::after{animation:none!important}}
+`;
+
 export default function SpikeRegisterAndAuthPage() {
   const router = useRouter();
   const { lang, toggleLanguage, toggleTheme, isDark } = useApp();
@@ -202,18 +232,36 @@ export default function SpikeRegisterAndAuthPage() {
   };
 
   const lbl = isDark ? 'text-slate-300' : 'text-slate-700';
-  const inp = `w-full p-3 rounded-xl border outline-none text-xs transition-all focus:border-[var(--ac)] ${isDark ? 'bg-slate-900 border-slate-700 text-white placeholder-slate-500' : 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white'}`;
-  const grp = `flex items-stretch rounded-xl border overflow-hidden transition-all focus-within:border-[var(--ac)] ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-300 bg-slate-50 focus-within:bg-white'}`;
-  const addon = `px-3 flex items-center font-mono text-xs select-none ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-700'}`;
+  const inp = `rg-inp w-full p-3 rounded-xl border outline-none text-xs transition-all focus:border-[var(--ac)] ${isDark ? 'bg-slate-900/70 border-slate-700 text-white placeholder-slate-500' : 'bg-white/80 border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white'}`;
+  const grp = `rg-inp flex items-stretch rounded-xl border overflow-hidden transition-all focus-within:border-[var(--ac)] ${isDark ? 'border-slate-700 bg-slate-900/70' : 'border-slate-300 bg-white/80 focus-within:bg-white'}`;
+  const addon = `px-3 flex items-center font-mono text-xs select-none ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-200/80 text-slate-700'}`;
   const title = mode === 'forgot' ? t.forgotTitle : (showLogin ? t.loginTitle : t.registerTitle);
+
+  /* ترتيب ظهور العناصر: كل عنصر يتأخر عن اللي قبله */
+  let n = 1;
+  const st = () => ({ '--i': n++ });
 
   return (
     <div
-      style={{ ...vars, backgroundColor: 'var(--bg)' }}
+      style={{ ...vars, backgroundColor: 'var(--bg)', isolation: 'isolate' }}
       className={`min-h-screen font-sans flex flex-col justify-between selection:bg-[var(--ac)] selection:text-white transition-colors duration-200 overflow-x-hidden ${isDark ? 'text-slate-100' : 'text-slate-800'}`}
       dir={isAr ? 'rtl' : 'ltr'}
     >
-      <header className={`px-4 sm:px-8 py-3 border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${isDark ? 'bg-[#091222]/95 border-slate-800' : 'bg-white/95 border-slate-200/90 shadow-2xs'}`}>
+      <style>{RG_CSS}</style>
+
+      {/* خلفية متحركة */}
+      <div className="rg-aurora" aria-hidden="true">
+        <span className="rg-blob rg-b1" />
+        <span className="rg-blob rg-b2" />
+        <span className="rg-blob rg-b3" />
+        <span className="rg-grid" />
+        <span className="rg-float" style={{ top: '16%', insetInlineStart: '8%', animationDelay: '0s' }}>🛒</span>
+        <span className="rg-float" style={{ top: '62%', insetInlineStart: '5%', animationDelay: '-3s' }}>📦</span>
+        <span className="rg-float" style={{ top: '22%', insetInlineEnd: '7%', animationDelay: '-5s' }}>⚡</span>
+        <span className="rg-float" style={{ top: '70%', insetInlineEnd: '9%', animationDelay: '-2s' }}>🚚</span>
+      </div>
+
+      <header className={`px-4 sm:px-8 py-3 border-b sticky top-0 z-40 backdrop-blur-md transition-colors ${isDark ? 'bg-[#091222]/70 border-slate-800' : 'bg-white/70 border-slate-200/90'}`}>
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-12 w-auto object-contain" />
@@ -234,30 +282,32 @@ export default function SpikeRegisterAndAuthPage() {
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-10 w-full max-w-lg mx-auto">
         <div className="text-center space-y-2 mb-5">
-          <div className="flex justify-center"><img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-24 w-auto object-contain" /></div>
-          <div className="flex items-center justify-center gap-1.5 font-black text-xl">
-            <span className={isDark ? 'text-white' : 'text-[#0E1E38]'}>سبايك</span>
-            <span className="text-slate-400 font-light">|</span>
-            <span className="text-[var(--ac)] font-mono tracking-wider">SPIKE</span>
+          <div className="flex justify-center rg-drop"><img src={SPIKE_LOGO_URL} alt="SPIKE" className="rg-logo h-24 w-auto object-contain" /></div>
+          <div key={`h-${mode}`} className="space-y-2">
+            <div className="rg-in flex items-center justify-center gap-1.5 font-black text-xl" style={{ '--i': 0 }}>
+              <span className={isDark ? 'text-white' : 'text-[#0E1E38]'}>سبايك</span>
+              <span className="text-slate-400 font-light">|</span>
+              <span className="text-[var(--ac)] font-mono tracking-wider">SPIKE</span>
+            </div>
+            <h2 className={`rg-in text-xl sm:text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`} style={{ '--i': 1 }}>{theme.headline && mode === 'register' && !isAdminEmail ? theme.headline : title}</h2>
+            {theme.subline && mode === 'register' && !isAdminEmail ? <p className="rg-in text-xs text-slate-500" style={{ '--i': 2 }}>{theme.subline}</p> : null}
           </div>
-          <h2 className={`text-xl sm:text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{theme.headline && mode === 'register' && !isAdminEmail ? theme.headline : title}</h2>
-          {theme.subline && mode === 'register' && !isAdminEmail ? <p className="text-xs text-slate-500">{theme.subline}</p> : null}
         </div>
 
-        <div className="w-full rounded-2xl border p-5 sm:p-8 shadow-sm transition-colors" style={{ backgroundColor: 'var(--card)', borderColor: isDark ? '#1e293b' : '#e2e8f0' }}>
-          <form onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
-            {mode === 'forgot' && <p className="font-normal text-slate-500">{t.forgotHint}</p>}
+        <div className="rg-card rg-glass w-full rounded-3xl border p-5 sm:p-8 transition-colors" style={{ backgroundColor: isDark ? 'rgba(14,30,56,.72)' : 'rgba(255,255,255,.78)', borderColor: isDark ? 'rgba(148,163,184,.18)' : 'rgba(226,232,240,.9)' }}>
+          <form key={mode} onSubmit={handleSubmit} className="space-y-4 text-xs font-bold">
+            {mode === 'forgot' && <p className="rg-in font-normal text-slate-500" style={st()}>{t.forgotHint}</p>}
 
             {showRegisterFields && (
               <>
-                <div className="space-y-1.5">
+                <div className="rg-in space-y-1.5" style={st()}>
                   <label className={lbl}>{t.storeNameLabel}</label>
                   <div className={grp} dir="ltr">
                     <input type="text" required placeholder="store-name" value={formData.storeSlug} onChange={(e) => handleChange('storeSlug', e.target.value)} className={`flex-1 p-3 outline-none font-mono text-xs text-left bg-transparent ${isDark ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`} />
                     <span className={`${addon} border-l ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>.spike.shop</span>
                   </div>
                 </div>
-                <div className="space-y-1.5">
+                <div className="rg-in space-y-1.5" style={st()}>
                   <label className={lbl}>{t.currencyLabel}</label>
                   <select value={formData.currency} onChange={(e) => handleChange('currency', e.target.value)} className={inp}>
                     <option value="USD">{isAr ? 'دولار أمريكي - USD' : 'US Dollar - USD'}</option>
@@ -266,39 +316,43 @@ export default function SpikeRegisterAndAuthPage() {
                     <option value="AED">{isAr ? 'درهم إماراتي - AED' : 'UAE Dirham - AED'}</option>
                   </select>
                 </div>
-                <div className="space-y-1.5">
+                <div className="rg-in space-y-1.5" style={st()}>
                   <label className={lbl}>{t.nameLabel}</label>
                   <input type="text" name="name" autoComplete="name" required placeholder={isAr ? 'مثال: أحمد محمد' : 'e.g. John Doe'} value={formData.fullName} onChange={(e) => handleChange('fullName', e.target.value)} className={inp} />
                 </div>
-                <div className="space-y-1.5">
+                <div className="rg-in space-y-1.5" style={st()}>
                   <label className={lbl}>{t.phoneLabel}</label>
                   <div className={grp} dir="ltr">
                     <div className={`${addon} gap-1.5 border-r ${isDark ? 'border-slate-700' : 'border-slate-300'}`}><span>🇪🇬</span><span>+20</span></div>
                     <input type="tel" name="tel" autoComplete="tel" required placeholder="01xxxxxxxxx" value={formData.phone} onChange={(e) => handleChange('phone', e.target.value)} className={`flex-1 p-3 outline-none font-mono text-xs text-left bg-transparent ${isDark ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`} />
                   </div>
                 </div>
-                <div className="space-y-1.5">
+                <div className="rg-in space-y-1.5" style={st()}>
                   <label className={lbl}>{isAr ? 'كود ترحيبي (اختياري)' : 'Promo code (optional)'}</label>
                   <input type="text" dir="ltr" autoComplete="off" placeholder="WELCOME" value={formData.promo} onChange={(e) => handleChange('promo', e.target.value.toUpperCase())} className={`${inp} font-mono text-left`} />
                 </div>
               </>
             )}
 
-            <div className="space-y-1.5">
+            <div className="rg-in space-y-1.5" style={st()}>
               <label className={lbl}>{t.emailLabel}</label>
               <input type="email" name="email" autoComplete="username" required dir="ltr" placeholder="name@example.com" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} className={`${inp} font-mono text-left`} />
             </div>
 
             {mode !== 'forgot' && (
-              <PassField id="password" label={t.passLabel} value={formData.password} onChange={(v) => handleChange('password', v)} shown={showPass} setShown={setShowPass} autoComplete={showLogin ? 'current-password' : 'new-password'} inp={inp} lbl={lbl} isAr={isAr} />
+              <div className="rg-in" style={st()}>
+                <PassField id="password" label={t.passLabel} value={formData.password} onChange={(v) => handleChange('password', v)} shown={showPass} setShown={setShowPass} autoComplete={showLogin ? 'current-password' : 'new-password'} inp={inp} lbl={lbl} isAr={isAr} />
+              </div>
             )}
 
             {showRegisterFields && (
-              <PassField id="confirm-password" label={t.confirmPassLabel} value={formData.confirmPassword} onChange={(v) => handleChange('confirmPassword', v)} shown={showPass2} setShown={setShowPass2} autoComplete="new-password" inp={inp} lbl={lbl} isAr={isAr} />
+              <div className="rg-in" style={st()}>
+                <PassField id="confirm-password" label={t.confirmPassLabel} value={formData.confirmPassword} onChange={(v) => handleChange('confirmPassword', v)} shown={showPass2} setShown={setShowPass2} autoComplete="new-password" inp={inp} lbl={lbl} isAr={isAr} />
+              </div>
             )}
 
             {showLogin && (
-              <div className="flex items-center justify-between gap-2">
+              <div className="rg-in flex items-center justify-between gap-2" style={st()}>
                 <label className="flex items-center gap-2 cursor-pointer font-bold">
                   <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="w-4 h-4 accent-[var(--ac)]" />
                   <span className={lbl}>{t.remember}</span>
@@ -308,7 +362,7 @@ export default function SpikeRegisterAndAuthPage() {
             )}
 
             {showRegisterFields && (
-              <div className="space-y-2.5">
+              <div className="rg-in space-y-2.5" style={st()}>
                 <label className="flex items-start gap-2 cursor-pointer font-bold">
                   <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="w-4 h-4 mt-0.5 accent-[var(--ac)]" />
                   <span className={lbl}>{t.agreePre} <Link href="/terms" target="_blank" className="text-[var(--ac)] underline">{t.agreeLink}</Link></span>
@@ -321,11 +375,13 @@ export default function SpikeRegisterAndAuthPage() {
             )}
 
             <div className="pt-3 space-y-3">
-              <button type="submit" disabled={loading} className="w-full py-3.5 bg-[var(--ac)] hover:opacity-90 text-white rounded-xl text-sm font-black transition-all shadow-sm active:scale-98 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60">
-                {loading ? t.processing : mode === 'forgot' ? t.submitForgot : showLogin ? t.submitLogin : t.submitRegister}
-              </button>
+              <div className="rg-in" style={st()}>
+                <button type="submit" disabled={loading} className="rg-btn w-full py-3.5 text-white rounded-xl text-sm font-black transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60">
+                  <span className="relative z-10">{loading ? t.processing : mode === 'forgot' ? t.submitForgot : showLogin ? t.submitLogin : t.submitRegister}</span>
+                </button>
+              </div>
 
-              <div className="text-center pt-1">
+              <div className="rg-in text-center pt-1" style={st()}>
                 {mode === 'forgot' ? (
                   <button type="button" onClick={() => setMode('login')} className="w-full py-2.5 border-2 border-[var(--ac)] text-[var(--ac)] hover:opacity-80 rounded-xl text-xs font-black transition cursor-pointer">{t.backLogin}</button>
                 ) : (
