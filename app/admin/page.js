@@ -97,6 +97,7 @@ export default function SpikeSuperAdminDashboard() {
   const [range, setRange] = useState(7);          // 7 | 30 يوم
   const [metric, setMetric] = useState('sales');  // sales | orders
   const [broadcasts, setBroadcasts] = useState([]);
+  const [totals, setTotals] = useState(null);
 
   // ===== الصلاحيات (فعلية، مش شكل) =====
   const can = (perm) => isSuper || currentPermissions?.[perm] === true;
@@ -252,19 +253,26 @@ export default function SpikeSuperAdminDashboard() {
     setRefreshing(true);
     const safety = setTimeout(() => { setLoading(false); setRefreshing(false); }, 12000);
     const q = (p) => Promise.resolve(p).then((r) => { if (r?.error) console.error('admin fetch error:', r.error.message); return r && r.data !== undefined ? r.data : null; }).catch((e) => { console.error('admin fetch failed:', e); return null; });
+    /* نسخة خفيفة من الدالة، ولو فشلت (مثلاً SQL 7 لم يُشغَّل) نرجع للاستعلام القديم */
+    const light = async (fn, fallback) => {
+      const r = await q(supabase.rpc(fn, { p_limit: 3000 }));
+      if (Array.isArray(r)) return r;
+      return q(fallback());
+    };
     try {
-      const [storesData, ordersData, productsData, logsData, bcData, domainsData, adminsData, settingsData] = await Promise.all([
+      const [storesData, ordersData, productsData, logsData, bcData, domainsData, adminsData, settingsData, totalsData] = await Promise.all([
         q(supabase.from('store_profiles').select('*').order('created_at', { ascending: false }).limit(2000)),
-        q(supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(3000)),
-        q(supabase.from('products').select('*').order('created_at', { ascending: false }).limit(3000)),
+        light('admin_orders_light', () => supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(3000)),
+        light('admin_products_light', () => supabase.from('products').select('*').order('created_at', { ascending: false }).limit(3000)),
         q(supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50)),
         q(supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(5)),
         q(supabase.from('custom_domains').select('*').order('created_at', { ascending: false }).limit(500)),
         q(supabase.from('admin_users').select('*').order('created_at', { ascending: false }).limit(200)),
         q(supabase.from('platform_settings').select('*').limit(1).maybeSingle()),
+        q(supabase.rpc('admin_totals')),
       ]);
       if (storesData) setStores(storesData);
-            if (!storesData || storesData.length === 0) {
+      if (!storesData || storesData.length === 0) {
         await new Promise((res) => setTimeout(res, 1500));
         const retry = await supabase.from('store_profiles').select('*').order('created_at', { ascending: false }).limit(2000);
         if (retry.error) console.error('stores retry error:', retry.error.message);
@@ -276,6 +284,7 @@ export default function SpikeSuperAdminDashboard() {
       if (bcData) setBroadcasts(bcData);
       if (domainsData) setDomains(domainsData);
       if (adminsData) setAdminUsers(adminsData);
+      if (totalsData && typeof totalsData === 'object') setTotals(totalsData);
       if (settingsData) {
         if (settingsData.exchange_rate) setExchangeRate(settingsData.exchange_rate);
         if (settingsData.commission_percentage) setPlatformCommission(settingsData.commission_percentage);
@@ -478,9 +487,9 @@ export default function SpikeSuperAdminDashboard() {
   };
 
   const totalStoresCount = stores.length;
-  const pendingOrdersCount = orders.filter(o => o.status === 'pending' || !o.status).length;
+  const pendingOrdersCount = totals ? Number(totals.pending_count) || 0 : orders.filter(o => o.status === 'pending' || !o.status).length;
   const activeStoresCount = stores.filter(s => s.is_active !== false).length;
-  const totalSalesAmount = orders.reduce((acc, curr) => acc + (Number(curr.total_price) || 0), 0);
+  const totalSalesAmount = totals ? Number(totals.sales_total) || 0 : orders.reduce((acc, curr) => acc + (Number(curr.total_price) || 0), 0);
 
   // ===================== التحليلات (كلها من بيانات حقيقية) =====================
   const sumPrice = (list) => list.reduce((a, o) => a + (Number(o.total_price) || 0), 0);
