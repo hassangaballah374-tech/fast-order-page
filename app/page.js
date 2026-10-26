@@ -343,6 +343,7 @@ export default function SpikeLandingPage() {
         </div>
       </section>
 
+      <HomeExtras lang={lang} isDark={isDark} />
       {/* 🖤 الفوتر */}
       <footer className={`pt-16 pb-12 px-6 lg:px-16 border-t text-xs transition-colors ${
         isDark ? 'bg-[#091222] border-slate-800 text-slate-400' : 'bg-[#ede9dc] border-slate-300 text-slate-600'
