@@ -274,14 +274,13 @@ export function HBarList({ items = [], unit = '', color = 'var(--teal)', empty =
   );
 }
 
-/* ============ Donut ============ */
 export function Donut({ segments = [], centerLabel = '', centerValue = '' }) {
   const total = segments.reduce((a, s) => a + s.value, 0);
   const R = 58;
   const C = 2 * Math.PI * R;
   let acc = 0;
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-5">
+    <div className="flex flex-col items-center gap-5">
       <div className="relative shrink-0" style={{ width: 168, height: 168 }} dir="ltr">
         <svg viewBox="0 0 168 168" width="168" height="168" style={{ transform: 'rotate(-90deg)' }}>
           <circle cx="84" cy="84" r={R} fill="none" stroke="var(--surface-2)" strokeWidth="22" />
@@ -310,14 +309,14 @@ export function Donut({ segments = [], centerLabel = '', centerValue = '' }) {
           <span className="text-[11px] text-slate-400">{centerLabel}</span>
         </div>
       </div>
-      <div className="w-full space-y-2.5">
+      <div className="w-full grid grid-cols-1 gap-2">
         {segments.map((s, i) => (
-          <div key={i} className="flex items-center justify-between text-xs gap-3">
-            <span className="flex items-center gap-2 font-bold">
-              <span style={{ width: 10, height: 10, borderRadius: 4, background: s.color, display: 'inline-block' }} />
+          <div key={i} className="flex items-center justify-between text-xs gap-3 min-w-0">
+            <span className="flex items-center gap-2 font-bold min-w-0 whitespace-nowrap">
+              <span style={{ width: 10, height: 10, borderRadius: 4, background: s.color, display: 'inline-block', flexShrink: 0 }} />
               {s.label}
             </span>
-            <span className="font-mono text-slate-400" dir="ltr">
+            <span className="font-mono text-slate-400 shrink-0 whitespace-nowrap" dir="ltr">
               {fmt(s.value)} · {total ? Math.round((s.value / total) * 100) : 0}%
             </span>
           </div>
@@ -326,7 +325,6 @@ export function Donut({ segments = [], centerLabel = '', centerValue = '' }) {
     </div>
   );
 }
-
 /* ============ Progress ============ */
 export function ProgressBar({ value = 0, color = 'var(--teal)' }) {
   return (
