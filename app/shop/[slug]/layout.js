@@ -56,6 +56,8 @@ export default async function ShopLayout({ children, params }) {
   return (
     <div className={cls} style={style} dir="rtl" lang="ar">
       <style dangerouslySetInnerHTML={{ __html: SHOP_CSS }} />
+       <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}:wght@400;600;700;800;900&display=swap`} />
       <StoreProvider slug={store.store_slug} name={store.store_name || ''} cfg={pubCfg} pages={footerPages} categories={categories} zones={zones} live={store.live} reason={store.reason}>
         <Tracker pixels={store.live ? pixels : []} gtm={gtm} />
