@@ -10,6 +10,7 @@ export default function ThankYouView() {
   const ty = cfg.thankyou || {};
   const [o, setO] = useState(null);
   const [loaded, setLoaded] = useState(false);
+  const [copied, setCopied] = useState(false);
   const fired = useRef(false);
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function ThankYouView() {
     fired.current = true;
     let done = false;
     try { done = sessionStorage.getItem(`spike_purchased_${slug}_${o.order_no}`) === '1'; sessionStorage.setItem(`spike_purchased_${slug}_${o.order_no}`, '1'); } catch { /* تجاهل */ }
-    if (!done && !o.held) track('Purchase', { value: o.total, items: o.items || [] }, o.event_id);
+    if (!done) track('Purchase', { value: o.total, items: o.items || [] }, o.event_id);
     clear();
     const url = safeUrl(ty.redirect_url);
     if (!url) return undefined;
@@ -56,22 +57,20 @@ export default function ThankYouView() {
   };
 
   return (
-     <div className="wrap ty">
-      {o.held ? (
-     <div className="card" style={{ margin: '0 0 14px', padding: 14, textAlign: 'center', border: '1px solid #b7791f' }}>
-          <div style={{ fontSize: 34 }}>⏳</div>
-          <b>طلبك تحت التنفيذ</b>
-          <p className="mut" style={{ margin: '6px 0 0' }}>
-            لقينا طلب سابق بنفس الرقم لنفس المنتج، فطلبك هذا بيتراجع من فريقنا وهنتواصل معاك للتأكيد قريباً.
-          </p>
-        </div>
-      ) : null}
-      <div className="ic">🎉</div>
+    <div className="wrap ty">
+      <div className="confetti" aria-hidden="true">{Array.from({ length: 26 }, (_, i) => <i key={i} style={{ left: `${(i * 3.9 + 2) % 100}%`, animationDelay: `${(i % 9) * 0.11}s`, background: ['var(--c)', '#f59e0b', '#ec4899', '#3b82f6'][i % 4] }} />)}</div>
+      <div className="ty-ok" aria-hidden="true"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" /><path d="M14 27l8 8 16-17" /></svg></div>
       <h1 style={{ margin: '10px 0' }}>{ty.title || 'تم استلام طلبك 🎉'}</h1>
       <p className="mut" style={{ maxWidth: 520, margin: '0 auto 18px' }}>{ty.message}</p>
-      <div className="card" style={{ maxWidth: 420, margin: '0 auto 18px' }}>
-        <p>رقم الطلب: <b className="num">#{o.order_no}</b></p>
-        <p>الإجمالي: <b className="num">{money(o.total, cur)}</b> · الدفع عند الاستلام</p>
+      <div className="card ty-sum">
+        <div className="rw"><span className="mut">رقم الطلب</span><span className="ty-no"><b className="num">#{o.order_no}</b><button type="button" onClick={() => { try { navigator.clipboard.writeText(String(o.order_no)); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* تجاهل */ } }}>{copied ? 'تم النسخ ✓' : 'نسخ'}</button></span></div>
+        {(o.items || []).filter((i) => i && i.title).map((i, k) => <div className="rw" key={k}><span>{i.title} × <span className="num">{i.qty || 1}</span></span></div>)}
+        <div className="rw"><span className="mut">الإجمالي · الدفع عند الاستلام</span><b className="num">{money(o.total, cur)}</b></div>
+      </div>
+      <div className="nxt">
+        <div><i>📞</i><span>هنتصل بيك لتأكيد الطلب<small>رد على المكالمة عشان الطلب يتجهّز بسرعة</small></span></div>
+        <div><i>🚚</i><span>بعد التأكيد بنشحنه لعنوانك<small>تقدر تتابع حالته في أي وقت</small></span></div>
+        <div><i>💵</i><span>ادفع للمندوب عند الاستلام<small>عاين طلبك وبعدين ادفع</small></span></div>
       </div>
       <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
         {waOk ? <a className="b wa" target="_blank" rel="noopener noreferrer" href={waLink(wa, `مرحباً، أنا ${o.name || ''}، أريد تأكيد طلبي رقم ${o.order_no}`)} onClick={() => track('Contact', {})}>💬 أكّد طلبك على واتساب</a> : null}
