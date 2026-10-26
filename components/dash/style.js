@@ -212,4 +212,24 @@ select.in{padding-inline-end:8px}
 @media print{.side,.top,.phr,.bulk,.acts,.toast{display:none!important}.app{display:block;background:#fff}.pg{padding:0}}
 @media(max-width:900px){.grid3.kpis,.grid4.kpis{grid-template-columns:1fr 1fr;gap:10px}}
 @media(max-width:560px){.kpis .kpi{padding:12px 12px 10px;border-radius:16px}.kpis .kpi small{display:block;font-size:11.5px;line-height:1.3}.kpis .kpi b{font-size:18px;margin:3px 0}.kpis .kpi .hint{font-size:10.5px;line-height:1.3}.kpis .spark{height:26px}}
+@media(max-width:560px){
+.spk .wrap{padding:0 12px}
+.spk .sec{padding:20px 0}
+.spk .sh h2{font-size:19px}
+.spk .hd-in{height:56px;gap:8px}
+.spk .hero-in{padding:34px 18px}
+.spk .hero p{font-size:14px}
+.spk .trust{grid-template-columns:1fr 1fr;gap:8px}
+.spk .ti{padding:10px;gap:8px}
+.spk .ti i{font-size:20px}
+.spk .ti b{font-size:12.5px}
+.spk .ti small{font-size:11px}
+.spk .cats{grid-template-columns:repeat(3,1fr);gap:8px}
+.spk .cat{padding:8px;font-size:12px}
+.spk .grid{gap:10px}
+.spk .pc-b{padding:9px 10px 11px}
+.spk .pc-t{font-size:13px}
+.spk .pc-p b{font-size:15px}
+.spk .price b{font-size:26px}
+}
 `;
