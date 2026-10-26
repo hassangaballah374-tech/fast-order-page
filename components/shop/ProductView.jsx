@@ -157,7 +157,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
 
           {msg ? <div className="err" style={{ marginBottom: 10 }}>{msg}</div> : null}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button type="button" className="b blk" onClick={addToCart} disabled={sold}>🛒 أضف للسلة</button>
+   <button type="button" className="b p blk" onClick={addToCart} disabled={sold}>🛒 أضف للسلة</button>
             {waOk ? <a className="b wa blk" target="_blank" rel="noopener noreferrer" href={waLink(wa, `استفسار عن: ${p.title}`)} onClick={() => track('Contact', {})}>💬 اسأل على واتساب</a> : null}
           </div>
 
