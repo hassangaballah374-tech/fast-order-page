@@ -1,6 +1,7 @@
 'use client';
 import React, { useMemo } from 'react';
 import { useDash, PageHead, Stat, Empty } from '../ui';
+import TodayPanel from '../TodayPanel';
 import { useTable } from '../hooks';
 import { Spark, Area, Bars, HBars, Funnel, fmtN } from '../charts';
 import { useOrders, useRange, RangeBar, inRange, rangeDays, dayLabel, bucketByDay, isLive, orderProfit } from '../shared';
@@ -90,6 +91,7 @@ export function StatsScreen() {
   return (
     <>
       <PageHead title="لوحة الإحصائيات" sub="أرقامك الحقيقية من متجرك"><RangeBar r={r} /></PageHead>
+      {!loading && <TodayPanel orders={orders.rows} aband={aband.rows} products={products.rows} go={go} cur={cur} />}
       {err && <div className="card errbox">⚠️ {err}<br /><small>شغّل ملف spike_store_all.sql في Supabase ثم أعد تحميل الصفحة.</small></div>}
 
       {done < steps.length && (
