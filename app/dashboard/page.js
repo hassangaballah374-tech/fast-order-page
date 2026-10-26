@@ -10,6 +10,7 @@ import { DARK_CSS } from '../../components/dash/dark';
 import { mergeConfig } from '../../lib/storeKit';
 import { spikeLogout } from '../../components/SpikeSessionBar';
 import { MerchantBell, UsageBanner } from '../../components/dash/MerchantBell';
+import NewOrderAlert from '../../components/dash/NewOrderAlert';
 
 const ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 const FLAT = flatMenu();
@@ -263,6 +264,7 @@ export default function MerchantDashboard() {
             <button type="button" className="btn menubtn" aria-label="القائمة" onClick={() => setSide(true)}>☰</button>
             <button type="button" className="srch" onClick={() => setCmd(true)}><span className="srt">🔎 ابحث عن أي شاشة أو إعداد…</span><kbd>Ctrl K</kbd></button>
             <span style={{ flex: 1 }} />
+            <NewOrderAlert />
             <MerchantBell />
             <button type="button" className="btn" onClick={toggleDark} title={dark ? 'الوضع النهاري' : 'الوضع الداكن'}>{dark ? '☀️' : '🌙'}</button>
             {storeUrl && <a className="btn" href={storeUrl} target="_blank" rel="noreferrer">معاينة المتجر ↗</a>}
