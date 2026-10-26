@@ -232,4 +232,21 @@ select.in{padding-inline-end:8px}
 .spk .pc-p b{font-size:15px}
 .spk .price b{font-size:26px}
 }
+/* ===== منع التمرير الأفقي على الموبايل ===== */
+html,body{max-width:100%;overflow-x:hidden}
+.app{max-width:100vw;overflow-x:clip}
+.main,.pg{max-width:100%;min-width:0}
+.grid4>*,.grid3>*,.grid2>*,.two>*,.fgrid>*{min-width:0}
+.pg img,.pg video{max-width:100%;height:auto}
+@media(max-width:900px){
+  .top{flex-wrap:wrap;gap:6px;padding-block:8px}
+  .top .btn{min-height:34px;padding:0 10px;font-size:12px;flex:0 1 auto}
+  .top .btn.dng{margin-inline-start:auto}
+}
+@media(max-width:560px){
+  .tdp{padding:16px;border-radius:20px}
+  .tdp-big{font-size:26px}
+  .tdp-dl{display:inline-block;margin-top:6px;margin-inline-start:0}
+  .card{padding:14px}
+}
 `;
