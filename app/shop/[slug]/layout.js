@@ -6,7 +6,7 @@ import { SHOP_CSS } from '../../../components/shop/style';
 import { StoreProvider } from '../../../components/shop/StoreContext';
 import Tracker from '../../../components/shop/tracker';
 import Shell from '../../../components/shop/Shell';
-import { Blocks } from '../../../components/shop/ui';
+import { Blocks } from '../../../components/shop/ui'; 
 
 export const dynamic = 'force-dynamic';
 
