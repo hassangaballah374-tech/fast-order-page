@@ -202,4 +202,23 @@ export const SHOP_CSS = `
 .spk .center{text-align:center}
 .spk .empty{text-align:center;padding:48px 16px;color:var(--mut)}
 .spk .cd2{background:#dc2626;color:#fff;border-radius:12px;padding:8px 14px;font-weight:800;display:inline-block;margin-top:8px}
+
+/* ===== Premium layer v1 ===== */
+.spk .gal-main{position:relative;box-shadow:0 18px 40px -24px rgba(0,0,0,.45)}
+.spk .gal-main img{transition:transform .6s cubic-bezier(.2,.7,.2,1)}
+.spk .gal-th button{transition:border-color .2s,transform .2s}
+.spk .pc{transition:transform .25s,box-shadow .25s}
+.spk .pc-img img{transition:transform .5s}
+@media(hover:hover){.spk .gal-main:hover img{transform:scale(1.07)}.spk .gal-th button:hover{transform:translateY(-2px)}.spk .pc:hover{transform:translateY(-4px);box-shadow:0 22px 38px -22px rgba(0,0,0,.45)}.spk .pc:hover .pc-img img{transform:scale(1.06)}}
+.spk .b.p{position:relative;overflow:hidden;box-shadow:0 10px 22px -12px var(--c)}
+.spk .b.p::after{content:'';position:absolute;top:0;left:0;width:36%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.38),transparent);transform:translateX(-160%) skewX(-20deg);animation:spkshine 3.6s ease-in-out infinite;pointer-events:none}
+@keyframes spkshine{0%,55%{transform:translateX(-160%) skewX(-20deg)}100%{transform:translateX(420%) skewX(-20deg)}}
+.spk .stk{background:color-mix(in srgb,var(--card) 84%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+.spk .price b{font-size:32px;letter-spacing:-.5px}
+.spk .assure{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:14px 0 0}
+.spk .assure div{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--ln);border-radius:12px;background:var(--card);font-size:12.5px;font-weight:700}
+.spk .assure i{font-style:normal;font-size:18px}
+.spk .sec{animation:spkup .6s both}
+@keyframes spkup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.spk .sec,.spk .b.p::after{animation:none}.spk .gal-main img,.spk .pc,.spk .pc-img img{transition:none}}
 `;
