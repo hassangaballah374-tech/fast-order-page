@@ -249,4 +249,27 @@ export const SHOP_CSS = `
 .spk .nxt i{font-style:normal;font-size:20px}
 .spk .nxt small{display:block;color:var(--mut);font-weight:500;font-size:12px}
 @media(prefers-reduced-motion:reduce){.spk .tl div.cur i,.spk .confetti i{animation:none}.spk .ty-ok circle,.spk .ty-ok path{animation:none;stroke-dashoffset:0}}
+
+/* ===== Mini cart ===== */
+.spk .mc-wrap{position:fixed;inset:0;z-index:90}
+.spk .mc-scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);animation:spkfade .2s}
+.spk .mc{position:absolute;top:0;bottom:0;inset-inline-end:0;width:min(420px,92vw);background:var(--card);color:var(--ink);display:flex;flex-direction:column;box-shadow:0 0 50px rgba(0,0,0,.35);animation:spkslide .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes spkfade{from{opacity:0}}
+@keyframes spkslide{from{transform:translateX(-100%)}}
+[dir=ltr] .spk .mc,.spk[dir=ltr] .mc{animation-name:spkslide2}
+@keyframes spkslide2{from{transform:translateX(100%)}}
+.spk .mc-hd{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--ln);font-size:17px}
+.spk .mc-hd button{border:0;background:var(--bg);color:var(--ink);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:15px}
+.spk .mc-ship{padding:12px 18px;background:color-mix(in srgb,var(--c) 10%,transparent);font-size:13px;font-weight:700}
+.spk .mc-bar{height:7px;border-radius:99px;background:var(--ln);margin-top:8px;overflow:hidden}
+.spk .mc-bar i{display:block;height:100%;background:var(--c);border-radius:99px;transition:width .4s}
+.spk .mc-list{flex:1;overflow-y:auto;padding:6px 18px}
+.spk .mc-it{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--ln)}
+.spk .mc-it img,.spk .mc-ph{width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--ln);flex:none}
+.spk .mc-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:13.5px}
+.spk .mc-q{display:flex;align-items:center;gap:10px;margin-top:4px}
+.spk .mc-rm{border:0;background:none;color:var(--mut);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline}
+.spk .mc-ft{padding:14px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--ln);display:grid;gap:8px}
+.spk .mc-sub{display:flex;justify-content:space-between;font-size:15px;margin-bottom:4px}
+@media(prefers-reduced-motion:reduce){.spk .mc,.spk .mc-scrim{animation:none}}
 `;
