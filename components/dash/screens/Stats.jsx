@@ -106,7 +106,7 @@ export function StatsScreen() {
         </div>
       )}
 
-      <div className="grid3">
+        <div className="grid3 kpis">
         <K label="زيارات" value={`${fmtN(d.visits)} زيارة`} spark={d.visitsS} />
         <K label="الطلبات" value={`${fmtN(d.count)} طلب`} spark={d.countS} />
         <K label="متوسط سعر الطلب" value={money(d.aov, cur)} spark={d.aovS} />
