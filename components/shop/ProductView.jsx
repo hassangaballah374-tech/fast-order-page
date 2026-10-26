@@ -102,9 +102,8 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
       <Blocks list={blocks.filter((b) => b.placement === 'product_top')} />
       <div className="pv">
         <div className="gal">
-          <div className="gal-main">{p.images[img] ? <img src={p.images[img]} alt={p.title} /> : null}</div>
+        <div className="gal-main">{p.images[img] ? <img src={p.images[img]} alt={p.title} fetchPriority="high" decoding="async" /> : null}</div>
           {p.images.length > 1 && (
-          fetchPriority="high" decoding="async"
             <div className="gal-th">{p.images.map((s, i) => <button key={i} type="button" className={i === img ? 'act' : ''} onClick={() => setImg(i)} aria-label={`صورة ${i + 1}`}><img src={s} alt="" loading="lazy" /></button>)}</div>
           )}
         </div>
