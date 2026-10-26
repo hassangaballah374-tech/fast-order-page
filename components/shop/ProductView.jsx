@@ -92,7 +92,8 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
     saveBump(bumpOn && bumpProd ? { product_id: bumpProd.id } : null);
     track('AddToCart', { value: offer.total, items: [{ id: p.id, title: p.title, price, qty }] });
     hit(slug, 'cart');
-    router.push(`${base}/cart`);
+    if (cfg.cart?.drawer === false) router.push(`${base}/cart`);
+    else window.dispatchEvent(new Event('spike:cart-open'));
   };
 
   const onePage = cfg.checkout?.one_page !== false;
