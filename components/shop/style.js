@@ -221,4 +221,32 @@ export const SHOP_CSS = `
 .spk .sec{animation:spkup .6s both}
 @keyframes spkup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.spk .sec,.spk .b.p::after{animation:none}.spk .gal-main img,.spk .pc,.spk .pc-img img{transition:none}}
+
+/* ===== Premium layer v2: tracking + thank-you ===== */
+.spk .tl{position:relative}
+.spk .tl div{position:relative;padding:11px 0}
+.spk .tl div i{position:relative;z-index:1;background:var(--card)}
+.spk .tl div:not(:last-child)::after{content:'';position:absolute;inset-inline-start:10px;top:33px;bottom:-11px;width:2px;background:var(--ln)}
+.spk .tl div.done:not(:last-child)::after{background:var(--c)}
+.spk .tl div.cur i{box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 22%,transparent);animation:spkpulse 1.8s ease-in-out infinite}
+@keyframes spkpulse{50%{box-shadow:0 0 0 10px color-mix(in srgb,var(--c) 6%,transparent)}}
+.spk .ty{position:relative;overflow:hidden}
+.spk .ty-ok{width:88px;height:88px;margin:0 auto}
+.spk .ty-ok svg{width:100%;height:100%}
+.spk .ty-ok circle{fill:none;stroke:var(--c);stroke-width:3;stroke-dasharray:152;stroke-dashoffset:152;animation:spkdraw .7s .1s forwards}
+.spk .ty-ok path{fill:none;stroke:var(--c);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:44;stroke-dashoffset:44;animation:spkdraw .5s .7s forwards}
+@keyframes spkdraw{to{stroke-dashoffset:0}}
+.spk .confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.spk .confetti i{position:absolute;top:-16px;width:8px;height:14px;border-radius:2px;opacity:0;animation:spkfall 2.8s ease-in forwards}
+@keyframes spkfall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(440px) rotate(560deg)}}
+.spk .ty-sum{max-width:440px;margin:0 auto 16px;text-align:start}
+.spk .ty-sum .rw{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--ln);font-size:14px}
+.spk .ty-sum .rw:last-child{border:0}
+.spk .ty-no{display:inline-flex;align-items:center;gap:8px}
+.spk .ty-no button{border:1px solid var(--ln);background:var(--bg);color:var(--ink);border-radius:8px;padding:2px 9px;font:inherit;font-size:12px;cursor:pointer}
+.spk .nxt{max-width:440px;margin:0 auto 18px;display:grid;gap:8px;text-align:start}
+.spk .nxt div{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:11px 14px;font-size:13.5px;font-weight:700}
+.spk .nxt i{font-style:normal;font-size:20px}
+.spk .nxt small{display:block;color:var(--mut);font-weight:500;font-size:12px}
+@media(prefers-reduced-motion:reduce){.spk .tl div.cur i,.spk .confetti i{animation:none}.spk .ty-ok circle,.spk .ty-ok path{animation:none;stroke-dashoffset:0}}
 `;
