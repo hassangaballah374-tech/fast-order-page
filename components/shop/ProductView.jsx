@@ -161,6 +161,11 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
             {waOk ? <a className="b wa blk" target="_blank" rel="noopener noreferrer" href={waLink(wa, `استفسار عن: ${p.title}`)} onClick={() => track('Contact', {})}>💬 اسأل على واتساب</a> : null}
           </div>
 
+          <div className="assure">
+            <div><i>💵</i>الدفع عند الاستلام</div>
+            <div><i>🚚</i>توصيل لباب البيت</div>
+            {waOk ? <div><i>💬</i>دعم على واتساب</div> : null}
+          </div>
           {p.description ? <div style={{ marginTop: 20 }}><h3 style={{ marginBottom: 6 }}>الوصف</h3><p className="desc">{p.description}</p></div> : null}
         </div>
       </div>
