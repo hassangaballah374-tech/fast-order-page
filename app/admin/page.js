@@ -206,16 +206,15 @@ export default function SpikeSuperAdminDashboard() {
   useEffect(() => {
     const verifyAdminAccess = async () => {
       try {
-        const user = await Promise.race([
-          supabase.auth.getUser().then((r) => r?.data?.user || null).catch(() => undefined),
-          new Promise((res) => setTimeout(() => res(undefined), 8000)),
-        ]).then(async (u) => (u !== undefined ? u : ((await supabase.auth.getSession())?.data?.session?.user || null)));
+        const { data: sess } = await supabase.auth.getSession();
+        const user = sess?.session?.user || null;
         const authEmail = user?.email?.toLowerCase().trim();
 
         if (authEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
           localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
           setIsSuper(true);
           setActorEmail(authEmail);
+          setLoading(false);
           fetchAllData();
           return;
         }
