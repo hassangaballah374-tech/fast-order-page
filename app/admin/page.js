@@ -206,7 +206,10 @@ export default function SpikeSuperAdminDashboard() {
   useEffect(() => {
     const verifyAdminAccess = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await Promise.race([
+          supabase.auth.getUser().then((r) => r?.data?.user || null).catch(() => undefined),
+          new Promise((res) => setTimeout(() => res(undefined), 8000)),
+        ]).then(async (u) => (u !== undefined ? u : ((await supabase.auth.getSession())?.data?.session?.user || null)));
         const authEmail = user?.email?.toLowerCase().trim();
 
         if (authEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
@@ -248,29 +251,26 @@ export default function SpikeSuperAdminDashboard() {
 
   const fetchAllData = async () => {
     setRefreshing(true);
+    const safety = setTimeout(() => { setLoading(false); setRefreshing(false); }, 12000);
+    const q = (p) => Promise.resolve(p).then((r) => (r && r.data !== undefined ? r.data : null)).catch(() => null);
     try {
-      const { data: storesData } = await supabase.from('store_profiles').select('*').order('created_at', { ascending: false });
+      const [storesData, ordersData, productsData, logsData, bcData, domainsData, adminsData, settingsData] = await Promise.all([
+        q(supabase.from('store_profiles').select('*').order('created_at', { ascending: false }).limit(2000)),
+        q(supabase.from('orders').select('*').order('created_at', { ascending: false }).limit(3000)),
+        q(supabase.from('products').select('*').order('created_at', { ascending: false }).limit(3000)),
+        q(supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50)),
+        q(supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(5)),
+        q(supabase.from('custom_domains').select('*').order('created_at', { ascending: false }).limit(500)),
+        q(supabase.from('admin_users').select('*').order('created_at', { ascending: false }).limit(200)),
+        q(supabase.from('platform_settings').select('*').limit(1).maybeSingle()),
+      ]);
       if (storesData) setStores(storesData);
-
-      const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
       if (ordersData) setOrders(ordersData);
-
-      const { data: productsData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
       if (productsData) setProducts(productsData);
-
-      const { data: logsData } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50);
       if (logsData) setAuditLogs(logsData);
-
-      const { data: bcData } = await supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(5);
       if (bcData) setBroadcasts(bcData);
-
-      const { data: domainsData } = await supabase.from('custom_domains').select('*').order('created_at', { ascending: false });
       if (domainsData) setDomains(domainsData);
-
-      const { data: adminsData } = await supabase.from('admin_users').select('*').order('created_at', { ascending: false });
       if (adminsData) setAdminUsers(adminsData);
-
-      const { data: settingsData } = await supabase.from('platform_settings').select('*').single();
       if (settingsData) {
         if (settingsData.exchange_rate) setExchangeRate(settingsData.exchange_rate);
         if (settingsData.commission_percentage) setPlatformCommission(settingsData.commission_percentage);
@@ -279,11 +279,11 @@ export default function SpikeSuperAdminDashboard() {
     } catch (err) {
       console.error('Error fetching admin data:', err);
     } finally {
+      clearTimeout(safety);
       setLoading(false);
       setRefreshing(false);
     }
   };
-
   const handleCreateStore = async (e) => {
     if (!guard('manage_stores')) { e.preventDefault(); return; }
     e.preventDefault();
