@@ -210,4 +210,6 @@ select.in{padding-inline-end:8px}
 @media(max-width:560px){.grid4{grid-template-columns:1fr 1fr}.kpi b{font-size:20px}}
 @media(prefers-reduced-motion:reduce){.app *{animation:none!important;transition:none!important}}
 @media print{.side,.top,.phr,.bulk,.acts,.toast{display:none!important}.app{display:block;background:#fff}.pg{padding:0}}
+@media(max-width:900px){.grid3.kpis,.grid4.kpis{grid-template-columns:1fr 1fr;gap:10px}}
+@media(max-width:560px){.kpis .kpi{padding:12px 12px 10px;border-radius:16px}.kpis .kpi small{display:block;font-size:11.5px;line-height:1.3}.kpis .kpi b{font-size:18px;margin:3px 0}.kpis .kpi .hint{font-size:10.5px;line-height:1.3}.kpis .spark{height:26px}}
 `;
