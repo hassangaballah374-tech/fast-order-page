@@ -11,6 +11,7 @@ import {
 import SpikeIntegrations from '../../components/SpikeIntegrations';
 import AdminAnalytics from '../../components/admin/AdminAnalytics';
 import AdminAlerts from '../../components/admin/AdminAlerts';
+import AdminAuditLog from '../../components/admin/AdminAuditLog';
 import { spikeLogout } from '../../components/SpikeSessionBar';
 import AdminBilling from '../../components/admin/AdminBilling';
 import AdminBell from '../../components/admin/AdminBell';
@@ -1457,7 +1458,8 @@ export default function SpikeSuperAdminDashboard() {
           {shown('billing') && <AdminBilling isDark={isDark} initial="stores" onChanged={fetchAllData} />}
 
           {/* تبويب سجل الحركات */}
-          {shown('audit') && (
+          {shown('audit') && <AdminAuditLog isDark={isDark} />}
+          {false && (
             <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-4">سجل الحركات الإدارية (Audit Logs)</h3>
               {auditLogs.length === 0 ? (
