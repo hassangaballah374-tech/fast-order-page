@@ -251,7 +251,7 @@ export default function SpikeSuperAdminDashboard() {
   const fetchAllData = async () => {
     setRefreshing(true);
     const safety = setTimeout(() => { setLoading(false); setRefreshing(false); }, 12000);
-    const q = (p) => Promise.resolve(p).then((r) => (r && r.data !== undefined ? r.data : null)).catch(() => null);
+    const q = (p) => Promise.resolve(p).then((r) => { if (r?.error) console.error('admin fetch error:', r.error.message); return r && r.data !== undefined ? r.data : null; }).catch((e) => { console.error('admin fetch failed:', e); return null; });
     try {
       const [storesData, ordersData, productsData, logsData, bcData, domainsData, adminsData, settingsData] = await Promise.all([
         q(supabase.from('store_profiles').select('*').order('created_at', { ascending: false }).limit(2000)),
@@ -264,6 +264,12 @@ export default function SpikeSuperAdminDashboard() {
         q(supabase.from('platform_settings').select('*').limit(1).maybeSingle()),
       ]);
       if (storesData) setStores(storesData);
+            if (!storesData || storesData.length === 0) {
+        await new Promise((res) => setTimeout(res, 1500));
+        const retry = await supabase.from('store_profiles').select('*').order('created_at', { ascending: false }).limit(2000);
+        if (retry.error) console.error('stores retry error:', retry.error.message);
+        else if (retry.data) setStores(retry.data);
+      }
       if (ordersData) setOrders(ordersData);
       if (productsData) setProducts(productsData);
       if (logsData) setAuditLogs(logsData);
