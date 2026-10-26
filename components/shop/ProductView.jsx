@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useShop, hit } from './StoreContext';
 import { track } from './tracker';
-import { useFavs, pushViewed, readViewed } from './favs';
+import { useFavs, pushViewed, readViewed } from './favs'; 
 import Checkout from './Checkout';
 import { Stars, ProductCard, Blocks, soldOut } from './ui';
 import { money, effectivePrice, saleActive, applyOffer, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
