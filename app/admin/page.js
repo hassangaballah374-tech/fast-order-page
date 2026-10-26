@@ -11,6 +11,7 @@ import SpikeIntegrations from '../../components/SpikeIntegrations';
 import AdminAnalytics from '../../components/admin/AdminAnalytics';
 import AdminAlerts from '../../components/admin/AdminAlerts';
 import AdminAuditLog from '../../components/admin/AdminAuditLog';
+import AdminCommandBar from '../../components/admin/AdminCommandBar';
 import { spikeLogout } from '../../components/SpikeSessionBar';
 import AdminBilling from '../../components/admin/AdminBilling';
 import AdminBell from '../../components/admin/AdminBell';
