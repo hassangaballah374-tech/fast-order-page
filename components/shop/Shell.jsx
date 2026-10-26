@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useShop, captureUtm, hit } from './StoreContext';
 import { track } from './tracker';
 import SearchBox from './SearchBox';
+import MiniCart from './MiniCart';
 import { fillTemplate, ago, safeUrl, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 const sget = (k) => { try { return sessionStorage.getItem(k); } catch { return null; } };
@@ -136,6 +137,7 @@ function WelcomeBack() {
 
 export default function Shell({ children, footerExtra }) {
   const { name, cfg, base, count, pages, live, reason } = useShop();
+  const path = usePathname();
   const b = cfg.brand || {};
   const c = cfg.contact || {};
   const social = cfg.social || {};
@@ -159,10 +161,11 @@ export default function Shell({ children, footerExtra }) {
           </nav>
           <span className="hd-sp" />
           <SearchBox />
-          <Link href={`${base}/cart`} className="cartb" aria-label="السلة">🛒 السلة{count > 0 ? <span className="cnt num">{count}</span> : null}</Link>
+          <Link href={`${base}/cart`} className="cartb" aria-label="السلة" onClick={(e) => { if (cfg.cart?.drawer === false || /\/(cart|checkout)/.test(path || '')) return; e.preventDefault(); window.dispatchEvent(new Event('spike:cart-open')); }}>🛒 السلة{count > 0 ? <span className="cnt num">{count}</span> : null}</Link>
         </div>
       </header>
 
+      <MiniCart />
       <main>{children}</main>
 
       {footerExtra}
