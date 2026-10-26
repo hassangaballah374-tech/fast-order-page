@@ -937,7 +937,7 @@ export default function SpikeSuperAdminDashboard() {
           {shown('overview') && (
             <>
               {/* مؤشرات رئيسية */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-5">
                 {statCards.map((stat, i) => (
                   <div
                     key={i}
@@ -945,11 +945,11 @@ export default function SpikeSuperAdminDashboard() {
                     tabIndex={0}
                     onClick={() => setStatModal(stat.id)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setStatModal(stat.id); } }}
-                    className={`p-5 rounded-2xl border cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg flex flex-col justify-between ${
+                    className={`p-3 sm:p-5 rounded-2xl border cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg flex flex-col justify-between ${
                       isDark ? 'bg-[#0E1E38] border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 shadow-xs hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex flex-col-reverse items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between mb-3">
                       <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-md border ${stat.badgeColor}`}>{stat.change}</span>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{stat.title}</span>
@@ -957,13 +957,13 @@ export default function SpikeSuperAdminDashboard() {
                       </div>
                     </div>
                     <div className="space-y-1 text-left" dir="ltr">
-                      <span className="text-2xl font-black font-mono tracking-tight block">{stat.value}</span>
+                      <span className="text-lg sm:text-2xl font-black font-mono tracking-tight block.">{stat.value}</span>
                       <span className="text-[10px] text-slate-400 block font-medium">{stat.desc1}</span>
                     </div>
                     <div className="mt-2" dir="ltr"><Sparkline data={stat.spark} /></div>
                     <div className="mt-2 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex justify-between items-center text-[10px] text-slate-400 font-medium">
                       <span>{stat.desc2}</span>
-                      <div className="w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div className="w-12 sm:w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: stat.progress }} />
                       </div>
                     </div>
@@ -979,7 +979,7 @@ export default function SpikeSuperAdminDashboard() {
                   { icon: '👛', label: isAr ? 'إجمالي محافظ التجار' : 'Merchant wallets', val: `$${fmt(walletsTotalUsd, 2)}` },
                   { icon: '⚠️', label: isAr ? 'منتجات مخزونها ≤ 5' : 'Low stock items', val: String(lowStockCount) },
                 ].map((k, i) => (
-                  <div key={i} className="p-5 rounded-2xl border">
+                 <div key={i} className="p-3 sm:p-5 rounded-2xl border">
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-2"><span className="text-base">{k.icon}</span>{k.label}</div>
                     <div className="text-xl font-black font-mono" dir="ltr">{k.val}</div>
                   </div>
