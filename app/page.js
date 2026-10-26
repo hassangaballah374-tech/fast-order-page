@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '../context/AppContext';
 import SpikeBrandHeader, { SPIKE_LOGO_URL } from '../components/SpikeBrandHeader';
+import HomeExtras from '../components/home/HomeExtras';
 
 export default function SpikeLandingPage() {
   const { lang, theme, toggleLanguage, toggleTheme } = useApp();
