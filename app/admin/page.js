@@ -849,6 +849,7 @@ export default function SpikeSuperAdminDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
+            <AdminCommandBar stores={stores} orders={orders} domains={domains} tabs={navItems} isDark={isDark} onGo={(id) => setActiveTab(id)} />
             <button
               onClick={() => setNewStoreModal(true)}
               className="px-3 sm:px-4 py-2 rounded-xl bg-[#00B050] hover:bg-[#009644] text-white text-xs font-black shadow-sm transition cursor-pointer flex items-center gap-1 active:scale-95"
