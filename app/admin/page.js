@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { useApp } from '../../context/AppContext';
-import { SPIKE_LOGO_URL } from '../../components/SpikeBrandHeader';
 import {
   ChartCard, Segmented, Sparkline, AreaChart, BarChart, HBarList, Donut, ProgressBar, fmt, fmtK,
 } from '../../components/SpikeCharts';
@@ -19,6 +18,8 @@ import PaymentNote from '../../components/admin/PaymentNote';
 import ThemeColors from '../../components/admin/ThemeColors'; 
 import AdminPromos from '../../components/admin/AdminPromos';
 import AdminApps from '../../components/admin/AdminApps';
+const BRAND_BASE = 'https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding';
+const ICON_PNG = `${BRAND_BASE}/icon.png?v=3`;
 
 const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
