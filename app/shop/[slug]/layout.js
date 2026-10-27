@@ -46,7 +46,7 @@ export default async function ShopLayout({ children, params }) {
   const cols = Math.max(2, Math.min(4, Number(b.columns) || 4));
   const style = {
     '--c': color, '--onc': onColor(color), '--bg': th.bg, '--card': th.card, '--ink': th.ink, '--mut': th.mut, '--ln': th.ln,
-    '--r': `${radius}px`, '--cols': cols, '--font': `'${font}'`,
+    '--r': `${radius}px`, '--cols': cols, '--font': `'${font}'`, colorScheme: th.dark ? 'dark' : 'light',
   };
   const cls = `spk ${b.card_style === 'outline' ? 'outline' : b.card_style === 'flat' ? 'flat' : 'soft'}`;
   const gtm = store.live && GTM_RE.test(String(cfg.tracking.gtm_id || '').trim()) ? String(cfg.tracking.gtm_id).trim() : '';
