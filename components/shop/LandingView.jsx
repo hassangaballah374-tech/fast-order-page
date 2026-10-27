@@ -5,6 +5,8 @@ import { track } from './tracker';
 import Checkout from './Checkout';
 import { soldOut } from './ui';
 import { money, effectivePrice, saleActive } from '../../lib/storeKit';
+import { fontHref } from '../../lib/themes100';
+import { lpThemeCss } from '../../lib/landingThemes';
 
 const ytId = (u) => { const m = String(u || '').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : ''; };
 const scrollToOrder = () => { track('LandingCTA', {}); document.getElementById('checkout')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
@@ -306,8 +308,9 @@ export default function LandingView({ funnel: fn, product: p }) {
   const wa = String(st.whatsapp || '').replace(/\D/g, '');
 
   return (
-    <div className="lp" style={{ ...vars, background: 'var(--lp-bg)', color: 'var(--lp-text)', minHeight: '100vh', paddingBottom: st.sticky_cta ? 76 : 0 }}>
-      {th.font ? <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(th.font)}:wght@400;700;900&display=swap`} /> : null}
+    <div className="lp" data-p={th.p || 'clean'} data-pat={th.pat || 'none'} style={{ ...vars, backgroundColor: 'var(--lp-bg)', color: 'var(--lp-text)', minHeight: '100vh', paddingBottom: st.sticky_cta ? 76 : 0 }}>
+          {th.font ? <link rel="stylesheet" href={fontHref(th.font)} /> : null}
+      <style dangerouslySetInnerHTML={{ __html: lpThemeCss(th) }} />
       <style>{`
         .lp{position:relative;overflow-x:clip;--lp-soft:color-mix(in srgb,var(--lp-primary) 12%,transparent);--lp-line:color-mix(in srgb,var(--lp-text) 14%,transparent);--lp-dark:color-mix(in srgb,var(--lp-primary) 62%,#000)}
         .lp *{box-sizing:border-box}
