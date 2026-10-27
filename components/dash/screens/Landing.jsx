@@ -5,6 +5,9 @@ import { useDash, PageHead, Empty, Spin, Tabs, Field, Tog } from '../ui';
 import { useTable, useProducts } from '../hooks';
 import { ImageInput } from '../forms';
 import { slugify, youtubeId } from '../../../lib/storeKit';
+import ThemePicker from '../ThemePicker';
+import { FONTS_ALL } from '../../../lib/themes100';
+import { lpFromTheme } from '../../../lib/landingThemes';
 
 const uid8 = () => Math.random().toString(36).slice(2, 8);
 
@@ -38,7 +41,7 @@ const TEMPLATES = {
 };
 
 const THEME_DEF = { primary: '#0a7f86', bg: '#ffffff', text: '#1a1a1a', btn_text: '#ffffff', radius: 14, width: 680, font: '' };
-const FONTS = [['', 'الافتراضي'], ['Cairo', 'Cairo'], ['Tajawal', 'Tajawal'], ['Almarai', 'Almarai'], ['Changa', 'Changa'], ['Readex Pro', 'Readex Pro']];
+const FONTS = [['', 'الافتراضي'], ...FONTS_ALL.map((f) => [f, f])];
 const THEMES = [
   ['تركواز', { primary: '#0a7f86', bg: '#ffffff', text: '#1a1a1a', btn_text: '#ffffff' }],
   ['أحمر جريء', { primary: '#e11d48', bg: '#ffffff', text: '#111827', btn_text: '#ffffff' }],
@@ -198,6 +201,8 @@ function Editor({ page, onSave, onBack, storeUrl, prods }) {
 
       {tab === 'design' && (
         <div className="card">
+        <ThemePicker value={theme.tid} onPick={(t) => setTheme((old) => ({ ...old, ...lpFromTheme(t) }))} />
+          <h4 style={{ margin: '18px 0 8px' }}>تخصيص يدوي</h4>
           <div className="chips" style={{ marginBottom: 12 }}>
             {THEMES.map(([n, v]) => <button type="button" key={n} className="chip" onClick={() => setTheme((t) => ({ ...t, ...v }))}><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 6, background: v.primary, marginInlineEnd: 6 }} />{n}</button>)}
           </div>
