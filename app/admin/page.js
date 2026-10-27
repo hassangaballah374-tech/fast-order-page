@@ -9,6 +9,7 @@ import {
 } from '../../components/SpikeCharts';
 import SpikeIntegrations from '../../components/SpikeIntegrations';
 import AdminAnalytics from '../../components/admin/AdminAnalytics';
+import AdminMerchantReport from '../../components/admin/AdminMerchantReport';
 import AdminAlerts from '../../components/admin/AdminAlerts';
 import AdminAuditLog from '../../components/admin/AdminAuditLog';
 import AdminCommandBar from '../../components/admin/AdminCommandBar';
@@ -1459,14 +1460,8 @@ export default function SpikeSuperAdminDashboard() {
             </div>
           )}
           {/* تبويب إحصائيات المنصة */}
-          {shown('analytics') && (
-            <>
-              <AdminAnalytics isDark={isDark} />
-              <AdminAlerts isDark={isDark} />
-            </>
-          )}
+          {shown('analytics') && (<><AdminAnalytics isDark={isDark} /><AdminMerchantReport stores={stores} orders={orders} isDark={isDark} /><AdminAlerts isDark={isDark} /></>)}
 
-          {/* تبويب الباقات */}
 
           {/* تبويب الباقات */}
          {shown('plans') && <><PaymentNote isDark={isDark} /><ThemeColors isDark={isDark} /><AdminBilling isDark={isDark} initial="plans" onChanged={fetchAllData} /></>}
