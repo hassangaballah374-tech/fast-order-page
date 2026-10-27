@@ -5,7 +5,7 @@ import { track } from './tracker';
 import Checkout from './Checkout';
 import { soldOut } from './ui';
 import { money, effectivePrice, saleActive } from '../../lib/storeKit';
-import { fontHref } from '../../lib/themes100';
+import { fontHref, isDark } from '../../lib/themes100';
 import { lpThemeCss } from '../../lib/landingThemes';
 
 const ytId = (u) => { const m = String(u || '').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : ''; };
@@ -302,6 +302,7 @@ export default function LandingView({ funnel: fn, product: p }) {
   const vars = {
     '--lp-primary': th.primary || '#0a7f86', '--lp-bg': th.bg || '#ffffff', '--lp-text': th.text || '#1a1a1a',
     '--lp-card': th.card || 'rgba(127,127,127,.08)', '--lp-r': `${Number(th.radius ?? 18)}px`,
+    colorScheme: /^#[0-9a-fA-F]{6}$/.test(th.bg || '') && isDark(th.bg) ? 'dark' : 'light',
     '--lp-btn-text': th.btn_text || '#ffffff', '--lp-w': `${Number(th.width) || 720}px`,
     fontFamily: th.font ? `${th.font}, 'Cairo', system-ui, sans-serif` : "'Cairo', system-ui, sans-serif",
   };
