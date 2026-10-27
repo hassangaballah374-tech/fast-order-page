@@ -4,7 +4,7 @@ import { useShop } from './StoreContext';
 import { track } from './tracker';
 import Checkout from './Checkout';
 import { soldOut } from './ui';
-import { money, effectivePrice, saleActive } from '../../lib/storeKit';
+import { money, effectivePrice, saleActive } from '../../lib/storeKit'; 
 import { fontHref, isDark } from '../../lib/themes100';
 import { lpThemeCss } from '../../lib/landingThemes';
 
