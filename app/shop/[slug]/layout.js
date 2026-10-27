@@ -2,6 +2,7 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { loadStore, publicCfg, getPages, getCategories, getPixels, getZonesPublic, getBlocks, onColor } from '../../../lib/storeData';
 import { themeById, FONTS, GTM_RE } from '../../../lib/storeKit';
+import { themeCss, fontHref } from '../../../lib/themes100';
 import { SHOP_CSS } from '../../../components/shop/style';
 import { StoreProvider } from '../../../components/shop/StoreContext';
 import Tracker from '../../../components/shop/tracker';
@@ -40,7 +41,7 @@ export default async function ShopLayout({ children, params }) {
   const b = cfg.brand;
   const th = themeById(b.theme);
   const color = /^#[0-9a-fA-F]{3,8}$/.test(b.color || '') ? b.color : th.color;
-  const font = FONTS.includes(b.font) ? b.font : 'Cairo';
+  const font = FONTS.includes(b.font) ? b.font : (th.font || 'Cairo');
   const radius = Math.max(0, Math.min(30, Number(b.radius) || th.radius));
   const cols = Math.max(2, Math.min(4, Number(b.columns) || 4));
   const style = {
@@ -54,11 +55,11 @@ export default async function ShopLayout({ children, params }) {
   const footerPages = pages.filter((p) => p.in_footer).map((p) => ({ title: p.title, slug: p.slug }));
 
   return (
-    <div className={cls} style={style} dir="rtl" lang="ar">
-      <style dangerouslySetInnerHTML={{ __html: SHOP_CSS }} />
+    <div className={cls} style={style} data-p={th.p || 'clean'} data-pat={th.pat || 'none'} dir="rtl" lang="ar">
+      <style dangerouslySetInnerHTML={{ __html: SHOP_CSS + themeCss(th) }} />
        <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link rel="stylesheet" href={`https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}:wght@400;600;700;800;900&display=swap`} />
+      <link rel="stylesheet" href={fontHref(font)} />
       <StoreProvider slug={store.store_slug} name={store.store_name || ''} cfg={pubCfg} pages={footerPages} categories={categories} zones={zones} live={store.live} reason={store.reason}>
         <Tracker pixels={store.live ? pixels : []} gtm={gtm} />
         <Shell footerExtra={<Blocks list={blocks.filter((x) => x.placement === 'footer')} />}>{children}</Shell>
