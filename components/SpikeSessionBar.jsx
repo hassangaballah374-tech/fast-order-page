@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabase';
 
 /* ================= إعدادات: عدّل السطرين دول فقط ================= */
-export const ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
+export const ADMIN_EMAIL = 'hassanhosny2007@gmail.com'; 
 const ADMIN_ROUTE = '/admin';         // مسار صفحة الإدارة
 const LOGIN_ROUTE = '/register';      // صفحة تسجيل الدخول
 /* مسارات تعتبر صفحات دخول (الأدمن لو سجل منها يروح للإدارة) */
