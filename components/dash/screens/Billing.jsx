@@ -5,7 +5,7 @@ import { useTable, uploadAsset } from '../hooks';
 import { fdate } from '../shared';
 import { storeStateOf, commissionOf, ordersLeft, freeLeft, ordersCovered, monthlyActive, toEgp, egpFmt, setPlatformCommission } from '../../../lib/billing';
 import { useUsdRate } from '../../useUsdRate';
-import { supabase } from '../../../lib/supabase';
+import { supabase } from '../../../lib/supabase'; 
 
 const n = (v) => Number(v) || 0;
 const usd = (v) => `$${n(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
