@@ -8,7 +8,7 @@ import { StoreProvider } from '../../../components/shop/StoreContext';
 import Tracker from '../../../components/shop/tracker';
 import Shell from '../../../components/shop/Shell';
 import { Blocks } from '../../../components/shop/ui'; 
-
+ 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
