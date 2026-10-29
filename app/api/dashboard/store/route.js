@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminClient, userFromRequest, isAdminUser } from '../../../../lib/supabaseAdmin';
 
 export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'; 
 
 const RESERVED = new Set(['admin', 'api', 'dashboard', 'register', 'login', 'shop', 'store', 'www', 'app', 'spike', 'p', 'static', '_next']);
 const bad = (error, status = 400) => NextResponse.json({ ok: false, error }, { status });
