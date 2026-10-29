@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   const ctx = await loadStore(params.slug);
-  if (!ctx) return {};
+  if (!ctx) return {}; 
   const f = await getFunnel(ctx.sb, ctx.sid, params.fslug);
   if (!f) return {};
   const seo = f.seo || {};
