@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 
 export const PLATFORMS = {
   facebook: { icon: '📘', ar: 'فيسبوك / ميتا', ph: '1234567890123456', re: /^\d{8,20}$/, hint: 'رقم البيكسل من Meta Events Manager' },
-  tiktok: { icon: '🎵', ar: 'تيك توك', ph: 'C1ABCDEF2GHIJK3L', re: /^[A-Z0-9]{8,30}$/i, hint: 'Pixel ID من TikTok Events Manager' },
+  tiktok: { icon: '🎵', ar: 'تيك توك', ph: 'C1ABCDEF2GHIJK3L', re: /^[A-Z0-9]{8,30}$/i, hint: 'Pixel ID من TikTok Events Manager' }, 
   snapchat: { icon: '👻', ar: 'سناب شات', ph: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', re: /^[a-z0-9-]{8,60}$/i, hint: 'Pixel ID من Snap Ads Manager' },
   ga4: { icon: '📈', ar: 'جوجل أناليتكس 4', ph: 'G-XXXXXXXXXX', re: /^G-[A-Z0-9]{4,20}$/i, hint: 'Measurement ID بيبدأ بـ G-' },
 };
