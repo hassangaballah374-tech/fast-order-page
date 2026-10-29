@@ -5,7 +5,7 @@ import { getStoreBySlug, storeKey, rateLimit, clientIp } from '../../../../lib/s
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/* تقييم من عميل: يدخل بحالة "قيد المراجعة" ولا يظهر في المتجر إلا بعد موافقة التاجر */
+/* تقييم من عميل: يدخل بحالة "قيد المراجعة" ولا يظهر في المتجر إلا بعد موافقة التاجر */ 
 export async function POST(req) {
   let body;
   try { body = await req.json(); } catch { return NextResponse.json({ ok: false, error: 'بيانات غير صالحة' }, { status: 400 }); }
