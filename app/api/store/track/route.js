@@ -4,7 +4,7 @@ import { getStoreBySlug, storeKey, rateLimit, clientIp } from '../../../../lib/s
 import { normalizePhone } from '../../../../lib/storeKit';
 
 export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'; 
 
 /* تتبع الطلب للعميل: رقم الطلب + رقم الموبايل (أو الرابط السري بعد الطلب) */
 export async function POST(req) {
