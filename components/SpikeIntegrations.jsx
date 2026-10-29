@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-/* ===================== كتالوج التكاملات ===================== */
+/* ===================== كتالوج التكاملات ===================== */ 
 export const CATALOG = [
   // قنوات التسويق والتتبع
   { key: 'facebook_pixel', cat: 'marketing', icon: '📘', ar: 'فيسبوك بيكسل', en: 'Facebook Pixel', dAr: 'تتبع المشتريات والإضافة للسلة للإعلانات', fields: [{ k: 'pixel_id', ar: 'Pixel ID', ph: '1234567890' }] },
