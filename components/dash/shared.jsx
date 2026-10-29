@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from 'react';
 import { useDash, Badge } from './ui';
 import { useTable } from './hooks';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase'; 
 import { STATUS, waLink, fillTemplate, money, dayKey } from '../../lib/storeKit';
 
 /* ---------- نطاق التاريخ ---------- */
