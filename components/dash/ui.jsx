@@ -3,7 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 
 export const DashCtx = createContext(null);
 export const useDash = () => useContext(DashCtx);
-
+ 
 export const Tog = ({ on, set, disabled }) => (
   <button type="button" role="switch" aria-checked={!!on} disabled={disabled} className={'tog' + (on ? ' on' : '')} onClick={() => set(!on)}><i /></button>
 );
