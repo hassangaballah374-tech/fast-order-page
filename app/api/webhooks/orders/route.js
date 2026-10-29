@@ -1,7 +1,7 @@
 // app/api/webhooks/orders/route.js
 // يستقبل طلبات من Shopify / WooCommerce / أي نظام ويكتبها في جدول orders للمتجر.
 // يحتاج متغيرين في .env.local وفي Vercel:
-//   NEXT_PUBLIC_SUPABASE_URL
+//   NEXT_PUBLIC_SUPABASE_URL 
 //   SUPABASE_SERVICE_ROLE_KEY   (سري — لا تضعه أبداً في كود المتصفح)
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
