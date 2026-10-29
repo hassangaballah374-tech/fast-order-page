@@ -5,7 +5,7 @@ import { getStoreBySlug, storeKey, getConfig, rateLimit, clientIp } from '../../
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/* بيانات النافذة الاجتماعية (Sales Popup): آخر طلبات حقيقية فقط، بالاسم الأول والمحافظة بدون أي رقم أو عنوان */
+/* بيانات النافذة الاجتماعية (Sales Popup): آخر طلبات حقيقية فقط، بالاسم الأول والمحافظة بدون أي رقم أو عنوان */ 
 export async function GET(req) {
   if (!rateLimit(`popup:${clientIp(req)}`, 30, 60_000)) return NextResponse.json({ ok: false }, { status: 429 });
   const slug = new URL(req.url).searchParams.get('slug');
