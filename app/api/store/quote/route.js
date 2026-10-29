@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 /* معاينة السعر النهائي (منتجات + عرض + كوبون + شحن + رسوم) من السيرفر */
 export async function POST(req) {
-  let body;
+  let body; 
   try { body = await req.json(); } catch { return NextResponse.json({ ok: false, error: 'بيانات غير صالحة' }, { status: 400 }); }
   if (!rateLimit(`quote:${clientIp(req)}`, 90, 60_000)) return NextResponse.json({ ok: false, error: 'محاولات كثيرة' }, { status: 429 });
 
