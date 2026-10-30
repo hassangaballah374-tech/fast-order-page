@@ -2,6 +2,7 @@
 import React from 'react';
 import { Field, Tog } from '../ui';
 import { ImageInput } from '../forms';
+import { FONTS_ALL } from '../../../lib/themes100';
 import { SECTION_DEFS, STYLE_DEFAULT, BG_OPTS, PAD_OPTS, ALIGN_OPTS, WIDTH_OPTS, ANIM_OPTS } from '../../../lib/lpSections';
 
 /* حقل واحد حسب نوعه */
@@ -105,6 +106,7 @@ export function StyleForm({ s, onChange }) {
       <Row l="المحاذاة"><Chips v={st.align} set={(v) => set('align', v)} opts={ALIGN_OPTS} /></Row>
       <Row l="عرض المحتوى"><Chips v={st.width} set={(v) => set('width', v)} opts={WIDTH_OPTS} /></Row>
       <Field l="استدارة الزوايا (px، فارغ = الافتراضي)"><input className="in num" type="number" min="0" max="40" value={st.radius ?? ''} onChange={(e) => set('radius', e.target.value === '' ? '' : Number(e.target.value))} /></Field>
+            <Field l="الخط (لهذا القسم فقط)" full><select className="in" value={st.font || ''} onChange={(e) => set('font', e.target.value)}><option value="">خط الصفحة العام</option>{FONTS_ALL.map((f) => <option key={f} value={f}>{f}</option>)}</select></Field>
       <Row l="حركة الظهور"><Chips v={st.anim} set={(v) => set('anim', v)} opts={ANIM_OPTS} /></Row>
       <Field l="إخفاء على الموبايل"><div className="tgrow"><Tog on={!!st.hideM} set={(x) => set('hideM', x)} /></div></Field>
       <Field l="إخفاء على الكمبيوتر"><div className="tgrow"><Tog on={!!st.hideD} set={(x) => set('hideD', x)} /></div></Field>
