@@ -7,6 +7,7 @@ import { soldOut } from './ui';
 import { money, effectivePrice, saleActive } from '../../lib/storeKit'; 
 import { fontHref, isDark } from '../../lib/themes100';
 import { lpThemeCss } from '../../lib/landingThemes';
+import WaIcon from './WaIcon';
 import { renderBlock, SectionWrap, useBuilderBridge } from './LpBlocks';
 
 const ytId = (u) => { const m = String(u || '').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : ''; };
@@ -430,7 +431,7 @@ export default function LandingView({ funnel: fnProp, product: p }) {
       {st.sticky_cta && showSticky ? (
         <div className="lp-sticky"><button type="button" className="lp-btn" onClick={scrollToOrder}>{st.sticky_text || fn.cta_text || 'اطلب الآن'} · {money(price, cur)}</button></div>
       ) : null}
-      {wa ? <a className="lp-wa" href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" aria-label="واتساب">💬</a> : null}
+      {wa ? <a className="lp-wa" href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" aria-label="واتساب"><WaIcon size={32} /></a> : null}
       {light ? <div className="lp-lb" onClick={() => setLight('')} role="dialog" aria-label="الصورة"><img src={light} alt="" /></div> : null}
     </div>
   );
