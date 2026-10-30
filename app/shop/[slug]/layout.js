@@ -1,4 +1,5 @@
 import React from 'react';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { loadStore, publicCfg, getPages, getCategories, getPixels, getZonesPublic, getBlocks, onColor } from '../../../lib/storeData';
 import { themeById, FONTS, GTM_RE } from '../../../lib/storeKit';
@@ -49,7 +50,8 @@ export default async function ShopLayout({ children, params }) {
     '--r': `${radius}px`, '--cols': cols, '--font': `'${font}'`, colorScheme: th.dark ? 'dark' : 'light',
   };
   const cls = `spk ${b.card_style === 'outline' ? 'outline' : b.card_style === 'flat' ? 'flat' : 'soft'}`;
-  const gtm = store.live && GTM_RE.test(String(cfg.tracking.gtm_id || '').trim()) ? String(cfg.tracking.gtm_id).trim() : '';
+  const inFrame = headers().get('sec-fetch-dest') === 'iframe';
+  const gtm = store.live && !inFrame && GTM_RE.test(String(cfg.tracking.gtm_id || '').trim()) ? String(cfg.tracking.gtm_id).trim() : '';
   const pubCfg = publicCfg(cfg);
   if (store.whatsapp_button === false) pubCfg.whatsapp = { ...pubCfg.whatsapp, enabled: false };
   const footerPages = pages.filter((p) => p.in_footer).map((p) => ({ title: p.title, slug: p.slug }));
@@ -61,7 +63,7 @@ export default async function ShopLayout({ children, params }) {
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link rel="stylesheet" href={fontHref(font)} />
       <StoreProvider slug={store.store_slug} name={store.store_name || ''} cfg={pubCfg} pages={footerPages} categories={categories} zones={zones} live={store.live} reason={store.reason}>
-        <Tracker pixels={store.live ? pixels : []} gtm={gtm} />
+        <Tracker pixels={store.live && !inFrame ? pixels : []} gtm={gtm} />
         <Shell footerExtra={<Blocks list={blocks.filter((x) => x.placement === 'footer')} />}>{children}</Shell>
       </StoreProvider>
     </div>
