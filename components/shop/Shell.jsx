@@ -6,6 +6,7 @@ import { useShop, captureUtm, hit } from './StoreContext';
 import { track } from './tracker';
 import SearchBox from './SearchBox';
 import MiniCart from './MiniCart';
+import WaIcon from './WaIcon';
 import { fillTemplate, ago, safeUrl, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 const sget = (k) => { try { return sessionStorage.getItem(k); } catch { return null; } };
@@ -190,14 +191,14 @@ export default function Shell({ children, footerExtra }) {
             <div className="soc">
               {[['instagram', 'إنستجرام'], ['facebook', 'فيسبوك'], ['tiktok', 'تيك توك'], ['youtube', 'يوتيوب']].map(([k, l]) => (safeUrl(social[k]) ? <a key={k} href={safeUrl(social[k])} target="_blank" rel="noopener noreferrer">{l}</a> : null))}
             </div>
-            {waOk ? <p style={{ marginTop: 10 }}><a className="b wa sm" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer">💬 تواصل معنا على واتساب</a></p> : null}
+            {waOk ? <p style={{ marginTop: 10 }}><a className="b wa sm" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer"><WaIcon size={16} /> تواصل معنا على واتساب</a></p> : null}
           </div>
         </div>
         <a className="pwl" href="/" target="_blank" rel="noopener noreferrer" title="سبايك"><img src="https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding/logo.png?v=3" alt="سبايك" loading="lazy" /></a>
         <p className="pw">متجر مبني على منصة سبايك · الدفع عند الاستلام</p>
       </footer>
 
-      {waOk ? <a className="waf" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer" aria-label="واتساب" onClick={() => track('Contact', {})}>💬</a> : null}
+      {waOk ? <a className="waf" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer" aria-label="واتساب" onClick={() => track('Contact', {})}><WaIcon size={32} /></a> : null}
       <SalesPopup />
       <Downsell />
       <WelcomeBack />
