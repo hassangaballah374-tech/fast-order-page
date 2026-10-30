@@ -8,11 +8,13 @@ import { slugify, youtubeId } from '../../../lib/storeKit';
 import ThemePicker from '../ThemePicker';
 import { FONTS_ALL } from '../../../lib/themes100';
 import { lpFromTheme } from '../../../lib/landingThemes';
+import { SECTION_DEFS, mkSection } from '../../../lib/lpSections';
+import LandingBuilder from '../LandingBuilder';
 
 const uid8 = () => Math.random().toString(36).slice(2, 8);
 
 /* تعريف كل نوع قسم: الاسم، الأيقونة، القيم الافتراضية، الحقول */
-const TYPES = {
+const OLD_TYPES = {
   hero: { n: 'الغلاف (Hero)', i: '🏁', d: { title: '', subtitle: '', badge: '', cta: 'اطلب الآن', image: '', show_price: true },
     f: [['title', 'العنوان الرئيسي'], ['subtitle', 'عنوان فرعي', 'area'], ['badge', 'شارة (مثل: خصم 30%)'], ['image', 'صورة (اتركها لصورة المنتج)', 'img'], ['cta', 'نص الزر'], ['show_price', 'إظهار السعر', 'tog']] },
   video: { n: 'فيديو يوتيوب', i: '🎬', d: { title: '', url: '' }, f: [['title', 'عنوان (اختياري)'], ['url', 'رابط يوتيوب', 'ltr']] },
@@ -31,7 +33,8 @@ const TYPES = {
   order: { n: 'نموذج الطلب', i: '🛒', d: { title: 'اطلب الآن · الدفع عند الاستلام', cta: '' }, f: [['title', 'العنوان'], ['cta', 'نص زر التأكيد (اختياري)']] },
 };
 
-const mk = (type, data) => ({ id: uid8(), type, on: true, data: { ...JSON.parse(JSON.stringify(TYPES[type].d)), ...(data || {}) } });
+const TYPES = SECTION_DEFS;
+const mk = mkSection;
 
 const TEMPLATES = {
   basic: { n: 'بسيط وسريع', d: 'غلاف + مميزات + نموذج طلب', make: () => [mk('hero'), mk('benefits'), mk('order')] },
@@ -115,6 +118,7 @@ function Editor({ page, onSave, onBack, storeUrl, prods }) {
   const [open, setOpen] = useState(null);
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
+    const [vb, setVb] = useState(false);
 
   const move = (i, dir) => setSections((a) => { const b = [...a]; const j = i + dir; if (j < 0 || j >= b.length) return a; [b[i], b[j]] = [b[j], b[i]]; return b; });
   const upd = (i, s) => setSections((a) => a.map((x, j) => (j === i ? s : x)));
@@ -123,20 +127,23 @@ function Editor({ page, onSave, onBack, storeUrl, prods }) {
 
   const save = async () => {
     const sl = slugify(slug || name);
-    if (String(name).trim().length < 2) return say('اكتب اسماً للصفحة');
-    if (!sl) return say('اكتب رابطاً صالحاً');
-    if (!productId) return say('اختر المنتج');
-    for (const s of sections) if (s.type === 'video' && s.data.url && !youtubeId(s.data.url)) return say('رابط يوتيوب غير صحيح في قسم الفيديو');
+    if (String(name).trim().length < 2) { say('اكتب اسماً للصفحة'); return false; }
+    if (!sl) { say('اكتب رابطاً صالحاً'); return false; }
+    if (!productId) { say('اختر المنتج'); return false; }
+    for (const s of sections) if (s.type === 'video' && s.data.url && !youtubeId(s.data.url)) { say('رابط يوتيوب غير صحيح في قسم الفيديو'); return false; }
     setBusy(true);
     const ok = await onSave({ name: String(name).trim(), slug: sl, product_id: productId, cta_text: cta || null, enabled, sections, theme, seo, settings: st });
     setBusy(false);
     if (ok) { setSlug(sl); say('تم حفظ الصفحة ✅'); }
+    return !!ok;
   };
 
   const url = `${storeUrl}/f/${slugify(slug || name)}`;
   return (
     <>
+      {vb && <LandingBuilder page={page} storeUrl={storeUrl} sections={sections} setSections={setSections} theme={theme} setTheme={setTheme} st={st} setSt={setSt} onSave={save} onClose={() => setVb(false)} />}
       <PageHead title={`تعديل: ${page.name}`} sub="كل تغيير يظهر في الصفحة بعد الحفظ">
+        <button type="button" className="btn p" onClick={() => setVb(true)}>🎨 المحرر البصري</button>
         <button type="button" className="btn" onClick={onBack}>← رجوع</button>
         <a className="btn" href={url} target="_blank" rel="noreferrer">معاينة ↗</a>
         <button type="button" className="btn p" disabled={busy} onClick={save}>{busy ? '...' : 'حفظ'}</button>
