@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { STYLE_DEFAULT, SECTION_DEFS } from '../../lib/lpSections';
 import { track } from './tracker';
+import { FONTS_ALL, fontHref } from '../../lib/themes100';
 
 const toOrder = () => { track('LandingCTA', {}); document.getElementById('checkout')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 const okLink = (u) => /^(https?:\/\/|\/|#|tel:|mailto:)/i.test(String(u || '').trim());
@@ -149,6 +150,17 @@ export function renderBlock(s) {
           </Rv>
         </section>
       );
+    case 'box':
+      return (
+        <section className="lp-sec lp-n">
+          <Rv>
+            <div className="lp-box" data-v={d.variant || 'soft'} data-size={d.size || 'md'} data-weight={d.weight || 'normal'} data-align={d.align || 'right'}>
+              {d.icon ? <i className="lp-box-i" aria-hidden="true">{d.icon}</i> : null}
+              <div className="lp-box-t">{d.title ? <b>{d.title}</b> : null}{d.body ? <p>{d.body}</p> : null}</div>
+            </div>
+          </Rv>
+        </section>
+      );
     case 'spacer':
       return <div aria-hidden="true" style={{ height: Math.max(0, Math.min(400, Number(d.h) || 40)) }} />;
     case 'divider':
@@ -162,12 +174,14 @@ export function renderBlock(s) {
   }
 }
 
-/* غلاف القسم: الخلفية والمسافات والمحاذاة والعرض والحركة والإخفاء حسب الجهاز */
+/* غلاف القسم: الخلفية والمسافات والمحاذاة والعرض والحركة والإخفاء حسب الجهاز + الخط */
 export function SectionWrap({ s, builder, picked, onPick, children }) {
   const st = { ...STYLE_DEFAULT, ...(s.style || {}) };
   const style = {};
   if (st.bg === 'custom' && hex(st.bgColor)) style['--lp-sbg'] = st.bgColor;
   if (hex(st.color)) { style['--lp-text'] = st.color; style.color = st.color; }
+  const font = FONTS_ALL.includes(st.font) ? st.font : '';
+  if (font) style.fontFamily = `'${font}', 'Cairo', system-ui, sans-serif`;
   if (st.radius !== '' && st.radius != null && !Number.isNaN(Number(st.radius))) style['--lp-r'] = `${Math.max(0, Math.min(40, Number(st.radius)))}px`;
   const cls = ['lp-s', st.hideM && 'lp-hide-m', st.hideD && 'lp-hide-d', builder && picked && 'lp-picked'].filter(Boolean).join(' ');
   const id = st.anchor ? String(st.anchor).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40) : undefined;
@@ -178,6 +192,7 @@ export function SectionWrap({ s, builder, picked, onPick, children }) {
       style={style}
       onClickCapture={builder ? (e) => { e.preventDefault(); e.stopPropagation(); onPick(s.id); } : undefined}
     >
+      {font ? <link rel="stylesheet" href={fontHref(font)} /> : null}
       {children}
     </div>
   );
