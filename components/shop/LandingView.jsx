@@ -7,6 +7,7 @@ import { soldOut } from './ui';
 import { money, effectivePrice, saleActive } from '../../lib/storeKit'; 
 import { fontHref, isDark } from '../../lib/themes100';
 import { lpThemeCss } from '../../lib/landingThemes';
+import { renderBlock, SectionWrap, useBuilderBridge } from './LpBlocks';
 
 const ytId = (u) => { const m = String(u || '').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : ''; };
 const scrollToOrder = () => { track('LandingCTA', {}); document.getElementById('checkout')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
@@ -204,7 +205,7 @@ function Section({ s, ctx }) {
     case 'order':
       return <OrderBox s={s} ctx={ctx} />;
     default:
-      return null;
+      return renderBlock(s);
   }
 }
 
@@ -257,7 +258,8 @@ function OrderBox({ s, ctx }) {
 }
 
 /* صفحة هبوط بالأقسام. لو مفيش أقسام يتم بناء أقسام افتراضية من بيانات الـ Funnel القديمة */
-export default function LandingView({ funnel: fn, product: p }) {
+export default function LandingView({ funnel: fnProp, product: p }) {
+  const { fn, sel, builder, pick } = useBuilderBridge(fnProp);
   const { slug, cur, cfg } = useShop();
   const th = fn.theme || {};
   const st = fn.settings || {};
@@ -309,7 +311,7 @@ export default function LandingView({ funnel: fn, product: p }) {
   const wa = String(st.whatsapp || '').replace(/\D/g, '');
 
   return (
-    <div className="lp" data-p={th.p || 'clean'} data-pat={th.pat || 'none'} style={{ ...vars, backgroundColor: 'var(--lp-bg)', color: 'var(--lp-text)', minHeight: '100vh', paddingBottom: st.sticky_cta ? 76 : 0 }}>
+ <div className={builder ? 'lp lp-builder' : 'lp'} data-p={th.p || 'clean'} data-pat={th.pat || 'none'} style={{ ...vars, backgroundColor: 'var(--lp-bg)', color: 'var(--lp-text)', minHeight: '100vh', paddingBottom: st.sticky_cta ? 76 : 0 }}>
           {th.font ? <link rel="stylesheet" href={fontHref(th.font)} /> : null}
       <style dangerouslySetInnerHTML={{ __html: lpThemeCss(th) }} />
       <style>{`
@@ -418,7 +420,12 @@ export default function LandingView({ funnel: fn, product: p }) {
         @media(prefers-reduced-motion:reduce){.lp-rv{opacity:1;transform:none;transition:none}.lp-btn,.lp-btn::after,.lp-frame img{animation:none}.lp-sticky{animation:none}}
       `}</style>
       <div className="lp-wrap">
-        {all.map((s) => <Section key={s.id} s={s} ctx={ctx} />)}
+        {all.map((s) => (
+          <SectionWrap key={s.id} s={s} builder={builder} picked={sel === s.id} onPick={pick}>
+            <Section s={s} ctx={ctx} />
+          </SectionWrap>
+        ))}
+        
       </div>
       {st.sticky_cta && showSticky ? (
         <div className="lp-sticky"><button type="button" className="lp-btn" onClick={scrollToOrder}>{st.sticky_text || fn.cta_text || 'اطلب الآن'} · {money(price, cur)}</button></div>
