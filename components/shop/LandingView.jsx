@@ -85,7 +85,7 @@ function Section({ s, ctx }) {
       const img = d.image || p.images[0];
       const trust = (Array.isArray(d.trust) && d.trust.length ? d.trust : ['💵|الدفع عند الاستلام', '🚚|توصيل لكل المحافظات', '📞|دعم سريع']).slice(0, 4);
       return (
-        <section className="lp-hero">
+        <section className="lp-hero" data-layout={d.layout || 'left'}>
           <Reveal className="lp-hero-t">
             {d.badge ? <span className="lp-badge">✦ {d.badge}</span> : null}
             <h1>{d.title || p.title}</h1>
