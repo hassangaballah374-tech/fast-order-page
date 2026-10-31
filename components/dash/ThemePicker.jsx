@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { SHOP_CSS } from '../shop/style';
 import { THEMES } from '../../lib/storeKit';
 import { THEME_CATS, allThemeCss, FONTS_ALL } from '../../lib/themes100';
@@ -11,20 +11,6 @@ const onColor = (hex) => {
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(f.slice(i, i + 2), 16));
   return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? '#111111' : '#ffffff';
 };
-
-/* بيرسم المعاينة بس لما الكارت يظهر في الشاشة (بدل رسم 100 معاينة مرة واحدة) */
-function LazyMini({ t }) {
-  const ref = useRef(null);
-  const [on, setOn] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === 'undefined') { setOn(true); return undefined; }
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setOn(true); io.disconnect(); } }, { rootMargin: '300px' });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-  return <div ref={ref} style={{ height: 200 }}>{on ? <Mini t={t} /> : null}</div>;
-}
 
 function Mini({ t }) {
   const style = {
@@ -65,6 +51,13 @@ function Mini({ t }) {
 export default function ThemePicker({ value, onPick }) {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('الكل');
+  /* المعاينات بتتحمّل على دفعات (12 كل مرة) بدل 100 مرة واحدة، فالصفحة تفتح بسرعة والكل بيظهر في ثواني */
+  const [shown, setShown] = useState(12);
+  useEffect(() => {
+    if (shown >= THEMES.length) return undefined;
+    const t = setTimeout(() => setShown((n) => n + 12), 90);
+    return () => clearTimeout(t);
+  }, [shown]);
   const css = useMemo(() => `${SHOP_CSS}\n${allThemeCss()}`, []);
   const list = useMemo(() => THEMES.filter((t) => (cat === 'الكل' || t.cat === cat) && (!q.trim() || `${t.name} ${t.desc} ${t.cat}`.includes(q.trim()))), [q, cat]);
   return (
@@ -82,14 +75,14 @@ export default function ThemePicker({ value, onPick }) {
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 12 }}>
-        {list.map((t) => {
+        {list.map((t, i) => {
           const act = value === t.id;
           return (
             <button
               key={t.id} type="button" onClick={() => onPick(t)}
-              style={{ contentVisibility: 'auto', containIntrinsicSize: '280px', textAlign: 'start', padding: 8, borderRadius: 16, cursor: 'pointer', background: 'var(--card, #fff)', border: act ? '2.5px solid #0a7f86' : '1.5px solid rgba(0,0,0,.1)', boxShadow: act ? '0 0 0 4px rgba(10,127,134,.15)' : 'none' }}
+              style={{ textAlign: 'start', padding: 8, borderRadius: 16, cursor: 'pointer', background: 'var(--card, #fff)', border: act ? '2.5px solid #0a7f86' : '1.5px solid rgba(0,0,0,.1)', boxShadow: act ? '0 0 0 4px rgba(10,127,134,.15)' : 'none' }}
             >
-              <div style={{ height: 200, overflow: 'hidden', borderRadius: 10, background: t.bg }}><LazyMini t={t} /></div>
+              <div style={{ height: 200, overflow: 'hidden', borderRadius: 10, background: t.bg }}>{i < shown ? <Mini t={t} /> : null}</div>
               <b style={{ display: 'block', marginTop: 8 }}>{act ? '✓ ' : ''}{t.name}</b>
               <small className="mut" style={{ display: 'block' }}>{t.desc} · {t.cat}</small>
             </button>
