@@ -1,5 +1,5 @@
 'use client';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { SHOP_CSS } from '../shop/style';
 import { THEMES } from '../../lib/storeKit';
 import { THEME_CATS, allThemeCss, FONTS_ALL } from '../../lib/themes100';
@@ -11,6 +11,20 @@ const onColor = (hex) => {
   const [r, g, b] = [0, 2, 4].map((i) => parseInt(f.slice(i, i + 2), 16));
   return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? '#111111' : '#ffffff';
 };
+
+/* بيرسم المعاينة بس لما الكارت يظهر في الشاشة (بدل رسم 100 معاينة مرة واحدة) */
+function LazyMini({ t }) {
+  const ref = useRef(null);
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') { setOn(true); return undefined; }
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setOn(true); io.disconnect(); } }, { rootMargin: '300px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return <div ref={ref} style={{ height: 200 }}>{on ? <Mini t={t} /> : null}</div>;
+}
 
 function Mini({ t }) {
   const style = {
@@ -73,9 +87,9 @@ export default function ThemePicker({ value, onPick }) {
           return (
             <button
               key={t.id} type="button" onClick={() => onPick(t)}
-              style={{ textAlign: 'start', padding: 8, borderRadius: 16, cursor: 'pointer', background: 'var(--card, #fff)', border: act ? '2.5px solid #0a7f86' : '1.5px solid rgba(0,0,0,.1)', boxShadow: act ? '0 0 0 4px rgba(10,127,134,.15)' : 'none' }}
+              style={{ contentVisibility: 'auto', containIntrinsicSize: '280px', textAlign: 'start', padding: 8, borderRadius: 16, cursor: 'pointer', background: 'var(--card, #fff)', border: act ? '2.5px solid #0a7f86' : '1.5px solid rgba(0,0,0,.1)', boxShadow: act ? '0 0 0 4px rgba(10,127,134,.15)' : 'none' }}
             >
-              <div style={{ height: 200, overflow: 'hidden', borderRadius: 10, background: t.bg }}><Mini t={t} /></div>
+              <div style={{ height: 200, overflow: 'hidden', borderRadius: 10, background: t.bg }}><LazyMini t={t} /></div>
               <b style={{ display: 'block', marginTop: 8 }}>{act ? '✓ ' : ''}{t.name}</b>
               <small className="mut" style={{ display: 'block' }}>{t.desc} · {t.cat}</small>
             </button>
