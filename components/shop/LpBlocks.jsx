@@ -4,7 +4,12 @@ import { STYLE_DEFAULT, SECTION_DEFS } from '../../lib/lpSections';
 import { track } from './tracker';
 import { FONTS_ALL, fontHref } from '../../lib/themes100';
 
-const toOrder = () => { track('LandingCTA', {}); document.getElementById('checkout')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+const toOrder = () => {
+  track('LandingCTA', {});
+  const el = document.getElementById('checkout');
+  if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  if (window.__spkGo) window.__spkGo(); /* صفحة مخصصة داخل فانل */
+};
 const okLink = (u) => /^(https?:\/\/|\/|#|tel:|mailto:)/i.test(String(u || '').trim());
 const hex = (v) => /^#[0-9a-fA-F]{3,8}$/.test(String(v || ''));
 

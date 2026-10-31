@@ -4,6 +4,7 @@ import { adminClient } from '../../../../lib/supabaseAdmin';
 import { getStoreBySlug, storeKey, getConfig, priceCart, takeStockForLines, orderRowItems, rateLimit, clientIp } from '../../../../lib/storeServer';
 import { normalizePhone, isValidEgPhone } from '../../../../lib/storeKit';
 import { sendCapiPurchase } from '../../../../lib/capi';
+import { getFlow } from '../../../../lib/storeData';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -95,7 +96,7 @@ export async function POST(req) {
   const token = crypto.randomBytes(16).toString('hex');
   const utm = body.utm && typeof body.utm === 'object' ? body.utm : {};
   const safeUtm = {};
-  for (const k of ['source', 'medium', 'campaign', 'content', 'ref', 'funnel']) if (utm[k]) safeUtm[k] = String(utm[k]).slice(0, 80);
+  for (const k of ['source', 'medium', 'campaign', 'content', 'ref', 'funnel', 'flow']) if (utm[k]) safeUtm[k] = String(utm[k]).slice(0, 80);
 
   const row = {
     store_id: sid, customer_name: name, customer_phone: phone, phone2: phone2 || null, email: email || null,
@@ -117,6 +118,21 @@ export async function POST(req) {
     sb.from('abandoned_carts').update({ recovered: true, updated_at: new Date().toISOString() }).eq('store_id', sid).eq('phone', phone),
     sb.rpc('bump_store_stat', { p_store: sid, p_visits: 0, p_carts: 0, p_checkouts: 0, p_cross: priced.lines.some((l) => l.bump) ? 1 : 0 }),
   ]);
+
+  /* إحصائيات الشراء لكل منتج */
+  try {
+    for (const l of priced.lines) await sb.rpc('bump_product_stat', { p_store: String(sid), p_product: String(l.product_id), p_views: 0, p_carts: 0, p_checkouts: 0, p_purchases: 1, p_units: l.qty, p_revenue: l.line_total });
+  } catch { /* لا نوقف الطلب */ }
+
+  /* إحصائية خطوة الطلب داخل الفانل الكامل (لو الطلب جاي من فانل) */
+  try {
+    const fl = body.flow && typeof body.flow === 'object' ? body.flow : null;
+    if (fl && fl.slug && fl.step) {
+      const flow = await getFlow(sb, sid, String(fl.slug));
+      const st = flow?.steps.find((x) => x.id === String(fl.step) && x.type === 'landing');
+      if (st) await sb.rpc('bump_flow_step', { p_store: String(sid), p_flow: flow.id, p_step: st.id, p_view: 0, p_pass: 1, p_decline: 0, p_revenue: priced.total });
+    }
+  } catch { /* لا نوقف الطلب */ }
 
   const eventId = `order-${created.order_no}`;
   try {

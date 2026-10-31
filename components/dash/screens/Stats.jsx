@@ -44,6 +44,7 @@ export function StatsScreen() {
 
     const sales = sum(salesS);
     const count = live.length;
+    const buyers = new Set(live.map((o) => String(o.customer_phone || o.id))).size;
     const visits = sum(visitsS);
     const carts = sum(cartsS);
     const checkouts = sum(checkoutsS);
@@ -69,7 +70,7 @@ export function StatsScreen() {
     const topSrc = Object.entries(srcMap).sort((a, b) => b[1] - a[1])[0];
     const risky = orders.rows.filter((o) => (o.status || 'pending') === 'pending' && Number(o.risk_score) >= 40).length;
 
-    return { labels, salesS, countS, aovS, visitsS, cartsS, checkoutsS, crossS, sales, count, visits, carts, checkouts, cross, lost, profit, pendingNow, top, topGov, topSrc, risky, aov: count ? sales / count : 0 };
+    return { labels, salesS, countS, aovS, visitsS, cartsS, checkoutsS, crossS, sales, count, buyers, visits, carts, checkouts, cross, lost, profit, pendingNow, top, topGov, topSrc, risky, aov: count ? sales / count : 0 };
   }, [orders.rows, daily.rows, aband.rows, spend.rows, r.key, r.from, cfg.shipping.courier_cost]);
 
   const low = products.rows.filter((p) => p.track_stock !== false && (Number(p.stock_quantity) || 0) <= 5 && p.status !== 'archived').slice(0, 6);
@@ -112,6 +113,7 @@ export function StatsScreen() {
         <K label="متوسط سعر الطلب" value={money(d.aov, cur)} spark={d.aovS} />
         <K label="مرات إضافة للسلة" value={fmtN(d.carts)} spark={d.cartsS} />
         <K label="مرات بدء الشراء" value={fmtN(d.checkouts)} spark={d.checkoutsS} />
+        <K label="شراء" value={`${fmtN(d.buyers)} مشتري`} color="#2f855a" hint="عدد العملاء اللي اشتروا فعلاً" />
         <K label="إضافة كروس سيل" value={fmtN(d.cross)} spark={d.crossS} />
         <K label="معدل التحويل" value={`${pct(d.count, d.visits)}%`} hint="الطلبات ÷ الزيارات" />
         <K label="طلبات جديدة" value={`${fmtN(d.pendingNow)} طلب`} color="#b7791f" hint="بانتظار التأكيد" />
@@ -149,7 +151,7 @@ export function StatsScreen() {
             { label: 'زيارات', value: d.visits },
             { label: 'إضافة للسلة', value: d.carts },
             { label: 'بدء الشراء', value: d.checkouts, color: '#e08f4f' },
-            { label: 'طلبات', value: d.count, color: '#2f855a' },
+            { label: 'شراء', value: d.buyers, color: '#2f855a' },
           ]} />
           <div className="pls" style={{ marginTop: 10 }}><p>معدل التحويل</p><b className="num">{pct(d.count, d.visits)}%</b></div>
           <div className="pls"><p>معدل الضغط على الشراء</p><b className="num">{pct(d.checkouts, d.visits)}%</b></div>

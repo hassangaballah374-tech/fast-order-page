@@ -18,6 +18,7 @@ export const MENU = [
   {
     g: 'products', t: 'المنتجات', i: '🏷️', items: [
       { id: 'products', t: 'كل المنتجات' },
+      { id: 'product_stats', t: 'إحصائيات المنتج', badge: 'جديد' },
       { id: 'inventory', t: 'المخزون', spike: true },
       { id: 'flash', t: 'عروض الفلاش', spike: true, badge: 'سبايك' },
       { id: 'categories', t: 'الأقسام' },

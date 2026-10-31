@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useShop, hit } from './StoreContext';
+import { fireInitiateCheckout } from './icGuard';
 import { track } from './tracker';
 import { useFavs, pushViewed, readViewed } from './favs'; 
 import Checkout from './Checkout';
@@ -73,6 +74,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
 
   useEffect(() => {
     track('ViewContent', { value: price, items: [{ id: p.id, title: p.title, price, qty: 1 }] });
+    hit(slug, 'pview', { product: String(p.id) });
     const t = setTimeout(() => track('Time30', {}), 30000);
     const onScroll = () => {
       const h = document.documentElement;
@@ -91,12 +93,24 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
     add({ product_id: p.id, title: p.title, image: p.images[0] || '', price, qty, options: opts });
     saveBump(bumpOn && bumpProd ? { product_id: bumpProd.id } : null);
     track('AddToCart', { value: offer.total, items: [{ id: p.id, title: p.title, price, qty }] });
-    hit(slug, 'cart');
+    hit(slug, 'cart', { product: String(p.id) });
     if (cfg.cart?.drawer === false) router.push(`${base}/cart`);
     else window.dispatchEvent(new Event('spike:cart-open'));
   };
 
   const onePage = cfg.checkout?.one_page !== false;
+
+  /* اطلب الآن: يسجّل «بدء إتمام الشراء» ثم يودّي العميل لنموذج الطلب */
+  const buyNow = () => {
+    setMsg('');
+    if (sold) return;
+    if (!optsOk) { setMsg(`اختر ${groups.filter((g) => !opts[g.name]).map((g) => g.name).join(' و ')} أولاً`); return; }
+    fireInitiateCheckout(slug, offer.total, [{ id: p.id, title: p.title, price, qty }]);
+    if (onePage) { toCheckout(); return; }
+    add({ product_id: p.id, title: p.title, image: p.images[0] || '', price, qty, options: opts });
+    saveBump(bumpOn && bumpProd ? { product_id: bumpProd.id } : null);
+    router.push(`${base}/cart`);
+  };
 
   return (
     <div className="wrap">
@@ -158,7 +172,8 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
 
           {msg ? <div className="err" style={{ marginBottom: 10 }}>{msg}</div> : null}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-   <button type="button" className="b p blk" onClick={addToCart} disabled={sold}>🛒 أضف للسلة</button>
+            <button type="button" className="b blk" onClick={addToCart} disabled={sold}>🛒 أضف للسلة</button>
+            <button type="button" className="b p blk" onClick={buyNow} disabled={sold}>⚡ اطلب الآن</button>
             {waOk ? <a className="b wa blk" target="_blank" rel="noopener noreferrer" href={waLink(wa, `استفسار عن: ${p.title}`)} onClick={() => track('Contact', {})}>💬 اسأل على واتساب</a> : null}
           </div>
 
@@ -204,7 +219,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
       {!sold && (
         <div className="stk">
           <b className="num">{money(offer.total, cur)}</b>
-          <button type="button" className="b p" onClick={onePage ? (optsOk ? toCheckout : addToCart) : addToCart}>{onePage ? 'اطلب الآن' : 'أضف للسلة'}</button>
+          <button type="button" className="b p" onClick={buyNow}>اطلب الآن</button>
         </div>
       )}
       <div style={{ height: 70 }} className="stk-sp" />
