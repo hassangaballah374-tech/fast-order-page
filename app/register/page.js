@@ -272,7 +272,7 @@ export default function SpikeRegisterAndAuthPage() {
       className={`min-h-screen font-sans flex flex-col justify-between selection:bg-[var(--ac)] selection:text-white transition-colors duration-200 overflow-x-hidden ${isDark ? 'text-slate-100' : 'text-slate-800'}`}
       dir={isAr ? 'rtl' : 'ltr'}
     >
-      <style>{RG_CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: RG_CSS }} />
 
       {/* خلفية متحركة */}
       <div className="rg-aurora" aria-hidden="true">
