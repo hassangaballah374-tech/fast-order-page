@@ -2240,9 +2240,8 @@ export default function SpikeSuperAdminDashboard() {
           .spike-dashboard div[class*='max-w-md'],
           .spike-dashboard div[class*='max-w-3xl'] { padding: 20px; }
         }
-        @media (prefers-reduced-motion: reduce) {
-          .spike-dashboard * { animation: none !important; transition: none !important; }
-        }
+        /* لوحة الأدمن بدون أي حركات أو انتقالات (أسرع)، ما عدا مؤشرات التحميل */
+        .spike-dashboard *:not([class*='animate-']) { animation: none !important; transition: none !important; }
       `}</style>
     </div>
   );
