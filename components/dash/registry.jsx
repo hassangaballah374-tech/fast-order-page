@@ -38,6 +38,7 @@ const base = {
   newsletter: L(O, 'NewsletterScreen'),
 
   products: L(P, 'ProductsScreen'),
+  product_stats: L(() => import('./screens/ProductStats'), 'ProductStatsScreen'),
   inventory: L(P, 'InventoryScreen'),
   flash: L(P, 'FlashScreen'),
   categories: L(P, 'CategoriesScreen'),
