@@ -39,14 +39,14 @@ export function ProductStatsScreen() {
         if (String(i.product_id) === sel) lines.push({ at: o.created_at, phone: String(o.customer_phone || o.id), qty: Number(i.qty) || 1, total: Number(i.line_total ?? (Number(i.price) || 0) * (Number(i.qty) || 1)) });
       });
     });
-    const viewsS = ser('views'); const cartsS = ser('carts'); const checkoutsS = ser('checkouts');
+    const viewsS = ser('views'); const cartsS = ser('carts'); const checkoutsS = ser('checkouts'); const trackedBuys = sum(ser('purchases'));
     const buyS = bucketByDay(lines, days, (l) => l.at, () => 1);
     const revS = bucketByDay(lines, days, (l) => l.at, (l) => l.total);
     const views = sum(viewsS); const carts = sum(cartsS); const checkouts = sum(checkoutsS);
     const buyers = new Set(lines.map((l) => l.phone)).size;
     const units = sum(lines.map((l) => l.qty));
     const rev = sum(revS);
-    return { labels, viewsS, cartsS, checkoutsS, buyS, revS, views, carts, checkouts, buyers, orders: lines.length, units, rev };
+    return { labels, viewsS, cartsS, checkoutsS, buyS, revS, views, carts, checkouts, buyers, trackedBuys, orders: lines.length, units, rev };
   }, [stats.rows, orders.rows, sel, r.key, r.from]);
 
   const K = ({ label, value, spark, color, hint }) => (
@@ -75,8 +75,8 @@ export function ProductStatsScreen() {
         <K label="شراء" value={`${fmtN(d.buyers)} مشتري`} color="#2f855a" spark={d.buyS} hint="عدد العملاء اللي اشتروا المنتج" />
         <K label="القطع المباعة" value={fmtN(d.units)} />
         <K label="إيراد المنتج" value={money(d.rev, cur)} color="var(--b)" spark={d.revS} />
-        <K label="معدل التحويل" value={`${pct(d.orders, d.views)}%`} hint="الطلبات ÷ المشاهدات" />
-        <K label="من السلة للشراء" value={`${pct(d.orders, d.carts)}%`} />
+        <K label="معدل التحويل" value={`${Math.min(100, pct(d.trackedBuys, d.views))}%`} hint="مشتريات متسجلة ÷ المشاهدات (من بداية التتبع)" />
+        <K label="من السلة للشراء" value={`${Math.min(100, pct(d.trackedBuys, d.carts))}%`} hint="من بداية التتبع" />
       </div>
 
       <div className="grid2">
