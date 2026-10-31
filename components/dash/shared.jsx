@@ -8,34 +8,58 @@ import { STATUS, waLink, fillTemplate, money, dayKey } from '../../lib/storeKit'
 /* ---------- نطاق التاريخ ---------- */
 export const RANGES = [['today', 'اليوم', 1], ['7', 'آخر 7 أيام', 7], ['30', 'آخر 30 يوم', 30], ['90', 'آخر 90 يوم', 90], ['all', 'الكل', 0]];
 
+const parseD = (v) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(String(v || ''))) return null; const [y, m, d] = v.split('-').map(Number); const x = new Date(y, m - 1, d); return Number.isNaN(x.getTime()) ? null : x; };
+
 export function useRange(initial = '30') {
   const [key, setKey] = useState(initial);
-  const days = (RANGES.find((r) => r[0] === key) || RANGES[2])[2];
+  const [cFrom, setCFrom] = useState('');
+  const [cTo, setCTo] = useState('');
+  const days0 = (RANGES.find((r) => r[0] === key) || RANGES[2])[2];
+  const custom = key === 'custom';
+  const cf = parseD(cFrom);
+  const ct = parseD(cTo);
+  const valid = custom && cf && ct && cf <= ct;
   const from = useMemo(() => {
-    if (!days) return null;
+    if (custom && valid) return cf;
+    if (!days0) return null;
     const d = new Date();
     d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - (days - 1));
+    d.setDate(d.getDate() - (days0 - 1));
     return d;
-  }, [days]);
-  return { key, setKey, days, from };
+  }, [days0, custom, valid, cFrom]);
+  const to = useMemo(() => {
+    if (!valid) return null;
+    const d = new Date(ct);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }, [valid, cTo]);
+  const days = valid ? Math.min(366, Math.round((ct - cf) / 86400000) + 1) : days0;
+  return { key, setKey, days, from, to, custom, cFrom, cTo, setCFrom, setCTo, valid };
 }
 
-export function RangeBar({ r }) {
+export function RangeBar({ r, custom = false }) {
   return (
-    <div className="chips">
+    <div className="chips" style={{ alignItems: 'center' }}>
       {RANGES.map(([k, t]) => <button key={k} type="button" className={'chip' + (r.key === k ? ' act' : '')} onClick={() => r.setKey(k)}>{t}</button>)}
+      {custom && <button type="button" className={'chip' + (r.key === 'custom' ? ' act' : '')} onClick={() => r.setKey('custom')}>📅 تاريخ محدد</button>}
+      {custom && r.key === 'custom' && (
+        <>
+          <input type="date" className="in" style={{ width: 'auto' }} value={r.cFrom} max={r.cTo || undefined} onChange={(e) => r.setCFrom(e.target.value)} aria-label="من تاريخ" />
+          <span className="mut">إلى</span>
+          <input type="date" className="in" style={{ width: 'auto' }} value={r.cTo} min={r.cFrom || undefined} onChange={(e) => r.setCTo(e.target.value)} aria-label="إلى تاريخ" />
+        </>
+      )}
     </div>
   );
 }
 
-export const inRange = (d, from) => !from || (d && new Date(d) >= from);
+export const inRange = (d, from, to) => !from ? (!to || (d && new Date(d) <= to)) : (d && new Date(d) >= from && (!to || new Date(d) <= to));
 
 /* أيام النطاق كمصفوفة (للرسوم). لو "الكل" نعرض آخر 60 يوم */
 export function rangeDays(r) {
   const n = r.days || 60;
   return Array.from({ length: n }, (_, i) => {
-    const d = new Date();
+    const d = r.to ? new Date(r.to) : new Date();
     d.setHours(0, 0, 0, 0);
     d.setDate(d.getDate() - (n - 1 - i));
     return d;

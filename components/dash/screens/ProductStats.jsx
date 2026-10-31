@@ -5,13 +5,14 @@ import { useTable } from '../hooks';
 import { Spark, Area, Bars, Funnel, fmtN } from '../charts';
 import { useOrders, useRange, RangeBar, inRange, rangeDays, dayLabel, bucketByDay, isLive } from '../shared';
 import { money, dayKey } from '../../../lib/storeKit';
+import PurgeStats from '../PurgeStats';
 
 const sum = (a) => a.reduce((x, y) => x + y, 0);
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 1000) / 10 : 0);
 
 /* إحصائيات منتج واحد: زي لوحة المتجر بس للمنتج المختار */
 export function ProductStatsScreen() {
-  const { cur } = useDash();
+  const { cur, uid } = useDash();
   const r = useRange('30');
   const products = useTable('products', { order: 'created_at', limit: 3000 });
   const stats = useTable('store_product_stats', { order: 'day', asc: true, limit: 5000 });
@@ -25,16 +26,17 @@ export function ProductStatsScreen() {
     const days = rangeDays(r);
     const labels = days.map(dayLabel);
     const fromKey = r.from ? dayKey(r.from) : '';
+    const toKey = r.to ? dayKey(r.to) : '';
     const dmap = {};
     stats.rows.forEach((x) => {
       if (String(x.product_id) !== sel) return;
       const k = String(x.day).slice(0, 10);
-      if (fromKey && k < fromKey) return;
+      if ((fromKey && k < fromKey) || (toKey && k > toKey)) return;
       dmap[k] = x;
     });
     const ser = (k) => days.map((x) => Number(dmap[dayKey(x)]?.[k]) || 0);
     const lines = [];
-    orders.rows.filter((o) => isLive(o) && inRange(o.created_at, r.from)).forEach((o) => {
+    orders.rows.filter((o) => isLive(o) && inRange(o.created_at, r.from, r.to)).forEach((o) => {
       (Array.isArray(o.items) ? o.items : []).forEach((i) => {
         if (String(i.product_id) === sel) lines.push({ at: o.created_at, phone: String(o.customer_phone || o.id), qty: Number(i.qty) || 1, total: Number(i.line_total ?? (Number(i.price) || 0) * (Number(i.qty) || 1)) });
       });
@@ -47,7 +49,7 @@ export function ProductStatsScreen() {
     const units = sum(lines.map((l) => l.qty));
     const rev = sum(revS);
     return { labels, viewsS, cartsS, checkoutsS, buyS, revS, views, carts, checkouts, buyers, trackedBuys, orders: lines.length, units, rev };
-  }, [stats.rows, orders.rows, sel, r.key, r.from]);
+  }, [stats.rows, orders.rows, sel, r.key, r.from, r.to]);
 
   const K = ({ label, value, spark, color, hint }) => (
     <Stat label={label} value={loading ? '-' : value} color={color} hint={hint}>
@@ -59,7 +61,7 @@ export function ProductStatsScreen() {
 
   return (
     <>
-      <PageHead title="إحصائيات المنتج" sub="نفس أرقام المتجر لكن لمنتج واحد"><RangeBar r={r} /></PageHead>
+      <PageHead title="إحصائيات المنتج" sub="نفس أرقام المتجر لكن لمنتج واحد"><RangeBar r={r} custom /></PageHead>
       {stats.err && <div className="card errbox">⚠️ {stats.err}<br /><small>شغّل ملف sql/product_stats.sql في Supabase ثم أعد تحميل الصفحة.</small></div>}
       <div className="card" style={{ marginBottom: 16 }}>
         <select className="in" value={sel} onChange={(e) => setPid(e.target.value)}>
@@ -67,6 +69,8 @@ export function ProductStatsScreen() {
         </select>
         {prod && <small className="mut" style={{ display: 'block', marginTop: 6 }}>السعر: {money(Number(prod.price) || 0, cur)}</small>}
       </div>
+
+      <PurgeStats uid={uid} table="store_product_stats" match={sel ? { product_id: sel } : null} label={`إحصائيات «${prod?.title || 'المنتج'}»`} onDone={stats.reload} />
 
       <div className="grid3 kpis">
         <K label="مشاهدات المنتج" value={`${fmtN(d.views)} مشاهدة`} spark={d.viewsS} />
