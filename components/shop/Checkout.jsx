@@ -3,13 +3,14 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useShop, getUtm, hit } from './StoreContext';
 import { track } from './tracker';
+import { fireInitiateCheckout } from './icGuard';
 import { GOVERNORATES, money, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 const ss = (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch { /* تجاهل */ } };
 
 /* نموذج الطلب المشترك (صفحة المنتج، السلة، الفانيل).
    items: [{product_id,title,image,price,qty,options}]، bump: {product_id}|null */
-export default function Checkout({ items, bump, buttonText, onSuccess, funnel, title = 'بيانات الشحن' }) {
+export default function Checkout({ items, bump, buttonText, onSuccess, funnel, title = 'بيانات الشحن', next, flow }) {
   const { slug, cfg, cur, zones, base, live } = useShop();
   const router = useRouter();
   const co = cfg.checkout || {};
@@ -50,8 +51,7 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
   const onFocus = () => {
     if (started.current || !items.length) return;
     started.current = true;
-    track('InitiateCheckout', { value: q?.total || 0, items: items.map((i) => ({ id: i.product_id, title: i.title, price: i.price, qty: i.qty })) });
-    hit(slug, 'checkout');
+    fireInitiateCheckout(slug, q?.total || 0, items.map((i) => ({ id: i.product_id, title: i.title, price: i.price, qty: i.qty })));
   };
 
   const saveAbandoned = () => {
@@ -83,14 +83,14 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug, customer: f, items: items.map((i) => ({ product_id: i.product_id, qty: i.qty, options: i.options })),
-          bump: bump || undefined, coupon: appliedCode || undefined, utm: { ...getUtm(slug), ...(funnel ? { funnel } : {}) }, hp, t: Math.round((Date.now() - t0.current) / 1000),
+          bump: bump || undefined, coupon: appliedCode || undefined, utm: { ...getUtm(slug), ...(funnel ? { funnel } : {}), ...(flow ? { flow: flow.slug } : {}) }, flow: flow || undefined, hp, t: Math.round((Date.now() - t0.current) / 1000),
         }),
       });
       const j = await r.json();
       if (!j.ok) { setErr(j.error || 'تعذر إرسال الطلب، حاول مرة أخرى'); setBusy(false); return; }
       ss(`spike_last_${slug}`, { held: !!j.held, hold_until: j.hold_until || null, order_no: j.order_no, token: j.token, total: j.total, event_id: j.event_id, name: f.name, phone: f.phone, items: items.map((i) => ({ id: i.product_id, title: i.title, price: i.price, qty: i.qty })) });
       if (onSuccess) onSuccess(j);
-      router.push(`${base}/thank-you`);
+      router.push(next || `${base}/thank-you`);
     } catch { setErr('تعذر الاتصال، حاول مرة أخرى'); setBusy(false); }
   };
 
