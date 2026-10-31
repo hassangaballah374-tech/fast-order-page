@@ -24,7 +24,10 @@ export async function POST(req) {
   /* إحصائيات كل منتج على حدة */
   const pids = (Array.isArray(body.products) ? body.products : [body.product]).filter((x) => /^[A-Za-z0-9_-]{1,64}$/.test(String(x || ''))).slice(0, 10);
   const pe = { pview: [1, 0, 0], cart: [0, 1, 0], checkout: [0, 0, 1] }[body.event];
-  if (pe) for (const pid of pids) await sb.rpc('bump_product_stat', { p_store: sid, p_product: String(pid), p_views: pe[0], p_carts: pe[1], p_checkouts: pe[2], p_purchases: 0, p_units: 0, p_revenue: 0 });
+  if (pe) for (const pid of pids) {
+    const { error } = await sb.rpc('bump_product_stat', { p_store: sid, p_product: String(pid), p_views: pe[0], p_carts: pe[1], p_checkouts: pe[2], p_purchases: 0, p_units: 0, p_revenue: 0 });
+    if (error) console.error('PRODUCT_STAT_ERROR', error.message);
+  }
   if (body.event === 'visit' && body.ref && /^[A-Za-z0-9_-]{2,40}$/.test(String(body.ref))) {
     await sb.rpc('bump_referral', { p_store: sid, p_code: String(body.ref) });
   }
