@@ -25,7 +25,7 @@ export const DASH_CSS = `
 .nv.act{background:var(--b);color:#fff}
 .nv .ic{width:22px;text-align:center;flex:none;font-size:16px}
 .nv .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.nv .chev{font-size:11px;opacity:.55;transition:transform .15s}
+.nv .chev{font-size:11px;opacity:.55;transition:transform .08s}
 .nv.open .chev{transform:rotate(180deg)}
 .nvsub{display:flex;flex-direction:column;gap:1px;margin:2px 0 6px;margin-inline-start:22px;padding-inline-start:10px;border-inline-start:2px solid var(--ln)}
 .nvsub .nv{min-height:36px;font-weight:600;font-size:13px;color:#3c4f53}
@@ -171,7 +171,7 @@ select.in{padding-inline-end:8px}
 /* ---------- نوافذ ---------- */
 .ov{position:fixed;inset:0;z-index:60;background:rgba(5,35,38,.55);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px}
 .ov.topv{align-items:start;padding-top:12vh}
-.mod{width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;background:var(--s);border:1px solid var(--ln);border-radius:24px;box-shadow:0 30px 80px -20px rgba(3,30,33,.55);animation:pop .18s ease-out}
+.mod{width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;background:var(--s);border:1px solid var(--ln);border-radius:24px;box-shadow:0 30px 80px -20px rgba(3,30,33,.55);animation:pop .1s ease-out}
 .mod.wide{max-width:860px}
 .mh{display:flex;justify-content:space-between;align-items:center;padding:18px 22px 6px}
 .mh b{font-size:16px}
@@ -198,7 +198,7 @@ select.in{padding-inline-end:8px}
   .grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr}
 }
 @media(max-width:900px){
-  .side{position:fixed;top:0;bottom:0;inset-inline-start:0;transform:translateX(100%);transition:transform .2s;box-shadow:0 0 40px rgba(0,0,0,.25)}
+  .side{position:fixed;top:0;bottom:0;inset-inline-start:0;transform:translateX(100%);transition:transform .12s;box-shadow:0 0 40px rgba(0,0,0,.25)}
   [dir=ltr] .side{transform:translateX(-100%)}
   .side.open{transform:none!important}
   .scrim.on{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:35}
@@ -208,7 +208,8 @@ select.in{padding-inline-end:8px}
   .pg,.top{padding-inline:14px}
 }
 @media(max-width:560px){.grid4{grid-template-columns:1fr 1fr}.kpi b{font-size:20px}}
-@media(prefers-reduced-motion:reduce){.app *{animation:none!important;transition:none!important}}
+/* لوحة التاجر بدون أي حركات أو انتقالات (أسرع)، ما عدا مؤشر التحميل */
+.app *:not(.spin){animation:none!important;transition:none!important}
 @media print{.side,.top,.phr,.bulk,.acts,.toast{display:none!important}.app{display:block;background:#fff}.pg{padding:0}}
 @media(max-width:900px){.grid3.kpis,.grid4.kpis{grid-template-columns:1fr 1fr;gap:10px}}
 @media(max-width:560px){.kpis .kpi{padding:12px 12px 10px;border-radius:16px}.kpis .kpi small{display:block;font-size:11.5px;line-height:1.3}.kpis .kpi b{font-size:18px;margin:3px 0}.kpis .kpi .hint{font-size:10.5px;line-height:1.3}.kpis .spark{height:26px}}
