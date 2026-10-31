@@ -659,7 +659,7 @@ export default function SpikeSuperAdminDashboard() {
   return (
     <div
       data-theme={isDark ? 'dark' : 'light'}
-      className={`spike-dashboard min-h-screen font-sans flex relative overflow-x-hidden transition-colors duration-200 ${
+      className={`spike-dashboard min-h-screen font-sans flex relative overflow-x-clip ${
         isDark ? 'bg-[#0B132B] text-slate-100' : 'bg-[#F4F6F9] text-slate-800'
       }`}
       dir={isAr ? 'rtl' : 'ltr'}
@@ -672,7 +672,7 @@ export default function SpikeSuperAdminDashboard() {
       )}
 
       {/* الشريط الجانبي الذكي */}
-      <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-transform duration-150 ease-out lg:static lg:z-10 lg:translate-x-0 ${
+      <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-transform duration-150 ease-out lg:sticky lg:top-0 lg:bottom-auto lg:h-screen lg:self-start lg:z-10 lg:translate-x-0 ${
         sidebarOpen
           ? 'translate-x-0 shadow-2xl'
           : isAr ? 'translate-x-full' : '-translate-x-full'

@@ -18,7 +18,7 @@ function ThemePreview({ d }) {
   const color = d.color || th.color;
   const r = Number(d.radius) || th.radius;
   return (
-    <div style={{ background: th.bg, color: th.ink, borderRadius: 18, padding: 12, fontFamily: `'${d.font || 'Cairo'}', sans-serif`, border: `1px solid ${th.ln}` }}>
+    <div style={{ maxWidth: '100%', overflow: 'hidden', background: th.bg, color: th.ink, borderRadius: 18, padding: 12, fontFamily: `'${d.font || 'Cairo'}', sans-serif`, border: `1px solid ${th.ln}` }}>
       {d.announcement && <div style={{ background: color, color: '#fff', textAlign: 'center', fontSize: 12, padding: '6px 8px', borderRadius: 8, marginBottom: 8 }}>{d.announcement}</div>}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
         {d.logo ? <img src={d.logo} alt="" style={{ width: 30, height: 30, borderRadius: 8, objectFit: 'cover' }} /> : <span style={{ width: 30, height: 30, borderRadius: 8, background: color, display: 'inline-block' }} />}

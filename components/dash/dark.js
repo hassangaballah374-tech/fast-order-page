@@ -1,6 +1,6 @@
 /* الوضع الداكن للوحة التاجر: يعيد تعريف متغيرات الألوان فقط عند وجود الكلاس dk */
 export const DARK_CSS = `
-.app.dk{--b:#2bb3bb;--b2:#7fdde2;--or:#f0a468;--bg:#0b1315;--s:#122024;--s2:#18292e;--ln:#26393f;--ink:#e6f0f1;--mut:#8fa6aa;--ok:#48bb78;--bad:#fc8181;--warn:#ecc94b;
+.app.dk{--b:#2bb3bb;--b2:#7fdde2;--or:#f0a468;--bg:#16262a;--s:#1d3237;--s2:#264046;--ln:#3a565d;--ink:#f1f7f8;--mut:#a9c0c4;--ok:#48bb78;--bad:#fc8181;--warn:#ecc94b;
   background:radial-gradient(1000px 420px at 100% -10%,rgba(43,179,187,.10),transparent 60%),radial-gradient(800px 380px at 0% 110%,rgba(240,164,104,.08),transparent 60%),var(--bg)}
 .app.dk .card{box-shadow:0 10px 30px -16px rgba(0,0,0,.6)}
 .app.dk .nv.act,.app.dk .btn.p{color:#04272a}
