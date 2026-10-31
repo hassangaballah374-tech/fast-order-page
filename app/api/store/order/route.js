@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { adminClient } from '../../../../lib/supabaseAdmin';
 import { getStoreBySlug, storeKey, getConfig, priceCart, takeStockForLines, orderRowItems, rateLimit, clientIp } from '../../../../lib/storeServer';
 import { normalizePhone, isValidEgPhone } from '../../../../lib/storeKit';
+import { runAfter } from '../../../../lib/after';
 import { sendCapiPurchase } from '../../../../lib/capi';
 import { getFlow } from '../../../../lib/storeData';
 
@@ -135,14 +136,12 @@ export async function POST(req) {
   } catch { /* لا نوقف الطلب */ }
 
   const eventId = `order-${created.order_no}`;
-  try {
-    await sendCapiPurchase(sb, sid, {
-      order: { ...row },
-      ip, ua: req.headers.get('user-agent') || '',
-      url: `${new URL(req.url).origin}/shop/${store.store_slug}/thank-you`,
-      eventId,
-    });
-  } catch { /* لا نوقف الطلب */ }
+  await runAfter(sendCapiPurchase(sb, sid, {
+    order: { ...row },
+    ip, ua: req.headers.get('user-agent') || '',
+    url: `${new URL(req.url).origin}/shop/${store.store_slug}/thank-you`,
+    eventId,
+  }));
 
   return NextResponse.json({ ok: true, order_no: created.order_no, token: created.public_token, total: priced.total, event_id: eventId, held: !!heldUntil, hold_until: heldUntil });
 }

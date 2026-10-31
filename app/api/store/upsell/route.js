@@ -4,6 +4,7 @@ import { getStoreBySlug, storeKey, getConfig, takeStockForLines, restoreStockFor
 import { getFlow } from '../../../../lib/storeData';
 import { effectivePrice } from '../../../../lib/storeKit';
 import { OFFER_TYPES } from '../../../../lib/flowKit';
+import { runAfter } from '../../../../lib/after';
 import { sendCapiPurchase } from '../../../../lib/capi';
 
 export const runtime = 'nodejs';
@@ -67,10 +68,10 @@ export async function POST(req) {
 
   const eventId = `order-${res.order_no}-${step.id}`;
   await sb.rpc('bump_flow_step', { p_store: String(sid), p_flow: flow.id, p_step: step.id, p_view: 0, p_pass: 1, p_decline: 0, p_revenue: lineTotal });
-  try {
+  await runAfter((async () => {
     const { data: o } = await sb.from('orders').select('customer_name, customer_phone').eq('store_id', sid).eq('public_token', token).maybeSingle();
     if (o) await sendCapiPurchase(sb, sid, { order: { ...o, total_price: lineTotal, items: [item] }, ip, ua: req.headers.get('user-agent') || '', url: `${new URL(req.url).origin}/shop/${store.store_slug}/thank-you`, eventId });
-  } catch { /* لا نوقف الإضافة */ }
+  })());
 
   return NextResponse.json({ ok: true, order_no: res.order_no, total: res.total, added: lineTotal, event_id: eventId, item: { id: item.product_id, title: item.title, price: unit, qty, line_total: lineTotal } });
 }

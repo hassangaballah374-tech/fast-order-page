@@ -25,9 +25,9 @@ export const DASH_CSS = `
 .nv.act{background:var(--b);color:#fff}
 .nv .ic{width:22px;text-align:center;flex:none;font-size:16px}
 .nv .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.nv .chev{font-size:11px;opacity:.55;transition:transform .15s}
+.nv .chev{font-size:11px;opacity:.55;transition:transform .08s}
 .nv.open .chev{transform:rotate(180deg)}
-.nvsub{display:flex;flex-direction:column;gap:1px;margin:2px 0 6px;margin-inline-start:22px;padding-inline-start:10px;border-inline-start:2px solid var(--ln)}
+.nvsub{animation:nvIn .1s ease-out;display:flex;flex-direction:column;gap:1px;margin:2px 0 6px;margin-inline-start:22px;padding-inline-start:10px;border-inline-start:2px solid var(--ln)}
 .nvsub .nv{min-height:36px;font-weight:600;font-size:13px;color:#3c4f53}
 .nvsub .nv.act{color:#fff}
 .nvh{margin:14px 12px 4px;color:var(--mut);font-size:11.5px;font-weight:800}
@@ -171,13 +171,14 @@ select.in{padding-inline-end:8px}
 /* ---------- نوافذ ---------- */
 .ov{position:fixed;inset:0;z-index:60;background:rgba(5,35,38,.55);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px}
 .ov.topv{align-items:start;padding-top:12vh}
-.mod{width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;background:var(--s);border:1px solid var(--ln);border-radius:24px;box-shadow:0 30px 80px -20px rgba(3,30,33,.55);animation:pop .18s ease-out}
+.mod{width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;background:var(--s);border:1px solid var(--ln);border-radius:24px;box-shadow:0 30px 80px -20px rgba(3,30,33,.55);animation:pop .1s ease-out}
 .mod.wide{max-width:860px}
 .mh{display:flex;justify-content:space-between;align-items:center;padding:18px 22px 6px}
 .mh b{font-size:16px}
 .mb{padding:10px 22px 14px;overflow:auto;flex:1}
 .mf{display:flex;gap:8px;justify-content:flex-end;padding:12px 22px 18px;border-top:1px solid var(--ln)}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:14px;font-weight:700;z-index:90;max-width:90vw;text-align:center}
+@keyframes nvIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 
 /* ---------- الرسوم ---------- */
@@ -198,7 +199,7 @@ select.in{padding-inline-end:8px}
   .grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr}
 }
 @media(max-width:900px){
-  .side{position:fixed;top:0;bottom:0;inset-inline-start:0;transform:translateX(100%);transition:transform .2s;box-shadow:0 0 40px rgba(0,0,0,.25)}
+  .side{position:fixed;top:0;bottom:0;inset-inline-start:0;transform:translateX(100%);transition:transform .12s;box-shadow:0 0 40px rgba(0,0,0,.25)}
   [dir=ltr] .side{transform:translateX(-100%)}
   .side.open{transform:none!important}
   .scrim.on{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:35}

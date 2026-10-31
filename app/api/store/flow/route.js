@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreBySlug, storeKey, rateLimit, clientIp } from '../../../../lib/storeServer';
+import { getStoreFast, storeKey, rateLimit, clientIp } from '../../../../lib/storeServer';
 import { getFlow } from '../../../../lib/storeData';
 import { OFFER_TYPES } from '../../../../lib/flowKit';
 
@@ -16,7 +16,7 @@ export async function POST(req) {
   if (!['view', 'pass', 'decline'].includes(ev)) return NextResponse.json({ ok: false }, { status: 400 });
   let sb;
   try { sb = adminClient(); } catch { return NextResponse.json({ ok: false }, { status: 500 }); }
-  const store = await getStoreBySlug(sb, body.slug);
+  const store = await getStoreFast(sb, body.slug);
   if (!store) return NextResponse.json({ ok: false }, { status: 404 });
   if (!store.live) return NextResponse.json({ ok: true, skipped: true });
   const sid = storeKey(store);

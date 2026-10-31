@@ -82,9 +82,29 @@ export function StoreProvider({ slug, name, cfg, pages, categories, zones, live 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
-/* نداءات خفيفة للـ API العام (لا تُظهر أخطاء للعميل) */
+/* نداءات خفيفة للـ API العام (لا تُظهر أخطاء للعميل).
+   الأحداث اللي بتحصل في نفس اللحظة (زيارة + مشاهدة منتج مثلاً) بتتجمع في طلب واحد */
+const hq = { list: [], slug: '', t: null };
+function flushHits() {
+  const { list, slug } = hq;
+  hq.list = []; hq.t = null;
+  if (!list.length) return;
+  try {
+    fetch('/api/store/hit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(list.length === 1 ? { slug, ...list[0] } : { slug, events: list }), keepalive: true });
+  } catch { /* تجاهل */ }
+}
 export function hit(slug, event, extra = {}) {
   try {
-    fetch('/api/store/hit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, event, ...extra }), keepalive: true });
+    if (hq.slug && hq.slug !== slug) flushHits();
+    hq.slug = slug;
+    hq.list.push({ event, ...extra });
+    if (hq.list.length >= 6) { clearTimeout(hq.t); flushHits(); return; }
+    if (!hq.t) hq.t = setTimeout(flushHits, 80);
+    if (typeof document !== 'undefined' && !hq.bound) {
+      hq.bound = true;
+      const now = () => { clearTimeout(hq.t); flushHits(); };
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') now(); });
+      window.addEventListener('pagehide', now);
+    }
   } catch { /* تجاهل */ }
 }

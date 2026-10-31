@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreBySlug, getConfig, storeKey, priceCart, rateLimit, clientIp } from '../../../../lib/storeServer';
+import { getStoreFast, getConfigFast, storeKey, priceCart, rateLimit, clientIp } from '../../../../lib/storeServer';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,9 +13,9 @@ export async function POST(req) {
 
   let sb;
   try { sb = adminClient(); } catch { return NextResponse.json({ ok: false, error: 'المتجر غير مهيأ' }, { status: 500 }); }
-  const store = await getStoreBySlug(sb, body.slug);
+  const store = await getStoreFast(sb, body.slug);
   if (!store) return NextResponse.json({ ok: false, error: 'المتجر غير متاح' }, { status: 404 });
-  const cfg = await getConfig(sb, storeKey(store));
+  const cfg = await getConfigFast(sb, storeKey(store));
 
   const priced = await priceCart(sb, store, cfg, { items: body.items, bump: body.bump, governorate: body.governorate, coupon: body.coupon });
   if (priced.errors?.length) return NextResponse.json({ ok: false, error: priced.errors[0] });

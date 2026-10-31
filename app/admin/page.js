@@ -672,7 +672,7 @@ export default function SpikeSuperAdminDashboard() {
       )}
 
       {/* الشريط الجانبي الذكي */}
-      <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-all duration-300 ease-in-out lg:static lg:z-10 lg:translate-x-0 ${
+      <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-transform duration-150 ease-out lg:static lg:z-10 lg:translate-x-0 ${
         sidebarOpen
           ? 'translate-x-0 shadow-2xl'
           : isAr ? 'translate-x-full' : '-translate-x-full'
@@ -711,7 +711,7 @@ export default function SpikeSuperAdminDashboard() {
                   setActiveTab(item.id);
                   setSidebarOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-100 cursor-pointer ${
                   isActive
                     ? 'bg-gradient-to-l from-[#00B050] to-emerald-600 text-white shadow-md shadow-[#00B050]/25 font-black'
                     : isDark
@@ -1973,7 +1973,7 @@ export default function SpikeSuperAdminDashboard() {
           border: 1px solid transparent;
           border-radius: 12px;
           cursor: pointer;
-          transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+          transition: background-color 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease, transform 0.1s ease;
         }
         .spike-dashboard button:active { transform: scale(0.97); }
         .spike-dashboard button:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -2220,7 +2220,7 @@ export default function SpikeSuperAdminDashboard() {
           border: 1px solid var(--line);
           border-radius: 24px;
           box-shadow: 0 30px 80px -20px rgba(3, 30, 33, 0.55);
-          animation: spike-pop 0.18s ease-out;
+          animation: spike-pop 0.1s ease-out;
         }
         .spike-dashboard div[class*='max-w-md'] h3,
         .spike-dashboard div[class*='max-w-3xl'] h3 { font-size: 18px; margin-bottom: 18px; }
