@@ -93,7 +93,7 @@ export default function NewOrderAlert() {
           </div>
         ))}
       </div>
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .noa-stack{position:fixed;top:70px;inset-inline-start:16px;z-index:80;display:grid;gap:8px;width:min(340px,calc(100vw - 32px));pointer-events:none}
         .noa{pointer-events:auto;display:flex;align-items:center;gap:10px;background:var(--s);color:var(--ink);border:1px solid var(--b);border-radius:16px;padding:10px 12px;box-shadow:0 18px 40px -18px rgba(6,73,78,.55);animation:noain .35s cubic-bezier(.2,.8,.2,1)}
         .noa i{font-style:normal;font-size:24px}
@@ -102,7 +102,7 @@ export default function NewOrderAlert() {
         .noa-b em{font-style:normal;font-weight:800;color:var(--b)}
         @keyframes noain{from{opacity:0;transform:translateY(-12px) scale(.96)}}
         @media(prefers-reduced-motion:reduce){.noa{animation:none}}
-      `}</style>
+      ` }} />
     </>
   );
 }

@@ -44,7 +44,7 @@ export default function TodayPanel({ orders, aband, products, go, cur, name }) {
 
   return (
     <div className="tdp">
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .tdp{position:relative;overflow:hidden;border-radius:24px;padding:22px;margin-bottom:16px;color:#fff;background:linear-gradient(135deg,#06494e 0%,#0a7f86 55%,#13a3a0 100%);box-shadow:0 22px 44px -22px rgba(6,73,78,.65)}
         .tdp::before{content:'';position:absolute;inset:auto auto -90px -70px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.22),transparent 65%)}
         .tdp-top{position:relative;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-end}
@@ -66,7 +66,7 @@ export default function TodayPanel({ orders, aband, products, go, cur, name }) {
         .tdp-bars b{flex:1;border-radius:3px 3px 0 0;background:rgba(255,255,255,.35);min-height:3px}
         .tdp-bars b.pk{background:#fde68a}
         @media(prefers-reduced-motion:reduce){.tdp-a{transition:none}}
-      `}</style>
+      ` }} />
       <div className="tdp-top">
         <div>
           <h2>{hello}{name ? `، ${name}` : ''} 👋</h2>
