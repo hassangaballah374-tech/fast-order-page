@@ -194,7 +194,7 @@ export default function MerchantDashboard() {
   if (!ready) {
     return (
       <div className="app" dir="rtl" style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <style>{DASH_CSS}</style>
+        <style dangerouslySetInnerHTML={{ __html: DASH_CSS }} />
         <div className="c"><Spin /><p className="mut">جاري تحميل لوحتك...</p></div>
       </div>
     );
@@ -217,7 +217,7 @@ export default function MerchantDashboard() {
   return (
     <DashCtx.Provider value={ctx}>
      <div className={'app' + (dark ? ' dk' : '')} dir="rtl">
-      <style>{DASH_CSS + DARK_CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: DASH_CSS + DARK_CSS }} />
         <div className={'scrim' + (side ? ' on' : '')} onClick={() => setSide(false)} />
 
         <aside className={'side' + (side ? ' open' : '')} aria-label="القائمة الرئيسية">
