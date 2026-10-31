@@ -6,12 +6,13 @@ import { useTable } from '../hooks';
 import { Spark, Area, Bars, HBars, Funnel, fmtN } from '../charts';
 import { useOrders, useRange, RangeBar, inRange, rangeDays, dayLabel, bucketByDay, isLive, orderProfit } from '../shared';
 import { money, dayKey } from '../../../lib/storeKit';
+import PurgeStats from '../PurgeStats';
 
 const sum = (a) => a.reduce((x, y) => x + y, 0);
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 1000) / 10 : 0);
 
 export function StatsScreen() {
-  const { cfg, go, cur } = useDash();
+  const { cfg, go, cur, uid } = useDash();
   const r = useRange('30');
   const orders = useOrders();
   const daily = useTable('store_daily_stats', { order: 'day', asc: true, limit: 500 });
@@ -28,10 +29,11 @@ export function StatsScreen() {
     const days = rangeDays(r);
     const labels = days.map(dayLabel);
     const fromKey = r.from ? dayKey(r.from) : '';
-    const inOrders = orders.rows.filter((o) => inRange(o.created_at, r.from));
+    const toKey = r.to ? dayKey(r.to) : '';
+    const inOrders = orders.rows.filter((o) => inRange(o.created_at, r.from, r.to));
     const live = inOrders.filter(isLive);
     const dmap = {};
-    daily.rows.forEach((x) => { if (!fromKey || String(x.day) >= fromKey) dmap[String(x.day).slice(0, 10)] = x; });
+    daily.rows.forEach((x) => { if ((!fromKey || String(x.day) >= fromKey) && (!toKey || String(x.day).slice(0, 10) <= toKey)) dmap[String(x.day).slice(0, 10)] = x; });
     const ser = (k) => days.map((x) => Number(dmap[dayKey(x)]?.[k]) || 0);
 
     const salesS = bucketByDay(live, days, (o) => o.created_at, (o) => Number(o.total_price) || 0);
@@ -49,7 +51,7 @@ export function StatsScreen() {
     const carts = sum(cartsS);
     const checkouts = sum(checkoutsS);
     const cross = sum(crossS);
-    const lost = aband.rows.filter((a) => !a.recovered && inRange(a.created_at, r.from)).length;
+    const lost = aband.rows.filter((a) => !a.recovered && inRange(a.created_at, r.from, r.to)).length;
     const adSpend = sum(spend.rows.filter((s) => !fromKey || String(s.spend_date) >= fromKey).map((s) => Number(s.amount) || 0));
     const courier = Number(cfg.shipping.courier_cost) || 0;
     const profit = sum(inOrders.map((o) => orderProfit(o, courier))) - adSpend;
@@ -91,7 +93,8 @@ export function StatsScreen() {
 
   return (
     <>
-      <PageHead title="لوحة الإحصائيات" sub="أرقامك الحقيقية من متجرك"><RangeBar r={r} /></PageHead>
+      <PageHead title="لوحة الإحصائيات" sub="أرقامك الحقيقية من متجرك"><RangeBar r={r} custom /></PageHead>
+      <PurgeStats uid={uid} table="store_daily_stats" label="إحصائيات المتجر (زيارات / سلة / بدء شراء)" onDone={daily.reload} />
       {!loading && <TodayPanel orders={orders.rows} aband={aband.rows} products={products.rows} go={go} cur={cur} />}
       {err && <div className="card errbox">⚠️ {err}<br /><small>شغّل ملف spike_store_all.sql في Supabase ثم أعد تحميل الصفحة.</small></div>}
 
