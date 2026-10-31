@@ -11,7 +11,7 @@ export const DASH_CSS = `
 .app a{color:var(--b)}
 
 /* ---------- الشريط الجانبي ---------- */
-.side{width:268px;flex:none;background:var(--s);border-inline-start:1px solid var(--ln);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;z-index:40}
+.side{align-self:flex-start;width:268px;flex:none;background:var(--s);border-inline-start:1px solid var(--ln);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;z-index:40}
 .sidehd{padding:16px 14px 8px;display:flex;gap:10px;align-items:center}
 .lg{width:40px;height:40px;border-radius:12px;background:var(--b);color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px;overflow:hidden;flex:none}
 .spkbrand{display:flex;justify-content:center;background:transparent;padding:10px 12px 4px;margin:0}
@@ -234,7 +234,7 @@ select.in{padding-inline-end:8px}
 .spk .price b{font-size:26px}
 }
 /* ===== منع التمرير الأفقي على الموبايل ===== */
-html,body{max-width:100%;overflow-x:hidden}
+html,body{max-width:100%;overflow-x:clip}
 .app{max-width:100vw;overflow-x:clip}
 .main,.pg{max-width:100%;min-width:0}
 .grid4>*,.grid3>*,.grid2>*,.two>*,.fgrid>*{min-width:0}
