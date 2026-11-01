@@ -95,8 +95,9 @@ export function orderProfit(o, courierCost = 0) {
   return (Number(o.total_price) || 0) - (Number(o.cost_total) || 0) - ship;
 }
 
-export function useOrders(limit = 5000) {
-  return useTable('orders', { order: 'created_at', asc: false, limit });
+/* from (اختياري): تاريخ بداية النطاق، فبنجيب الطلبات من التاريخ ده بس بدل آخر 5000 طلب */
+export function useOrders(limit = 5000, from = null) {
+  return useTable('orders', { order: 'created_at', asc: false, limit, gte: from ? { created_at: new Date(from).toISOString() } : undefined });
 }
 
 export const FLAG_LABEL = {
