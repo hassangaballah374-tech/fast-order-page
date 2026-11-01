@@ -11,10 +11,17 @@ import PurgeStats from '../PurgeStats';
 const sum = (a) => a.reduce((x, y) => x + y, 0);
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 1000) / 10 : 0);
 
+/* نجيب طلبات الفترة المطلوبة (أو آخر 30 يوم على الأقل) بدل آخر 5000 طلب، فاللوحة تفتح أسرع */
+const loadFromOf = (from) => {
+  if (!from) return null;
+  const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 29);
+  return from > d ? d : from;
+};
+
 export function StatsScreen() {
   const { cfg, go, cur, uid } = useDash();
   const r = useRange('30');
-  const orders = useOrders();
+  const orders = useOrders(5000, loadFromOf(r.from));
   const daily = useTable('store_daily_stats', { order: 'day', asc: true, limit: 500 });
   const aband = useTable('abandoned_carts', { order: 'created_at', limit: 3000 });
   const spend = useTable('store_ad_spend', { order: 'spend_date', limit: 3000 });
