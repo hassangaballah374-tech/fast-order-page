@@ -39,6 +39,36 @@ function ThemePreview({ d }) {
   );
 }
 
+/* شبكة الثيمات: بتعرض أول 12 بس والباقي بزرار، عشان الصفحة ماتبقاش بطول آلاف البكسلات */
+function ThemeGrid({ draft, set }) {
+  const [all, setAll] = useState(false);
+  const shown = all ? THEMES : THEMES.slice(0, 12).concat(THEMES.slice(12).filter((t) => t.id === draft.theme));
+  return (
+    <div style={{ marginTop: 16 }}>
+      <h3>🎨 اختر الثيم <small>({shown.length} من {THEMES.length})</small></h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+        {shown.map((t) => (
+          <button
+            key={t.id} type="button" className={'thm' + (draft.theme === t.id ? ' act' : '')}
+            onClick={() => { set('theme', t.id); set('color', t.color); set('radius', t.radius); }}
+          >
+            <div className="pvw" style={{ background: t.bg, border: `1px solid ${t.ln}` }}>
+              <i style={{ background: t.color, width: '45%' }} />
+              <i style={{ background: t.card, width: '80%', border: `1px solid ${t.ln}` }} />
+              <i style={{ background: t.ln, width: '60%' }} />
+            </div>
+            <b>{t.name}</b>
+            <small className="mut" style={{ display: 'block' }}>{t.desc}</small>
+          </button>
+        ))}
+      </div>
+      {THEMES.length > 12 && (
+        <button type="button" className="btn" style={{ marginTop: 12 }} onClick={() => setAll(!all)}>{all ? 'عرض أقل' : `عرض كل الثيمات (${THEMES.length})`}</button>
+      )}
+    </div>
+  );
+}
+
 export function ThemesScreen() {
   return (
     <ConfigForm
@@ -59,27 +89,7 @@ export function ThemesScreen() {
       ]}
       validate={(d) => (d.announcement_link && !safeUrl(d.announcement_link) ? 'رابط الإعلان لازم يبدأ بـ https:// أو /' : '')}
     >
-      {({ draft, set }) => (
-        <div style={{ marginTop: 16 }}>
-          <h3>🎨 اختر الثيم</h3>
-          <div className="grid2" style={{ marginBottom: 0 }}>
-            {THEMES.map((t) => (
-              <button
-                key={t.id} type="button" className={'thm' + (draft.theme === t.id ? ' act' : '')}
-                onClick={() => { set('theme', t.id); set('color', t.color); set('radius', t.radius); }}
-              >
-                <div className="pvw" style={{ background: t.bg, border: `1px solid ${t.ln}` }}>
-                  <i style={{ background: t.color, width: '45%' }} />
-                  <i style={{ background: t.card, width: '80%', border: `1px solid ${t.ln}` }} />
-                  <i style={{ background: t.ln, width: '60%' }} />
-                </div>
-                <b>{t.name}</b>
-                <small className="mut" style={{ display: 'block' }}>{t.desc}</small>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {({ draft, set }) => <ThemeGrid draft={draft} set={set} />}
     </ConfigForm>
   );
 }
