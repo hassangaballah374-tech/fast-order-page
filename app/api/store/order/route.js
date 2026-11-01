@@ -5,6 +5,7 @@ import { getStoreBySlug, storeKey, getConfig, priceCart, takeStockForLines, orde
 import { normalizePhone, isValidEgPhone } from '../../../../lib/storeKit';
 import { runAfter } from '../../../../lib/after';
 import { sendCapiPurchase } from '../../../../lib/capi';
+import { getFlow } from '../../../../lib/storeData';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -122,6 +123,16 @@ export async function POST(req) {
   /* إحصائيات الشراء لكل منتج */
   try {
     for (const l of priced.lines) await sb.rpc('bump_product_stat', { p_store: String(sid), p_product: String(l.product_id), p_views: 0, p_carts: 0, p_checkouts: 0, p_purchases: 1, p_units: l.qty, p_revenue: l.line_total });
+  } catch { /* لا نوقف الطلب */ }
+
+  /* إحصائية خطوة الطلب داخل الفانل الكامل (لو الطلب جاي من فانل) */
+  try {
+    const fl = body.flow && typeof body.flow === 'object' ? body.flow : null;
+    if (fl && fl.slug && fl.step) {
+      const flow = await getFlow(sb, sid, String(fl.slug));
+      const st = flow?.steps.find((x) => x.id === String(fl.step) && x.type === 'landing');
+      if (st) await sb.rpc('bump_flow_step', { p_store: String(sid), p_flow: flow.id, p_step: st.id, p_view: 0, p_pass: 1, p_decline: 0, p_revenue: priced.total });
+    }
   } catch { /* لا نوقف الطلب */ }
 
   const eventId = `order-${created.order_no}`;
