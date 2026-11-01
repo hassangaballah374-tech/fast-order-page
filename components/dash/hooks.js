@@ -4,12 +4,13 @@ import { supabase } from '../../lib/supabase';
 import { useDash } from './ui';
 
 /* قراءة وكتابة جدول مرتبط بالمتجر. كل التعديلات تتحفظ في Supabase فوراً ثم تتحدث الواجهة. */
-export function useTable(table, { order = 'created_at', asc = false, limit = 1000, filter } = {}) {
+export function useTable(table, { order = 'created_at', asc = false, limit = 1000, filter, gte } = {}) {
   const { uid, say } = useDash();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
   const fkey = JSON.stringify(filter || {});
+  const gkey = JSON.stringify(gte || {});
 
   const load = useCallback(async (silent) => {
     if (!uid) return;
@@ -17,11 +18,12 @@ export function useTable(table, { order = 'created_at', asc = false, limit = 100
     let q = supabase.from(table).select('*').eq('store_id', uid);
     const f = JSON.parse(fkey);
     for (const [k, v] of Object.entries(f)) q = q.eq(k, v);
+    for (const [k, v] of Object.entries(JSON.parse(gkey))) q = q.gte(k, v);
     if (order) q = q.order(order, { ascending: asc });
     const { data, error } = await q.limit(limit);
     if (error) { setErr(error.message); setRows([]); } else { setErr(''); setRows(data || []); }
     setLoading(false);
-  }, [uid, table, order, asc, limit, fkey]);
+  }, [uid, table, order, asc, limit, fkey, gkey]);
 
   useEffect(() => { load(); }, [load]);
 
