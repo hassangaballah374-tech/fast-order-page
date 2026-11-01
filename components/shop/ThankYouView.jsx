@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { useShop } from './StoreContext';
 import { track } from './tracker';
 import { money, waLink, normalizePhone, isValidEgPhone, safeUrl } from '../../lib/storeKit';
+import { flowHit } from './flowClient';
 
-export default function ThankYouView() {
+export default function ThankYouView({ flow }) {
   const { slug, name, cfg, cur, base, clear, ready } = useShop();
   const ty = cfg.thankyou || {};
   const [o, setO] = useState(null);
@@ -18,6 +19,8 @@ export default function ThankYouView() {
     try { v = JSON.parse(sessionStorage.getItem(`spike_last_${slug}`)); } catch { /* تجاهل */ }
     setO(v); setLoaded(true);
   }, [slug]);
+
+  useEffect(() => { if (flow) flowHit(slug, flow.slug, flow.step, 'view'); }, [flow?.slug, flow?.step]);
 
   useEffect(() => {
     if (!o || !ready || fired.current) return undefined;
@@ -64,8 +67,8 @@ export default function ThankYouView() {
       <p className="mut" style={{ maxWidth: 520, margin: '0 auto 18px' }}>{ty.message}</p>
       <div className="card ty-sum">
         <div className="rw"><span className="mut">رقم الطلب</span><span className="ty-no"><b className="num">#{o.order_no}</b><button type="button" onClick={() => { try { navigator.clipboard.writeText(String(o.order_no)); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* تجاهل */ } }}>{copied ? 'تم النسخ ✓' : 'نسخ'}</button></span></div>
-        {(o.items || []).filter((i) => i && i.title).map((i, k) => <div className="rw" key={k}><span>{i.title} × <span className="num">{i.qty || 1}</span></span></div>)}
-        <div className="rw"><span className="mut">الإجمالي · الدفع عند الاستلام</span><b className="num">{money(o.total, cur)}</b></div>
+        {[...(o.items || []), ...(o.upsells || [])].filter((i) => i && i.title).map((i, k) => <div className="rw" key={k}><span>{i.title} × <span className="num">{i.qty || 1}</span></span></div>)}
+        <div className="rw"><span className="mut">الإجمالي · الدفع عند الاستلام</span><b className="num">{money((Number(o.total) || 0) + (Number(o.extra) || 0), cur)}</b></div>
       </div>
       <div className="nxt">
         <div><i>📞</i><span>هنتصل بيك لتأكيد الطلب<small>رد على المكالمة عشان الطلب يتجهّز بسرعة</small></span></div>
