@@ -8,10 +8,17 @@ import { money, effectivePrice, saleActive } from '../../lib/storeKit';
 import { fontHref, isDark } from '../../lib/themes100';
 import { lpThemeCss } from '../../lib/landingThemes';
 import WaIcon from './WaIcon';
+import { flowHit } from './flowClient';
+import { nextHref } from '../../lib/flowKit';
 import { renderBlock, SectionWrap, useBuilderBridge } from './LpBlocks';
 
 const ytId = (u) => { const m = String(u || '').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : ''; };
-const scrollToOrder = () => { track('LandingCTA', {}); document.getElementById('checkout')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+const scrollToOrder = () => {
+  track('LandingCTA', {});
+  const el = document.getElementById('checkout');
+  if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  if (window.__spkGo) window.__spkGo(); /* صفحة مخصصة داخل فانل: الزر يكمّل للخطوة اللي بعدها */
+};
 
 /* ظهور تدريجي عند التمرير */
 function Reveal({ children, delay = 0, className = '' }) {
@@ -248,7 +255,7 @@ function OrderBox({ s, ctx }) {
                 </div>
               </div>
               {!optsOk ? <div className="err" style={{ marginBottom: 10 }}>اختر {groups.filter((g) => !opts[g.name]).map((g) => g.name).join(' و ')} لإتمام الطلب</div> : null}
-              <Checkout items={optsOk ? [item] : []} bump={null} funnel={fn.slug} buttonText={d.cta || fn.cta_text || undefined} title="بيانات الشحن" />
+              <Checkout items={optsOk ? [item] : []} bump={null} funnel={fn.slug} buttonText={d.cta || fn.cta_text || undefined} title="بيانات الشحن" next={ctx.flow?.next} flow={ctx.flow ? { slug: ctx.flow.slug, step: ctx.flow.step } : undefined} />
               <div className="lp-safe"><span>🔒 بياناتك محمية</span><span>🚚 توصيل لباب البيت</span><span>↩️ تواصل معنا لأي استفسار</span></div>
             </>
           )}
@@ -259,9 +266,9 @@ function OrderBox({ s, ctx }) {
 }
 
 /* صفحة هبوط بالأقسام. لو مفيش أقسام يتم بناء أقسام افتراضية من بيانات الـ Funnel القديمة */
-export default function LandingView({ funnel: fnProp, product: p }) {
+export default function LandingView({ funnel: fnProp, product: p, flow }) {
   const { fn, sel, builder, pick } = useBuilderBridge(fnProp);
-  const { slug, cur, cfg } = useShop();
+  const { slug, cur, cfg, base } = useShop();
   const th = fn.theme || {};
   const st = fn.settings || {};
   const price = effectivePrice(p);
@@ -278,12 +285,21 @@ export default function LandingView({ funnel: fnProp, product: p }) {
     out.push({ id: 'o', type: 'order', data: {} });
     return out;
   }, [fn]);
-  const hasOrder = sections.some((x) => x.type === 'order');
-  const all = hasOrder ? sections : [...sections, { id: 'o_auto', type: 'order', data: {} }];
-  const ctx = { fn, p, price, onSale, cur, slug, scarce, scarText, setLight };
+  const isPageStep = flow?.type === 'page';
+  const shown = isPageStep ? sections.filter((x) => x.type !== 'order') : sections;
+  const hasOrder = shown.some((x) => x.type === 'order');
+  const all = hasOrder || isPageStep ? shown : [...shown, { id: 'o_auto', type: 'order', data: {} }];
+  const flowCtx = flow ? { slug: flow.slug, step: flow.step, next: nextHref(base, flow, flow.step, 'continue') } : null;
+  const ctx = { fn, p, price, onSale, cur, slug, scarce, scarText, setLight, flow: flowCtx };
   const [showSticky, setShowSticky] = useState(false);
 
   useEffect(() => { track('ViewContent', { value: price, items: [{ id: p.id, title: p.title, price, qty: 1 }] }); }, [p.id]);
+  useEffect(() => { if (flow) flowHit(slug, flow.slug, flow.step, 'view'); }, [flow?.slug, flow?.step]);
+  useEffect(() => {
+    if (!flowCtx || flow.type !== 'page') return undefined;
+    window.__spkGo = () => { flowHit(slug, flow.slug, flow.step, 'pass'); window.location.assign(flowCtx.next); };
+    return () => { delete window.__spkGo; };
+  }, [flowCtx?.next]);
   useEffect(() => {
     if (!st.sticky_cta) return undefined;
     const on = () => {
