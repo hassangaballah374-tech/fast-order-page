@@ -10,13 +10,20 @@ import PurgeStats from '../PurgeStats';
 const sum = (a) => a.reduce((x, y) => x + y, 0);
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 1000) / 10 : 0);
 
+/* نجيب طلبات الفترة المطلوبة (أو آخر 30 يوم على الأقل) بدل آخر 5000 طلب، فاللوحة تفتح أسرع */
+const loadFromOf = (from) => {
+  if (!from) return null;
+  const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 29);
+  return from > d ? d : from;
+};
+
 /* إحصائيات منتج واحد: زي لوحة المتجر بس للمنتج المختار */
 export function ProductStatsScreen() {
   const { cur, uid } = useDash();
   const r = useRange('30');
   const products = useTable('products', { order: 'created_at', limit: 3000 });
   const stats = useTable('store_product_stats', { order: 'day', asc: true, limit: 5000 });
-  const orders = useOrders();
+  const orders = useOrders(5000, loadFromOf(r.from));
   const [pid, setPid] = useState('');
   const sel = pid || (products.rows[0] ? String(products.rows[0].id) : '');
   const prod = products.rows.find((p) => String(p.id) === sel);
