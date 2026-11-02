@@ -6,6 +6,7 @@ import { normalizePhone, isValidEgPhone } from '../../../../lib/storeKit';
 import { runAfter } from '../../../../lib/after';
 import { sendCapiPurchase } from '../../../../lib/capi';
 import { getFlow } from '../../../../lib/storeData';
+import { netLevel } from '../../../../lib/netRisk';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -46,7 +47,7 @@ export async function POST(req) {
   if (address.length < 6) return fail('اكتب العنوان بالتفصيل');
 
   const since = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString();
-  const [blockedRes, priced, recentRes, historyRes, otpRes] = await Promise.all([
+  const [blockedRes, priced, recentRes, historyRes, otpRes, netRes] = await Promise.all([
     sb.from('store_blocklist').select('id').eq('store_id', sid).eq('phone', phone).eq('kind', 'order').maybeSingle(),
     priceCart(sb, store, cfg, { items: body.items, bump: body.bump, governorate, coupon: body.coupon }),
     sb.from('orders')
@@ -56,6 +57,7 @@ export async function POST(req) {
       .order('created_at', { ascending: false }).limit(30),
     sb.from('orders').select('status').eq('store_id', sid).eq('customer_phone', phone).in('status', ['returned', 'cancelled']).limit(5),
     sb.from('store_blocklist').select('id').eq('store_id', sid).eq('phone', phone).eq('kind', 'otp').maybeSingle(),
+    sb.rpc('network_risk_for', { p_phones: [phone] }),
   ]);
   if (blockedRes.data) return fail('تعذر إتمام الطلب حالياً. تواصل معنا عبر واتساب.', 403);
   if (priced.errors?.length) return fail(priced.errors[0]);
@@ -87,6 +89,8 @@ export async function POST(req) {
   if (todayCount >= 1) { risk += 15; flags.push('repeat_today'); }
   if ((history || []).length >= 2) { risk += 40; flags.push('returns_history'); }
   if (otpHit) { risk += 40; flags.push('otp_blocked'); }
+  const nl = netLevel(netRes?.error ? null : (netRes?.data || [])[0]);
+  if (nl === 'high') { risk += 35; flags.push('network_high'); } else if (nl === 'mid') { risk += 15; flags.push('network_returns'); }
   risk = Math.min(100, risk);
   if (heldUntil) { flags.push('duplicate_hold'); risk = Math.min(100, risk + 20); }
   if ((cfg.verify.flag_risk && risk >= (Number(cfg.verify.threshold) || 40)) || otpHit) flags.push('needs_verify');
