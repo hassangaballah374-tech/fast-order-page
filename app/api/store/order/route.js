@@ -6,6 +6,7 @@ import { normalizePhone, isValidEgPhone } from '../../../../lib/storeKit';
 import { runAfter } from '../../../../lib/after';
 import { sendCapiPurchase } from '../../../../lib/capi';
 import { getFlow } from '../../../../lib/storeData';
+import { sendWaConfirm } from '../../../../lib/waCloud';
 import { netLevel } from '../../../../lib/netRisk';
 
 export const runtime = 'nodejs';
@@ -111,7 +112,7 @@ export async function POST(req) {
     coupon_code: priced.coupon?.code || null, utm: safeUtm, risk_score: risk, flags, status: 'pending', source: 'storefront', public_token: token, hold_until: heldUntil,
   };
 
-  const { data: created, error } = await sb.from('orders').insert([row]).select('order_no, public_token').single();
+  const { data: created, error } = await sb.from('orders').insert([row]).select('id, order_no, public_token').single();
   if (error) {
     for (const l of stock.taken) await sb.rpc('take_stock', { p_product: l.product_id, p_qty: -l.qty });
     console.error('ORDER_INSERT_ERROR', error.message, error.details, error.hint);
@@ -138,6 +139,8 @@ export async function POST(req) {
       if (st) await sb.rpc('bump_flow_step', { p_store: String(sid), p_flow: flow.id, p_step: st.id, p_view: 0, p_pass: 1, p_decline: 0, p_revenue: priced.total });
     }
   } catch { /* لا نوقف الطلب */ }
+
+  if (!heldUntil) await runAfter(sendWaConfirm(sb, sid, { ...row, id: created.id, order_no: created.order_no }));
 
   const eventId = `order-${created.order_no}`;
   await runAfter(sendCapiPurchase(sb, sid, {
