@@ -57,6 +57,7 @@ const base = {
   funnels: L(G, 'FunnelsScreen'),
   landing: L(() => import('./screens/Landing'), 'LandingScreen'),
   flows: L(() => import('./screens/Flows'), 'FlowsScreen'),
+  ab: L(() => import('./screens/Ab'), 'AbScreen'),
   campaigns: L(G, 'CampaignsScreen'),
   referrals: L(G, 'ReferralsScreen'),
   reports: L(G, 'ReportsScreen'),
