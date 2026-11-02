@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDash, PageHead, Empty, Spin, Badge, Tabs } from '../ui';
 import { BostaCard } from './Account';
+import { WaCloudCard } from './WaCloud';
 import { supabase } from '../../../lib/supabase';
 
 const CATS = { all: 'الكل', tracking: 'التتبع', marketing: 'التسويق', sales: 'المبيعات', shipping: 'الشحن', other: 'أخرى' };
@@ -45,6 +46,7 @@ export function AppsScreen() {
       <PageHead title="التطبيقات" sub="التكاملات والإضافات لمتجرك" />
       <div style={{ display: 'grid', gap: 16 }}>
         <BostaCard />
+        <WaCloudCard />
 
         {installed.length > 0 && (
           <div className="card">
