@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { useDash, PageHead, Modal, Field, Empty, Spin, Badge, Stat, Tabs, Tog } from '../ui';
+import { useDash, PageHead, Modal, Field, Empty, Spin, Badge, Stat, Tabs, Tog, CopyBtn } from '../ui';
 import { useTable, api } from '../hooks';
 import { Crud, ConfigForm } from '../forms';
 import { useSection, SaveBtn, LinkBox } from '../bits';
@@ -210,6 +210,7 @@ export function BostaCard() {
     setBusy(true);
     const config = { ...(row?.config || {}) };
     if (key.trim()) config.api_key = key.trim();
+    if (!config.webhook_secret) config.webhook_secret = (globalThis.crypto?.randomUUID?.() || `${Date.now()}${Math.random()}`).replace(/-/g, '');
     const { error } = await supabase.from('store_integrations').upsert({ store_id: uid, provider: 'bosta', enabled, config, updated_at: new Date().toISOString() }, { onConflict: 'store_id,provider' });
     setBusy(false);
     if (error) { say(`تعذر الحفظ: ${error.message}`); return; }
@@ -229,6 +230,17 @@ export function BostaCard() {
           </Field>
         )}
         <div><button type="button" className="btn p" disabled={busy || row === undefined} onClick={save}>{busy ? '...' : 'حفظ'}</button></div>
+        {row?.config?.webhook_secret && typeof window !== 'undefined' && (() => {
+          const wh = `${window.location.origin}/api/webhooks/bosta?s=${uid}&k=${row.config.webhook_secret}`;
+          return (
+            <Field l="رابط تحديث الحالة التلقائي (Webhook)" hint="الصقه في بوسطة ← Settings ← API Integration ← Webhook URL. بعدها حالة «تم التسليم» و«مرتجع» بتتحدّث لوحدها في طلباتك.">
+              <div className="row" style={{ gap: 8 }}>
+                <input className="in num" dir="ltr" readOnly value={wh} onFocus={(e) => e.target.select()} />
+                <CopyBtn text={wh} />
+              </div>
+            </Field>
+          );
+        })()}
         <small className="hint">يُنصح بإرسال طلب تجريبي واحد والتأكد من ظهوره في لوحة بوسطة قبل الاعتماد عليه.</small>
       </div>
     </div>
