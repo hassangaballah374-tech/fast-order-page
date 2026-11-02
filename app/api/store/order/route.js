@@ -102,7 +102,7 @@ export async function POST(req) {
   const token = crypto.randomBytes(16).toString('hex');
   const utm = body.utm && typeof body.utm === 'object' ? body.utm : {};
   const safeUtm = {};
-  for (const k of ['source', 'medium', 'campaign', 'content', 'ref', 'funnel', 'flow']) if (utm[k]) safeUtm[k] = String(utm[k]).slice(0, 80);
+  for (const k of ['source', 'medium', 'campaign', 'content', 'ref', 'funnel', 'flow', 'ab']) if (utm[k]) safeUtm[k] = String(utm[k]).slice(0, 80);
 
   const row = {
     store_id: sid, customer_name: name, customer_phone: phone, phone2: phone2 || null, email: email || null,
@@ -128,6 +128,12 @@ export async function POST(req) {
   /* إحصائيات الشراء لكل منتج */
   try {
     for (const l of priced.lines) await sb.rpc('bump_product_stat', { p_store: String(sid), p_product: String(l.product_id), p_views: 0, p_carts: 0, p_checkouts: 0, p_purchases: 1, p_units: l.qty, p_revenue: l.line_total });
+  } catch { /* لا نوقف الطلب */ }
+
+  /* اختبار A/B: نسب الطلب للنسخة اللي الزائر شافها */
+  try {
+    const ab = String(safeUtm.ab || '');
+    if (/^[0-9a-f-]{36}\.[a-d]$/.test(ab)) { const [tid, vid] = ab.split('.'); await sb.rpc('bump_ab', { p_store: String(sid), p_test: tid, p_variant: vid, p_view: 0, p_order: 1, p_revenue: priced.total }); }
   } catch { /* لا نوقف الطلب */ }
 
   /* إحصائية خطوة الطلب داخل الفانل الكامل (لو الطلب جاي من فانل) */
