@@ -10,6 +10,11 @@ const ss = (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } cat
 
 /* نموذج الطلب المشترك (صفحة المنتج، السلة، الفانيل).
    items: [{product_id,title,image,price,qty,options}]، bump: {product_id}|null */
+/* وسم اختبار A/B (لو الزائر جاي من رابط اختبار) */
+function abTag() {
+  try { const v = new URLSearchParams(window.location.search).get('ab'); return /^[0-9a-f-]{36}\.[a-d]$/.test(v || '') ? v : ''; } catch { return ''; }
+}
+
 export default function Checkout({ items, bump, buttonText, onSuccess, funnel, title = 'بيانات الشحن', next, flow }) {
   const { slug, cfg, cur, zones, base, live } = useShop();
   const router = useRouter();
@@ -83,7 +88,7 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           slug, customer: f, items: items.map((i) => ({ product_id: i.product_id, qty: i.qty, options: i.options })),
-          bump: bump || undefined, coupon: appliedCode || undefined, utm: { ...getUtm(slug), ...(funnel ? { funnel } : {}), ...(flow ? { flow: flow.slug } : {}) }, flow: flow || undefined, hp, t: Math.round((Date.now() - t0.current) / 1000),
+          bump: bump || undefined, coupon: appliedCode || undefined, utm: { ...getUtm(slug), ...(funnel ? { funnel } : {}), ...(flow ? { flow: flow.slug } : {}), ...(abTag() ? { ab: abTag() } : {}) }, flow: flow || undefined, hp, t: Math.round((Date.now() - t0.current) / 1000),
         }),
       });
       const j = await r.json();
