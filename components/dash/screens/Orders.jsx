@@ -4,6 +4,7 @@ import { useDash, PageHead, Modal, Field, Empty, Spin, Tabs, Pager, useDebounced
 import { useTable, useProducts, api, useInterval } from '../hooks';
 import { useNetRisk, NetBadge } from '../netRisk';
 import { Crud } from '../forms';
+import { MANUAL_COURIERS, courierName } from '../../../lib/couriers';
 import {
   useOrders, useRange, RangeBar, inRange, StatusBadge, RiskBadge, FLAG_LABEL, useWa, orderProfit, isLive, downloadCsvFile, fdate, fday,
 } from '../shared';
@@ -95,6 +96,19 @@ export function OrdersScreen() {
     await t.refresh();
   };
 
+  const [manualIds, setManualIds] = useState(null);
+  const sendManual = async (courier, items) => {
+    setBusy(true);
+    const res = await api('/api/shipping/manual', { courier, items });
+    setBusy(false);
+    if (!res.results) { say(res.error || 'تعذر التسجيل'); return false; }
+    const ok = res.results.filter((x) => x.ok).length;
+    const fail = res.results.find((x) => !x.ok);
+    say(ok ? `🚚 تم تسجيل ${ok} شحنة${fail ? ` — تعذر: ${fail.error}` : ''}` : `تعذر التسجيل: ${fail?.error || ''}`);
+    await t.refresh();
+    return ok > 0;
+  };
+
   const sendBosta = async (ids) => {
     if (!ids.length) return;
     setBusy(true);
@@ -153,6 +167,7 @@ export function OrdersScreen() {
           </select>
           <button type="button" className="btn sm p" disabled={busy} onClick={() => changeStatus(selected.map((o) => o.id), bulkStatus)}>تطبيق الحالة</button>
           <button type="button" className="btn sm" disabled={busy} onClick={() => sendBosta(selected.map((o) => o.id))}>🚚 إرسال لبوسطة</button>
+          <button type="button" className="btn sm" onClick={() => setManualIds(selected.map((o) => o.id))}>📦 شحن يدوي</button>
           <button type="button" className="btn sm" onClick={() => print(selected)}>🖨️ طباعة البوالص</button>
           <button type="button" className="btn sm" onClick={() => exportCsv(selected)}>⬇️ تصدير المحدد</button>
           <button type="button" className="btn sm" onClick={() => setSel(new Set())}>إلغاء التحديد</button>
@@ -179,7 +194,7 @@ export function OrdersScreen() {
                   <td className="num"><b>{money(o.total_price, cur)}</b>{o.coupon_code && <small>🏷️ {o.coupon_code}</small>}</td>
                   <td><StatusBadge s={o.status} />{o.verified && <small className="ok">✓ موثّق</small>}</td>
                   <td><RiskBadge score={o.risk_score} /></td>
-                  <td>{o.tracking_number ? <><small className="num">{o.courier}</small><a className="num" href={trackUrl(o.courier, o.tracking_number)} target="_blank" rel="noreferrer">{o.tracking_number}</a></> : <span className="mut">—</span>}</td>
+                  <td>{o.tracking_number ? <><small className="num">{courierName(o.courier)}</small><a className="num" href={trackUrl(o.courier, o.tracking_number)} target="_blank" rel="noreferrer">{o.tracking_number}</a></> : <span className="mut">—</span>}</td>
                   <td className="acts"><button type="button" className="btn sm p" onClick={() => setViewId(o.id)}>عرض</button></td>
                 </tr>
               ))}
@@ -189,10 +204,18 @@ export function OrdersScreen() {
         <Pager total={list.length} page={page} per={PER} onPage={setPage} />
       </div>
 
+      {manualIds && (
+        <ManualShipModal
+          orders={t.rows.filter((o) => manualIds.includes(o.id))} busy={busy}
+          onClose={() => setManualIds(null)}
+          onSubmit={async (courier, items) => { if (await sendManual(courier, items)) setManualIds(null); }}
+        />
+      )}
+
       {viewing && (
         <OrderView
           order={viewing} onClose={() => setViewId(null)} busy={busy}
-          onStatus={(s) => changeStatus([viewing.id], s)} onBosta={() => sendBosta([viewing.id])}
+          onStatus={(s) => changeStatus([viewing.id], s)} onBosta={() => sendBosta([viewing.id])} onManual={() => setManualIds([viewing.id])}
           onPrint={() => print([viewing])} onChanged={() => t.refresh()}
           onDeleted={() => { setViewId(null); t.reload(); }}
         />
@@ -202,7 +225,34 @@ export function OrdersScreen() {
   );
 }
 
-function OrderView({ order: o, onClose, onStatus, onBosta, onPrint, onChanged, onDeleted, busy }) {
+function ManualShipModal({ orders, busy, onClose, onSubmit }) {
+  const [courier, setCourier] = useState('aramex');
+  const [nums, setNums] = useState({});
+  const items = orders.map((o) => ({ id: o.id, tracking: String(nums[o.id] || '').trim() }));
+  const ready = items.length > 0 && items.every((x) => x.tracking);
+  return (
+    <Modal t="📦 شحن يدوي" x={onClose}>
+      <p className="mut" style={{ marginTop: 0 }}>سلّم الطرد لأي شركة شحن، واكتب هنا رقم التتبع اللي أخدته منها. الطلب يتحول «في الشحن» ورقم التتبع يظهر للعميل.</p>
+      <Field l="شركة الشحن">
+        <select className="in" value={courier} onChange={(e) => setCourier(e.target.value)}>
+          {MANUAL_COURIERS.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      </Field>
+      {orders.map((o) => (
+        <div className="pls" key={o.id}>
+          <p><b>#{o.order_no ?? o.id}</b> {o.customer_name}<small>{o.governorate}</small></p>
+          <input className="in num" dir="ltr" style={{ maxWidth: 200 }} placeholder="رقم التتبع" value={nums[o.id] || ''} onChange={(e) => setNums({ ...nums, [o.id]: e.target.value })} />
+        </div>
+      ))}
+      <div className="row" style={{ marginTop: 12 }}>
+        <button type="button" className="btn p" disabled={busy || !ready} onClick={() => onSubmit(courier, items)}>{busy ? '...' : 'تسجيل الشحنات'}</button>
+        <button type="button" className="btn" onClick={onClose}>إلغاء</button>
+      </div>
+    </Modal>
+  );
+}
+
+function OrderView({ order: o, onClose, onStatus, onBosta, onManual, onPrint, onChanged, onDeleted, busy }) {
   const { cfg, cur, say, uid } = useDash();
   const wa = useWa();
   const [note, setNote] = useState(o.internal_note || '');
@@ -310,7 +360,7 @@ function OrderView({ order: o, onClose, onStatus, onBosta, onPrint, onChanged, o
           <h3>🚚 الشحن</h3>
           {o.tracking_number ? (
             <>
-              <div className="pls"><p>{o.courier}</p><b className="num">{o.tracking_number}</b></div>
+              <div className="pls"><p>{courierName(o.courier)}</p><b className="num">{o.tracking_number}</b></div>
               <div className="row" style={{ marginBottom: 0 }}>
                 {trackUrl(o.courier, o.tracking_number) && <a className="btn sm" href={trackUrl(o.courier, o.tracking_number)} target="_blank" rel="noreferrer">تتبع الشحنة</a>}
                 <button type="button" className="btn sm wa" onClick={() => openWa('shipped')}>إبلاغ العميل</button>
@@ -321,9 +371,10 @@ function OrderView({ order: o, onClose, onStatus, onBosta, onPrint, onChanged, o
               <p className="mut">لم يُرسل للشحن بعد.</p>
               <div className="row" style={{ marginBottom: 0 }}>
                 <button type="button" className="btn p sm" disabled={busy || !['pending', 'confirmed'].includes(st)} onClick={onBosta}>🚚 إرسال لبوسطة</button>
+                <button type="button" className="btn sm" disabled={busy || !['pending', 'confirmed'].includes(st)} onClick={onManual}>📦 شحن يدوي (أي شركة)</button>
                 <button type="button" className="btn sm" onClick={onPrint}>🖨️ طباعة بوليصة</button>
               </div>
-              <small className="hint">يتطلب تفعيل بوسطة من صفحة «التطبيقات».</small>
+              <small className="hint">«إرسال لبوسطة» يتطلب تفعيل بوسطة من «التطبيقات». «شحن يدوي» يشتغل مع أي شركة: اكتب رقم التتبع بنفسك.</small>
             </>
           )}
         </div>
