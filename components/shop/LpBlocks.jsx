@@ -5,7 +5,7 @@ import { track } from './tracker';
 import { FONTS_ALL, fontHref } from '../../lib/themes100';
 
 const toOrder = () => {
-  track('LandingCTA', {});
+  track('LandingCTA', {}); 
   const el = document.getElementById('checkout');
   if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
   if (window.__spkGo) window.__spkGo(); /* صفحة مخصصة داخل فانل */
