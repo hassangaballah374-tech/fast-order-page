@@ -3,6 +3,7 @@ import React, { useMemo, useState } from 'react';
 import { useDash, PageHead, Empty, Spin, Badge } from '../ui';
 import { useTable, api } from '../hooks';
 import { useOrders, useWa, fdate } from '../shared';
+import { useNetRisk, NetBadge } from '../netRisk';
 import { STATUS, money, normalizePhone } from '../../../lib/storeKit';
 
 /* طابور تأكيد الطلبات: الطلبات الجديدة + إرسال رسالة التأكيد بالواتساب بضغطة + تأكيد/إلغاء مباشر */
@@ -27,6 +28,7 @@ export function ConfirmScreen() {
     .filter((o) => (o.status || 'pending') === 'pending')
     .sort((a, b) => new Date(a.created_at) - new Date(b.created_at)), [orders.rows]);
 
+  const netOf = useNetRisk(pending.map((o) => normalizePhone(o.customer_phone)));
   const list = onlyUnsent ? pending.filter((o) => !sent[normalizePhone(o.customer_phone)]) : pending;
 
   const sendWa = async (o) => {
@@ -70,6 +72,7 @@ export function ConfirmScreen() {
                     <td>
                       <b>{o.customer_name}</b>
                       <div className="mut num" dir="ltr">{o.customer_phone}</div>
+                      <NetBadge r={netOf(normalizePhone(o.customer_phone))} />
                       {flags.includes('duplicate_hold') ? <Badge c="#b7791f">مكرر – معلّق</Badge> : null}
                     </td>
                     <td className="num">{money(o.total_price, cur)}</td>
