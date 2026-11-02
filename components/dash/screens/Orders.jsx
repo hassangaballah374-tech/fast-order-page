@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDash, PageHead, Modal, Field, Empty, Spin, Tabs, Pager, useDebounced, Badge, Stat, CopyBtn, Tog } from '../ui';
 import { useTable, useProducts, api, useInterval } from '../hooks';
+import { useNetRisk, NetBadge } from '../netRisk';
 import { Crud } from '../forms';
 import {
   useOrders, useRange, RangeBar, inRange, StatusBadge, RiskBadge, FLAG_LABEL, useWa, orderProfit, isLive, downloadCsvFile, fdate, fday,
@@ -76,6 +77,7 @@ export function OrdersScreen() {
   useEffect(() => { setPage(1); setSel(new Set()); }, [st, dq, r.key]);
 
   const rows = list.slice((page - 1) * PER, page * PER);
+  const netOf = useNetRisk(rows.map((o) => normalizePhone(o.customer_phone)));
   const allOnPage = rows.length > 0 && rows.every((o) => sel.has(o.id));
   const toggle = (id) => setSel((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const toggleAll = () => setSel((s) => { const n = new Set(s); rows.forEach((o) => (allOnPage ? n.delete(o.id) : n.add(o.id))); return n; });
@@ -171,7 +173,7 @@ export function OrdersScreen() {
                 <tr key={o.id} className={sel.has(o.id) ? 'sel' : ''}>
                   <td><input type="checkbox" checked={sel.has(o.id)} onChange={() => toggle(o.id)} aria-label="تحديد" /></td>
                   <td><b className="num">#{o.order_no ?? o.id}</b><small>{ago(o.created_at)} · {fday(o.created_at)}</small></td>
-                  <td><b>{o.customer_name}</b><small className="num" dir="ltr" style={{ textAlign: 'start' }}>{o.customer_phone}</small></td>
+                  <td><b>{o.customer_name}</b><small className="num" dir="ltr" style={{ textAlign: 'start' }}>{o.customer_phone}</small><NetBadge r={netOf(normalizePhone(o.customer_phone))} /></td>
                   <td>{o.governorate}</td>
                   <td style={{ maxWidth: 220 }}><span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{itemsText(o)}</span></td>
                   <td className="num"><b>{money(o.total_price, cur)}</b>{o.coupon_code && <small>🏷️ {o.coupon_code}</small>}</td>
@@ -553,6 +555,7 @@ export function CustomersScreen() {
   const SEG = { vip: ['VIP', '#6b46c1'], repeat: ['متكرر', '#0a7f86'], new: ['جديد', '#2f855a'], risky: ['خطر مرتجعات', '#c53030'] };
   const counts = customers.reduce((a, c) => { a[c.seg] = (a[c.seg] || 0) + 1; return a; }, {});
   const list = customers.filter((c) => (seg === 'all' || c.seg === seg) && (!dq || `${c.name} ${c.phone}`.toLowerCase().includes(dq.toLowerCase())));
+  const netOf = useNetRisk(list.slice(0, 200).map((c) => c.phone));
   const repeatRate = customers.length ? Math.round(((counts.vip || 0) + (counts.repeat || 0)) / customers.length * 100) : 0;
   const ltv = customers.length ? customers.reduce((x, c) => x + c.spent, 0) / customers.length : 0;
 
@@ -587,7 +590,7 @@ export function CustomersScreen() {
                   <td><b>{c.name}</b><small className="num" dir="ltr" style={{ textAlign: 'start' }}>{c.phone}</small></td>
                   <td>{c.gov}</td><td className="num">{c.orders}{c.bad > 0 && <small className="warn">{c.bad} ملغي/مرتجع</small>}</td>
                   <td className="num"><b>{money(c.spent, cur)}</b></td><td>{fday(c.last)}</td>
-                  <td><Badge c={SEG[c.seg][1]}>{SEG[c.seg][0]}</Badge></td>
+                  <td><Badge c={SEG[c.seg][1]}>{SEG[c.seg][0]}</Badge><NetBadge r={netOf(c.phone)} /></td>
                   <td className="acts"><button type="button" className="btn sm wa" onClick={() => promo(c)}>عرض واتساب</button></td>
                 </tr>
               ))}

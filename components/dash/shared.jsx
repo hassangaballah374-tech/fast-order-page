@@ -110,6 +110,8 @@ export const FLAG_LABEL = {
   needs_verify: 'يحتاج توثيق',
   duplicate_hold: 'طلب مكرر خلال فترة المنع: معلّق لحين موافقتك (غيّر الحالة إلى «مؤكد»)',
   otp_blocked: 'رقم في قائمة OTP المحظورة',
+  network_high: 'العميل له سجل مرتجعات مرتفع عبر متاجر سبايك',
+  network_returns: 'العميل سبق له مرتجع في متجر آخر على سبايك',
 };
 
 export function RiskBadge({ score }) {
