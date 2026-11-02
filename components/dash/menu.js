@@ -39,6 +39,7 @@ export const MENU = [
     ],
   },
   { id: 'landing', t: 'صفحات الهبوط', i: '🚀' },
+  { id: 'flows', t: 'الفانل الكامل (Upsell)', i: '🧲', badge: 'جديد' },
   { id: 'funnels', t: 'Funnels (بسيط)', i: '🔻' },
   {
     g: 'tracking', t: 'أدوات التتبع', i: '🎯', items: [
