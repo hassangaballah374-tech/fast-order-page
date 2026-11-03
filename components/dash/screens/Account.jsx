@@ -34,7 +34,7 @@ export function BalanceScreen() {
     <>
       <PageHead title="رصيدك" sub="محفظة سبايك" />
       <div className="grid4" style={{ marginBottom: 16 }}>
-        <Stat label="الرصيد الحالي" value={usd(store?.wallet_balance_usd)} color="#0a7f86" />
+        <Stat label="الرصيد الحالي" value={usd(store?.wallet_balance_usd)} color="#6B8E23" />
         <Stat label="طلبات شحن قيد المراجعة" value={pending.length} hint={pending.length ? usd(pending.reduce((a, x) => a + Number(x.amount_usd || 0), 0)) : ''} />
       </div>
       <div className="card">
@@ -313,7 +313,7 @@ function ServicesView({ title, sub, catalog }) {
     }
   };
   const mine = reqs.rows.filter((r) => catalog.some((c) => c[0] === r.service_key));
-  const ST = { new: ['جديد', '#d97706'], contacted: ['تم التواصل', '#0a7f86'], done: ['مكتمل', '#16a34a'], cancelled: ['ملغي', '#718096'] };
+  const ST = { new: ['جديد', '#d97706'], contacted: ['تم التواصل', '#6B8E23'], done: ['مكتمل', '#16a34a'], cancelled: ['ملغي', '#718096'] };
 
   return (
     <>
