@@ -115,6 +115,8 @@ export default function SpikeSuperAdminDashboard() {
     analytics: 'manage_finance',
     billing: 'manage_finance',
     services: 'manage_stores',
+    promos: 'manage_finance',
+    apps: 'manage_stores',
     admins: 'manage_admins',
     audit: 'manage_admins',
     broadcast: 'manage_admins',
@@ -584,6 +586,8 @@ export default function SpikeSuperAdminDashboard() {
     { id: 'merchants', title: t.navStores, icon: '🏬', count: totalStoresCount },
     { id: 'billing', title: 'الحصص والاشتراكات', icon: '💳', count: null },
     { id: 'services', title: 'طلبات الخدمات', icon: '🧰', count: null },
+    { id: 'promos', title: isAr ? 'العروض والأكواد' : 'Offers & Codes', icon: '🎟️', count: null },
+    { id: 'apps', title: isAr ? 'التطبيقات والمميزات' : 'Apps & Features', icon: '🧩', count: null },
     { id: 'orders', title: t.navOrders, icon: '📦', count: orders.length },
     { id: 'inventory', title: t.navInventory, icon: '🏷️', count: products.length },
     { id: 'integrations', title: t.navIntegrations, icon: '🔌', count: null },
@@ -1468,9 +1472,9 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* تبويب الباقات */}
          {shown('plans') && <><PaymentNote isDark={isDark} /><ThemeColors isDark={isDark} /><AdminBilling isDark={isDark} initial="plans" onChanged={fetchAllData} /></>}
-          <AdminPromos isDark={isDark} />
+          {shown('promos') && <AdminPromos isDark={isDark} />}
           {shown('services') && <AdminServiceRequests isDark={isDark} />}
-          <AdminApps isDark={isDark} />
+          {shown('apps') && <AdminApps isDark={isDark} />}
           {shown('billing') && <AdminBilling isDark={isDark} initial="stores" onChanged={fetchAllData} />}
 
           {/* تبويب سجل الحركات */}
