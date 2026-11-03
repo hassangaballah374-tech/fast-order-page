@@ -12,13 +12,13 @@ const FONTS = [['', 'الافتراضي'], ...FONTS_ALL.map((f) => [f, f])];
 const DEVICES = [['m', '📱', 390], ['d', '🖥️', 0]];
 
 const CSS = `
-.lpb{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'Cairo',sans-serif}
+.lpb{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'Tajawal',sans-serif}
 .lpb-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 14px;background:var(--s);border-bottom:1px solid var(--ln)}
 .lpb-top b{font-size:15px}.lpb-sp{flex:1}
 .lpb-main{flex:1;display:flex;min-height:0}
 .lpb-side{width:380px;max-width:44vw;display:flex;flex-direction:column;background:var(--s);border-inline-end:1px solid var(--ln);min-height:0}
 .lpb-tabs{display:flex;border-bottom:1px solid var(--ln)}
-.lpb-tabs button{flex:1;border:0;background:none;padding:11px 6px;font:800 13px 'Cairo',sans-serif;color:var(--mut);cursor:pointer;border-bottom:3px solid transparent}
+.lpb-tabs button{flex:1;border:0;background:none;padding:11px 6px;font:800 13px 'Tajawal',sans-serif;color:var(--mut);cursor:pointer;border-bottom:3px solid transparent}
 .lpb-tabs button.on{color:var(--ink);border-bottom-color:var(--b)}
 .lpb-body{flex:1;overflow:auto;padding:12px}
 .lpb-stage{flex:1;display:flex;justify-content:center;align-items:stretch;padding:14px;min-width:0;background:repeating-conic-gradient(rgba(127,127,127,.08) 0 25%,transparent 0 50%) 0 0/20px 20px}
