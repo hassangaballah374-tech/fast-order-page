@@ -256,6 +256,7 @@ export default function SpikeSuperAdminDashboard() {
     setRefreshing(true);
     const safety = setTimeout(() => { setLoading(false); setRefreshing(false); }, 12000);
     const q = (p) => Promise.resolve(p).then((r) => { if (r?.error) console.error('admin fetch error:', r.error.message); return r && r.data !== undefined ? r.data : null; }).catch((e) => { console.error('admin fetch failed:', e); return null; });
+    /* نسخة خفيفة من الدالة، ولو فشلت (مثلاً SQL 7 لم يُشغَّل) نرجع للاستعلام القديم */
     const light = async (fn, fallback) => {
       const r = await q(supabase.rpc(fn, { p_limit: 3000 }));
       if (Array.isArray(r)) return r;
@@ -493,6 +494,7 @@ export default function SpikeSuperAdminDashboard() {
   const activeStoresCount = stores.filter(s => s.is_active !== false).length;
   const totalSalesAmount = totals ? Number(totals.sales_total) || 0 : orders.reduce((acc, curr) => acc + (Number(curr.total_price) || 0), 0);
 
+  // ===================== التحليلات (كلها من بيانات حقيقية) =====================
   const sumPrice = (list) => list.reduce((a, o) => a + (Number(o.total_price) || 0), 0);
   const dayKey = (d) => {
     const x = new Date(d);
@@ -551,10 +553,10 @@ export default function SpikeSuperAdminDashboard() {
   const chartOrders = ordersSeries30.slice(-range);
 
   const statusMeta = [
-    { key: 'pending', label: isAr ? 'بانتظار الشحن' : 'Pending', color: '#6B8E23' },
-    { key: 'confirmed', label: isAr ? 'تم التأكيد' : 'Confirmed', color: '#6B8E23' },
-    { key: 'shipped', label: isAr ? 'تم الشحن' : 'Shipped', color: '#6B8E23' },
-    { key: 'delivered', label: isAr ? 'تم التسليم' : 'Delivered', color: '#6B8E23' },
+    { key: 'pending', label: isAr ? 'بانتظار الشحن' : 'Pending', color: '#f2a066' },
+    { key: 'confirmed', label: isAr ? 'تم التأكيد' : 'Confirmed', color: '#c9a45c' },
+    { key: 'shipped', label: isAr ? 'تم الشحن' : 'Shipped', color: '#5fb7bb' },
+    { key: 'delivered', label: isAr ? 'تم التسليم' : 'Delivered', color: '#0a7f86' },
     { key: 'cancelled', label: isAr ? 'ملغي' : 'Cancelled', color: '#c95e53' },
   ];
   const statusSegments = statusMeta.map((m) => ({
@@ -641,7 +643,7 @@ export default function SpikeSuperAdminDashboard() {
       value: `${fmt(totalSalesAmount, 2)} ج.م`,
       change: pctLabel(salesGrowth),
       icon: '💰',
-      badgeColor: salesGrowth >= 0 ? 'text-[#6B8E23] bg-[#6B8E23]/10 border-[#6B8E23]/20' : downCls,
+      badgeColor: salesGrowth >= 0 ? 'text-[#00B050] bg-[#00B050]/10 border-[#00B050]/20' : downCls,
       desc1: t.comparedLastMonth,
       desc2: `${fmt(orders.length)} ${t.ordersCount}`,
       progress: `${Math.min(100, Math.max(5, Math.round(50 + salesGrowth / 2)))}%`,
@@ -672,6 +674,7 @@ export default function SpikeSuperAdminDashboard() {
         />
       )}
 
+      {/* الشريط الجانبي الذكي */}
       <aside className={`fixed top-0 bottom-0 ${isAr ? 'right-0' : 'left-0'} z-50 w-72 shrink-0 border-r border-l flex flex-col justify-between transition-transform duration-150 ease-out lg:sticky lg:top-0 lg:bottom-auto lg:h-screen lg:self-start lg:z-10 lg:translate-x-0 ${
         sidebarOpen
           ? 'translate-x-0 shadow-2xl'
@@ -697,6 +700,7 @@ export default function SpikeSuperAdminDashboard() {
               <span className="text-[10px] text-slate-400 block font-bold">لوحة التحكم والإدارة</span>
             </Link>
           </div>
+
         </div>
 
         <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
@@ -712,7 +716,7 @@ export default function SpikeSuperAdminDashboard() {
                 }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-100 cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-l from-[#6B8E23] to-[#556B2F] text-white shadow-md shadow-[#6B8E23]/25 font-black'
+                    ? 'bg-gradient-to-l from-[#00B050] to-emerald-600 text-white shadow-md shadow-[#00B050]/25 font-black'
                     : isDark
                     ? 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -738,19 +742,21 @@ export default function SpikeSuperAdminDashboard() {
             );
           })}
 
+          {/* 👑 متاجر الأدمن الخاصة — داخل السكرول */}
           <button
             data-admin-stores
             onClick={() => { setPickQ(''); setPickStore(true); }}
-            className="w-full py-2 mt-3 bg-gradient-to-r from-[#6B8E23] to-[#556B2F] text-white rounded-xl text-xs font-black shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full py-2 mt-3 bg-gradient-to-r from-[#00B050] to-emerald-600 text-white rounded-xl text-xs font-black shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
             title="الدخول إلى متاجر الأدمن الخاصة بك"
           >
             <span>👑</span>
             <span>{t.adminStoresBtn}</span>
           </button>
 
+          {/* 🚪 بيانات المشرف وتسجيل الخروج — تظهر عند النزول */}
           <div className={`px-1 pt-4 mt-3 border-t flex flex-col gap-2.5 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#6B8E23] to-[#A2C151] flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00B050] to-emerald-400 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
                 S
               </div>
               <div className="leading-tight truncate">
@@ -771,8 +777,8 @@ export default function SpikeSuperAdminDashboard() {
             </button>
           </div>
         </nav>
-      </aside>
 
+      </aside>
       {pickStore && (
         <div
           onClick={() => setPickStore(false)}
@@ -800,7 +806,7 @@ export default function SpikeSuperAdminDashboard() {
                 type="button"
                 className="cursor-pointer"
                 onClick={() => { localStorage.setItem('merchant_user_id', 'main_flagship_owner'); router.push('/dashboard'); }}
-                style={{ textAlign: 'right', padding: 12, borderRadius: 12, border: '1px solid #6B8E23', background: 'rgba(107,142,35,.1)' }}
+                style={{ textAlign: 'right', padding: 12, borderRadius: 12, border: '1px solid #00B050', background: 'rgba(0,176,80,.1)' }}
               >
                 <b>👑 {isAr ? 'متجر الأدمن الرئيسي' : 'Main admin store'}</b>
               </button>
@@ -818,7 +824,7 @@ export default function SpikeSuperAdminDashboard() {
                       <b style={{ display: 'block' }}>{s.store_name || '—'}</b>
                       <span className="text-[10px] text-slate-400 font-mono" dir="ltr">{s.store_slug}.spike.shop</span>
                     </span>
-                    <span className="text-[11px]" style={{ color: s.is_active !== false ? '#6B8E23' : '#e11d48' }}>
+                    <span className="text-[11px]" style={{ color: s.is_active !== false ? '#00B050' : '#e11d48' }}>
                       {s.is_active !== false ? (isAr ? 'مفعل' : 'Active') : (isAr ? 'معطل' : 'Off')}
                     </span>
                   </button>
@@ -828,6 +834,7 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       )}
 
+      {/* منطقة المحتوى الرئيسية */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <header className={`px-4 sm:px-8 py-4 border-b flex items-center justify-between backdrop-blur-md sticky top-0 z-30 transition-colors ${
           isDark ? 'bg-[#0B132B]/95 border-slate-800' : 'bg-white/95 border-slate-200 shadow-sm'
@@ -863,7 +870,7 @@ export default function SpikeSuperAdminDashboard() {
             <AdminCommandBar stores={stores} orders={orders} domains={domains} tabs={navItems} isDark={isDark} onGo={(id) => setActiveTab(id)} />
             <button
               onClick={() => setNewStoreModal(true)}
-              className="px-3 sm:px-4 py-2 rounded-xl bg-[#6B8E23] hover:bg-[#556B2F] text-white text-xs font-black shadow-sm transition cursor-pointer flex items-center gap-1 active:scale-95"
+              className="px-3 sm:px-4 py-2 rounded-xl bg-[#00B050] hover:bg-[#009644] text-white text-xs font-black shadow-sm transition cursor-pointer flex items-center gap-1 active:scale-95"
             >
               <span>+</span>
               <span className="hidden sm:inline">{t.addStore}</span>
@@ -916,7 +923,7 @@ export default function SpikeSuperAdminDashboard() {
               onClick={toggleMobileView}
               className={`w-9 h-9 rounded-xl border flex items-center justify-center text-sm transition cursor-pointer ${
                 isMobileView
-                  ? 'bg-[#6B8E23] text-white border-[#6B8E23] shadow-xs'
+                  ? 'bg-[#00B050] text-white border-[#00B050] shadow-xs'
                   : isDark
                   ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
                   : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 shadow-2xs'
@@ -929,8 +936,11 @@ export default function SpikeSuperAdminDashboard() {
         </header>
 
         <div className="p-4 sm:p-8 space-y-6">
+
+          {/* تبويب الرئيسية والمؤشرات */}
           {shown('overview') && (
             <>
+              {/* مؤشرات رئيسية */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-5">
                 {statCards.map((stat, i) => (
                   <div
@@ -958,14 +968,15 @@ export default function SpikeSuperAdminDashboard() {
                     <div className="mt-2 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex justify-between items-center text-[10px] text-slate-400 font-medium">
                       <span>{stat.desc2}</span>
                       <div className="w-12 sm:w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#6B8E23] rounded-full transition-all duration-500" style={{ width: stat.progress }} />
+                        <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: stat.progress }} />
                       </div>
                     </div>
                   </div>
                 ))}
-            </div>
+              </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+              {/* مؤشرات مالية ثانوية */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
                 {[
                   { icon: '🏦', label: isAr ? `عمولة المنصة الفعلية (${ledgerOrders} طلب)` : `Platform commission (${ledgerOrders} orders)`, val: ledgerUsd === null ? '—' : `$${fmt(ledgerUsd, 2)} ≈ ${fmt(ledgerUsd * (Number(exchangeRate) || 0), 0)} ج.م` },
                   { icon: '🧾', label: isAr ? 'متوسط قيمة الطلب' : 'Avg order value', val: `${fmt(avgOrderValue, 2)} ج.م` },
@@ -977,9 +988,10 @@ export default function SpikeSuperAdminDashboard() {
                     <div className="text-xl font-black font-mono" dir="ltr">{k.val}</div>
                   </div>
                 ))}
-            </div>
+              </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-5">
+              {/* الرسم الرئيسي + حالة الطلبات */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-5">
                 <ChartCard
                   className="xl:col-span-2"
                   title={metric === 'sales' ? (isAr ? 'المبيعات اليومية' : 'Daily sales') : (isAr ? 'الطلبات اليومية' : 'Daily orders')}
@@ -1010,492 +1022,524 @@ export default function SpikeSuperAdminDashboard() {
                 <ChartCard title={isAr ? 'حالة الطلبات' : 'Order status'} subtitle={isAr ? 'توزيع كل الطلبات' : 'All orders'}>
                   <Donut segments={statusSegments} centerValue={fmt(orders.length)} centerLabel={isAr ? 'طلب' : 'orders'} />
                 </ChartCard>
-            </div>
+              </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+              {/* محافظات + متاجر + طلبات يومية */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
                 <ChartCard title={isAr ? 'أكثر المحافظات طلباً' : 'Top governorates'} subtitle={isAr ? 'عدد الطلبات' : 'Order count'}>
                   <HBarList items={topGovernorates} unit={isAr ? 'طلب' : ''} empty={isAr ? 'لا توجد بيانات بعد' : 'No data yet'} />
                 </ChartCard>
                 <ChartCard title={isAr ? 'أفضل المتاجر مبيعاً' : 'Top stores'} subtitle={isAr ? 'بالجنيه' : 'EGP'}>
-                  <HBarList items={topStores} unit="ج.م" color="#FDF6EC" empty={isAr ? 'لا توجد بيانات بعد' : 'No data yet'} />
+                  <HBarList items={topStores} unit="ج.م" color="var(--orange)" empty={isAr ? 'لا توجد بيانات بعد' : 'No data yet'} />
                 </ChartCard>
                 <ChartCard title={isAr ? 'عدد الطلبات' : 'Orders per day'} subtitle={isAr ? `آخر ${range} يوم` : `Last ${range} days`}>
                   <BarChart labels={chartLabels} values={chartOrders} height={210} />
                 </ChartCard>
-            </div>
+              </div>
 
-            <ChartCard title={isAr ? 'المنتجات الأعلى هامش ربح' : 'Highest-margin products'} subtitle={isAr ? 'من سعر البيع وسعر التكلفة' : 'From price and cost'}>
-              {topProducts.length === 0 ? (
-                <div className="text-center py-10 text-slate-400 text-xs">{isAr ? 'أضف منتجات بسعر وتكلفة لتظهر هنا' : 'Add products with price and cost'}</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr>
-                        <th className="p-3 text-right">المنتج</th>
-                        <th className="p-3 text-right">المخزون</th>
-                        <th className="p-3 text-right">هامش الربح</th>
-                        <th className="p-3 text-right">سعر البيع</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {topProducts.map((p, i) => (
-                        <tr key={i}>
-                          <td className="p-3 font-bold">{p.title}</td>
-                          <td className="p-3 font-mono">{p.stock_quantity || 0}</td>
-                          <td className="p-3" style={{ minWidth: 180 }}>
-                            <div className="flex items-center gap-3">
-                              <div className="flex-1"><ProgressBar value={p.margin} color={p.margin < 15 ? '#FDF6EC' : '#6B8E23'} /></div>
-                              <span className="font-mono text-[11px] w-12 text-left" dir="ltr">{p.margin.toFixed(0)}%</span>
-                            </div>
-                          </td>
-                          <td className="p-3 font-mono font-bold text-[#6B8E23]">{fmt(p.price, 2)} ج.م</td>
+              {/* المنتجات الأعلى هامش ربح */}
+              <ChartCard title={isAr ? 'المنتجات الأعلى هامش ربح' : 'Highest-margin products'} subtitle={isAr ? 'من سعر البيع وسعر التكلفة' : 'From price and cost'}>
+                {topProducts.length === 0 ? (
+                  <div className="text-center py-10 text-slate-400 text-xs">{isAr ? 'أضف منتجات بسعر وتكلفة لتظهر هنا' : 'Add products with price and cost'}</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr>
+                          <th className="p-3 text-right">المنتج</th>
+                          <th className="p-3 text-right">المخزون</th>
+                          <th className="p-3 text-right">هامش الربح</th>
+                          <th className="p-3 text-right">سعر البيع</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </ChartCard>
+                      </thead>
+                      <tbody>
+                        {topProducts.map((p, i) => (
+                          <tr key={i}>
+                            <td className="p-3 font-bold">{p.title}</td>
+                            <td className="p-3 font-mono">{p.stock_quantity || 0}</td>
+                            <td className="p-3" style={{ minWidth: 180 }}>
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1"><ProgressBar value={p.margin} color={p.margin < 15 ? 'var(--orange)' : 'var(--teal)'} /></div>
+                                <span className="font-mono text-[11px] w-12 text-left" dir="ltr">{p.margin.toFixed(0)}%</span>
+                              </div>
+                            </td>
+                            <td className="p-3 font-mono font-bold text-[#00B050]">{fmt(p.price, 2)} ج.م</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </ChartCard>
 
-            <div className={`p-6 sm:p-8 rounded-3xl border transition-colors ${
-              isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'
-            }`}>
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h3 className="text-base font-black">{isAr ? 'آخر طلبات المنصة الحية' : 'Latest Live Platform Orders'}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{isAr ? 'مزامنة لحظية للعمليات مع تأكيد الدفع والشحن' : 'Real-time sync'}</p>
+              <div className={`p-6 sm:p-8 rounded-3xl border transition-colors ${
+                isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
+              }`}>
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-base font-black">{isAr ? 'آخر طلبات المنصة الحية' : 'Latest Live Platform Orders'}</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{isAr ? 'مزامنة لحظية للعمليات مع تأكيد الدفع والشحن' : 'Real-time sync'}</p>
+                  </div>
+                  {can('manage_orders') && (
+                    <button onClick={() => setActiveTab('orders')} className="text-xs text-[#00B050] font-bold hover:underline cursor-pointer">
+                      {isAr ? 'عرض كل الطلبات ←' : 'View all orders →'}
+                    </button>
+                  )}
                 </div>
-                {can('manage_orders') && (
-                  <button onClick={() => setActiveTab('orders')} className="text-xs text-[#6B8E23] font-bold hover:underline cursor-pointer">
-                    {isAr ? 'عرض كل الطلبات ←' : 'View all orders →'}
-                  </button>
+
+                {orders.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400 text-xs">
+                    {isAr ? 'لا توجد طلبات مسجلة حتى اللحظة' : 'No recorded orders yet'}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400">
+                          <th className="p-3 text-right">رقم الطلب</th>
+                          <th className="p-3 text-right">العميل</th>
+                          <th className="p-3 text-right">المحافظة</th>
+                          <th className="p-3 text-right">الإجمالي</th>
+                          <th className="p-3 text-right">الحالة</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.slice(0, 5).map((o, idx) => (
+                          <tr key={idx} className="border-b border-slate-100 dark:border-slate-800/50">
+                            <td className="p-3 font-mono font-bold">#{o.id}</td>
+                            <td className="p-3">{o.customer_name || 'عميل نقدي'}</td>
+                            <td className="p-3">{o.governorate || 'القاهرة'}</td>
+                            <td className="p-3 font-mono font-bold text-[#00B050]">{o.total_price} ج.م</td>
+                            <td className="p-3">
+                              <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-bold">
+                                {o.status || 'pending'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
+            </>
+          )}
 
-              {orders.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 text-xs">
-                  {isAr ? 'لا توجد طلبات مسجلة حتى اللحظة' : 'No recorded orders yet'}
+          {/* تبويب فريق الإدارة والصلاحيات */}
+          {shown('admins') && (
+            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-lg font-black">{isAr ? 'فريق إدارة منصة سبايك' : 'Platform Admins & Roles'}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">الحسابات المصرح لها حصرياً بالدخول والتحكم في الداشبورد</p>
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400">
-                        <th className="p-3 text-right">رقم الطلب</th>
-                        <th className="p-3 text-right">العميل</th>
-                        <th className="p-3 text-right">المحافظة</th>
-                        <th className="p-3 text-right">الإجمالي</th>
-                        <th className="p-3 text-right">الحالة</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {orders.slice(0, 5).map((o, idx) => (
-                        <tr key={idx} className="border-b border-slate-100 dark:border-slate-800/50">
-                          <td className="p-3 font-mono font-bold">#{o.id}</td>
-                          <td className="p-3">{o.customer_name || 'عميل نقدي'}</td>
-                          <td className="p-3">{o.governorate || 'القاهرة'}</td>
-                          <td className="p-3 font-mono font-bold text-[#6B8E23]">{o.total_price} ج.م</td>
-                          <td className="p-3">
-                            <span className="px-2 py-0.5 rounded-md bg-[#E2EEDB] text-[#6B8E23] text-[10px] font-bold">
-                              {o.status || 'pending'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                </table>
+                <button
+                  onClick={() => setNewAdminModal(true)}
+                  className="px-4 py-2 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  + إضافة مشرف جديد
+                </button>
               </div>
-            )}
-          </div>
-          </>
-        )}
 
-        {shown('admins') && (
-          <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-lg font-black">{isAr ? 'فريق إدارة منصة سبايك' : 'Platform Admins & Roles'}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">الحسابات المصرح لها حصرياً بالدخول والتحكم في الداشبورد</p>
-              </div>
-              <button
-                onClick={() => setNewAdminModal(true)}
-                className="px-4 py-2 bg-[#6B8E23] hover:bg-[#556B2F] text-white rounded-xl text-xs font-bold transition cursor-pointer"
-              >
-                + إضافة مشرف جديد
-              </button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                    <th className="p-3 text-right">المسؤول</th>
-                    <th className="p-3 text-right">البريد الإلكتروني</th>
-                    <th className="p-3 text-right">الرتبة</th>
-                    <th className="p-3 text-right">الصلاحيات الممنوحة</th>
-                    <th className="p-3 text-center">الإجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-slate-100 dark:border-slate-800/50 bg-[#E2EEDB]/20">
-                    <td className="p-3 font-black text-[#6B8E23]">حسن حسني (المالك)</td>
-                    <td className="p-3 font-mono font-bold" dir="ltr">{SUPER_ADMIN_EMAIL}</td>
-                    <td className="p-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#6B8E23]/10 text-[#6B8E23] border border-[#6B8E23]/20">
-                        S.A
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <span className="text-[10px] font-bold text-[#6B8E23]">تحكم كامل ومطلق بكافة أقسام المنظومة</span>
-                    </td>
-                    <td className="p-3 text-center text-slate-400 text-[10px]">
-                      🔒 محمي بالنظام
-                    </td>
-                  </tr>
-
-                  {adminUsers.map((user) => (
-                    <tr key={user.id} className="border-b border-slate-100 dark:border-slate-800/50">
-                      <td className="p-3 font-bold">{user.name}</td>
-                      <td className="p-3 font-mono" dir="ltr">{user.email}</td>
-                      <td className="p-3">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex flex-wrap gap-1 text-[10px]">
-                          {user.permissions?.manage_stores && <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">المتاجر</span>}
-                          {user.permissions?.manage_orders && <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">الطلبات</span>}
-                          {user.permissions?.manage_finance && <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">المالية</span>}
-                          {user.permissions?.manage_admins && <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">الأدمن</span>}
-                        </div>
-                      </td>
-                      <td className="p-3 text-center">
-                        <button
-                          onClick={() => handleDeleteAdmin(user.id, user.email)}
-                          className="text-rose-500 hover:text-rose-600 font-bold text-xs cursor-pointer"
-                        >
-                          إلغاء الصلاحية
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {shown('merchants') && (
-          <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-lg font-black">{isAr ? 'قائمة المتاجر والتجار' : 'Stores & Merchants'} ({stores.length})</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{isAr ? 'التحكم في تفعيل المتاجر والأرصدة' : 'Manage stores and balances'}</p>
-              </div>
-              <button
-                onClick={() => setNewStoreModal(true)}
-                className="px-4 py-2 bg-[#6B8E23] text-white rounded-xl text-xs font-bold cursor-pointer"
-              >
-                + {t.addStore}
-              </button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                    <th className="p-3 text-right">المتجر</th>
-                    <th className="p-3 text-right">المالك</th>
-                    <th className="p-3 text-right">الهاتف</th>
-                    <th className="p-3 text-right">رصيد المحفظة</th>
-                    <th className="p-3 text-right">الباقة</th>
-                    <th className="p-3 text-right">الحالة</th>
-                    <th className="p-3 text-center">إجراءات</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stores.map((s, idx) => (
-                    <tr key={idx} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="p-3">
-                        <span className="font-bold block">{s.store_name}</span>
-                        <span className="text-[10px] text-slate-400 font-mono" dir="ltr">{s.store_slug}.spike.shop</span>
-                      </td>
-                      <td className="p-3">{s.owner_name || '—'}</td>
-                      <td className="p-3 font-mono" dir="ltr">{s.phone || '—'}</td>
-                      <td className="p-3 font-mono font-bold text-[#6B8E23]">${s.wallet_balance_usd || 0}</td>
-                      <td className="p-3">
-                        <select
-                          value={s.plan_type || 'starter'}
-                          onChange={(e) => handleChangePlan(s.id, e.target.value)}
-                          disabled={!can('manage_finance')}
-                          style={{ minHeight: 34, padding: '4px 10px', fontSize: 12 }}
-                        >
-                          <option value="starter">Starter</option>
-                          <option value="pro">Pro</option>
-                          <option value="scale">Scale</option>
-                        </select>
-                      </td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => handleToggleStoreStatus(s.id, s.is_active !== false)}
-                          className={`px-2.5 py-1 rounded-md text-[10px] font-bold cursor-pointer transition ${
-                            s.is_active !== false
-                              ? 'bg-[#E2EEDB] text-[#6B8E23] border border-[#6B8E23]/30'
-                              : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
-                          }`}
-                        >
-                          {s.is_active !== false ? 'مفعل' : 'معطل'}
-                        </button>
-                      </td>
-                      <td className="p-3 text-center space-x-2">
-                        <button
-                          onClick={() => handleUpdateWallet(s.id, s.wallet_balance_usd || 0)}
-                          className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded text-[11px] font-bold cursor-pointer"
-                        >
-                          شحن/خصم
-                        </button>
-                        <button
-                          onClick={() => {
-                            localStorage.setItem('merchant_user_id', s.user_id);
-                            router.push('/dashboard');
-                          }}
-                          className="px-2 py-1 bg-[#6B8E23]/15 text-[#6B8E23] rounded text-[11px] font-bold cursor-pointer"
-                        >
-                          دخول كتاجر ↗
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {shown('orders') && (
-          <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-lg font-black">{isAr ? 'كافة طلبات المنصة' : 'All Platform Orders'} ({orders.length})</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">تحديث وتأكيد طلبات الدفع عند الاستلام والشحن</p>
-              </div>
-              <button onClick={fetchAllData} className="px-3 py-1.5 border rounded-lg text-xs font-bold cursor-pointer">تحديث</button>
-            </div>
-
-            {orders.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-sm">لا توجد طلبات حتى الآن</div>
-            ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400">
-                      <th className="p-3 text-right">رقم الطلب</th>
-                      <th className="p-3 text-right">العميل</th>
-                      <th className="p-3 text-right">الهاتف</th>
-                      <th className="p-3 text-right">المحافظة / العنوان</th>
-                      <th className="p-3 text-right">المبلغ</th>
-                      <th className="p-3 text-right">الحالة</th>
-                      <th className="p-3 text-center">تحديث الحالة</th>
+                      <th className="p-3 text-right">المسؤول</th>
+                      <th className="p-3 text-right">البريد الإلكتروني</th>
+                      <th className="p-3 text-right">الرتبة</th>
+                      <th className="p-3 text-right">الصلاحيات الممنوحة</th>
+                      <th className="p-3 text-center">الإجراءات</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map((o, idx) => (
-                      <tr key={idx} className="border-b border-slate-100 dark:border-slate-800/50">
-                        <td className="p-3 font-mono font-bold">#{o.id}</td>
-                        <td className="p-3 font-bold">{o.customer_name}</td>
-                        <td className="p-3 font-mono" dir="ltr">{o.customer_phone}</td>
-                        <td className="p-3">{o.governorate} - {o.address}</td>
-                        <td className="p-3 font-mono font-bold text-[#6B8E23]">{o.total_price} ج.م</td>
+                    <tr className="border-b border-slate-100 dark:border-slate-800/50 bg-emerald-500/5">
+                      <td className="p-3 font-black text-emerald-600 dark:text-emerald-400">حسن حسني (المالك)</td>
+                      <td className="p-3 font-mono font-bold" dir="ltr">{SUPER_ADMIN_EMAIL}</td>
+                      <td className="p-3">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                          S.A
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">تحكم كامل ومطلق بكافة أقسام المنظومة</span>
+                      </td>
+                      <td className="p-3 text-center text-slate-400 text-[10px]">
+                        🔒 محمي بالنظام
+                      </td>
+                    </tr>
+
+                    {adminUsers.map((user) => (
+                      <tr key={user.id} className="border-b border-slate-100 dark:border-slate-800/50">
+                        <td className="p-3 font-bold">{user.name}</td>
+                        <td className="p-3 font-mono" dir="ltr">{user.email}</td>
                         <td className="p-3">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#E2EEDB] text-[#6B8E23]">
-                            {o.status || 'pending'}
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                            {user.role}
                           </span>
                         </td>
+                        <td className="p-3">
+                          <div className="flex flex-wrap gap-1 text-[10px]">
+                            {user.permissions?.manage_stores && <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">المتاجر</span>}
+                            {user.permissions?.manage_orders && <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">الطلبات</span>}
+                            {user.permissions?.manage_finance && <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">المالية</span>}
+                            {user.permissions?.manage_admins && <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">الأدمن</span>}
+                          </div>
+                        </td>
                         <td className="p-3 text-center">
-                          <select
-                            value={o.status || 'pending'}
-                            onChange={(e) => handleUpdateOrderStatus(o.id, e.target.value)}
-                            className="p-1 border rounded text-[11px] bg-transparent cursor-pointer"
+                          <button
+                            onClick={() => handleDeleteAdmin(user.id, user.email)}
+                            className="text-rose-500 hover:text-rose-600 font-bold text-xs cursor-pointer"
                           >
-                            <option value="pending">بانتظار الشحن</option>
-                            <option value="confirmed">تم التأكيد</option>
-                            <option value="shipped">تم الشحن</option>
-                            <option value="delivered">تم التسليم</option>
-                            <option value="cancelled">ملغي</option>
-                          </select>
+                            إلغاء الصلاحية
+                          </button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
-        )}
-
-        {shown('inventory') && (
-          <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-lg font-black">{isAr ? 'المنتجات والمخزون' : 'Products & Inventory'} ({products.length})</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">إدارة المنتجات، تكلفة التوريد، وسعر البيع المقترح</p>
-              </div>
-              <button
-                onClick={() => setNewProductModal(true)}
-                className="px-4 py-2 bg-[#6B8E23] text-white rounded-xl text-xs font-bold cursor-pointer"
-              >
-                + إضافة منتج جديد
-              </button>
             </div>
+          )}
 
-            {products.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-sm">المخزون فارغ حالياً، قم بإضافة أول منتج</div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {products.map((p, idx) => (
-                  <div key={idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3">
-                    <div>
-                      <span className="font-bold text-sm block">{p.title}</span>
-                      <div className="flex justify-between text-xs text-slate-400 mt-2 font-mono">
-                        <span>سعر البيع: {p.price} ج.م</span>
-                        <span>التكلفة: {p.cost_price || 0} ج.م</span>
+          {/* تبويب المتاجر والتجار */}
+          {shown('merchants') && (
+            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-lg font-black">{isAr ? 'قائمة المتاجر والتجار' : 'Stores & Merchants'} ({stores.length})</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{isAr ? 'التحكم في تفعيل المتاجر والأرصدة' : 'Manage stores and balances'}</p>
+                </div>
+                <button
+                  onClick={() => setNewStoreModal(true)}
+                  className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  + {t.addStore}
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400">
+                      <th className="p-3 text-right">المتجر</th>
+                      <th className="p-3 text-right">المالك</th>
+                      <th className="p-3 text-right">الهاتف</th>
+                      <th className="p-3 text-right">رصيد المحفظة</th>
+                      <th className="p-3 text-right">الباقة</th>
+                      <th className="p-3 text-right">الحالة</th>
+                      <th className="p-3 text-center">إجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stores.map((s, idx) => (
+                      <tr key={idx} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                        <td className="p-3">
+                          <span className="font-bold block">{s.store_name}</span>
+                          <span className="text-[10px] text-slate-400 font-mono" dir="ltr">{s.store_slug}.spike.shop</span>
+                        </td>
+                        <td className="p-3">{s.owner_name || '—'}</td>
+                        <td className="p-3 font-mono" dir="ltr">{s.phone || '—'}</td>
+                        <td className="p-3 font-mono font-bold text-emerald-500">${s.wallet_balance_usd || 0}</td>
+                        <td className="p-3">
+                          <select
+                            value={s.plan_type || 'starter'}
+                            onChange={(e) => handleChangePlan(s.id, e.target.value)}
+                            disabled={!can('manage_finance')}
+                            style={{ minHeight: 34, padding: '4px 10px', fontSize: 12 }}
+                          >
+                            <option value="starter">Starter</option>
+                            <option value="pro">Pro</option>
+                            <option value="scale">Scale</option>
+                          </select>
+                        </td>
+                        <td className="p-3">
+                          <button
+                            onClick={() => handleToggleStoreStatus(s.id, s.is_active !== false)}
+                            className={`px-2.5 py-1 rounded-md text-[10px] font-bold cursor-pointer transition ${
+                              s.is_active !== false
+                                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                                : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+                            }`}
+                          >
+                            {s.is_active !== false ? 'مفعل' : 'معطل'}
+                          </button>
+                        </td>
+                        <td className="p-3 text-center space-x-2">
+                          <button
+                            onClick={() => handleUpdateWallet(s.id, s.wallet_balance_usd || 0)}
+                            className="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded text-[11px] font-bold cursor-pointer"
+                          >
+                            شحن/خصم
+                          </button>
+                          <button
+                            onClick={() => {
+                              localStorage.setItem('merchant_user_id', s.user_id);
+                              router.push('/dashboard');
+                            }}
+                            className="px-2 py-1 bg-[#00B050]/15 text-[#00B050] rounded text-[11px] font-bold cursor-pointer"
+                          >
+                            دخول كتاجر ↗
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* تبويب كافة الطلبات */}
+          {shown('orders') && (
+            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-lg font-black">{isAr ? 'كافة طلبات المنصة' : 'All Platform Orders'} ({orders.length})</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">تحديث وتأكيد طلبات الدفع عند الاستلام والشحن</p>
+                </div>
+                <button onClick={fetchAllData} className="px-3 py-1.5 border rounded-lg text-xs font-bold cursor-pointer">تحديث</button>
+              </div>
+
+              {orders.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-sm">لا توجد طلبات حتى الآن</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400">
+                        <th className="p-3 text-right">رقم الطلب</th>
+                        <th className="p-3 text-right">العميل</th>
+                        <th className="p-3 text-right">الهاتف</th>
+                        <th className="p-3 text-right">المحافظة / العنوان</th>
+                        <th className="p-3 text-right">المبلغ</th>
+                        <th className="p-3 text-right">الحالة</th>
+                        <th className="p-3 text-center">تحديث الحالة</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((o, idx) => (
+                        <tr key={idx} className="border-b border-slate-100 dark:border-slate-800/50">
+                          <td className="p-3 font-mono font-bold">#{o.id}</td>
+                          <td className="p-3 font-bold">{o.customer_name}</td>
+                          <td className="p-3 font-mono" dir="ltr">{o.customer_phone}</td>
+                          <td className="p-3">{o.governorate} - {o.address}</td>
+                          <td className="p-3 font-mono font-bold text-[#00B050]">{o.total_price} ج.م</td>
+                          <td className="p-3">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500">
+                              {o.status || 'pending'}
+                            </span>
+                          </td>
+                          <td className="p-3 text-center">
+                            <select
+                              value={o.status || 'pending'}
+                              onChange={(e) => handleUpdateOrderStatus(o.id, e.target.value)}
+                              className="p-1 border rounded text-[11px] bg-transparent cursor-pointer"
+                            >
+                              <option value="pending">بانتظار الشحن</option>
+                              <option value="confirmed">تم التأكيد</option>
+                              <option value="shipped">تم الشحن</option>
+                              <option value="delivered">تم التسليم</option>
+                              <option value="cancelled">ملغي</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* تبويب المنتجات والمخزون */}
+          {shown('inventory') && (
+            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h3 className="text-lg font-black">{isAr ? 'المنتجات والمخزون' : 'Products & Inventory'} ({products.length})</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">إدارة المنتجات، تكلفة التوريد، وسعر البيع المقترح</p>
+                </div>
+                <button
+                  onClick={() => setNewProductModal(true)}
+                  className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  + إضافة منتج جديد
+                </button>
+              </div>
+
+              {products.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-sm">المخزون فارغ حالياً، قم بإضافة أول منتج</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {products.map((p, idx) => (
+                    <div key={idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3">
+                      <div>
+                        <span className="font-bold text-sm block">{p.title}</span>
+                        <div className="flex justify-between text-xs text-slate-400 mt-2 font-mono">
+                          <span>سعر البيع: {p.price} ج.م</span>
+                          <span>التكلفة: {p.cost_price || 0} ج.م</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                        <span className="text-slate-400">المخزون: <strong>{p.stock_quantity || 0}</strong></span>
+                        <span className="px-2 py-0.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded text-[10px] font-bold">متوفر</span>
                       </div>
                     </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                      <span className="text-slate-400">المخزون: <strong>{p.stock_quantity || 0}</strong></span>
-                      <span className="px-2 py-0.5 bg-[#E2EEDB] text-[#6B8E23] rounded text-[10px] font-bold">متوفر</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {shown('rates') && (
-          <div className={`p-6 sm:p-8 rounded-2xl border max-w-2xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className="text-lg font-black mb-2">{isAr ? 'إعدادات سعر الصرف والعمولات المالية' : 'Exchange Rates & Fees'}</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">يتم تطبيق هذه الإعدادات لحظياً على حسابات جميع المتاجر وسحب الأرباح.</p>
-
-            <div className="space-y-4 text-xs font-bold">
-              <div>
-                <label className="block text-slate-500 dark:text-slate-400 mb-1.5">سعر تحويل الدولار مقابل الجنيه المصري (USD to EGP)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={exchangeRate}
-                  onChange={(e) => setExchangeRate(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm font-mono outline-none focus:border-[#6B8E23]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-500 dark:text-slate-400 mb-1.5">نسبة عمولة المنصة من كل طلب ناجح (%)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={platformCommission}
-                  onChange={(e) => setPlatformCommission(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm font-mono outline-none focus:border-[#6B8E23]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-500 dark:text-slate-400 mb-1.5">الحد الأدنى لطلب سحب الأرباح بالدولار ($)</label>
-                <input
-                  type="number"
-                  value={withdrawThreshold}
-                  onChange={(e) => setWithdrawThreshold(e.target.value)}
-                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm font-mono outline-none focus:border-[#6B8E23]"
-                />
-              </div>
-
-              <button
-                onClick={handleSavePlatformSettings}
-                className="px-6 py-3 bg-[#6B8E23] text-white rounded-xl font-black text-xs hover:bg-[#556B2F] transition cursor-pointer mt-4"
-              >
-                {t.save}
-              </button>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          )}
 
-        {shown('domains') && (
-          <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className="text-lg font-black mb-2">{isAr ? 'إدارة الدومينات المخصصة والربط' : 'Custom Domains & DNS'}</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">حالة طلبات الدومينات المخصصة والربط بسيرفرات سبايك عبر Cloudflare و CNAME.</p>
-            {domains.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-xs">
-                جميع المتاجر تستخدم النطاق المباشر الفرعي (.spike.shop) بشكل مستقر.
+          {/* تبويب سعر الصرف والعمولة */}
+          {shown('rates') && (
+            <div className={`p-6 sm:p-8 rounded-2xl border max-w-2xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+              <h3 className="text-lg font-black mb-2">{isAr ? 'إعدادات سعر الصرف والعمولات المالية' : 'Exchange Rates & Fees'}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">يتم تطبيق هذه الإعدادات لحظياً على حسابات جميع المتاجر وسحب الأرباح.</p>
+
+              <div className="space-y-4 text-xs font-bold">
+                <div>
+                  <label className="block text-slate-500 dark:text-slate-400 mb-1.5">سعر تحويل الدولار مقابل الجنيه المصري (USD to EGP)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={exchangeRate}
+                    onChange={(e) => setExchangeRate(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm font-mono outline-none focus:border-[#00B050]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-500 dark:text-slate-400 mb-1.5">نسبة عمولة المنصة من كل طلب ناجح (%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={platformCommission}
+                    onChange={(e) => setPlatformCommission(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm font-mono outline-none focus:border-[#00B050]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-500 dark:text-slate-400 mb-1.5">الحد الأدنى لطلب سحب الأرباح بالدولار ($)</label>
+                  <input
+                    type="number"
+                    value={withdrawThreshold}
+                    onChange={(e) => setWithdrawThreshold(e.target.value)}
+                    className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm font-mono outline-none focus:border-[#00B050]"
+                  />
+                </div>
+
+                <button
+                  onClick={handleSavePlatformSettings}
+                  className="px-6 py-3 bg-[#00B050] text-white rounded-xl font-black text-xs hover:bg-[#009644] transition cursor-pointer mt-4"
+                >
+                  {t.save}
+                </button>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {domains.map((d, i) => (
-                  <div key={i} className="p-3 border rounded-xl flex justify-between items-center text-xs">
-                    <span className="font-mono">{d.domain_name}</span>
-                    <span className="text-[#6B8E23] font-bold">{d.status}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-        {shown('analytics') && (<><AdminAnalytics isDark={isDark} /><AdminMerchantReport stores={stores} orders={orders} isDark={isDark} /><AdminAlerts isDark={isDark} /></>)}
+          {/* تبويب الدومينات */}
+          {shown('domains') && (
+            <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+              <h3 className="text-lg font-black mb-2">{isAr ? 'إدارة الدومينات المخصصة والربط' : 'Custom Domains & DNS'}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">حالة طلبات الدومينات المخصصة والربط بسيرفرات سبايك عبر Cloudflare و CNAME.</p>
+              {domains.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-xs">
+                  جميع المتاجر تستخدم النطاق المباشر الفرعي (.spike.shop) بشكل مستقر.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {domains.map((d, i) => (
+                    <div key={i} className="p-3 border rounded-xl flex justify-between items-center text-xs">
+                      <span className="font-mono">{d.domain_name}</span>
+                      <span className="text-emerald-500 font-bold">{d.status}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          {/* تبويب إحصائيات المنصة */}
+          {shown('analytics') && (<><AdminAnalytics isDark={isDark} /><AdminMerchantReport stores={stores} orders={orders} isDark={isDark} /><AdminAlerts isDark={isDark} /></>)}
 
-        {shown('plans') && <><PaymentNote isDark={isDark} /><ThemeColors isDark={isDark} /><AdminBilling isDark={isDark} initial="plans" onChanged={fetchAllData} /></>}
-        <AdminPromos isDark={isDark} />
-        {shown('services') && <AdminServiceRequests isDark={isDark} />}
-        <AdminApps isDark={isDark} />
-        {shown('billing') && <AdminBilling isDark={isDark} initial="stores" onChanged={fetchAllData} />}
 
-        {shown('audit') && <AdminAuditLog isDark={isDark} />}
+          {/* تبويب الباقات */}
+         {shown('plans') && <><PaymentNote isDark={isDark} /><ThemeColors isDark={isDark} /><AdminBilling isDark={isDark} initial="plans" onChanged={fetchAllData} /></>}
+          <AdminPromos isDark={isDark} />
+          {shown('services') && <AdminServiceRequests isDark={isDark} />}
+          <AdminApps isDark={isDark} />
+          {shown('billing') && <AdminBilling isDark={isDark} initial="stores" onChanged={fetchAllData} />}
 
-        {shown('integrations') && (
-          <SpikeIntegrations
-            stores={stores}
-            isAr={isAr}
-            canManage={can('manage_stores')}
-            onLog={logAction}
-            onImported={fetchAllData}
-          />
-        )}
+          {/* تبويب سجل الحركات */}
+          {shown('audit') && <AdminAuditLog isDark={isDark} />}
+          {false && (
+            <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+              <h3 className="text-lg font-black mb-4">سجل الحركات الإدارية (Audit Logs)</h3>
+              {auditLogs.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-xs">لا توجد حركات مسجلة مؤخراً</div>
+              ) : (
+                <div className="space-y-2 text-xs font-mono">
+                  {auditLogs.map((log, i) => (
+                    <div key={i} className="p-3 border rounded-xl flex justify-between">
+                      <span className="font-bold">{log.action}</span>
+                      <span className="text-slate-400 truncate mx-3 flex-1" dir="ltr">{log.actor_email || ''}</span>
+                      <span className="text-slate-400" dir="ltr">{log.created_at ? new Date(log.created_at).toLocaleString() : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-        {shown('broadcast') && (
-          <div className={`p-6 sm:p-8 rounded-2xl border max-w-xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className="text-lg font-black mb-2">إرسال تنبيه جماعي لجميع التجار</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">يظهر التنبيه داخل لوحة تحكم كل التجار المسجلين في المنصة فوراً.</p>
-            <textarea
-              rows="4"
-              value={broadcastMessage}
-              onChange={(e) => setBroadcastMessage(e.target.value)}
-              placeholder="اكتب التنبيه هنا..."
-              className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-xs mb-3 outline-none focus:border-[#6B8E23]"
+          {/* تبويب التكاملات والإضافات */}
+          {shown('integrations') && (
+            <SpikeIntegrations
+              stores={stores}
+              isAr={isAr}
+              canManage={can('manage_stores')}
+              onLog={logAction}
+              onImported={fetchAllData}
             />
-            <button
-              onClick={handleSendBroadcast}
-              className="px-5 py-2.5 bg-[#6B8E23] text-white rounded-xl text-xs font-bold cursor-pointer"
-            >
-              إرسال الإعلان الآن
-            </button>
-            {broadcasts.length > 0 && (
-              <div className="mt-6 space-y-2">
-                <div className="text-xs font-black text-slate-400">آخر الإعلانات المرسلة</div>
-                {broadcasts.map((b) => (
-                  <div key={b.id} className="p-3 rounded-xl border text-xs">
-                    <div>{b.message}</div>
-                    <div className="text-[10px] text-slate-400 mt-1 font-mono" dir="ltr">{new Date(b.created_at).toLocaleString()}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+          )}
+
+          {/* تبويب الإعلانات الجماعية */}
+          {shown('broadcast') && (
+            <div className={`p-6 sm:p-8 rounded-2xl border max-w-xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+              <h3 className="text-lg font-black mb-2">إرسال تنبيه جماعي لجميع التجار</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">يظهر التنبيه داخل لوحة تحكم كل التجار المسجلين في المنصة فوراً.</p>
+              <textarea
+                rows="4"
+                value={broadcastMessage}
+                onChange={(e) => setBroadcastMessage(e.target.value)}
+                placeholder="اكتب التنبيه هنا..."
+                className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-xs mb-3 outline-none focus:border-[#00B050]"
+              />
+              <button
+                onClick={handleSendBroadcast}
+                className="px-5 py-2.5 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer"
+              >
+                إرسال الإعلان الآن
+              </button>
+              {broadcasts.length > 0 && (
+                <div className="mt-6 space-y-2">
+                  <div className="text-xs font-black text-slate-400">آخر الإعلانات المرسلة</div>
+                  {broadcasts.map((b) => (
+                    <div key={b.id} className="p-3 rounded-xl border text-xs">
+                      <div>{b.message}</div>
+                      <div className="text-[10px] text-slate-400 mt-1 font-mono" dir="ltr">{new Date(b.created_at).toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </main>
 
+      {/* مودال تفاصيل المؤشرات (يفتح عند الضغط على كارت من الأعلى) */}
       {statModal && (() => {
         const cfgMap = {
           stores:  { title: isAr ? 'إجمالي المتاجر' : 'All stores', kind: 'stores', rows: stores, tab: 'merchants' },
@@ -1544,10 +1588,10 @@ export default function SpikeSuperAdminDashboard() {
                             </td>
                             <td className="p-3">{s.owner_name || '—'}</td>
                             <td className="p-3 font-mono" dir="ltr">{s.phone || '—'}</td>
-                            <td className="p-3 font-mono font-bold text-[#6B8E23]">${s.wallet_balance_usd || 0}</td>
+                            <td className="p-3 font-mono font-bold text-emerald-500">${s.wallet_balance_usd || 0}</td>
                             <td className="p-3">
                               <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                                s.is_active !== false ? 'bg-[#E2EEDB] text-[#6B8E23]' : 'bg-rose-500/15 text-rose-500'
+                                s.is_active !== false ? 'bg-emerald-500/15 text-emerald-600' : 'bg-rose-500/15 text-rose-500'
                               }`}>
                                 {s.is_active !== false ? 'مفعل' : 'معطل'}
                               </span>
@@ -1573,9 +1617,9 @@ export default function SpikeSuperAdminDashboard() {
                             <td className="p-3 font-mono font-bold">#{o.id}</td>
                             <td className="p-3">{o.customer_name || 'عميل نقدي'}</td>
                             <td className="p-3">{o.governorate || '—'}</td>
-                            <td className="p-3 font-mono font-bold text-[#6B8E23]">{o.total_price} ج.م</td>
+                            <td className="p-3 font-mono font-bold text-[#00B050]">{o.total_price} ج.م</td>
                             <td className="p-3">
-                              <span className="px-2 py-0.5 rounded-md bg-[#E2EEDB] text-[#6B8E23] text-[10px] font-bold">
+                              <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-bold">
                                 {o.status || 'pending'}
                               </span>
                             </td>
@@ -1594,7 +1638,7 @@ export default function SpikeSuperAdminDashboard() {
                 <button
                   type="button"
                   onClick={() => { setActiveTab(cfg.tab); setStatModal(null); }}
-                  className="px-4 py-2 bg-[#6B8E23] text-white rounded-xl text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer"
                 >
                   {isAr ? 'فتح الصفحة الكاملة' : 'Open full page'}
                 </button>
@@ -1604,6 +1648,7 @@ export default function SpikeSuperAdminDashboard() {
         );
       })()}
 
+      {/* مودال إنشاء متجر جديد */}
       {newStoreModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
@@ -1616,7 +1661,7 @@ export default function SpikeSuperAdminDashboard() {
                   required
                   value={newStoreData.store_name}
                   onChange={(e) => setNewStoreData({ ...newStoreData, store_name: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#6B8E23]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#00B050]"
                 />
               </div>
               <div>
@@ -1627,7 +1672,7 @@ export default function SpikeSuperAdminDashboard() {
                   placeholder="brand-name"
                   value={newStoreData.store_slug}
                   onChange={(e) => setNewStoreData({ ...newStoreData, store_slug: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#6B8E23]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
                 />
               </div>
               <div>
@@ -1636,7 +1681,7 @@ export default function SpikeSuperAdminDashboard() {
                   type="text"
                   value={newStoreData.owner_name}
                   onChange={(e) => setNewStoreData({ ...newStoreData, owner_name: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#6B8E23]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#00B050]"
                 />
               </div>
               <div>
@@ -1645,7 +1690,7 @@ export default function SpikeSuperAdminDashboard() {
                   type="text"
                   value={newStoreData.phone}
                   onChange={(e) => setNewStoreData({ ...newStoreData, phone: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#6B8E23]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
                 />
               </div>
               <div>
@@ -1654,11 +1699,11 @@ export default function SpikeSuperAdminDashboard() {
                   type="number"
                   value={newStoreData.initial_wallet}
                   onChange={(e) => setNewStoreData({ ...newStoreData, initial_wallet: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#6B8E23]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
                 />
               </div>
               <div className="flex gap-2 pt-3">
-                <button type="submit" className="flex-1 py-2.5 bg-[#6B8E23] text-white rounded-xl font-bold cursor-pointer">إنشاء المتجر</button>
+                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إنشاء المتجر</button>
                 <button type="button" onClick={() => setNewStoreModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">إلغاء</button>
               </div>
             </form>
@@ -1666,6 +1711,7 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       )}
 
+      {/* مودال إضافة منتج جديد */}
       {newProductModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
@@ -1678,7 +1724,7 @@ export default function SpikeSuperAdminDashboard() {
                   required
                   value={newProductData.title}
                   onChange={(e) => setNewProductData({ ...newProductData, title: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#6B8E23]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#00B050]"
                 />
               </div>
               <div>
@@ -1688,7 +1734,7 @@ export default function SpikeSuperAdminDashboard() {
                   required
                   value={newProductData.price}
                   onChange={(e) => setNewProductData({ ...newProductData, price: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#6B8E23]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
                 />
               </div>
               <div>
@@ -1697,7 +1743,7 @@ export default function SpikeSuperAdminDashboard() {
                   type="number"
                   value={newProductData.cost_price}
                   onChange={(e) => setNewProductData({ ...newProductData, cost_price: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#6B8E23]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
                 />
               </div>
               <div>
@@ -1706,11 +1752,11 @@ export default function SpikeSuperAdminDashboard() {
                   type="number"
                   value={newProductData.stock}
                   onChange={(e) => setNewProductData({ ...newProductData, stock: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#6B8E23]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
                 />
               </div>
               <div className="flex gap-2 pt-3">
-                <button type="submit" className="flex-1 py-2.5 bg-[#6B8E23] text-white rounded-xl font-bold cursor-pointer">إضافة المنتج</button>
+                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إضافة المنتج</button>
                 <button type="button" onClick={() => setNewProductModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">إلغاء</button>
               </div>
             </form>
@@ -1718,6 +1764,7 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       )}
 
+      {/* مودال إضافة مشرف جديد وتحديد الصلاحيات */}
       {newAdminModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
@@ -1731,7 +1778,7 @@ export default function SpikeSuperAdminDashboard() {
                   placeholder="مثال: أحمد علي"
                   value={newAdminData.name}
                   onChange={(e) => setNewAdminData({ ...newAdminData, name: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#6B8E23]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#00B050]"
                 />
               </div>
 
@@ -1744,7 +1791,7 @@ export default function SpikeSuperAdminDashboard() {
                   placeholder="admin@example.com"
                   value={newAdminData.email}
                   onChange={(e) => setNewAdminData({ ...newAdminData, email: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#6B8E23]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
                 />
               </div>
 
@@ -1802,7 +1849,7 @@ export default function SpikeSuperAdminDashboard() {
               </div>
 
               <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-1 py-2.5 bg-[#6B8E23] text-white rounded-xl font-bold cursor-pointer">
+                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">
                   حفظ المشرف
                 </button>
                 <button type="button" onClick={() => setNewAdminModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">
@@ -1814,45 +1861,43 @@ export default function SpikeSuperAdminDashboard() {
         </div>
       )}
 
+      {/* ===== SPIKE admin theme — استبدل بلوك <style jsx global> القديم بالكامل بهذا ===== */}
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
 
-        /* ---------- Avocado Tokens ---------- */
+        /* ---------- Tokens ---------- */
         .spike-dashboard {
-          --avocado-primary: #6B8E23;
-          --avocado-light: #E2EEDB;
-          --avocado-cream: #FDF6EC;
-          --teal: #6B8E23;
-          --teal-deep: #556B2F;
-          --teal-ink: #3B4D20;
-          --orange: #FDF6EC;
-          --gold: #6B8E23;
-          --ivory: #FDF6EC;
-          --bg: #FDF6EC;
-          --surface: #FFFFFF;
-          --surface-2: #E2EEDB;
-          --line: #D5E2CD;
-          --ink: #2C3E1F;
-          --muted: #5F734C;
-          --accent-text: #6B8E23;
+          --teal: #0a7f86;
+          --teal-deep: #06494e;
+          --teal-ink: #052f33;
+          --orange: #f2a066;
+          --gold: #c9a45c;
+          --ivory: #f6f2e7;
+          --bg: #ece8d8;
+          --surface: #fcfbf7;
+          --surface-2: #f3f0e4;
+          --line: #e2ddca;
+          --ink: #1f2f33;
+          --muted: #6f7f82;
+          --accent-text: #0a7f86;
           --danger: #c95e53;
-          --shadow: 0 10px 30px -14px rgba(107, 142, 35, 0.22);
+          --shadow: 0 10px 30px -14px rgba(6, 73, 78, 0.22);
           font-family: 'Tajawal', 'Inter', sans-serif;
           font-size: 14px;
           color: var(--ink);
           background:
-            radial-gradient(1100px 480px at 100% -10%, rgba(107, 142, 35, 0.10), transparent 60%),
-            radial-gradient(800px 420px at 0% 110%, rgba(226, 238, 219, 0.4), transparent 60%),
+            radial-gradient(1100px 480px at 100% -10%, rgba(10, 127, 134, 0.10), transparent 60%),
+            radial-gradient(800px 420px at 0% 110%, rgba(242, 160, 102, 0.13), transparent 60%),
             var(--bg) !important;
         }
         .spike-dashboard[data-theme='dark'] {
-          --bg: #121A0F;
-          --surface: #1B2616;
-          --surface-2: #24331E;
-          --line: #2F4227;
-          --ink: #E2EEDB;
-          --muted: #9BB38C;
-          --accent-text: #A2C151;
+          --bg: #07252a;
+          --surface: #0d3339;
+          --surface-2: #11404a;
+          --line: #1f4f57;
+          --ink: #eaf2ef;
+          --muted: #93b0b2;
+          --accent-text: #5fd0d3;
           --danger: #ff9d94;
           --shadow: 0 14px 34px -16px rgba(0, 0, 0, 0.65);
         }
@@ -1862,6 +1907,7 @@ export default function SpikeSuperAdminDashboard() {
         .spike-dashboard select,
         .spike-dashboard textarea { font-family: inherit; }
 
+        /* ---------- Type scale (يرفع الخطوط الصغيرة جداً) ---------- */
         .spike-dashboard [class~='text-xs'] { font-size: 13px; }
         .spike-dashboard [class*='text-[11px]'] { font-size: 12px; }
         .spike-dashboard [class*='text-[10px]'] { font-size: 11.5px; }
@@ -1874,9 +1920,10 @@ export default function SpikeSuperAdminDashboard() {
         .spike-dashboard .text-slate-400,
         .spike-dashboard .text-slate-500 { color: var(--muted); }
         .spike-dashboard [class*='text-emerald-'],
-        .spike-dashboard [class*='text-[#6B8E23]'] { color: var(--accent-text); }
-        .spike-dashboard .bg-emerald-500 { background: var(--avocado-primary); }
+        .spike-dashboard [class*='text-[#00B050]'] { color: var(--accent-text); }
+        .spike-dashboard .bg-emerald-500 { background: var(--teal); }
 
+        /* ---------- Layout ---------- */
         .spike-dashboard > main { min-width: 0; }
         @media (min-width: 1024px) {
           .spike-dashboard > aside {
@@ -1898,6 +1945,7 @@ export default function SpikeSuperAdminDashboard() {
           .spike-dashboard button[class*='lg:hidden'] { display: none; }
         }
 
+        /* ---------- Header ---------- */
         .spike-dashboard header {
           min-height: 76px;
           background: color-mix(in srgb, var(--surface) 88%, transparent);
@@ -1910,11 +1958,12 @@ export default function SpikeSuperAdminDashboard() {
           inset-inline: 0;
           bottom: -1px;
           height: 1px;
-          background: linear-gradient(90deg, transparent, var(--avocado-primary), transparent);
+          background: linear-gradient(90deg, transparent, var(--gold), transparent);
           opacity: 0.55;
           pointer-events: none;
         }
 
+        /* ---------- Buttons: حجم موحد وطبيعي ---------- */
         .spike-dashboard button {
           align-items: center;
           justify-content: center;
@@ -1935,6 +1984,7 @@ export default function SpikeSuperAdminDashboard() {
         .spike-dashboard button[class*='w-8'],
         .spike-dashboard button[class*='w-9'] { width: 38px; padding: 0; }
 
+        /* أزرار الحدود (ثانوية) */
         .spike-dashboard button[class~='border'] {
           background: var(--surface);
           border-color: var(--line);
@@ -1942,13 +1992,14 @@ export default function SpikeSuperAdminDashboard() {
         }
         .spike-dashboard button[class~='border']:hover { background: var(--surface-2); }
 
-        .spike-dashboard button[class*='bg-[#6B8E23]']:not([class*='bg-[#6B8E23]/']) {
-          background: var(--avocado-primary);
-          border-color: var(--avocado-primary);
+        /* الأزرار الأساسية */
+        .spike-dashboard button[class*='bg-[#00B050]']:not([class*='bg-[#00B050]/']) {
+          background: var(--teal);
+          border-color: var(--teal);
           color: #fff;
-          box-shadow: 0 6px 14px -6px rgba(107, 142, 35, 0.55);
+          box-shadow: 0 6px 14px -6px rgba(10, 127, 134, 0.55);
         }
-        .spike-dashboard button[class*='bg-[#6B8E23]']:not([class*='bg-[#6B8E23]/']):hover {
+        .spike-dashboard button[class*='bg-[#00B050]']:not([class*='bg-[#00B050]/']):hover {
           background: var(--teal-deep);
           border-color: var(--teal-deep);
         }
@@ -1961,6 +2012,7 @@ export default function SpikeSuperAdminDashboard() {
         }
         .spike-dashboard form button[type='submit'] { min-height: 44px; }
 
+        /* أزرار داخل الجداول: أصغر قليلاً لكن مريحة للّمس */
         .spike-dashboard td button {
           min-height: 32px;
           padding-inline: 12px;
@@ -1972,10 +2024,10 @@ export default function SpikeSuperAdminDashboard() {
           color: var(--ink);
           box-shadow: none;
         }
-        .spike-dashboard td button[class*='bg-[#6B8E23]/'],
+        .spike-dashboard td button[class*='bg-[#00B050]/'],
         .spike-dashboard td button[class*='bg-emerald'] {
-          background: color-mix(in srgb, var(--avocado-primary) 13%, transparent);
-          border-color: color-mix(in srgb, var(--avocado-primary) 32%, transparent);
+          background: color-mix(in srgb, var(--teal) 13%, transparent);
+          border-color: color-mix(in srgb, var(--teal) 32%, transparent);
           color: var(--accent-text);
         }
         .spike-dashboard td button[class*='bg-rose'],
@@ -1986,6 +2038,7 @@ export default function SpikeSuperAdminDashboard() {
         }
         .spike-dashboard td select { min-height: 34px; padding: 4px 10px; font-size: 12px; }
 
+        /* ---------- Cards ---------- */
         .spike-dashboard main div[class*='rounded-2xl'],
         .spike-dashboard main div[class*='rounded-3xl'] {
           background: var(--surface);
@@ -1997,6 +2050,7 @@ export default function SpikeSuperAdminDashboard() {
           border-color: var(--line);
           background: var(--surface-2);
         }
+        /* بطاقات المؤشرات: شريط برتقالي صغير = لمسة الهوية الوحيدة في الصفحة */
         .spike-dashboard .grid > div[class*='p-5'] { position: relative; overflow: hidden; }
         .spike-dashboard .grid > div[class*='p-5']::before {
           content: '';
@@ -2006,10 +2060,11 @@ export default function SpikeSuperAdminDashboard() {
           width: 44px;
           height: 3px;
           border-radius: 0 0 4px 4px;
-          background: var(--avocado-primary);
+          background: var(--orange);
         }
         .spike-dashboard span[class*='text-2xl'] { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
 
+        /* ---------- Tables ---------- */
         .spike-dashboard table { min-width: 640px; border-collapse: separate; border-spacing: 0; font-size: 13px; }
         .spike-dashboard thead th {
           padding: 12px 14px;
@@ -2023,8 +2078,9 @@ export default function SpikeSuperAdminDashboard() {
         .spike-dashboard thead th:last-child { border-start-end-radius: 12px; border-end-end-radius: 12px; }
         .spike-dashboard tbody td { padding: 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
         .spike-dashboard tbody tr:last-child td { border-bottom: 0; }
-        .spike-dashboard tbody tr:hover { background: color-mix(in srgb, var(--avocado-primary) 6%, transparent); }
+        .spike-dashboard tbody tr:hover { background: color-mix(in srgb, var(--teal) 6%, transparent); }
 
+        /* ---------- Inputs ---------- */
         .spike-dashboard input:not([type='checkbox']):not([type='radio']),
         .spike-dashboard select,
         .spike-dashboard textarea {
@@ -2037,33 +2093,35 @@ export default function SpikeSuperAdminDashboard() {
           border-radius: 12px;
         }
         .spike-dashboard textarea { min-height: 110px; line-height: 1.7; }
-        .spike-dashboard input[type='checkbox'] { width: 16px; height: 16px; accent-color: var(--avocado-primary); }
+        .spike-dashboard input[type='checkbox'] { width: 16px; height: 16px; accent-color: var(--teal); }
         .spike-dashboard input:focus,
         .spike-dashboard select:focus,
         .spike-dashboard textarea:focus {
           outline: none;
-          border-color: var(--avocado-primary);
-          box-shadow: 0 0 0 4px color-mix(in srgb, var(--avocado-primary) 16%, transparent);
+          border-color: var(--teal);
+          box-shadow: 0 0 0 4px color-mix(in srgb, var(--teal) 16%, transparent);
         }
         .spike-dashboard button:focus-visible {
-          outline: 3px solid color-mix(in srgb, var(--avocado-primary) 35%, transparent);
+          outline: 3px solid color-mix(in srgb, var(--teal) 35%, transparent);
           outline-offset: 2px;
         }
 
+        /* ---------- Sidebar: فاتح، والأزرار الغامقة ---------- */
         .spike-dashboard {
           --nav-active-bg: var(--teal-deep);
-          --nav-active-ink: var(--avocado-cream);
+          --nav-active-ink: var(--ivory);
         }
         .spike-dashboard[data-theme='dark'] {
-          --nav-active-bg: var(--avocado-cream);
+          --nav-active-bg: var(--ivory);
           --nav-active-ink: var(--teal-deep);
         }
         .spike-dashboard > aside {
           background: var(--surface);
           border: 0;
           color: var(--ink);
-          box-shadow: 0 0 0 1px var(--line), 12px 0 40px -26px rgba(107, 142, 35, 0.35);
+          box-shadow: 0 0 0 1px var(--line), 12px 0 40px -26px rgba(6, 73, 78, 0.35);
         }
+        /* إخفاء السكرول مع بقاء التمرير شغال */
         .spike-dashboard > aside,
         .spike-dashboard > aside nav { scrollbar-width: none; -ms-overflow-style: none; }
         .spike-dashboard > aside::-webkit-scrollbar,
@@ -2076,6 +2134,8 @@ export default function SpikeSuperAdminDashboard() {
         .spike-dashboard > aside .border-b,
         .spike-dashboard > aside .border-t { border-color: var(--line); }
 
+        /* زر متاجر الأدمن (داخل القائمة) يُعرَّف بعد قواعد عناصر القائمة */
+        /* عناصر القائمة */
         .spike-dashboard > aside nav { padding: 14px 12px; }
         .spike-dashboard > aside nav button {
           width: 100%;
@@ -2098,26 +2158,26 @@ export default function SpikeSuperAdminDashboard() {
           background: var(--surface-2);
           color: var(--muted);
         }
-        .spike-dashboard > aside nav button[class*='from-[#6B8E23]'] {
+        .spike-dashboard > aside nav button[class*='from-[#00B050]'] {
           background: var(--nav-active-bg);
           color: var(--nav-active-ink);
           font-weight: 800;
-          box-shadow: 0 10px 22px -12px rgba(107, 142, 35, 0.6);
+          box-shadow: 0 10px 22px -12px rgba(6, 73, 78, 0.6);
         }
-        .spike-dashboard > aside nav button[class*='from-[#6B8E23]']:hover {
+        .spike-dashboard > aside nav button[class*='from-[#00B050]']:hover {
           background: var(--nav-active-bg);
           color: var(--nav-active-ink);
         }
-        .spike-dashboard > aside nav button[class*='from-[#6B8E23]'] span[class*='rounded-full'] {
+        .spike-dashboard > aside nav button[class*='from-[#00B050]'] span[class*='rounded-full'] {
           background: rgba(255, 255, 255, 0.18);
           color: var(--nav-active-ink);
         }
-        .spike-dashboard[data-theme='dark'] > aside nav button[class*='from-[#6B8E23]'] span[class*='rounded-full'] {
-          background: rgba(107, 142, 35, 0.14);
+        .spike-dashboard[data-theme='dark'] > aside nav button[class*='from-[#00B050]'] span[class*='rounded-full'] {
+          background: rgba(6, 73, 78, 0.14);
         }
         .spike-dashboard > aside div[class*='bg-gradient'] {
-          background: linear-gradient(135deg, var(--avocado-light), var(--avocado-cream));
-          color: var(--ink);
+          background: linear-gradient(135deg, var(--orange), #e08f4f);
+          color: #3a1d08;
         }
         .spike-dashboard > aside button[class*='rose'] {
           background: color-mix(in srgb, #dc5a50 10%, transparent);
@@ -2128,27 +2188,30 @@ export default function SpikeSuperAdminDashboard() {
           background: color-mix(in srgb, #dc5a50 18%, transparent);
         }
 
+        /* زر متاجر الأدمن = اللمسة البرتقالية */
         .spike-dashboard > aside nav button[data-admin-stores] {
           justify-content: center;
-          background: linear-gradient(135deg, #6B8E23, #556B2F);
+          background: linear-gradient(135deg, #f4b987, #e08f4f);
           border-color: transparent;
-          color: #FDF6EC;
+          color: #3a1d08;
           font-weight: 800;
-          box-shadow: 0 8px 18px -8px rgba(107, 142, 35, 0.7);
+          box-shadow: 0 8px 18px -8px rgba(224, 143, 79, 0.7);
         }
         .spike-dashboard > aside nav button[data-admin-stores]:hover {
-          background: linear-gradient(135deg, #556B2F, #3B4D20);
-          color: #FDF6EC;
+          background: linear-gradient(135deg, #f7c79c, #e79a5c);
+          color: #3a1d08;
         }
         .spike-dashboard > aside nav button[class*='rose'] { justify-content: center; }
 
+        /* كروت المؤشرات قابلة للضغط */
         .spike-dashboard .grid > div[class*='p-5'][role='button']:focus-visible {
-          outline: 3px solid color-mix(in srgb, var(--avocado-primary) 35%, transparent);
+          outline: 3px solid color-mix(in srgb, var(--teal) 35%, transparent);
           outline-offset: 2px;
         }
 
+        /* ---------- Modals ---------- */
         .spike-dashboard div[class*='bg-black/'] {
-          background: rgba(20, 30, 15, 0.55);
+          background: rgba(5, 35, 38, 0.55);
           backdrop-filter: blur(6px);
         }
         .spike-dashboard div[class*='max-w-md'],
@@ -2160,7 +2223,7 @@ export default function SpikeSuperAdminDashboard() {
           background: var(--surface);
           border: 1px solid var(--line);
           border-radius: 24px;
-          box-shadow: 0 30px 80px -20px rgba(10, 20, 5, 0.55);
+          box-shadow: 0 30px 80px -20px rgba(3, 30, 33, 0.55);
           animation: spike-pop 0.1s ease-out;
         }
         .spike-dashboard div[class*='max-w-md'] h3,
@@ -2172,6 +2235,7 @@ export default function SpikeSuperAdminDashboard() {
           to { opacity: 1; transform: none; }
         }
 
+        /* ---------- Responsive + a11y ---------- */
         @media (max-width: 640px) {
           .spike-dashboard header { padding-inline: 12px; }
           .spike-dashboard main > div { padding: 14px; }
@@ -2180,6 +2244,7 @@ export default function SpikeSuperAdminDashboard() {
           .spike-dashboard div[class*='max-w-md'],
           .spike-dashboard div[class*='max-w-3xl'] { padding: 20px; }
         }
+        /* لوحة الأدمن بدون أي حركات أو انتقالات (أسرع)، ما عدا مؤشرات التحميل */
         .spike-dashboard *:not([class*='animate-']) { animation: none !important; transition: none !important; }
       `}</style>
     </div>
