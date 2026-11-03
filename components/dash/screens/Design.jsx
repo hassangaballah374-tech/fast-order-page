@@ -317,7 +317,7 @@ export function BlocksScreen() {
   const [edit, setEdit] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const open = (b) => setEdit(b ? { ...b, content: { ...(b.content || {}) } } : { _new: true, name: '', kind: 'announcement', placement: 'home_top', enabled: true, sort_order: 0, content: { bg: '#0a7f86', fg: '#ffffff' } });
+  const open = (b) => setEdit(b ? { ...b, content: { ...(b.content || {}) } } : { _new: true, name: '', kind: 'announcement', placement: 'home_top', enabled: true, sort_order: 0, content: { bg: '#6B8E23', fg: '#ffffff' } });
 
   const save = async () => {
     const c = { ...edit.content };
@@ -378,7 +378,7 @@ export function BlocksScreen() {
           <div className="fgrid">
             <Field l="اسم داخلي"><input className="in" value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} /></Field>
             <Field l="النوع">
-              <select className="in" value={edit.kind} onChange={(e) => setEdit({ ...edit, kind: e.target.value, content: e.target.value === 'announcement' ? { bg: '#0a7f86', fg: '#ffffff' } : {} })}>
+              <select className="in" value={edit.kind} onChange={(e) => setEdit({ ...edit, kind: e.target.value, content: e.target.value === 'announcement' ? { bg: '#6B8E23', fg: '#ffffff' } : {} })}>
                 {Object.entries(BLOCK_KINDS).map(([k, v]) => <option key={k} value={k}>{v.icon} {v.ar}</option>)}
               </select>
             </Field>

@@ -108,7 +108,7 @@ export function BumpScreen() {
       title="عرض قبل التأكيد (Order Bump)" cols="العرض" emptyIcon="🎁"
       desc="يظهر للعميل قبل زر الطلب: «أضف هذا المنتج بخصم». يظهر فقط لو المنتج المقترح بدون خيارات (مقاس/لون)."
       hasRule={(x) => !!(x.upsell && x.upsell.product_id)}
-      summary={(x, p) => <span>{(p.byId[String(x.upsell.product_id)] || {}).title || 'منتج محذوف'} <Badge c="#0a7f86">خصم {Number(x.upsell.percent) || 0}%</Badge></span>}
+      summary={(x, p) => <span>{(p.byId[String(x.upsell.product_id)] || {}).title || 'منتج محذوف'} <Badge c="#6B8E23">خصم {Number(x.upsell.percent) || 0}%</Badge></span>}
       initial={(x) => ({ product_id: '', percent: 10, text: '', ...(x.upsell && typeof x.upsell === 'object' ? x.upsell : {}) })}
       build={(v) => ({ upsell: v && v.product_id ? { product_id: String(v.product_id), percent: Math.min(90, Math.max(0, asNumber(v.percent))), text: String(v.text || '').trim().slice(0, 120) } : {} })}
       validate={(v) => (v.product_id ? '' : 'اختر المنتج المقترح')}
@@ -466,7 +466,7 @@ export function FreeShipScreen() {
             {lim > 0 ? (
               <>
                 <span>باقي <b>{money(Math.round(lim * 0.4), cur)}</b> للحصول على شحن مجاني 🚚</span>
-                <div style={{ height: 8, borderRadius: 8, background: 'var(--ln, #e2e8f0)' }}><div style={{ width: '60%', height: '100%', borderRadius: 8, background: '#0a7f86' }} /></div>
+                <div style={{ height: 8, borderRadius: 8, background: 'var(--ln, #e2e8f0)' }}><div style={{ width: '60%', height: '100%', borderRadius: 8, background: '#6B8E23' }} /></div>
               </>
             ) : <span className="mut">الشحن المجاني متوقف</span>}
           </div>

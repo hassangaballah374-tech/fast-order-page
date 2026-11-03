@@ -1,14 +1,14 @@
-/* ستايل لوحة تاجر سبايك (هوية سبايك: تركواز + عاجي دافئ). الكلاسات هنا تغطي كل مكونات اللوحة والشاشات. */
+/* ستايل لوحة تاجر سبايك (هوية سبايك: أخضر الأفوكادو الزيتي + كريمي). الكلاسات هنا تغطي كل مكونات اللوحة والشاشات. */
 export const DASH_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
-.app{--b:#0a7f86;--b2:#06494e;--or:#e08f4f;--bg:#efece0;--s:#fcfbf7;--s2:#f3f0e4;--ln:#e2ddca;--ink:#1f2f33;--mut:#6f7f82;--ok:#2f855a;--bad:#c53030;--warn:#b7791f;
-  display:flex;min-height:100vh;background:radial-gradient(1000px 420px at 100% -10%,rgba(10,127,134,.10),transparent 60%),radial-gradient(800px 380px at 0% 110%,rgba(224,143,79,.12),transparent 60%),var(--bg);
+.app{--b:#6B8E23;--b2:#4A6318;--or:#e08f4f;--bg:#F5F1E3;--s:#FFFCF6;--s2:#F3EDDB;--ln:#E2DDC6;--ink:#262E1C;--mut:#6E7560;--okbg:#E2EEDB;--okfg:#3D5A12;--cream:#FDF6EC;--ok:#4A7A1E;--bad:#c53030;--warn:#b7791f;
+  display:flex;min-height:100vh;background:radial-gradient(1000px 420px at 100% -10%,rgba(107,142,35,.12),transparent 60%),radial-gradient(800px 380px at 0% 110%,rgba(224,143,79,.12),transparent 60%),var(--bg);
   color:var(--ink);font-family:'Tajawal',sans-serif;font-size:14px;line-height:1.55}
 .app *{box-sizing:border-box}
 .app button{font-family:inherit}
 .num{font-family:Inter,'Tajawal',sans-serif;font-variant-numeric:tabular-nums}
 .app h1,.app h2,.app h3{margin:0}
-.app a{color:var(--b)}
+.app a{color:var(--b2)}
 
 /* ---------- الشريط الجانبي ---------- */
 .side{align-self:flex-start;width:268px;flex:none;background:var(--s);border-inline-start:1px solid var(--ln);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;z-index:40}
@@ -31,7 +31,7 @@ export const DASH_CSS = `
 .nvsub .nv{min-height:36px;font-weight:600;font-size:13px;color:#3c4f53}
 .nvsub .nv.act{color:#fff}
 .nvh{margin:14px 12px 4px;color:var(--mut);font-size:11.5px;font-weight:800}
-.bn{font-style:normal;font-size:10.5px;font-weight:800;border-radius:99px;padding:1px 8px;background:#d6f0e0;color:#1e6b43}
+.bn{font-style:normal;font-size:10.5px;font-weight:800;border-radius:99px;padding:1px 8px;background:var(--okbg);color:var(--okfg)}
 .bn.sp{background:#fde8d4;color:#a8581c}
 .nv.act .bn{background:rgba(255,255,255,.25);color:#fff}
 .spk{color:var(--or);font-size:11px;margin-inline-start:2px}
@@ -53,7 +53,7 @@ export const DASH_CSS = `
 .phr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .app h3{font-size:15.5px;font-weight:800;margin-bottom:12px}
 .dsc{margin:-6px 0 14px;font-size:13px}
-.card{background:var(--s);border:1px solid var(--ln);border-radius:20px;padding:20px;box-shadow:0 10px 30px -16px rgba(6,73,78,.22)}
+.card{background:var(--s);border:1px solid var(--ln);border-radius:20px;padding:20px;box-shadow:0 10px 30px -16px rgba(74,99,24,.22)}
 .card+.card{margin-top:16px}
 .grid4,.grid3,.grid2,.two{display:grid;gap:14px;margin-bottom:16px;align-items:start}
 .grid4{grid-template-columns:repeat(4,1fr)}
@@ -62,6 +62,8 @@ export const DASH_CSS = `
 .grid4>.card+.card,.grid3>.card+.card,.grid2>.card+.card,.two>.card+.card{margin-top:0}
 .two>.card{margin-top:0}
 .kpi small{color:var(--mut);font-weight:600}
+.app .kpi{background:var(--cream)}
+.app .kpi .up,.app .kpi .hint.up,.app .kpi .pos{background:var(--okbg);color:var(--okfg);border-radius:99px;padding:1px 8px;font-weight:700}
 .kpi b{display:block;font-size:25px;font-weight:800;margin:4px 0 4px;font-family:Inter,'Tajawal',sans-serif}
 .kpi .spark{width:100%;height:34px}
 .kpi .hint{display:block}
@@ -110,7 +112,7 @@ select.in{padding-inline-end:8px}
 .gal .gi{position:relative;width:78px;height:78px;border-radius:12px;overflow:hidden;border:1px solid var(--ln)}
 .gal .gi img{width:100%;height:100%;object-fit:cover}
 .gal .gi button{position:absolute;top:3px;inset-inline-start:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:12px}
-.gal .gi.first::after{content:'الرئيسية';position:absolute;bottom:0;inset-inline:0;background:rgba(10,127,134,.9);color:#fff;font-size:10px;text-align:center;font-weight:700}
+.gal .gi.first::after{content:'الرئيسية';position:absolute;bottom:0;inset-inline:0;background:rgba(107,142,35,.92);color:#fff;font-size:10px;text-align:center;font-weight:700}
 .gal .add{width:78px;height:78px;border-radius:12px;border:2px dashed var(--ln);background:var(--s2);display:grid;place-items:center;cursor:pointer;font-size:22px;color:var(--mut)}
 
 /* ---------- جداول ---------- */

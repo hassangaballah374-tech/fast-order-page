@@ -43,10 +43,10 @@ const TEMPLATES = {
   offer: { n: 'عرض محدود', d: 'عدّاد + غلاف + ضمان + طلب', make: () => [mk('countdown', { minutes: 120 }), mk('hero', { badge: 'عرض لفترة محدودة' }), mk('guarantee'), mk('order')] },
 };
 
-const THEME_DEF = { primary: '#0a7f86', bg: '#ffffff', text: '#1a1a1a', btn_text: '#ffffff', radius: 14, width: 680, font: '' };
+const THEME_DEF = { primary: '#6B8E23', bg: '#ffffff', text: '#1a1a1a', btn_text: '#ffffff', radius: 14, width: 680, font: '' };
 const FONTS = [['', 'الافتراضي'], ...FONTS_ALL.map((f) => [f, f])];
 const THEMES = [
-  ['تركواز', { primary: '#0a7f86', bg: '#ffffff', text: '#1a1a1a', btn_text: '#ffffff' }],
+  ['تركواز', { primary: '#6B8E23', bg: '#ffffff', text: '#1a1a1a', btn_text: '#ffffff' }],
   ['أحمر جريء', { primary: '#e11d48', bg: '#ffffff', text: '#111827', btn_text: '#ffffff' }],
   ['داكن', { primary: '#f59e0b', bg: '#111827', text: '#f9fafb', btn_text: '#111827' }],
   ['أخضر', { primary: '#16a34a', bg: '#f7fdf9', text: '#14291c', btn_text: '#ffffff' }],
@@ -322,7 +322,7 @@ export function LandingScreen() {
           </div>
           <div className="grid3" style={{ margin: '10px 0' }}>
             {Object.entries(TEMPLATES).map(([k, x]) => (
-              <button type="button" key={k} className="card" onClick={() => setTpl(k)} style={{ textAlign: 'right', cursor: 'pointer', borderColor: tpl === k ? 'var(--brand, #0a7f86)' : undefined, borderWidth: tpl === k ? 2 : 1 }}>
+              <button type="button" key={k} className="card" onClick={() => setTpl(k)} style={{ textAlign: 'right', cursor: 'pointer', borderColor: tpl === k ? 'var(--brand, #6B8E23)' : undefined, borderWidth: tpl === k ? 2 : 1 }}>
                 <b>{x.n}</b><div className="mut">{x.d}</div>
               </button>
             ))}

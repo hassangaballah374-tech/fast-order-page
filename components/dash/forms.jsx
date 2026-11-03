@@ -65,7 +65,7 @@ export function FieldInput({ f, value, onChange, draft }) {
         </select>
       );
     case 'color':
-      return <div className="row" style={{ marginBottom: 0 }}><input type="color" className="clr" value={v || '#0a7f86'} onChange={(e) => onChange(e.target.value)} /><input className="in num" dir="ltr" style={{ maxWidth: 130 }} value={v} onChange={(e) => onChange(e.target.value)} /></div>;
+      return <div className="row" style={{ marginBottom: 0 }}><input type="color" className="clr" value={v || '#6B8E23'} onChange={(e) => onChange(e.target.value)} /><input className="in num" dir="ltr" style={{ maxWidth: 130 }} value={v} onChange={(e) => onChange(e.target.value)} /></div>;
     case 'image':
       return <ImageInput value={v} onChange={onChange} folder={f.folder} />;
     case 'datetime':

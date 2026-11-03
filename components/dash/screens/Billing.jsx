@@ -72,15 +72,15 @@ function WalletStats({ store, rate, pc }) {
   return (
     <>
       <div className="grid4" style={{ marginBottom: 12 }}>
-        <Stat label="رصيدك" value={usd(store?.wallet_balance_usd)} hint={rate ? `≈ ${egpFmt(toEgp(store?.wallet_balance_usd, rate))}` : ''} color="#0a7f86" />
+        <Stat label="رصيدك" value={usd(store?.wallet_balance_usd)} hint={rate ? `≈ ${egpFmt(toEgp(store?.wallet_balance_usd, rate))}` : ''} color="#6B8E23" />
         <Stat label="إجمالي ما شحنته" value={usd(store?.wallet_topped_usd)} hint={`يغطي ${covered} طلب`} />
-        <Stat label="الطلبات المتبقية" value={left == null ? 'غير محدود' : left} hint={monthly ? `الباقة الشهرية حتى ${new Date(store.subscription_ends_at).toLocaleDateString('ar-EG')}` : `عمولة الطلب ${usd(c)}${free ? ` · منها ${free} مجاني 🎁` : ''}`} color={left === 0 ? '#dc2626' : '#0a7f86'} />
+        <Stat label="الطلبات المتبقية" value={left == null ? 'غير محدود' : left} hint={monthly ? `الباقة الشهرية حتى ${new Date(store.subscription_ends_at).toLocaleDateString('ar-EG')}` : `عمولة الطلب ${usd(c)}${free ? ` · منها ${free} مجاني 🎁` : ''}`} color={left === 0 ? '#dc2626' : '#6B8E23'} />
         <Stat label="الطلبات المستخدمة" value={n(store?.orders_used)} />
       </div>
       {!monthly && covered > 0 && (
         <div className="card" style={{ marginBottom: 16 }}>
           <div style={{ height: 10, background: '#e2e8f0', borderRadius: 8, overflow: 'hidden' }}>
-            <div style={{ width: `${Math.max(0, Math.min(100, Math.round(((left || 0) / covered) * 100)))}%`, height: '100%', background: (left || 0) / covered < 0.1 ? '#dc2626' : '#0a7f86' }} />
+            <div style={{ width: `${Math.max(0, Math.min(100, Math.round(((left || 0) / covered) * 100)))}%`, height: '100%', background: (left || 0) / covered < 0.1 ? '#dc2626' : '#6B8E23' }} />
           </div>
           <p className="mut dsc" style={{ marginTop: 6 }}>
             باقي {left} طلب من أصل {covered}{left > 0 && left <= 10 ? ' — اشحن رصيدك قبل ما المتجر يقف' : ''}
@@ -169,9 +169,9 @@ export function PlansScreen() {
           {plans.map((p) => {
             const monthly = p.kind === 'monthly';
             return (
-              <div key={p.id} className="card" style={{ borderColor: p.highlight ? '#0a7f86' : undefined, borderWidth: p.highlight ? 2 : 1 }}>
+              <div key={p.id} className="card" style={{ borderColor: p.highlight ? '#6B8E23' : undefined, borderWidth: p.highlight ? 2 : 1 }}>
                 <b style={{ fontSize: 17 }}>{p.name}</b>
-                <div style={{ fontSize: 26, fontWeight: 900, color: '#0a7f86', margin: '6px 0 0' }}>{usd(p.price)}</div>
+                <div style={{ fontSize: 26, fontWeight: 900, color: '#6B8E23', margin: '6px 0 0' }}>{usd(p.price)}</div>
                 {rate ? <div className="mut dsc" style={{ margin: '0 0 6px' }}>≈ {egpFmt(toEgp(p.price, rate))}</div> : null}
                 <p className="mut dsc">{monthly ? 'طلبات غير محدودة · 30 يوم' : `≈ ${Math.floor(n(p.price) / c)} طلب (عمولة ${usd(c)} للطلب)`}</p>
                 <ul style={{ margin: '8px 0 12px', paddingInlineStart: 18, fontSize: 13 }}>{(p.features || []).map((f, i) => <li key={i}>{f}</li>)}</ul>
@@ -183,7 +183,7 @@ export function PlansScreen() {
       )}
 
       {sel && (
-        <div className="card" style={{ marginBottom: 16, borderColor: '#0a7f86' }}>
+        <div className="card" style={{ marginBottom: 16, borderColor: '#6B8E23' }}>
           <h3>{sel.name} — {usd(sel.price)}{rate ? ` ≈ ${egpFmt(toEgp(sel.price, rate))}` : ''}</h3>
           <p className="mut dsc">حوّل المبلغ بالجنيه المصري بحسب سعر الدولار الحالي ثم ارفع صورة التحويل.</p>
           {note ? <p className="mut dsc" style={{ whiteSpace: 'pre-line' }}>{note}</p> : null}
