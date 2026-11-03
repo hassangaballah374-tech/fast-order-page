@@ -1,12 +1,12 @@
 /* ستايل لوحة تاجر سبايك (هوية سبايك: تركواز + عاجي دافئ). الكلاسات هنا تغطي كل مكونات اللوحة والشاشات. */
 export const DASH_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
 .app{--b:#0a7f86;--b2:#06494e;--or:#e08f4f;--bg:#efece0;--s:#fcfbf7;--s2:#f3f0e4;--ln:#e2ddca;--ink:#1f2f33;--mut:#6f7f82;--ok:#2f855a;--bad:#c53030;--warn:#b7791f;
   display:flex;min-height:100vh;background:radial-gradient(1000px 420px at 100% -10%,rgba(10,127,134,.10),transparent 60%),radial-gradient(800px 380px at 0% 110%,rgba(224,143,79,.12),transparent 60%),var(--bg);
-  color:var(--ink);font-family:'Cairo',sans-serif;font-size:14px;line-height:1.55}
+  color:var(--ink);font-family:'Tajawal',sans-serif;font-size:14px;line-height:1.55}
 .app *{box-sizing:border-box}
 .app button{font-family:inherit}
-.num{font-family:Inter,'Cairo',sans-serif;font-variant-numeric:tabular-nums}
+.num{font-family:Inter,'Tajawal',sans-serif;font-variant-numeric:tabular-nums}
 .app h1,.app h2,.app h3{margin:0}
 .app a{color:var(--b)}
 
@@ -20,7 +20,7 @@ export const DASH_CSS = `
 .sidehd b{display:block;font-size:15px;line-height:1.5;padding-top:2px}
 .sidehd small{display:block;color:var(--mut);font-size:11.5px;line-height:1.5;margin-top:2px}
 .nvs{flex:1;overflow:auto;padding:6px 10px 14px;display:flex;flex-direction:column;gap:2px;scrollbar-width:thin}
-.nv{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:0 12px;border:0;border-radius:12px;background:none;color:var(--ink);font:600 13.5px 'Cairo',sans-serif;cursor:pointer;text-align:start;text-decoration:none}
+.nv{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:0 12px;border:0;border-radius:12px;background:none;color:var(--ink);font:600 13.5px 'Tajawal',sans-serif;cursor:pointer;text-align:start;text-decoration:none}
 .nv:hover{background:var(--s2)}
 .nv.act{background:var(--b);color:#fff}
 .nv .ic{width:22px;text-align:center;flex:none;font-size:16px}
@@ -47,7 +47,7 @@ export const DASH_CSS = `
 .menubtn{display:none}
 .pg{padding:24px 26px 70px;max-width:1240px}
 .phd{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-.phd h1{font-size:23px;font-weight:800}
+.phd h1{font-size:25px;font-weight:800}
 .phd h1 small,.app h3 small{font-size:12.5px;color:var(--mut);font-weight:600;margin-inline-start:8px}
 .phr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .app h3{font-size:15.5px;font-weight:800;margin-bottom:12px}
@@ -61,12 +61,12 @@ export const DASH_CSS = `
 .grid4>.card+.card,.grid3>.card+.card,.grid2>.card+.card,.two>.card+.card{margin-top:0}
 .two>.card{margin-top:0}
 .kpi small{color:var(--mut);font-weight:600}
-.kpi b{display:block;font-size:25px;font-weight:800;margin:4px 0 4px;font-family:Inter,'Cairo',sans-serif}
+.kpi b{display:block;font-size:25px;font-weight:800;margin:4px 0 4px;font-family:Inter,'Tajawal',sans-serif}
 .kpi .spark{width:100%;height:34px}
 .kpi .hint{display:block}
 
 /* ---------- أزرار وحقول ---------- */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:0 14px;border-radius:12px;border:1px solid var(--ln);background:var(--s);color:var(--ink);font:700 13px 'Cairo',sans-serif;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:0 14px;border-radius:12px;border:1px solid var(--ln);background:var(--s);color:var(--ink);font:700 13px 'Tajawal',sans-serif;cursor:pointer;text-decoration:none;white-space:nowrap}
 .btn:hover{background:var(--s2)}
 .btn.p{background:var(--b);border-color:var(--b);color:#fff}
 .btn.p:hover{filter:brightness(.92)}
@@ -75,7 +75,7 @@ export const DASH_CSS = `
 .btn.dng:hover{background:color-mix(in srgb,var(--bad) 8%,var(--s))}
 .btn.wa{background:#25d366;border-color:#25d366;color:#fff}
 .btn:disabled{opacity:.5;cursor:not-allowed}
-.in{width:100%;min-height:42px;padding:0 13px;border:1px solid var(--ln);border-radius:12px;background:var(--s);color:var(--ink);font:500 14px 'Cairo',sans-serif}
+.in{width:100%;min-height:42px;padding:0 13px;border:1px solid var(--ln);border-radius:12px;background:var(--s);color:var(--ink);font:500 14px 'Tajawal',sans-serif}
 .in.sm{min-height:34px;font-size:12.5px;font-weight:700}
 .in:focus{outline:0;border-color:var(--b);box-shadow:0 0 0 4px color-mix(in srgb,var(--b) 16%,transparent)}
 .in.ta{padding:10px 13px;line-height:1.7;resize:vertical;min-height:90px}
@@ -94,12 +94,12 @@ select.in{padding-inline-end:8px}
 .tog.on{background:var(--b)}
 .tog.on i{inset-inline-start:21px}
 .tog:disabled{opacity:.5;cursor:not-allowed}
-.chip{border:1px solid var(--ln);background:var(--s);border-radius:99px;padding:6px 14px;font:700 12.5px 'Cairo',sans-serif;cursor:pointer;color:var(--ink)}
+.chip{border:1px solid var(--ln);background:var(--s);border-radius:99px;padding:6px 14px;font:700 12.5px 'Tajawal',sans-serif;cursor:pointer;color:var(--ink)}
 .chip.act{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .chip em{font-style:normal;opacity:.6;margin-inline-start:4px}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
-.tb{border:1px solid var(--ln);background:var(--s);border-radius:99px;padding:7px 15px;font:700 13px 'Cairo',sans-serif;cursor:pointer;color:var(--ink)}
+.tb{border:1px solid var(--ln);background:var(--s);border-radius:99px;padding:7px 15px;font:700 13px 'Tajawal',sans-serif;cursor:pointer;color:var(--ink)}
 .tb.act{background:var(--b);border-color:var(--b);color:#fff}
 .tb em{font-style:normal;opacity:.7;margin-inline-start:6px;font-size:12px}
 .imgin{display:flex;gap:8px;align-items:center}

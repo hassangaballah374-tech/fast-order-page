@@ -1859,7 +1859,7 @@ export default function SpikeSuperAdminDashboard() {
 
       {/* ===== SPIKE admin theme — استبدل بلوك <style jsx global> القديم بالكامل بهذا ===== */}
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
 
         /* ---------- Tokens ---------- */
         .spike-dashboard {
@@ -1878,7 +1878,7 @@ export default function SpikeSuperAdminDashboard() {
           --accent-text: #0a7f86;
           --danger: #c95e53;
           --shadow: 0 10px 30px -14px rgba(6, 73, 78, 0.22);
-          font-family: 'Cairo', 'Inter', sans-serif;
+          font-family: 'Tajawal', 'Inter', sans-serif;
           font-size: 14px;
           color: var(--ink);
           background:
@@ -1910,7 +1910,7 @@ export default function SpikeSuperAdminDashboard() {
         .spike-dashboard [class*='text-[9px]'] { font-size: 11px; }
         .spike-dashboard h3 { color: var(--ink); line-height: 1.5; font-weight: 800; }
         .spike-dashboard .font-mono {
-          font-family: 'Inter', 'Cairo', sans-serif;
+          font-family: 'Inter', 'Tajawal', sans-serif;
           font-variant-numeric: tabular-nums;
         }
         .spike-dashboard .text-slate-400,
