@@ -48,7 +48,8 @@ export const DASH_CSS = `
 .pg{padding:24px 26px 70px;max-width:1240px}
 .phd{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .phd h1{font-size:25px;font-weight:800}
-.phd h1 small,.app h3 small{font-size:12.5px;color:var(--mut);font-weight:600;margin-inline-start:8px}
+.phd h1 small,.app h3 small{display:inline-block;font-size:12.5px;color:var(--mut);font-weight:600;margin-inline-start:8px}
+/* إصلاح: كروم بيقص ذيل آخر حرف في العنوان لو جاي بعده عنصر inline (small). inline-block بيخلّي النص ينرسم كامل */
 .phr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .app h3{font-size:15.5px;font-weight:800;margin-bottom:12px}
 .dsc{margin:-6px 0 14px;font-size:13px}
