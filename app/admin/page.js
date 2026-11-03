@@ -20,6 +20,7 @@ import PaymentNote from '../../components/admin/PaymentNote';
 import ThemeColors from '../../components/admin/ThemeColors'; 
 import AdminPromos from '../../components/admin/AdminPromos';
 import AdminApps from '../../components/admin/AdminApps';
+import AdminServiceRequests from '../../components/admin/AdminServiceRequests';
 const BRAND_BASE = 'https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding';
 const ICON_PNG = `${BRAND_BASE}/icon.png?v=3`;
 
@@ -113,6 +114,7 @@ export default function SpikeSuperAdminDashboard() {
     plans: 'manage_finance',
     analytics: 'manage_finance',
     billing: 'manage_finance',
+    services: 'manage_stores',
     admins: 'manage_admins',
     audit: 'manage_admins',
     broadcast: 'manage_admins',
@@ -581,6 +583,7 @@ export default function SpikeSuperAdminDashboard() {
     { id: 'overview', title: t.navOverview, icon: '📊', count: null },
     { id: 'merchants', title: t.navStores, icon: '🏬', count: totalStoresCount },
     { id: 'billing', title: 'الحصص والاشتراكات', icon: '💳', count: null },
+    { id: 'services', title: 'طلبات الخدمات', icon: '🧰', count: null },
     { id: 'orders', title: t.navOrders, icon: '📦', count: orders.length },
     { id: 'inventory', title: t.navInventory, icon: '🏷️', count: products.length },
     { id: 'integrations', title: t.navIntegrations, icon: '🔌', count: null },
@@ -1465,7 +1468,8 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* تبويب الباقات */}
          {shown('plans') && <><PaymentNote isDark={isDark} /><ThemeColors isDark={isDark} /><AdminBilling isDark={isDark} initial="plans" onChanged={fetchAllData} /></>}
-          <AdminPromos isDark={isDark} />.
+          <AdminPromos isDark={isDark} />
+          {shown('services') && <AdminServiceRequests isDark={isDark} />}
           <AdminApps isDark={isDark} />
           {shown('billing') && <AdminBilling isDark={isDark} initial="stores" onChanged={fetchAllData} />}
 

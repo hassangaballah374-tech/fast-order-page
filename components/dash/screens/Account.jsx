@@ -294,7 +294,7 @@ const MSERVICES = [
 ];
 
 function ServicesView({ title, sub, catalog }) {
-  const { say } = useDash();
+  const { say, store, uid } = useDash();
   const reqs = useTable('store_service_requests', { order: 'created_at', limit: 100 });
   const [pick, setPick] = useState(null);
   const [f, setF] = useState({ details: '', contact: '' });
@@ -307,7 +307,10 @@ function ServicesView({ title, sub, catalog }) {
     setBusy(true);
     const res = await reqs.insert({ service_key: pick[0], title: pick[2], details: f.details.trim().slice(0, 1000), contact: c, status: 'new' });
     setBusy(false);
-    if (res) { setPick(null); setF({ details: '', contact: '' }); say('✅ تم إرسال طلبك وسنتواصل معك'); }
+    if (res) {
+      try { await supabase.from('platform_notifications').insert([{ audience: 'admin', kind: 'service', title: 'طلب خدمة جديد', body: `${store?.store_name || uid} · ${pick[2]}` }]); } catch { /* الإشعار اختياري */ }
+      setPick(null); setF({ details: '', contact: '' }); say('✅ تم إرسال طلبك وسنتواصل معك');
+    }
   };
   const mine = reqs.rows.filter((r) => catalog.some((c) => c[0] === r.service_key));
   const ST = { new: ['جديد', '#d97706'], contacted: ['تم التواصل', '#0a7f86'], done: ['مكتمل', '#16a34a'], cancelled: ['ملغي', '#718096'] };
@@ -330,8 +333,8 @@ function ServicesView({ title, sub, catalog }) {
         <div className="card tw" style={{ marginTop: 16 }}>
           <h3 style={{ padding: '12px 14px 0' }}>طلباتي</h3>
           <table className="tbl">
-            <thead><tr><th>الخدمة</th><th>الحالة</th><th>التاريخ</th></tr></thead>
-            <tbody>{mine.map((r) => { const [l, c] = ST[r.status] || [r.status, '#718096']; return <tr key={r.id}><td><b>{r.title}</b></td><td><Badge c={c}>{l}</Badge></td><td>{fdate(r.created_at)}</td></tr>; })}</tbody>
+            <thead><tr><th>الخدمة</th><th>الحالة</th><th>ملاحظة من الفريق</th><th>التاريخ</th></tr></thead>
+            <tbody>{mine.map((r) => { const [l, c] = ST[r.status] || [r.status, '#718096']; return <tr key={r.id}><td><b>{r.title}</b></td><td><Badge c={c}>{l}</Badge></td><td>{r.admin_note || '—'}</td><td>{fdate(r.created_at)}</td></tr>; })}</tbody>
           </table>
         </div>
       )}
