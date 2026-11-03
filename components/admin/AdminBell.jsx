@@ -3,6 +3,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 
 /* جرس إشعارات الأدمن: طلبات جديدة وطلبات اشتراك. لحظي (Realtime) مع تحديث دوري احتياطي. */
+/* كل نوع إشعار يفتح التبويب بتاعه */
+const TAB_OF = { new_order: 'orders', service: 'services', app: 'apps', domain: 'domains', plan: 'billing' };
+const ICON_OF = { new_order: '📦', service: '🧰', app: '🧩', domain: '🌐', plan: '💳' };
+
 export default function AdminBell({ isDark, onNewOrder, onOpenTab }) {
   const [list, setList] = useState([]);
   const [open, setOpen] = useState(false);
@@ -55,7 +59,7 @@ export default function AdminBell({ isDark, onNewOrder, onOpenTab }) {
   };
   const click = async (r) => {
     if (!r.read) { await supabase.from('platform_notifications').update({ read: true }).eq('id', r.id); load(); }
-    if (onOpenTab) onOpenTab(r.kind === 'new_order' ? 'orders' : 'billing');
+    if (onOpenTab) onOpenTab(TAB_OF[r.kind] || 'billing');
     setOpen(false);
   };
 
@@ -79,7 +83,7 @@ export default function AdminBell({ isDark, onNewOrder, onOpenTab }) {
             {list.length === 0 && <div className="text-center text-xs text-slate-400 py-6">لا توجد إشعارات</div>}
             {list.map((r) => (
               <button key={r.id} onClick={() => click(r)} className={`w-full text-right p-2.5 rounded-xl border text-xs cursor-pointer ${r.read ? 'border-slate-200/60 dark:border-slate-800 opacity-70' : 'border-[#00B050]/40 bg-[#00B050]/5'}`}>
-                <div className="font-bold">{r.kind === 'new_order' ? '📦 ' : '💳 '}{r.title}</div>
+                <div className="font-bold">{ICON_OF[r.kind] || '💳'} {r.title}</div>
                 {r.body ? <div className="text-slate-500 dark:text-slate-400 truncate">{r.body}</div> : null}
                 <div className="text-[10px] text-slate-400 mt-0.5" dir="ltr">{new Date(r.created_at).toLocaleString()}</div>
               </button>
