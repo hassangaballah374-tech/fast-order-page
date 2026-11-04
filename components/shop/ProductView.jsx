@@ -119,6 +119,13 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
         <div className="gal">
         <div className="gal-main">{p.images[img] ? <img src={p.images[img]} alt={p.title} fetchPriority="high" decoding="async" /> : null}</div>
           {p.images.length > 1 && (
+            <div className="gal-nav">
+              <button type="button" onClick={() => setImg((img - 1 + p.images.length) % p.images.length)} aria-label="السابق">→</button>
+              <span className="num" dir="ltr">{String(img + 1).padStart(2, '0')} / {String(p.images.length).padStart(2, '0')}</span>
+              <button type="button" className="dk" onClick={() => setImg((img + 1) % p.images.length)} aria-label="التالي">←</button>
+            </div>
+          )}
+          {p.images.length > 1 && (
             <div className="gal-th">{p.images.map((s, i) => <button key={i} type="button" className={i === img ? 'act' : ''} onClick={() => setImg(i)} aria-label={`صورة ${i + 1}`}><img src={s} alt="" loading="lazy" /></button>)}</div>
           )}
         </div>
