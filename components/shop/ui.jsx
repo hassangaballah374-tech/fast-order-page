@@ -37,7 +37,7 @@ export function ProductCard({ p }) {
           <b className="num">{money(price, cur)}</b>
           {onSale && <span className="old num">{money(p.compare_price, cur)}</span>}
         </div>
-        <Link href={`${base}/p/${p.id}`} className="b p sm blk">{out ? 'التفاصيل' : 'اطلب الآن'}</Link>
+        <Link href={`${base}/p/${p.id}`} className="b p sm blk">{out ? 'التفاصيل' : 'عرض التفاصيل'}</Link>
       </div>
     </div>
   );

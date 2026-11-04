@@ -3,8 +3,10 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { loadStore, publicCfg, getPages, getCategories, getPixels, getZonesPublic, getBlocks, onColor } from '../../../lib/storeData';
 import { themeById, FONTS, GTM_RE } from '../../../lib/storeKit';
-import { themeCss, fontHref } from '../../../lib/themes100';
+import { fontHref } from '../../../lib/themes100';
 import { SHOP_CSS } from '../../../components/shop/style';
+import { SYS_CSS } from '../../../components/shop/systemCss';
+import { SHOP_BASE } from '../../../lib/themeModern';
 import { StoreProvider } from '../../../components/shop/StoreContext';
 import Tracker from '../../../components/shop/tracker';
 import Shell from '../../../components/shop/Shell';
@@ -57,8 +59,8 @@ export default async function ShopLayout({ children, params }) {
   const footerPages = pages.filter((p) => p.in_footer).map((p) => ({ title: p.title, slug: p.slug }));
 
   return (
-    <div className={cls} style={style} data-p={th.p || 'clean'} data-pat={th.pat || 'none'} dir="rtl" lang="ar">
-      <style dangerouslySetInnerHTML={{ __html: SHOP_CSS + themeCss(th) }} />
+    <div className={cls} style={style} data-p={th.p || 'clean'} data-ob="1" data-dk={th.dark ? '1' : '0'} dir="rtl" lang="ar">
+      <style dangerouslySetInnerHTML={{ __html: SHOP_CSS + SHOP_BASE + SYS_CSS }} />
        <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link rel="stylesheet" href={fontHref(font)} />
