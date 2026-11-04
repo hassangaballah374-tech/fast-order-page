@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useShop, hit } from './StoreContext';
 import { track } from './tracker';
 import { soldOut } from './ui';
+import { flyToCart } from './fly';
 import { money, effectivePrice, saleActive } from '../../lib/storeKit';
 
 /* عرض «المدار»: المنتجات بتدور على مسار منحني، والعميل بيسحب العجلة (أو الشاشة) عشان يتنقل.
@@ -18,7 +19,7 @@ function Ph({ p }) {
 }
 
 export default function OrbitView({ list = [] }) {
-  const { slug, cfg, cur, base, add } = useShop();
+  const { slug, cfg, cur, base, add, count } = useShop();
   const router = useRouter();
   const n = list.length;
 
@@ -170,6 +171,8 @@ export default function OrbitView({ list = [] }) {
   const addLine = (p, opts, label) => {
     if (soldOut(p)) return;
     const price = effectivePrice(p);
+    const srcEl = document.querySelector(focus ? '.ob-focus .ob-fpic img' : '.ob-it.on img');
+    flyToCart(srcEl, p.images[0]);
     add({ product_id: p.id, title: p.title, image: p.images[0] || '', price, qty: 1, options: opts });
     track('AddToCart', { value: price, items: [{ id: p.id, title: p.title, price, qty: 1 }] });
     hit(slug, 'cart', { product: String(p.id) });
@@ -315,6 +318,7 @@ export default function OrbitView({ list = [] }) {
       {focus && (
         <div className="ob-focus" role="dialog" aria-modal="true" aria-label={p.title}>
           <button type="button" className="ob-x" onClick={() => setFocus(false)}>إغلاق ✕</button>
+          <button type="button" className="ob-cartp" data-fly-target="1" onClick={openCart} aria-label="السلة">🛒 <span className="num">{count}</span></button>
           <div className="ob-fgrid">
             <div className="ob-fimg">
               <div className="ob-fpic" key={`${p.id}-${swap}`}>
