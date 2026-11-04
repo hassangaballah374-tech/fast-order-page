@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ProductCard, Blocks, NewsletterForm, Stars } from './ui';
 import { safeUrl, HOME_SECTION_TYPES } from '../../lib/storeKit';
 import { orderByIds } from '../../lib/storeData';
+import OrbitView from './OrbitView';
 
 const DEFAULT_TRUST = ['🚚|شحن سريع|لكل محافظات مصر', '💵|الدفع عند الاستلام|ادفع بعد ما تعاين طلبك', '📞|دعم عبر واتساب|نرد عليك بسرعة'];
 const lines = (v) => (Array.isArray(v) ? v : String(v || '').split('\n')).map((x) => String(x).trim()).filter(Boolean);
@@ -88,10 +89,10 @@ export default function HomeSections({ cfg, base, products, categories, reviews,
           const id = !anchored ? 'products' : undefined;
           anchored = true;
           return (
-            <section className="wrap sec" key={key} id={id}>
-              <Head s={s} />
-              <Grid list={list} />
-              <div className="center" style={{ marginTop: 16 }}><Link href={`${base}/products`} className="b">عرض كل المنتجات</Link></div>
+            <section className="sec" key={key} id={id}>
+              <div className="wrap"><Head s={s} /></div>
+              {id ? <OrbitView list={list} /> : <div className="wrap"><Grid list={list} /></div>}
+              <div className="wrap center" style={{ marginTop: 18 }}><Link href={`${base}/products`} className="more">عرض كل المنتجات ←</Link></div>
             </section>
           );
         }
