@@ -355,4 +355,5 @@ export const SHOP_CSS = `
 }
 @media(prefers-reduced-motion:reduce){.spk .ob-it.on .ob-fl,.spk .ob-fpic,.spk .ob-txt,.spk .ob-finfo,.spk .ob-focus{animation:none}}
 .spk[data-dk="1"] .ob-it,.spk[data-dk="1"] .ob-fpic,.spk[data-dk="1"] .ob-ths img{mix-blend-mode:normal}
+.spk .ob-cartp{position:absolute;inset-inline-start:18px;top:14px;z-index:5;border:0;background:color-mix(in srgb,var(--card) 80%,transparent);border-radius:99px;padding:8px 16px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;color:var(--ink)}
 `;
