@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useShop, hit } from './StoreContext';
 import { fireInitiateCheckout } from './icGuard';
 import { track } from './tracker';
+import { flyToCart } from './fly';
 import { useFavs, pushViewed, readViewed } from './favs'; 
 import Checkout from './Checkout';
 import { Stars, ProductCard, Blocks, soldOut } from './ui';
@@ -90,12 +91,16 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
     setMsg('');
     if (sold) return; 
     if (!optsOk) { setMsg(`اختر ${groups.filter((g) => !opts[g.name]).map((g) => g.name).join(' و ')} أولاً`); return; }
+    const flyMs = flyToCart(document.querySelector('.spk .gal-main img'), p.images[img] || p.images[0]);
     add({ product_id: p.id, title: p.title, image: p.images[0] || '', price, qty, options: opts });
     saveBump(bumpOn && bumpProd ? { product_id: bumpProd.id } : null);
     track('AddToCart', { value: offer.total, items: [{ id: p.id, title: p.title, price, qty }] });
     hit(slug, 'cart', { product: String(p.id) });
-    if (cfg.cart?.drawer === false) router.push(`${base}/cart`);
-    else window.dispatchEvent(new Event('spike:cart-open'));
+    /* السلة الجانبية تتفتح بعد ما الصورة المصغّرة توصل أيقونة السلة */
+    setTimeout(() => {
+      if (cfg.cart?.drawer === false) router.push(`${base}/cart`);
+      else window.dispatchEvent(new Event('spike:cart-open'));
+    }, flyMs ? flyMs + 60 : 0);
   };
 
   const onePage = cfg.checkout?.one_page !== false;
