@@ -25,7 +25,7 @@ const NAME_RE = /^[A-Za-z0-9_]{2,40}$/;
 
 /* ستايل مستقل: بيورّث لون النص من الصفحة، فيشتغل في لوحة التاجر ولوحة الإدارة نهاري وليلي */
 const CSS = `
-.px{--pxc:var(--b,var(--teal,#6B8E23));display:grid;gap:14px;color:inherit;font-family:inherit}
+.px{--pxc:var(--b,var(--teal,#014D6F));display:grid;gap:14px;color:inherit;font-family:inherit}
 .px *{box-sizing:border-box}
 .px-box{border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:16px;padding:14px;display:grid;gap:12px}
 .px-box.on{border-color:var(--pxc)}
