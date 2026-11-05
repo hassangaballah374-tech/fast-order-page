@@ -5,7 +5,7 @@ import { PageHead, Empty } from './ui';
 
 const Loading = () => <div className="card"><p className="mut">جاري التحميل...</p></div>;
 const L = (loader, name) => dynamic(() => loader().then((m) => m[name]), { ssr: false, loading: Loading });
-
+ 
 function Soon() {
   return (
     <>
