@@ -47,6 +47,7 @@ const base = {
   catalog: L(P, 'CatalogScreen'),
 
   themes: L(D, 'ThemesScreen'),
+  sizing: L(() => import('./screens/Sizing'), 'SizingScreen'),
   home: L(D, 'HomeScreen'),
   pages: L(D, 'PagesScreen'),
   checkout: L(D, 'CheckoutScreen'),
