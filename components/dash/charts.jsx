@@ -74,7 +74,7 @@ export function Area({ labels = [], values = [], color = 'var(--b)', height = 22
             <line x1={x(hv)} x2={x(hv)} y1={pad.t} y2={H - pad.b} stroke={color} strokeOpacity=".35" strokeDasharray="3 4" />
             <circle cx={x(hv)} cy={y(values[hv])} r="5" fill="var(--s)" stroke={color} strokeWidth="3" />
             <g>
-              <rect x={Math.min(Math.max(x(hv) - 54, pad.l), W - pad.r - 108)} y={Math.max(y(values[hv]) - 50, 2)} width="108" height="40" rx="10" fill="#06494e" />
+              <rect x={Math.min(Math.max(x(hv) - 54, pad.l), W - pad.r - 108)} y={Math.max(y(values[hv]) - 50, 2)} width="108" height="40" rx="10" fill="#4A6318" />
               <text x={Math.min(Math.max(x(hv) - 54, pad.l), W - pad.r - 108) + 54} y={Math.max(y(values[hv]) - 50, 2) + 16} textAnchor="middle" fontSize="11" fill="#d9ecec">{labels[hv]}</text>
               <text x={Math.min(Math.max(x(hv) - 54, pad.l), W - pad.r - 108) + 54} y={Math.max(y(values[hv]) - 50, 2) + 32} textAnchor="middle" fontSize="13" fontWeight="700" fill="#fff">{fmtN(values[hv])} {unit}</text>
             </g>
