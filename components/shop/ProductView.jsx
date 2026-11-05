@@ -5,6 +5,8 @@ import { useShop, hit } from './StoreContext';
 import { fireInitiateCheckout } from './icGuard';
 import { track } from './tracker';
 import { flyToCart } from './fly';
+import SizeHelp from './SizeFinder';
+import { chartFor, isSizeGroup } from '../../lib/sizeFinder';
 import { useFavs, pushViewed, readViewed } from './favs'; 
 import Checkout from './Checkout';
 import { Stars, ProductCard, Blocks, soldOut } from './ui';
@@ -57,6 +59,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const onSale = saleActive(p) && p.compare_price > price;
   const maxQty = p.track_stock ? Math.max(1, Math.min(50, p.stock_quantity)) : 50;
   const groups = p.variants || [];
+  const sizeChart = chartFor(cfg.sizing, p);
   const optsOk = groups.every((g) => opts[g.name]);
   const offer = applyOffer(price, qty, p.offers);
   const bumpProd = p.upsell ? catalog.find((x) => x.id === String(p.upsell.product_id) && !soldOut(x)) : null;
@@ -148,6 +151,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
             <div className="opt" key={g.name}>
               <b>{g.name}</b>
               <div className="chips">{g.values.map((v) => <button type="button" key={v} className={'chip' + (opts[g.name] === v ? ' act' : '')} onClick={() => setOpts({ ...opts, [g.name]: v })}>{v}</button>)}</div>
+              {sizeChart && isSizeGroup(g.name) ? <SizeHelp chart={sizeChart} values={g.values} onPick={(v) => setOpts((o) => ({ ...o, [g.name]: v }))} /> : null}
             </div>
           ))}
 
