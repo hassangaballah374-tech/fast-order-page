@@ -30,6 +30,7 @@ export const MENU = [
   {
     g: 'design', t: 'تصميم المتجر', i: '🎨', items: [
       { id: 'themes', t: 'الثيمات' },
+      { id: 'sizing', t: 'باحث المقاس', badge: 'جديد' },
       { id: 'home', t: 'تعديل الصفحة الرئيسية' },
       { id: 'pages', t: 'الصفحات' },
       { id: 'checkout', t: 'نموذج الشراء' },
