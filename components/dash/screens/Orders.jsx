@@ -533,7 +533,7 @@ export function AbandonedScreen() {
                   <td style={{ maxWidth: 240 }}>{summary(a)}</td>
                   <td className="num">{money(a.total, cur)}</td>
                   <td>{ago(a.updated_at || a.created_at)}</td>
-                  <td>{a.recovered ? <Badge c="#2f855a">اكتمل</Badge> : a.wa_sent_at ? <Badge c="#6B8E23">تم التواصل</Badge> : <Badge c="#b7791f">جديد</Badge>}</td>
+                  <td>{a.recovered ? <Badge c="#2f855a">اكتمل</Badge> : a.wa_sent_at ? <Badge c="var(--b)">تم التواصل</Badge> : <Badge c="#b7791f">جديد</Badge>}</td>
                   <td className="acts">
                     {!a.recovered && <button type="button" className="btn sm wa" onClick={() => send(a)}>واتساب</button>}
                     {!a.recovered && <button type="button" className="btn sm" onClick={() => t.update(a.id, { recovered: true })}>تم</button>}
@@ -603,7 +603,7 @@ export function CustomersScreen() {
     })).sort((a, b) => b.spent - a.spent);
   }, [t.rows]);
 
-  const SEG = { vip: ['VIP', '#6b46c1'], repeat: ['متكرر', '#6B8E23'], new: ['جديد', '#2f855a'], risky: ['خطر مرتجعات', '#c53030'] };
+  const SEG = { vip: ['VIP', '#6b46c1'], repeat: ['متكرر', 'var(--b)'], new: ['جديد', '#2f855a'], risky: ['خطر مرتجعات', '#c53030'] };
   const counts = customers.reduce((a, c) => { a[c.seg] = (a[c.seg] || 0) + 1; return a; }, {});
   const list = customers.filter((c) => (seg === 'all' || c.seg === seg) && (!dq || `${c.name} ${c.phone}`.toLowerCase().includes(dq.toLowerCase())));
   const netOf = useNetRisk(list.slice(0, 200).map((c) => c.phone));

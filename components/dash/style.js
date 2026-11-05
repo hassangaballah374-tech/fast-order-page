@@ -1,8 +1,8 @@
 /* ستايل لوحة تاجر سبايك (هوية سبايك: أخضر الأفوكادو الزيتي + كريمي). الكلاسات هنا تغطي كل مكونات اللوحة والشاشات. */
 export const DASH_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
-.app{--b:#6B8E23;--b2:#4A6318;--or:#e08f4f;--bg:#F5F1E3;--s:#FFFCF6;--s2:#F3EDDB;--ln:#E2DDC6;--ink:#262E1C;--mut:#6E7560;--okbg:#E2EEDB;--okfg:#3D5A12;--cream:#FDF6EC;--ok:#4A7A1E;--bad:#c53030;--warn:#b7791f;
-  display:flex;min-height:100vh;background:radial-gradient(1000px 420px at 100% -10%,rgba(107,142,35,.12),transparent 60%),radial-gradient(800px 380px at 0% 110%,rgba(224,143,79,.12),transparent 60%),var(--bg);
+.app{--b:#014D6F;--b2:#013A55;--or:#e08f4f;--bg:#ECF3FD;--s:#FFFFFF;--s2:#F2F6FF;--ln:#D6E2F0;--ink:#0F2A3D;--mut:#5B6B7A;--okbg:#E0F2E9;--okfg:#1B6B42;--cream:#DEEAF4;--ok:#2F855A;--bad:#c53030;--warn:#b7791f;
+  display:flex;min-height:100vh;background:radial-gradient(1000px 420px at 100% -10%,rgba(1,77,111,.10),transparent 60%),radial-gradient(800px 380px at 0% 110%,rgba(46,134,181,.10),transparent 60%),var(--bg);
   color:var(--ink);font-family:'Tajawal',sans-serif;font-size:14px;line-height:1.55}
 .app *{box-sizing:border-box}
 .app button{font-family:inherit}
@@ -28,10 +28,10 @@ export const DASH_CSS = `
 .nv .chev{font-size:11px;opacity:.55;transition:transform .08s}
 .nv.open .chev{transform:rotate(180deg)}
 .nvsub{display:flex;flex-direction:column;gap:1px;margin:2px 0 6px;margin-inline-start:22px;padding-inline-start:10px;border-inline-start:2px solid var(--ln)}
-.nvsub .nv{min-height:36px;font-weight:600;font-size:13px;color:#3c4f53}
+.nvsub .nv{min-height:36px;font-weight:600;font-size:13px;color:#3a5266}
 .nvsub .nv.act{color:#fff}
 .nvh{margin:14px 12px 4px;color:var(--mut);font-size:11.5px;font-weight:800}
-.bn{font-style:normal;font-size:10.5px;font-weight:800;border-radius:99px;padding:1px 8px;background:var(--okbg);color:var(--okfg)}
+.bn{font-style:normal;font-size:10.5px;font-weight:800;border-radius:99px;padding:1px 8px;background:var(--cream);color:var(--b)}
 .bn.sp{background:#fde8d4;color:#a8581c}
 .nv.act .bn{background:rgba(255,255,255,.25);color:#fff}
 .spk{color:var(--or);font-size:11px;margin-inline-start:2px}
@@ -53,7 +53,7 @@ export const DASH_CSS = `
 .phr{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .app h3{font-size:15.5px;font-weight:800;margin-bottom:12px}
 .dsc{margin:-6px 0 14px;font-size:13px}
-.card{background:var(--s);border:1px solid var(--ln);border-radius:20px;padding:20px;box-shadow:0 10px 30px -16px rgba(74,99,24,.22)}
+.card{background:var(--s);border:1px solid var(--ln);border-radius:20px;padding:20px;box-shadow:0 10px 30px -16px rgba(1,58,85,.18)}
 .card+.card{margin-top:16px}
 .grid4,.grid3,.grid2,.two{display:grid;gap:14px;margin-bottom:16px;align-items:start}
 .grid4{grid-template-columns:repeat(4,1fr)}
@@ -92,7 +92,7 @@ select.in{padding-inline-end:8px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
 .row .fld{flex:1;min-width:110px;margin-bottom:0}
 .tgrow{display:flex;align-items:center;gap:10px}
-.tog{width:44px;height:26px;border-radius:99px;border:0;background:#cfd6d3;position:relative;cursor:pointer;flex:none;transition:.2s;padding:0}
+.tog{width:44px;height:26px;border-radius:99px;border:0;background:#C5D3E2;position:relative;cursor:pointer;flex:none;transition:.2s;padding:0}
 .tog i{position:absolute;top:3px;inset-inline-start:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
 .tog.on{background:var(--b)}
 .tog.on i{inset-inline-start:21px}
@@ -112,7 +112,7 @@ select.in{padding-inline-end:8px}
 .gal .gi{position:relative;width:78px;height:78px;border-radius:12px;overflow:hidden;border:1px solid var(--ln)}
 .gal .gi img{width:100%;height:100%;object-fit:cover}
 .gal .gi button{position:absolute;top:3px;inset-inline-start:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:12px}
-.gal .gi.first::after{content:'الرئيسية';position:absolute;bottom:0;inset-inline:0;background:rgba(107,142,35,.92);color:#fff;font-size:10px;text-align:center;font-weight:700}
+.gal .gi.first::after{content:'الرئيسية';position:absolute;bottom:0;inset-inline:0;background:rgba(1,77,111,.92);color:#fff;font-size:10px;text-align:center;font-weight:700}
 .gal .add{width:78px;height:78px;border-radius:12px;border:2px dashed var(--ln);background:var(--s2);display:grid;place-items:center;cursor:pointer;font-size:22px;color:var(--mut)}
 
 /* ---------- جداول ---------- */
@@ -172,9 +172,9 @@ select.in{padding-inline-end:8px}
 .sec b{flex:1;min-width:0}
 
 /* ---------- نوافذ ---------- */
-.ov{position:fixed;inset:0;z-index:60;background:rgba(5,35,38,.55);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px}
+.ov{position:fixed;inset:0;z-index:60;background:rgba(2,30,45,.55);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px}
 .ov.topv{align-items:start;padding-top:12vh}
-.mod{width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;background:var(--s);border:1px solid var(--ln);border-radius:24px;box-shadow:0 30px 80px -20px rgba(3,30,33,.55);animation:pop .1s ease-out}
+.mod{width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;background:var(--s);border:1px solid var(--ln);border-radius:24px;box-shadow:0 30px 80px -20px rgba(2,30,45,.55);animation:pop .1s ease-out}
 .mod.wide{max-width:860px}
 .mh{display:flex;justify-content:space-between;align-items:center;padding:18px 22px 6px}
 .mh b{font-size:16px}

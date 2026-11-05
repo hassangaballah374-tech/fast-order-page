@@ -45,7 +45,7 @@ export default function TodayPanel({ orders, aband, products, go, cur, name }) {
   return (
     <div className="tdp">
       <style dangerouslySetInnerHTML={{ __html: `
-        .tdp{position:relative;overflow:hidden;border-radius:24px;padding:22px;margin-bottom:16px;color:#fff;background:linear-gradient(135deg,#4A6318 0%,#6B8E23 55%,#13a3a0 100%);box-shadow:0 22px 44px -22px rgba(6,73,78,.65)}
+        .tdp{position:relative;overflow:hidden;border-radius:24px;padding:22px;margin-bottom:16px;color:#fff;background:linear-gradient(135deg,#013A55 0%,#014D6F 55%,#2E86B5 100%);box-shadow:0 22px 44px -22px rgba(1,58,85,.65)}
         .tdp::before{content:'';position:absolute;inset:auto auto -90px -70px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.22),transparent 65%)}
         .tdp-top{position:relative;display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:flex-end}
         .tdp h2{margin:0;font-size:20px;font-weight:900}

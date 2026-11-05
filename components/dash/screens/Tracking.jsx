@@ -70,7 +70,7 @@ export function PixelsScreen() {
                   <tr key={r.id}>
                     <td><b>{(PLATFORMS[r.platform] || {}).icon} {(PLATFORMS[r.platform] || {}).ar || r.platform}</b>{r.label && <small>{r.label}</small>}</td>
                     <td className="num" dir="ltr" style={{ textAlign: 'start' }}>{r.pixel_id}</td>
-                    <td><Badge c="#6B8E23">{on} من {EVENTS.length}</Badge></td>
+                    <td><Badge c="var(--b)">{on} من {EVENTS.length}</Badge></td>
                     <td><Tog on={r.enabled !== false} set={(v) => t.update(r.id, { enabled: v })} /></td>
                     <td className="acts">
                       <button type="button" className="btn sm" onClick={() => open(r)}>تعديل</button>

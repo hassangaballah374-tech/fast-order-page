@@ -15,13 +15,13 @@ function Pick({ value, onChange, allowInherit, name }) {
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(190px,1fr))', gap: 10 }}>
       {allowInherit && (
         <button type="button" className="card" onClick={() => onChange('')} aria-pressed={!value}
-          style={{ textAlign: 'start', cursor: 'pointer', outline: !value ? '2px solid var(--c, #6B8E23)' : 'none' }}>
+          style={{ textAlign: 'start', cursor: 'pointer', outline: !value ? '2px solid var(--b)' : 'none' }}>
           <b>↩ زي الافتراضي</b><div className="mut" style={{ fontSize: 12, marginTop: 4 }}>بدون تخصيص</div>
         </button>
       )}
       {STYLES.map((s) => (
         <button key={s.k} type="button" className="card" onClick={() => onChange(s.k)} aria-pressed={value === s.k} aria-label={`${name || ''} ${s.t}`}
-          style={{ textAlign: 'start', cursor: 'pointer', outline: value === s.k ? '2px solid var(--c, #6B8E23)' : 'none' }}>
+          style={{ textAlign: 'start', cursor: 'pointer', outline: value === s.k ? '2px solid var(--b)' : 'none' }}>
           <div style={{ fontSize: 26 }}>{s.i}</div>
           <b>{s.t}</b>
           <div className="mut" style={{ fontSize: 12, marginTop: 4, lineHeight: 1.5 }}>{s.d}</div>
