@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { loadStore, getProducts, getCategories } from '../../../../lib/storeData';
 import { ProductCard } from '../../../../components/shop/ui';
-import BrowseView, { BROWSE_STYLES, pickStyle } from '../../../../components/shop/BrowseView';
+import BrowseView from '../../../../components/shop/BrowseView';
+import { BROWSE_STYLES, pickStyle } from '../../../../lib/browse';
 
 export const dynamic = 'force-dynamic';
 

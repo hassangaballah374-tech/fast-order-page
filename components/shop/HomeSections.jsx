@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { ProductCard, Blocks, NewsletterForm, Stars } from './ui';
 import { safeUrl, HOME_SECTION_TYPES } from '../../lib/storeKit';
 import { orderByIds } from '../../lib/storeData';
-import BrowseView, { pickStyle } from './BrowseView';
+import BrowseView from './BrowseView';
+import { pickStyle } from '../../lib/browse';
 
 const DEFAULT_TRUST = ['🚚|شحن سريع|لكل محافظات مصر', '💵|الدفع عند الاستلام|ادفع بعد ما تعاين طلبك', '📞|دعم عبر واتساب|نرد عليك بسرعة'];
 const lines = (v) => (Array.isArray(v) ? v : String(v || '').split('\n')).map((x) => String(x).trim()).filter(Boolean);
