@@ -136,6 +136,29 @@ function WelcomeBack() {
   );
 }
 
+/* زر نهاري/ليلي: بيبدّل ألوان المتجر كله ويفتكر اختيار العميل */
+function ModeToggle() {
+  const { slug } = useShop();
+  const [night, setNight] = useState(false);
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const r = document.querySelector('.spk[data-ob]');
+    if (!r || r.getAttribute('data-dk0') === '1') return;
+    setShow(true);
+    setNight(r.getAttribute('data-mode') === 'night');
+  }, []);
+  if (!show) return null;
+  const flip = () => {
+    const r = document.querySelector('.spk[data-ob]');
+    if (!r) return;
+    const nx = !night;
+    if (nx) { r.setAttribute('data-mode', 'night'); r.setAttribute('data-dk', '1'); } else { r.removeAttribute('data-mode'); r.setAttribute('data-dk', '0'); }
+    try { if (nx) localStorage.setItem(`spike_mode_${slug}`, 'night'); else localStorage.removeItem(`spike_mode_${slug}`); } catch { /* تجاهل */ }
+    setNight(nx);
+  };
+  return <button type="button" className="mode" onClick={flip} aria-label={night ? 'الوضع النهاري' : 'الوضع الليلي'} title={night ? 'الوضع النهاري' : 'الوضع الليلي'}>{night ? '☀️' : '🌙'}</button>;
+}
+
 export default function Shell({ children, footerExtra }) {
   const { name, cfg, base, count, pages, live, reason } = useShop();
   const path = usePathname();
@@ -162,6 +185,7 @@ export default function Shell({ children, footerExtra }) {
           </nav>
           <span className="hd-sp" />
           <SearchBox />
+          {b.night_toggle !== false ? <ModeToggle /> : null}
           <Link href={`${base}/cart`} className="cartb" aria-label="السلة" onClick={(e) => { if (cfg.cart?.drawer === false || /\/(cart|checkout)/.test(path || '')) return; e.preventDefault(); window.dispatchEvent(new Event('spike:cart-open')); }}>🛒 السلة{count > 0 ? <span className="cnt num">{count}</span> : null}</Link>
         </div>
       </header>

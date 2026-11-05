@@ -43,12 +43,15 @@ export default async function ShopLayout({ children, params }) {
 
   const b = cfg.brand;
   const th = themeById(b.theme);
-  const color = /^#[0-9a-fA-F]{3,8}$/.test(b.color || '') ? b.color : th.color;
+  /* ثيمات هوية سبايك (pal) بتاخد لونها الأساسي من الثيم؛ اللون القديم الافتراضي (التركواز) يتعامل كأنه غير محدد */
+  const customColor = /^#[0-9a-fA-F]{3,8}$/.test(b.color || '') && !(th.pal && /^#0a7f86$/i.test(b.color)) ? b.color : '';
+  const color = customColor || th.color;
   const font = FONTS.includes(b.font) ? b.font : (th.font || 'Cairo');
   const radius = Math.max(0, Math.min(30, Number(b.radius) || th.radius));
   const cols = Math.max(2, Math.min(4, Number(b.columns) || 4));
   const style = {
     '--c': color, '--onc': onColor(color), '--bg': th.bg, '--card': th.card, '--ink': th.ink, '--mut': th.mut, '--ln': th.ln,
+    ...(th.pal ? { '--tint': th.tint, '--tint2': th.tint2, '--deep': th.deep } : {}),
     '--r': `${radius}px`, '--cols': cols, '--font': `'${font}'`, colorScheme: th.dark ? 'dark' : 'light',
   };
   const cls = `spk ${b.card_style === 'outline' ? 'outline' : b.card_style === 'flat' ? 'flat' : 'soft'}`;
@@ -59,7 +62,8 @@ export default async function ShopLayout({ children, params }) {
   const footerPages = pages.filter((p) => p.in_footer).map((p) => ({ title: p.title, slug: p.slug }));
 
   return (
-    <div className={cls} style={style} data-p={th.p || 'clean'} data-ob="1" data-dk={th.dark ? '1' : '0'} dir="rtl" lang="ar">
+    <div className={cls} style={style} data-p={th.p || 'clean'} data-ob="1" data-dk={th.dark ? '1' : '0'} data-pal={th.pal ? '1' : '0'} data-dk0={th.dark ? '1' : '0'} dir="rtl" lang="ar" suppressHydrationWarning>
+      {b.night_toggle !== false ? <script dangerouslySetInnerHTML={{ __html: `try{var r=document.currentScript.parentNode;if(localStorage.getItem('spike_mode_'+${JSON.stringify(String(store.store_slug)).replace(/</g, '\\u003c')})==='night'){r.setAttribute('data-mode','night');r.setAttribute('data-dk','1')}}catch(e){}` }} /> : null}
       <style dangerouslySetInnerHTML={{ __html: SHOP_CSS + SHOP_BASE + SYS_CSS }} />
        <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

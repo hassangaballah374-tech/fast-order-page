@@ -128,4 +128,34 @@ export const SYS_CSS = `
 
 /* الثيمات الداكنة: بلاطة الصورة بيضاء عشان خلفيات الصور البيضا تذوب */
 .spk[data-ob][data-dk="1"] .pc-img,.spk[data-ob][data-dk="1"] .gal-main,.spk[data-ob][data-dk="1"] .gal-th button,.spk[data-ob][data-dk="1"] .cat img,.spk[data-ob][data-dk="1"] .cat .ph{background:#fff}
+/* ===== هوية سبايك (نهاري/ليلي): تفعل مع ثيمي «سبايك نهاري/ليلي» فقط ===== */
+.spk[data-mode="night"]{--bg:#061C2A!important;--card:#0A2A3E!important;--ink:#E8F1F8!important;--mut:#8FA9BC!important;--ln:#16435D!important;--tint:#0F3650!important;--tint2:#082436!important;--deep:#02131E!important;color-scheme:dark}
+.spk[data-mode="night"][data-pal="1"]{--c:#5BB6E0!important;--onc:#04202F!important}
+.spk[data-mode="night"]{background:var(--bg);color:var(--ink)}
+.spk .mode{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--ln2,var(--ln));background:transparent;color:var(--ink);font-size:17px;cursor:pointer;flex:none;display:inline-flex;align-items:center;justify-content:center;line-height:1}
+.spk .mode:hover{border-color:var(--ink)}
+.spk[data-pal="1"]{background:var(--bg)}
+.spk[data-pal="1"] .ann{background:var(--deep);color:#fff}
+.spk[data-pal="1"] .hero{background:var(--tint);color:var(--ink);border-radius:20px}
+.spk[data-pal="1"] .hero.img{background-size:cover;background-position:center;min-height:clamp(300px,40vw,430px);display:flex;align-items:center}
+.spk[data-pal="1"] .hero.img::before{display:none}
+.spk[data-pal="1"] .hero-in{padding:clamp(24px,3.4vw,38px);max-width:480px}
+.spk[data-pal="1"] .hero.img .hero-in{background:var(--tint);color:var(--ink);border-radius:14px;margin:clamp(14px,3vw,36px);box-shadow:0 18px 40px -26px rgba(2,52,77,.55)}
+.spk[data-pal="1"] .hero h1{color:var(--ink)}
+.spk[data-pal="1"] .hero p{opacity:1;color:color-mix(in srgb,var(--ink) 78%,var(--bg))}
+.spk[data-ob][data-pal="1"] .hero .b,.spk[data-ob][data-pal="1"] .hero .b:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.spk[data-pal="1"] .trust{background:var(--tint2);border-radius:16px;padding:clamp(12px,2vw,20px);gap:10px}
+.spk[data-ob][data-pal="1"] .ti{border:0;background:transparent}
+.spk[data-pal="1"] .ti i{color:var(--ink)}
+.spk[data-ob][data-pal="1"] .pc-img,.spk[data-ob][data-pal="1"] .cat img,.spk[data-ob][data-pal="1"] .cat .ph{background:var(--card)}
+.spk[data-ob][data-pal="1"] .banner{background:var(--tint);border-color:transparent}
+.spk[data-ob][data-pal="1"] .ft{background:var(--deep);color:#fff;border-top:0}
+.spk[data-ob][data-pal="1"] .ft h4{color:#fff}
+.spk[data-ob][data-pal="1"] .ft a,.spk[data-ob][data-pal="1"] .ft .mut,.spk[data-ob][data-pal="1"] .ft p{color:rgba(255,255,255,.76)}
+.spk[data-ob][data-pal="1"] .ft a:hover{color:#fff}
+.spk[data-ob][data-pal="1"] .ft .soc a{border-color:rgba(255,255,255,.3);color:#fff}
+.spk[data-ob][data-pal="1"] .ft .b.wa{color:#fff}
+.spk[data-ob][data-pal="1"] .ft .pw{color:rgba(255,255,255,.55)}
+.spk[data-mode="night"] .pc-img,.spk[data-mode="night"] .gal-main,.spk[data-mode="night"] .gal-th button,.spk[data-mode="night"] .cat img,.spk[data-mode="night"] .cat .ph{background:#fff}
+.spk[data-mode="night"] .ob-it,.spk[data-mode="night"] .ob-fpic,.spk[data-mode="night"] .ob-ths img{mix-blend-mode:normal}
 `;
