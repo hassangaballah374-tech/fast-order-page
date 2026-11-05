@@ -82,7 +82,7 @@ export default function SpikeSessionBar() {
             {email}
           </div>
           {admin && (
-            <button type="button" onClick={() => router.push(ADMIN_ROUTE)} style={{ ...btn, background: '#6B8E23', color: '#fff', marginBottom: 6 }}>
+            <button type="button" onClick={() => router.push(ADMIN_ROUTE)} style={{ ...btn, background: '#014D6F', color: '#fff', marginBottom: 6 }}>
               🛡️ <span>لوحة الإدارة</span>
             </button>
           )}
@@ -97,7 +97,7 @@ export default function SpikeSessionBar() {
         onClick={() => setOpen((v) => !v)}
         style={{
           width: 46, height: 46, borderRadius: 999, border: '2px solid #fcfbf7', cursor: 'pointer',
-          background: admin ? 'linear-gradient(135deg,#f4b987,#e08f4f)' : '#6B8E23', color: admin ? '#3a1d08' : '#fff',
+          background: admin ? 'linear-gradient(135deg,#f4b987,#e08f4f)' : '#014D6F', color: admin ? '#3a1d08' : '#fff',
           fontSize: 18, fontWeight: 800, boxShadow: '0 10px 24px -10px rgba(6,73,78,.6)',
         }}
       >
