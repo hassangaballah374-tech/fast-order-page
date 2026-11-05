@@ -80,7 +80,7 @@ export default function ThemePicker({ value, onPick }) {
           return (
             <button
               key={t.id} type="button" onClick={() => onPick(t)}
-              style={{ textAlign: 'start', padding: 8, borderRadius: 16, cursor: 'pointer', background: 'var(--card, #fff)', border: act ? '2.5px solid #0a7f86' : '1.5px solid rgba(0,0,0,.1)', boxShadow: act ? '0 0 0 4px rgba(10,127,134,.15)' : 'none' }}
+              style={{ textAlign: 'start', padding: 8, borderRadius: 16, cursor: 'pointer', background: 'var(--card, #fff)', border: act ? '2.5px solid #6B8E23' : '1.5px solid rgba(0,0,0,.1)', boxShadow: act ? '0 0 0 4px rgba(107,142,35,.15)' : 'none' }}
             >
               <div style={{ height: 200, overflow: 'hidden', borderRadius: 10, background: t.bg }}>{i < shown ? <Mini t={t} /> : null}</div>
               <b style={{ display: 'block', marginTop: 8 }}>{act ? '✓ ' : ''}{t.name}</b>
