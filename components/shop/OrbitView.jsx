@@ -7,6 +7,8 @@ import { track } from './tracker';
 import { soldOut } from './ui';
 import { flyToCart } from './fly';
 import { lockScroll } from './scrollLock';
+import SizeHelp from './SizeFinder';
+import { chartFor, isSizeGroup } from '../../lib/sizeFinder';
 import { money, effectivePrice, saleActive } from '../../lib/storeKit';
 
 /* عرض «المدار»: المنتجات بتدور على مسار منحني، والعميل بيسحب العجلة (أو الشاشة) عشان يتنقل.
@@ -195,6 +197,7 @@ export default function OrbitView({ list = [] }) {
 
   const p = cur0;
   const groups = p.variants || [];
+  const chart = chartFor(cfg.sizing, p);
   const price = effectivePrice(p);
   const onSale = saleActive(p) && p.compare_price > price;
   const sold = soldOut(p);
@@ -304,6 +307,7 @@ export default function OrbitView({ list = [] }) {
                 </button>
               ))}
             </div>
+            {chart && isSizeGroup(groups[0].name) ? <SizeHelp chart={chart} values={groups[0].values} onPick={(v) => pick(p, groups[0], v)} /> : null}
           </>
         ) : groups.length === 0 ? (
           <button type="button" className={'ob-add' + (justAdded ? ' ok' : '')} onClick={() => quickAdd(p)}>
@@ -341,6 +345,7 @@ export default function OrbitView({ list = [] }) {
                       <button key={v} type="button" className={fopts[g.name] === v ? 'sel' : ''} disabled={sold} onClick={() => setFopts({ ...fopts, [g.name]: v })}>{v}</button>
                     ))}
                   </div>
+                  {chart && isSizeGroup(g.name) ? <SizeHelp chart={chart} values={g.values} onPick={(v) => setFopts((o) => ({ ...o, [g.name]: v }))} /> : null}
                 </div>
               ))}
               <button type="button" className={'ob-add' + (justAdded ? ' ok' : '') + (needed.length || sold ? ' dis' : '')} onClick={addFocus} disabled={sold}>
