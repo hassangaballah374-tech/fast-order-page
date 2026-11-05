@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useShop } from './StoreContext';
 import { money } from '../../lib/storeKit';
+import { lockScroll, unlockIfIdle } from './scrollLock';
 
 /* سلة جانبية: تُفتح بحدث 'spike:cart-open' (بعد "أضف للسلة" أو الضغط على أيقونة السلة) */
 export default function MiniCart() {
@@ -21,10 +22,10 @@ export default function MiniCart() {
     if (!open) return undefined;
     const k = (e) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('keydown', k);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', k); document.body.style.overflow = prev; };
+    const unlock = lockScroll();
+    return () => { document.removeEventListener('keydown', k); unlock(); };
   }, [open]);
+  useEffect(() => { unlockIfIdle(); }, [path]);
 
   if (!open) return null;
   const sub = cart.reduce((a, i) => a + (Number(i.price) || 0) * (Number(i.qty) || 0), 0);

@@ -6,6 +6,7 @@ import { useShop, hit } from './StoreContext';
 import { track } from './tracker';
 import { soldOut } from './ui';
 import { flyToCart } from './fly';
+import { lockScroll } from './scrollLock';
 import { money, effectivePrice, saleActive } from '../../lib/storeKit';
 
 /* عرض «المدار»: المنتجات بتدور على مسار منحني، والعميل بيسحب العجلة (أو الشاشة) عشان يتنقل.
@@ -159,8 +160,7 @@ export default function OrbitView({ list = [] }) {
   /* قفل تمرير الصفحة مع العرض المركّز + تتبّع المشاهدة */
   useEffect(() => {
     if (!focus) return undefined;
-    const prev = document.body.style.overflow; document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    return lockScroll();
   }, [focus]);
   useEffect(() => {
     if (!focus || !cur0) return;

@@ -11,7 +11,7 @@ export const SYS_CSS = `
 
 /* الشريط العلوي */
 .spk[data-ob] .ann{background:var(--ink);color:var(--bg);font-size:12px;letter-spacing:.04em}
-.spk[data-ob] .hd{background:color-mix(in srgb,var(--bg) 88%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--ln3)}
+.spk[data-ob] .hd{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none;border-bottom:1px solid var(--ln3)}
 .spk[data-ob] .hd-in{height:66px}
 .spk[data-ob] .logo{font-weight:900;font-size:17px}
 .spk[data-ob] .logo img{width:38px;height:38px;border-radius:50%}
@@ -61,8 +61,8 @@ export const SYS_CSS = `
 /* كروت المنتجات: صورة عائمة + اسم + سعر + رابط تفاصيل */
 .spk[data-ob] .pc{background:transparent;border:0;border-radius:0;box-shadow:none!important;overflow:visible}
 .spk[data-ob] .pc:hover{transform:none;box-shadow:none}
-.spk[data-ob] .pc-img{border-radius:18px;background:var(--stage);position:relative}
-.spk[data-ob] .pc-img img{object-fit:contain;padding:6%;mix-blend-mode:multiply}
+.spk[data-ob] .pc-img{border-radius:18px;background:var(--card);border:1px solid var(--ln3);position:relative}
+.spk[data-ob] .pc-img img{object-fit:contain;padding:6%}
 .spk[data-ob] .pc-b{padding:12px 2px 2px;gap:3px}
 .spk[data-ob] .pc-t{font-size:15px;font-weight:800;min-height:0}
 .spk[data-ob] .pc-p b{color:var(--ink);font-size:14px;font-weight:700}
@@ -77,11 +77,11 @@ export const SYS_CSS = `
 
 /* صفحة المنتج */
 .spk[data-ob] .pv{gap:30px;padding:30px 0}
-.spk[data-ob] .gal-main{background:var(--stage);border:0;box-shadow:none;border-radius:22px}
-.spk[data-ob] .gal-main img{object-fit:contain;padding:5%;mix-blend-mode:multiply}
-.spk[data-ob] .gal-th button{border:1.5px solid transparent;border-radius:12px;background:var(--stage)}
+.spk[data-ob] .gal-main{background:var(--card);border:1px solid var(--ln3);box-shadow:none;border-radius:22px}
+.spk[data-ob] .gal-main img{object-fit:contain;padding:5%}
+.spk[data-ob] .gal-th button{border:1.5px solid transparent;border-radius:12px;background:var(--card)}
 .spk[data-ob] .gal-th button.act{border-color:var(--ink)}
-.spk[data-ob] .gal-th img{object-fit:contain;mix-blend-mode:multiply}
+.spk[data-ob] .gal-th img{object-fit:contain}
 .spk[data-ob] .gal-nav{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:12px;font-size:12px;letter-spacing:.1em}
 .spk[data-ob] .gal-nav button{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--ln2);background:transparent;color:var(--ink);font-size:18px;cursor:pointer}
 .spk[data-ob] .gal-nav button.dk{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -89,7 +89,7 @@ export const SYS_CSS = `
 .spk[data-ob] .price b{font-size:22px;color:var(--ink);font-weight:800;letter-spacing:0}
 .spk[data-ob] .assure{display:flex;gap:6px 18px;flex-wrap:wrap}
 .spk[data-ob] .assure div{border:0;background:none;padding:4px 0;font-size:12px;color:var(--mut);font-weight:700}
-.spk[data-ob] .stk{background:color-mix(in srgb,var(--bg) 88%,transparent);border-top:1px solid var(--ln3)}
+.spk[data-ob] .stk{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none;border-top:1px solid var(--ln3)}
 .spk[data-ob] .stk b{color:var(--ink)}
 .spk[data-ob] .rev{border-top:1px solid var(--ln3)}
 
@@ -97,7 +97,7 @@ export const SYS_CSS = `
 .spk[data-ob] .card,.spk[data-ob] .frm,.spk[data-ob] .ti,.spk[data-ob] .cat,.spk[data-ob] .ci,.spk[data-ob] .bl-cd,.spk[data-ob] .bl-faq details,.spk[data-ob] .banner,.spk[data-ob] .nxt div,.spk[data-ob] .pop{border:1px solid var(--ln3);border-radius:18px;box-shadow:none;background:var(--card)}
 .spk[data-ob] .sum{border:1px solid var(--ln3);border-radius:16px;background:transparent}
 .spk[data-ob] .cat{background:transparent;border:0;padding:0;text-align:start;font-size:15px;font-weight:800}
-.spk[data-ob] .cat img,.spk[data-ob] .cat .ph{border-radius:18px;background:var(--stage);margin-bottom:10px}
+.spk[data-ob] .cat img,.spk[data-ob] .cat .ph{border-radius:18px;background:var(--card);margin-bottom:10px}
 .spk[data-ob] .cat.act{box-shadow:none;text-decoration:underline}
 .spk[data-ob] .ci img{border-radius:12px}
 .spk[data-ob] .hero{border-radius:24px}
@@ -126,6 +126,6 @@ export const SYS_CSS = `
 /* رابط «عرض الكل ←» */
 .spk .more{display:inline-block;font-size:13px;font-weight:800;border-bottom:1.5px solid currentColor;padding-bottom:2px}
 
-/* الثيمات الداكنة: بلاطة صورة فاتحة مع دمج الصورة فيها */
-.spk[data-ob][data-dk="1"] .pc-img,.spk[data-ob][data-dk="1"] .gal-main,.spk[data-ob][data-dk="1"] .gal-th button,.spk[data-ob][data-dk="1"] .cat img,.spk[data-ob][data-dk="1"] .cat .ph{background:#eeeef0}
+/* الثيمات الداكنة: بلاطة الصورة بيضاء عشان خلفيات الصور البيضا تذوب */
+.spk[data-ob][data-dk="1"] .pc-img,.spk[data-ob][data-dk="1"] .gal-main,.spk[data-ob][data-dk="1"] .gal-th button,.spk[data-ob][data-dk="1"] .cat img,.spk[data-ob][data-dk="1"] .cat .ph{background:#fff}
 `;
