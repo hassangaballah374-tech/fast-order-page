@@ -3,8 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 
 const DEF = {
-  light: { bg: '#F4F6F9', card: '#FFFFFF', accent: '#00B050' },
-  dark: { bg: '#0B132B', card: '#0E1E38', accent: '#00B050' },
+  light: { bg: '#ECF3FD', card: '#FFFFFF', accent: '#014D6F' },
+  dark: { bg: '#061C2A', card: '#0A2A3E', accent: '#5BB6E0' },
   headline: '', subline: '',
 };
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -27,8 +27,8 @@ export default function ThemeColors({ isDark }) {
     setTimeout(() => setMsg(''), 3000);
   };
   const reset = () => { setV(DEF); save(DEF); };
-  const box = `p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`;
-  const inp = 'w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent text-xs outline-none focus:border-[#00B050]';
+  const box = `p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`;
+  const inp = 'w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent text-xs outline-none focus:border-[#014D6F]';
   return (
     <div className={box}>
       <h3 className="font-black text-sm mb-3">واجهة التسجيل والدخول: الألوان والعنوان</h3>
@@ -56,9 +56,9 @@ export default function ThemeColors({ isDark }) {
         <label className="text-xs">سطر توضيحي (اختياري)<input className={inp} value={v.subline} onChange={(e) => setV({ ...v, subline: e.target.value })} placeholder="سجّل مجاناً وجرّب المنصة" /></label>
       </div>
       <div className="flex items-center gap-3 mt-3">
-        <button onClick={() => save(v)} className="px-4 py-2 bg-[#00B050] text-white rounded-lg text-xs font-bold cursor-pointer">حفظ</button>
+        <button onClick={() => save(v)} className="px-4 py-2 bg-[#014D6F] text-white rounded-lg text-xs font-bold cursor-pointer">حفظ</button>
         <button onClick={reset} className="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold cursor-pointer">استرجاع الافتراضي</button>
-        {msg ? <span className="text-xs font-bold text-[#00B050]">{msg}</span> : null}
+        {msg ? <span className="text-xs font-bold text-[#014D6F]">{msg}</span> : null}
       </div>
     </div>
   );

@@ -13,12 +13,12 @@ export default function PaymentNote({ isDark }) {
     setTimeout(() => setMsg(''), 3000);
   };
   return (
-    <div className={`p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+    <div className={`p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`}>
       <h3 className="font-black text-sm mb-1">تعليمات الدفع (تظهر للتاجر عند الاشتراك أو شحن الرصيد)</h3>
-      <textarea rows={3} value={v} onChange={(e) => setV(e.target.value)} placeholder="مثال: حوّل المبلغ إلى فودافون كاش 010XXXXXXXX ثم ارفع صورة التحويل" className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent text-xs outline-none focus:border-[#00B050]" />
+      <textarea rows={3} value={v} onChange={(e) => setV(e.target.value)} placeholder="مثال: حوّل المبلغ إلى فودافون كاش 010XXXXXXXX ثم ارفع صورة التحويل" className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent text-xs outline-none focus:border-[#014D6F]" />
       <div className="flex items-center gap-3 mt-2">
-        <button onClick={save} className="px-4 py-2 bg-[#00B050] text-white rounded-lg text-xs font-bold cursor-pointer">حفظ</button>
-        {msg ? <span className="text-xs font-bold text-[#00B050]">{msg}</span> : null}
+        <button onClick={save} className="px-4 py-2 bg-[#014D6F] text-white rounded-lg text-xs font-bold cursor-pointer">حفظ</button>
+        {msg ? <span className="text-xs font-bold text-[#014D6F]">{msg}</span> : null}
       </div>
     </div>
   );

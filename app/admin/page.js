@@ -557,8 +557,8 @@ export default function SpikeSuperAdminDashboard() {
   const statusMeta = [
     { key: 'pending', label: isAr ? 'بانتظار الشحن' : 'Pending', color: '#f2a066' },
     { key: 'confirmed', label: isAr ? 'تم التأكيد' : 'Confirmed', color: '#c9a45c' },
-    { key: 'shipped', label: isAr ? 'تم الشحن' : 'Shipped', color: '#5fb7bb' },
-    { key: 'delivered', label: isAr ? 'تم التسليم' : 'Delivered', color: '#0a7f86' },
+    { key: 'shipped', label: isAr ? 'تم الشحن' : 'Shipped', color: '#5BB6E0' },
+    { key: 'delivered', label: isAr ? 'تم التسليم' : 'Delivered', color: '#014D6F' },
     { key: 'cancelled', label: isAr ? 'ملغي' : 'Cancelled', color: '#c95e53' },
   ];
   const statusSegments = statusMeta.map((m) => ({
@@ -647,7 +647,7 @@ export default function SpikeSuperAdminDashboard() {
       value: `${fmt(totalSalesAmount, 2)} ج.م`,
       change: pctLabel(salesGrowth),
       icon: '💰',
-      badgeColor: salesGrowth >= 0 ? 'text-[#00B050] bg-[#00B050]/10 border-[#00B050]/20' : downCls,
+      badgeColor: salesGrowth >= 0 ? 'text-[#014D6F] bg-[#014D6F]/10 border-[#014D6F]/20' : downCls,
       desc1: t.comparedLastMonth,
       desc2: `${fmt(orders.length)} ${t.ordersCount}`,
       progress: `${Math.min(100, Math.max(5, Math.round(50 + salesGrowth / 2)))}%`,
@@ -657,7 +657,7 @@ export default function SpikeSuperAdminDashboard() {
 
   if (loading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center font-sans ${isDark ? 'bg-[#0B132B] text-white' : 'bg-[#F4F6F9] text-slate-900'}`}>
+      <div className={`min-h-screen flex items-center justify-center font-sans ${isDark ? 'bg-[#061C2A] text-white' : 'bg-[#ECF3FD] text-slate-900'}`}>
         <div className="animate-pulse text-sm font-bold">جاري التحقق الأمني وفتح لوحة الإدارة...</div>
       </div>
     );
@@ -667,7 +667,7 @@ export default function SpikeSuperAdminDashboard() {
     <div
       data-theme={isDark ? 'dark' : 'light'}
       className={`spike-dashboard min-h-screen font-sans flex relative overflow-x-clip ${
-        isDark ? 'bg-[#0B132B] text-slate-100' : 'bg-[#F4F6F9] text-slate-800'
+        isDark ? 'bg-[#061C2A] text-slate-100' : 'bg-[#ECF3FD] text-slate-800'
       }`}
       dir={isAr ? 'rtl' : 'ltr'}
     >
@@ -685,7 +685,7 @@ export default function SpikeSuperAdminDashboard() {
           : isAr ? 'translate-x-full' : '-translate-x-full'
       } ${
         isDark
-          ? 'bg-[#0E1E38] border-slate-800 text-white'
+          ? 'bg-[#0A2A3E] border-slate-800 text-white'
           : 'bg-white border-slate-200 text-slate-900 shadow-lg'
       }`}>
 
@@ -720,7 +720,7 @@ export default function SpikeSuperAdminDashboard() {
                 }}
                 className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all duration-100 cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-l from-[#00B050] to-emerald-600 text-white shadow-md shadow-[#00B050]/25 font-black'
+                    ? 'bg-gradient-to-l from-[#014D6F] to-emerald-600 text-white shadow-md shadow-[#014D6F]/25 font-black'
                     : isDark
                     ? 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -750,7 +750,7 @@ export default function SpikeSuperAdminDashboard() {
           <button
             data-admin-stores
             onClick={() => { setPickQ(''); setPickStore(true); }}
-            className="w-full py-2 mt-3 bg-gradient-to-r from-[#00B050] to-emerald-600 text-white rounded-xl text-xs font-black shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full py-2 mt-3 bg-gradient-to-r from-[#014D6F] to-emerald-600 text-white rounded-xl text-xs font-black shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
             title="الدخول إلى متاجر الأدمن الخاصة بك"
           >
             <span>👑</span>
@@ -760,7 +760,7 @@ export default function SpikeSuperAdminDashboard() {
           {/* 🚪 بيانات المشرف وتسجيل الخروج — تظهر عند النزول */}
           <div className={`px-1 pt-4 mt-3 border-t flex flex-col gap-2.5 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#00B050] to-emerald-400 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#014D6F] to-emerald-400 flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0">
                 S
               </div>
               <div className="leading-tight truncate">
@@ -790,7 +790,7 @@ export default function SpikeSuperAdminDashboard() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className={isDark ? 'bg-[#0E1E38] text-white' : 'bg-white text-slate-900'}
+            className={isDark ? 'bg-[#0A2A3E] text-white' : 'bg-white text-slate-900'}
             style={{ width: '100%', maxWidth: 520, maxHeight: '80vh', borderRadius: 16, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
           >
             <div style={{ padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(127,127,127,.25)' }}>
@@ -810,7 +810,7 @@ export default function SpikeSuperAdminDashboard() {
                 type="button"
                 className="cursor-pointer"
                 onClick={() => { localStorage.setItem('merchant_user_id', 'main_flagship_owner'); router.push('/dashboard'); }}
-                style={{ textAlign: 'right', padding: 12, borderRadius: 12, border: '1px solid #00B050', background: 'rgba(0,176,80,.1)' }}
+                style={{ textAlign: 'right', padding: 12, borderRadius: 12, border: '1px solid #014D6F', background: 'rgba(1,77,111,.1)' }}
               >
                 <b>👑 {isAr ? 'متجر الأدمن الرئيسي' : 'Main admin store'}</b>
               </button>
@@ -828,7 +828,7 @@ export default function SpikeSuperAdminDashboard() {
                       <b style={{ display: 'block' }}>{s.store_name || '—'}</b>
                       <span className="text-[10px] text-slate-400 font-mono" dir="ltr">{s.store_slug}.spike.shop</span>
                     </span>
-                    <span className="text-[11px]" style={{ color: s.is_active !== false ? '#00B050' : '#e11d48' }}>
+                    <span className="text-[11px]" style={{ color: s.is_active !== false ? '#014D6F' : '#e11d48' }}>
                       {s.is_active !== false ? (isAr ? 'مفعل' : 'Active') : (isAr ? 'معطل' : 'Off')}
                     </span>
                   </button>
@@ -841,7 +841,7 @@ export default function SpikeSuperAdminDashboard() {
       {/* منطقة المحتوى الرئيسية */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <header className={`px-4 sm:px-8 py-4 border-b flex items-center justify-between backdrop-blur-md sticky top-0 z-30 transition-colors ${
-          isDark ? 'bg-[#0B132B]/95 border-slate-800' : 'bg-white/95 border-slate-200 shadow-sm'
+          isDark ? 'bg-[#061C2A]/95 border-slate-800' : 'bg-white/95 border-slate-200 shadow-sm'
         }`}>
           <div className="flex items-center gap-3">
             <button
@@ -874,7 +874,7 @@ export default function SpikeSuperAdminDashboard() {
             <AdminCommandBar stores={stores} orders={orders} domains={domains} tabs={navItems} isDark={isDark} onGo={(id) => setActiveTab(id)} />
             <button
               onClick={() => setNewStoreModal(true)}
-              className="px-3 sm:px-4 py-2 rounded-xl bg-[#00B050] hover:bg-[#009644] text-white text-xs font-black shadow-sm transition cursor-pointer flex items-center gap-1 active:scale-95"
+              className="px-3 sm:px-4 py-2 rounded-xl bg-[#014D6F] hover:bg-[#013A55] text-white text-xs font-black shadow-sm transition cursor-pointer flex items-center gap-1 active:scale-95"
             >
               <span>+</span>
               <span className="hidden sm:inline">{t.addStore}</span>
@@ -927,7 +927,7 @@ export default function SpikeSuperAdminDashboard() {
               onClick={toggleMobileView}
               className={`w-9 h-9 rounded-xl border flex items-center justify-center text-sm transition cursor-pointer ${
                 isMobileView
-                  ? 'bg-[#00B050] text-white border-[#00B050] shadow-xs'
+                  ? 'bg-[#014D6F] text-white border-[#014D6F] shadow-xs'
                   : isDark
                   ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
                   : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 shadow-2xs'
@@ -954,7 +954,7 @@ export default function SpikeSuperAdminDashboard() {
                     onClick={() => setStatModal(stat.id)}
                     onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setStatModal(stat.id); } }}
                     className={`p-3 sm:p-5 rounded-2xl border cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg flex flex-col justify-between ${
-                      isDark ? 'bg-[#0E1E38] border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 shadow-xs hover:border-slate-300'
+                      isDark ? 'bg-[#0A2A3E] border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 shadow-xs hover:border-slate-300'
                     }`}
                   >
                     <div className="flex flex-col-reverse items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between mb-3">
@@ -1067,7 +1067,7 @@ export default function SpikeSuperAdminDashboard() {
                                 <span className="font-mono text-[11px] w-12 text-left" dir="ltr">{p.margin.toFixed(0)}%</span>
                               </div>
                             </td>
-                            <td className="p-3 font-mono font-bold text-[#00B050]">{fmt(p.price, 2)} ج.م</td>
+                            <td className="p-3 font-mono font-bold text-[#014D6F]">{fmt(p.price, 2)} ج.م</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1077,7 +1077,7 @@ export default function SpikeSuperAdminDashboard() {
               </ChartCard>
 
               <div className={`p-6 sm:p-8 rounded-3xl border transition-colors ${
-                isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
+                isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200 shadow-xs'
               }`}>
                 <div className="flex justify-between items-center mb-6">
                   <div>
@@ -1085,7 +1085,7 @@ export default function SpikeSuperAdminDashboard() {
                     <p className="text-xs text-slate-500 dark:text-slate-400">{isAr ? 'مزامنة لحظية للعمليات مع تأكيد الدفع والشحن' : 'Real-time sync'}</p>
                   </div>
                   {can('manage_orders') && (
-                    <button onClick={() => setActiveTab('orders')} className="text-xs text-[#00B050] font-bold hover:underline cursor-pointer">
+                    <button onClick={() => setActiveTab('orders')} className="text-xs text-[#014D6F] font-bold hover:underline cursor-pointer">
                       {isAr ? 'عرض كل الطلبات ←' : 'View all orders →'}
                     </button>
                   )}
@@ -1113,7 +1113,7 @@ export default function SpikeSuperAdminDashboard() {
                             <td className="p-3 font-mono font-bold">#{o.id}</td>
                             <td className="p-3">{o.customer_name || 'عميل نقدي'}</td>
                             <td className="p-3">{o.governorate || 'القاهرة'}</td>
-                            <td className="p-3 font-mono font-bold text-[#00B050]">{o.total_price} ج.م</td>
+                            <td className="p-3 font-mono font-bold text-[#014D6F]">{o.total_price} ج.م</td>
                             <td className="p-3">
                               <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-bold">
                                 {o.status || 'pending'}
@@ -1131,7 +1131,7 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* تبويب فريق الإدارة والصلاحيات */}
           {shown('admins') && (
-            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-lg font-black">{isAr ? 'فريق إدارة منصة سبايك' : 'Platform Admins & Roles'}</h3>
@@ -1139,7 +1139,7 @@ export default function SpikeSuperAdminDashboard() {
                 </div>
                 <button
                   onClick={() => setNewAdminModal(true)}
-                  className="px-4 py-2 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                  className="px-4 py-2 bg-[#014D6F] hover:bg-[#013A55] text-white rounded-xl text-xs font-bold transition cursor-pointer"
                 >
                   + إضافة مشرف جديد
                 </button>
@@ -1208,7 +1208,7 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* تبويب المتاجر والتجار */}
           {shown('merchants') && (
-            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-lg font-black">{isAr ? 'قائمة المتاجر والتجار' : 'Stores & Merchants'} ({stores.length})</h3>
@@ -1216,7 +1216,7 @@ export default function SpikeSuperAdminDashboard() {
                 </div>
                 <button
                   onClick={() => setNewStoreModal(true)}
-                  className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 bg-[#014D6F] text-white rounded-xl text-xs font-bold cursor-pointer"
                 >
                   + {t.addStore}
                 </button>
@@ -1281,7 +1281,7 @@ export default function SpikeSuperAdminDashboard() {
                               localStorage.setItem('merchant_user_id', s.user_id);
                               router.push('/dashboard');
                             }}
-                            className="px-2 py-1 bg-[#00B050]/15 text-[#00B050] rounded text-[11px] font-bold cursor-pointer"
+                            className="px-2 py-1 bg-[#014D6F]/15 text-[#014D6F] rounded text-[11px] font-bold cursor-pointer"
                           >
                             دخول كتاجر ↗
                           </button>
@@ -1296,7 +1296,7 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* تبويب كافة الطلبات */}
           {shown('orders') && (
-            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-lg font-black">{isAr ? 'كافة طلبات المنصة' : 'All Platform Orders'} ({orders.length})</h3>
@@ -1328,7 +1328,7 @@ export default function SpikeSuperAdminDashboard() {
                           <td className="p-3 font-bold">{o.customer_name}</td>
                           <td className="p-3 font-mono" dir="ltr">{o.customer_phone}</td>
                           <td className="p-3">{o.governorate} - {o.address}</td>
-                          <td className="p-3 font-mono font-bold text-[#00B050]">{o.total_price} ج.م</td>
+                          <td className="p-3 font-mono font-bold text-[#014D6F]">{o.total_price} ج.م</td>
                           <td className="p-3">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-500">
                               {o.status || 'pending'}
@@ -1358,7 +1358,7 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* تبويب المنتجات والمخزون */}
           {shown('inventory') && (
-            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-lg font-black">{isAr ? 'المنتجات والمخزون' : 'Products & Inventory'} ({products.length})</h3>
@@ -1366,7 +1366,7 @@ export default function SpikeSuperAdminDashboard() {
                 </div>
                 <button
                   onClick={() => setNewProductModal(true)}
-                  className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 bg-[#014D6F] text-white rounded-xl text-xs font-bold cursor-pointer"
                 >
                   + إضافة منتج جديد
                 </button>
@@ -1398,7 +1398,7 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* تبويب سعر الصرف والعمولة */}
           {shown('rates') && (
-            <div className={`p-6 sm:p-8 rounded-2xl border max-w-2xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-6 sm:p-8 rounded-2xl border max-w-2xl ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-2">{isAr ? 'إعدادات سعر الصرف والعمولات المالية' : 'Exchange Rates & Fees'}</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">يتم تطبيق هذه الإعدادات لحظياً على حسابات جميع المتاجر وسحب الأرباح.</p>
 
@@ -1410,7 +1410,7 @@ export default function SpikeSuperAdminDashboard() {
                     step="0.1"
                     value={exchangeRate}
                     onChange={(e) => setExchangeRate(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm font-mono outline-none focus:border-[#00B050]"
+                    className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm font-mono outline-none focus:border-[#014D6F]"
                   />
                 </div>
 
@@ -1421,7 +1421,7 @@ export default function SpikeSuperAdminDashboard() {
                     step="0.1"
                     value={platformCommission}
                     onChange={(e) => setPlatformCommission(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm font-mono outline-none focus:border-[#00B050]"
+                    className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm font-mono outline-none focus:border-[#014D6F]"
                   />
                 </div>
 
@@ -1431,13 +1431,13 @@ export default function SpikeSuperAdminDashboard() {
                     type="number"
                     value={withdrawThreshold}
                     onChange={(e) => setWithdrawThreshold(e.target.value)}
-                    className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm font-mono outline-none focus:border-[#00B050]"
+                    className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-sm font-mono outline-none focus:border-[#014D6F]"
                   />
                 </div>
 
                 <button
                   onClick={handleSavePlatformSettings}
-                  className="px-6 py-3 bg-[#00B050] text-white rounded-xl font-black text-xs hover:bg-[#009644] transition cursor-pointer mt-4"
+                  className="px-6 py-3 bg-[#014D6F] text-white rounded-xl font-black text-xs hover:bg-[#013A55] transition cursor-pointer mt-4"
                 >
                   {t.save}
                 </button>
@@ -1447,7 +1447,7 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* تبويب الدومينات */}
           {shown('domains') && (
-            <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-2">{isAr ? 'إدارة الدومينات المخصصة والربط' : 'Custom Domains & DNS'}</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">حالة طلبات الدومينات المخصصة والربط بسيرفرات سبايك عبر Cloudflare و CNAME.</p>
               {domains.length === 0 ? (
@@ -1480,7 +1480,7 @@ export default function SpikeSuperAdminDashboard() {
           {/* تبويب سجل الحركات */}
           {shown('audit') && <AdminAuditLog isDark={isDark} />}
           {false && (
-            <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-4">سجل الحركات الإدارية (Audit Logs)</h3>
               {auditLogs.length === 0 ? (
                 <div className="text-center py-12 text-slate-400 text-xs">لا توجد حركات مسجلة مؤخراً</div>
@@ -1511,7 +1511,7 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* تبويب الإعلانات الجماعية */}
           {shown('broadcast') && (
-            <div className={`p-6 sm:p-8 rounded-2xl border max-w-xl ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-6 sm:p-8 rounded-2xl border max-w-xl ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-2">إرسال تنبيه جماعي لجميع التجار</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">يظهر التنبيه داخل لوحة تحكم كل التجار المسجلين في المنصة فوراً.</p>
               <textarea
@@ -1519,11 +1519,11 @@ export default function SpikeSuperAdminDashboard() {
                 value={broadcastMessage}
                 onChange={(e) => setBroadcastMessage(e.target.value)}
                 placeholder="اكتب التنبيه هنا..."
-                className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-xs mb-3 outline-none focus:border-[#00B050]"
+                className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent text-xs mb-3 outline-none focus:border-[#014D6F]"
               />
               <button
                 onClick={handleSendBroadcast}
-                className="px-5 py-2.5 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer"
+                className="px-5 py-2.5 bg-[#014D6F] text-white rounded-xl text-xs font-bold cursor-pointer"
               >
                 إرسال الإعلان الآن
               </button>
@@ -1557,7 +1557,7 @@ export default function SpikeSuperAdminDashboard() {
           <div onClick={() => setStatModal(null)} className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
             <div
               onClick={(e) => e.stopPropagation()}
-              className={`p-6 rounded-2xl max-w-3xl w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}
+              className={`p-6 rounded-2xl max-w-3xl w-full border ${isDark ? 'bg-[#0A2A3E] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}
             >
               <div className="flex justify-between items-center mb-4 gap-3">
                 <h3 className="text-base font-black !mb-0">{cfg.title} ({cfg.rows.length})</h3>
@@ -1621,7 +1621,7 @@ export default function SpikeSuperAdminDashboard() {
                             <td className="p-3 font-mono font-bold">#{o.id}</td>
                             <td className="p-3">{o.customer_name || 'عميل نقدي'}</td>
                             <td className="p-3">{o.governorate || '—'}</td>
-                            <td className="p-3 font-mono font-bold text-[#00B050]">{o.total_price} ج.م</td>
+                            <td className="p-3 font-mono font-bold text-[#014D6F]">{o.total_price} ج.م</td>
                             <td className="p-3">
                               <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-500 text-[10px] font-bold">
                                 {o.status || 'pending'}
@@ -1642,7 +1642,7 @@ export default function SpikeSuperAdminDashboard() {
                 <button
                   type="button"
                   onClick={() => { setActiveTab(cfg.tab); setStatModal(null); }}
-                  className="px-4 py-2 bg-[#00B050] text-white rounded-xl text-xs font-bold cursor-pointer"
+                  className="px-4 py-2 bg-[#014D6F] text-white rounded-xl text-xs font-bold cursor-pointer"
                 >
                   {isAr ? 'فتح الصفحة الكاملة' : 'Open full page'}
                 </button>
@@ -1655,7 +1655,7 @@ export default function SpikeSuperAdminDashboard() {
       {/* مودال إنشاء متجر جديد */}
       {newStoreModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+          <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0A2A3E] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
             <h3 className="text-base font-black mb-4">إنشاء متجر جديد في المنصة</h3>
             <form onSubmit={handleCreateStore} className="space-y-3 text-xs">
               <div>
@@ -1665,7 +1665,7 @@ export default function SpikeSuperAdminDashboard() {
                   required
                   value={newStoreData.store_name}
                   onChange={(e) => setNewStoreData({ ...newStoreData, store_name: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#00B050]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#014D6F]"
                 />
               </div>
               <div>
@@ -1676,7 +1676,7 @@ export default function SpikeSuperAdminDashboard() {
                   placeholder="brand-name"
                   value={newStoreData.store_slug}
                   onChange={(e) => setNewStoreData({ ...newStoreData, store_slug: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#014D6F]"
                 />
               </div>
               <div>
@@ -1685,7 +1685,7 @@ export default function SpikeSuperAdminDashboard() {
                   type="text"
                   value={newStoreData.owner_name}
                   onChange={(e) => setNewStoreData({ ...newStoreData, owner_name: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#00B050]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#014D6F]"
                 />
               </div>
               <div>
@@ -1694,7 +1694,7 @@ export default function SpikeSuperAdminDashboard() {
                   type="text"
                   value={newStoreData.phone}
                   onChange={(e) => setNewStoreData({ ...newStoreData, phone: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#014D6F]"
                 />
               </div>
               <div>
@@ -1703,11 +1703,11 @@ export default function SpikeSuperAdminDashboard() {
                   type="number"
                   value={newStoreData.initial_wallet}
                   onChange={(e) => setNewStoreData({ ...newStoreData, initial_wallet: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#014D6F]"
                 />
               </div>
               <div className="flex gap-2 pt-3">
-                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إنشاء المتجر</button>
+                <button type="submit" className="flex-1 py-2.5 bg-[#014D6F] text-white rounded-xl font-bold cursor-pointer">إنشاء المتجر</button>
                 <button type="button" onClick={() => setNewStoreModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">إلغاء</button>
               </div>
             </form>
@@ -1718,7 +1718,7 @@ export default function SpikeSuperAdminDashboard() {
       {/* مودال إضافة منتج جديد */}
       {newProductModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+          <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0A2A3E] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
             <h3 className="text-base font-black mb-4">إضافة منتج للمخزون</h3>
             <form onSubmit={handleCreateProduct} className="space-y-3 text-xs">
               <div>
@@ -1728,7 +1728,7 @@ export default function SpikeSuperAdminDashboard() {
                   required
                   value={newProductData.title}
                   onChange={(e) => setNewProductData({ ...newProductData, title: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#00B050]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#014D6F]"
                 />
               </div>
               <div>
@@ -1738,7 +1738,7 @@ export default function SpikeSuperAdminDashboard() {
                   required
                   value={newProductData.price}
                   onChange={(e) => setNewProductData({ ...newProductData, price: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#014D6F]"
                 />
               </div>
               <div>
@@ -1747,7 +1747,7 @@ export default function SpikeSuperAdminDashboard() {
                   type="number"
                   value={newProductData.cost_price}
                   onChange={(e) => setNewProductData({ ...newProductData, cost_price: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#014D6F]"
                 />
               </div>
               <div>
@@ -1756,11 +1756,11 @@ export default function SpikeSuperAdminDashboard() {
                   type="number"
                   value={newProductData.stock}
                   onChange={(e) => setNewProductData({ ...newProductData, stock: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#014D6F]"
                 />
               </div>
               <div className="flex gap-2 pt-3">
-                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">إضافة المنتج</button>
+                <button type="submit" className="flex-1 py-2.5 bg-[#014D6F] text-white rounded-xl font-bold cursor-pointer">إضافة المنتج</button>
                 <button type="button" onClick={() => setNewProductModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">إلغاء</button>
               </div>
             </form>
@@ -1771,7 +1771,7 @@ export default function SpikeSuperAdminDashboard() {
       {/* مودال إضافة مشرف جديد وتحديد الصلاحيات */}
       {newAdminModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0E1E38] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+          <div className={`p-6 rounded-2xl max-w-md w-full border ${isDark ? 'bg-[#0A2A3E] border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
             <h3 className="text-base font-black mb-4">إضافة مشرف وتحديد الصلاحيات</h3>
             <form onSubmit={handleCreateAdmin} className="space-y-4 text-xs font-bold">
               <div>
@@ -1782,7 +1782,7 @@ export default function SpikeSuperAdminDashboard() {
                   placeholder="مثال: أحمد علي"
                   value={newAdminData.name}
                   onChange={(e) => setNewAdminData({ ...newAdminData, name: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#00B050]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent outline-none focus:border-[#014D6F]"
                 />
               </div>
 
@@ -1795,7 +1795,7 @@ export default function SpikeSuperAdminDashboard() {
                   placeholder="admin@example.com"
                   value={newAdminData.email}
                   onChange={(e) => setNewAdminData({ ...newAdminData, email: e.target.value })}
-                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#00B050]"
+                  className="w-full p-2.5 rounded-lg border bg-transparent font-mono outline-none focus:border-[#014D6F]"
                 />
               </div>
 
@@ -1853,7 +1853,7 @@ export default function SpikeSuperAdminDashboard() {
               </div>
 
               <div className="flex gap-2 pt-2">
-                <button type="submit" className="flex-1 py-2.5 bg-[#00B050] text-white rounded-xl font-bold cursor-pointer">
+                <button type="submit" className="flex-1 py-2.5 bg-[#014D6F] text-white rounded-xl font-bold cursor-pointer">
                   حفظ المشرف
                 </button>
                 <button type="button" onClick={() => setNewAdminModal(false)} className="px-4 py-2.5 border rounded-xl cursor-pointer">
@@ -1871,37 +1871,37 @@ export default function SpikeSuperAdminDashboard() {
 
         /* ---------- Tokens ---------- */
         .spike-dashboard {
-          --teal: #0a7f86;
-          --teal-deep: #06494e;
-          --teal-ink: #052f33;
+          --teal: #014D6F;
+          --teal-deep: #013A55;
+          --teal-ink: #02344D;
           --orange: #f2a066;
           --gold: #c9a45c;
-          --ivory: #f6f2e7;
-          --bg: #ece8d8;
-          --surface: #fcfbf7;
-          --surface-2: #f3f0e4;
-          --line: #e2ddca;
-          --ink: #1f2f33;
-          --muted: #6f7f82;
-          --accent-text: #0a7f86;
+          --ivory: #ECF3FD;
+          --bg: #ECF3FD;
+          --surface: #FFFFFF;
+          --surface-2: #F2F6FF;
+          --line: #D6E2F0;
+          --ink: #0F2A3D;
+          --muted: #5B6B7A;
+          --accent-text: #014D6F;
           --danger: #c95e53;
-          --shadow: 0 10px 30px -14px rgba(6, 73, 78, 0.22);
+          --shadow: 0 10px 30px -14px rgba(1, 58, 85, 0.22);
           font-family: 'Tajawal', 'Inter', sans-serif;
           font-size: 14px;
           color: var(--ink);
           background:
-            radial-gradient(1100px 480px at 100% -10%, rgba(10, 127, 134, 0.10), transparent 60%),
+            radial-gradient(1100px 480px at 100% -10%, rgba(1, 77, 111, 0.10), transparent 60%),
             radial-gradient(800px 420px at 0% 110%, rgba(242, 160, 102, 0.13), transparent 60%),
             var(--bg) !important;
         }
         .spike-dashboard[data-theme='dark'] {
-          --bg: #07252a;
-          --surface: #0d3339;
-          --surface-2: #11404a;
-          --line: #1f4f57;
-          --ink: #eaf2ef;
-          --muted: #93b0b2;
-          --accent-text: #5fd0d3;
+          --bg: #061C2A;
+          --surface: #0A2A3E;
+          --surface-2: #0F3650;
+          --line: #16435D;
+          --ink: #E8F1F8;
+          --muted: #8FA9BC;
+          --accent-text: #8FD0F0;
           --danger: #ff9d94;
           --shadow: 0 14px 34px -16px rgba(0, 0, 0, 0.65);
         }
@@ -1924,7 +1924,7 @@ export default function SpikeSuperAdminDashboard() {
         .spike-dashboard .text-slate-400,
         .spike-dashboard .text-slate-500 { color: var(--muted); }
         .spike-dashboard [class*='text-emerald-'],
-        .spike-dashboard [class*='text-[#00B050]'] { color: var(--accent-text); }
+        .spike-dashboard [class*='text-[#014D6F]'] { color: var(--accent-text); }
         .spike-dashboard .bg-emerald-500 { background: var(--teal); }
 
         /* ---------- Layout ---------- */
@@ -1997,13 +1997,13 @@ export default function SpikeSuperAdminDashboard() {
         .spike-dashboard button[class~='border']:hover { background: var(--surface-2); }
 
         /* الأزرار الأساسية */
-        .spike-dashboard button[class*='bg-[#00B050]']:not([class*='bg-[#00B050]/']) {
+        .spike-dashboard button[class*='bg-[#014D6F]']:not([class*='bg-[#014D6F]/']) {
           background: var(--teal);
           border-color: var(--teal);
           color: #fff;
-          box-shadow: 0 6px 14px -6px rgba(10, 127, 134, 0.55);
+          box-shadow: 0 6px 14px -6px rgba(1, 77, 111, 0.55);
         }
-        .spike-dashboard button[class*='bg-[#00B050]']:not([class*='bg-[#00B050]/']):hover {
+        .spike-dashboard button[class*='bg-[#014D6F]']:not([class*='bg-[#014D6F]/']):hover {
           background: var(--teal-deep);
           border-color: var(--teal-deep);
         }
@@ -2028,7 +2028,7 @@ export default function SpikeSuperAdminDashboard() {
           color: var(--ink);
           box-shadow: none;
         }
-        .spike-dashboard td button[class*='bg-[#00B050]/'],
+        .spike-dashboard td button[class*='bg-[#014D6F]/'],
         .spike-dashboard td button[class*='bg-emerald'] {
           background: color-mix(in srgb, var(--teal) 13%, transparent);
           border-color: color-mix(in srgb, var(--teal) 32%, transparent);
@@ -2123,7 +2123,7 @@ export default function SpikeSuperAdminDashboard() {
           background: var(--surface);
           border: 0;
           color: var(--ink);
-          box-shadow: 0 0 0 1px var(--line), 12px 0 40px -26px rgba(6, 73, 78, 0.35);
+          box-shadow: 0 0 0 1px var(--line), 12px 0 40px -26px rgba(1, 58, 85, 0.35);
         }
         /* إخفاء السكرول مع بقاء التمرير شغال */
         .spike-dashboard > aside,
@@ -2162,23 +2162,26 @@ export default function SpikeSuperAdminDashboard() {
           background: var(--surface-2);
           color: var(--muted);
         }
-        .spike-dashboard > aside nav button[class*='from-[#00B050]'] {
+        .spike-dashboard > aside nav button[class*='from-[#014D6F]'] {
           background: var(--nav-active-bg);
           color: var(--nav-active-ink);
           font-weight: 800;
-          box-shadow: 0 10px 22px -12px rgba(6, 73, 78, 0.6);
+          box-shadow: 0 10px 22px -12px rgba(1, 58, 85, 0.6);
         }
-        .spike-dashboard > aside nav button[class*='from-[#00B050]']:hover {
+        .spike-dashboard > aside nav button[class*='from-[#014D6F]']:hover {
           background: var(--nav-active-bg);
           color: var(--nav-active-ink);
         }
-        .spike-dashboard > aside nav button[class*='from-[#00B050]'] span[class*='rounded-full'] {
+        .spike-dashboard > aside nav button[class*='from-[#014D6F]'] span[class*='rounded-full'] {
           background: rgba(255, 255, 255, 0.18);
           color: var(--nav-active-ink);
         }
-        .spike-dashboard[data-theme='dark'] > aside nav button[class*='from-[#00B050]'] span[class*='rounded-full'] {
-          background: rgba(6, 73, 78, 0.14);
+        .spike-dashboard[data-theme='dark'] > aside nav button[class*='from-[#014D6F]'] span[class*='rounded-full'] {
+          background: rgba(1, 58, 85, 0.14);
         }
+        .spike-dashboard[data-theme='dark'] [class*='text-[#014D6F']] { color: #5BB6E0; }
+        .spike-dashboard[data-theme='dark'] [class*='bg-[#014D6F']] { background-color: #1B7BA6; }
+        .spike-dashboard[data-theme='dark'] [class*='bg-[#014D6F']/'] { background-color: rgba(91, 182, 224, 0.15); }
         .spike-dashboard > aside div[class*='bg-gradient'] {
           background: linear-gradient(135deg, var(--orange), #e08f4f);
           color: #3a1d08;

@@ -64,7 +64,7 @@ export default function AdminCommandBar({ stores = [], orders = [], domains = []
   };
 
   const btn = isDark ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700' : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100';
-  const panel = isDark ? 'bg-[#0E1E38] border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900';
+  const panel = isDark ? 'bg-[#0A2A3E] border-slate-700 text-slate-100' : 'bg-white border-slate-200 text-slate-900';
   const hov = isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-100';
 
   return (

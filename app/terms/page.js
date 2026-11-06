@@ -28,11 +28,11 @@ export default async function TermsPage() {
     if (data?.value && data.value.trim()) text = data.value;
   } catch { /* نستخدم النص الافتراضي */ }
   return (
-    <div dir="rtl" className="min-h-screen bg-[#F4F6F9] font-sans px-4 py-10">
+    <div dir="rtl" className="min-h-screen bg-[#ECF3FD] font-sans px-4 py-10">
       <div className="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
         <h1 className="text-xl font-black mb-4 text-slate-900">الشروط والسياسات</h1>
         <div className="text-sm leading-7 text-slate-700 whitespace-pre-line">{text}</div>
-        <div className="mt-6"><Link href="/register" className="text-[#00B050] font-black underline">العودة للتسجيل</Link></div>
+        <div className="mt-6"><Link href="/register" className="text-[#014D6F] font-black underline">العودة للتسجيل</Link></div>
       </div>
     </div>
   );

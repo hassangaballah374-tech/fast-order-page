@@ -9,8 +9,8 @@ import { SPIKE_LOGO_URL } from '../../components/SpikeBrandHeader';
 const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
 const DEFAULT_THEME = {
-  light: { bg: '#F4F6F9', card: '#FFFFFF', accent: '#00B050' },
-  dark: { bg: '#0B132B', card: '#0E1E38', accent: '#00B050' },
+  light: { bg: '#ECF3FD', card: '#FFFFFF', accent: '#014D6F' },
+  dark: { bg: '#061C2A', card: '#0A2A3E', accent: '#5BB6E0' },
   headline: '',
   subline: '',
 };
@@ -47,7 +47,7 @@ const IArrow = ({ flip }) => <Ic className={`w-4 h-4 ${flip ? 'rotate-180' : ''}
 const RG_CSS = `
 .rg-aurora{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
 .rg-blob{position:absolute;border-radius:50%;filter:blur(80px);will-change:transform}
-.rg-b1{width:540px;height:540px;top:-170px;inset-inline-start:-130px;opacity:.5;background:radial-gradient(circle,#00d4c8,transparent 70%);animation:rgf1 14s ease-in-out infinite alternate}
+.rg-b1{width:540px;height:540px;top:-170px;inset-inline-start:-130px;opacity:.5;background:radial-gradient(circle,#5BB6E0,transparent 70%);animation:rgf1 14s ease-in-out infinite alternate}
 .rg-b2{width:600px;height:600px;bottom:-230px;inset-inline-end:-150px;opacity:.5;background:radial-gradient(circle,var(--ac),transparent 70%);animation:rgf2 17s ease-in-out infinite alternate}
 .rg-b3{width:400px;height:400px;top:38%;inset-inline-start:52%;opacity:.28;background:radial-gradient(circle,#2563eb,transparent 70%);animation:rgf3 21s ease-in-out infinite alternate}
 @keyframes rgf1{to{transform:translate(140px,110px) scale(1.18)}}
@@ -63,22 +63,22 @@ const RG_CSS = `
 @keyframes rgpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
 .rg-in{animation:rgin .65s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 75ms + 250ms)}
 @keyframes rgin{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
-.rg-inp:focus,.rg-inp:focus-within{box-shadow:0 0 0 3px rgba(34,211,238,.28);border-color:#22d3ee}
-.rg-btn{position:relative;overflow:hidden;background:linear-gradient(135deg,#00d4c8,var(--ac));box-shadow:0 10px 28px -10px var(--ac)}
+.rg-inp:focus,.rg-inp:focus-within{box-shadow:0 0 0 3px rgba(34,211,238,.28);border-color:#5BB6E0}
+.rg-btn{position:relative;overflow:hidden;background:linear-gradient(135deg,#5BB6E0,var(--ac));box-shadow:0 10px 28px -10px var(--ac)}
 .rg-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
 .rg-btn::after{content:'';position:absolute;top:0;bottom:0;width:60%;left:-80%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);animation:rgshine 3.4s ease-in-out 1.6s infinite}
 @keyframes rgshine{0%{left:-80%}55%,100%{left:140%}}
 .rg-nav{position:relative;padding:8px 14px;font-weight:800;font-size:13px;opacity:.78;transition:opacity .2s}
-.rg-nav::after{content:'';position:absolute;left:14px;right:14px;bottom:2px;height:2px;border-radius:2px;background:linear-gradient(90deg,#00d4c8,var(--ac));transform:scaleX(0);transform-origin:center;transition:transform .25s}
+.rg-nav::after{content:'';position:absolute;left:14px;right:14px;bottom:2px;height:2px;border-radius:2px;background:linear-gradient(90deg,#5BB6E0,var(--ac));transform:scaleX(0);transform-origin:center;transition:transform .25s}
 .rg-nav:hover{opacity:1}.rg-nav:hover::after{transform:scaleX(1)}
 .rg-head{box-shadow:0 1px 0 rgba(0,212,200,.18),0 18px 40px -28px rgba(0,0,0,.6)}
 .rg-ibtn{width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;border-radius:14px;border:1px solid;transition:transform .2s,background .2s,border-color .2s;cursor:pointer}
-.rg-ibtn:hover{transform:translateY(-2px);border-color:#22d3ee}
+.rg-ibtn:hover{transform:translateY(-2px);border-color:#5BB6E0}
 .rg-ring{position:absolute;border-radius:50%;border:1px solid rgba(34,211,238,.28);animation:rgspin 40s linear infinite}
-.rg-ring::after{content:'';position:absolute;top:-4px;left:50%;width:8px;height:8px;border-radius:50%;background:#22d3ee;box-shadow:0 0 14px 3px rgba(34,211,238,.7)}
+.rg-ring::after{content:'';position:absolute;top:-4px;left:50%;width:8px;height:8px;border-radius:50%;background:#5BB6E0;box-shadow:0 0 14px 3px rgba(34,211,238,.7)}
 .rg-r1{width:620px;height:620px;top:-210px;inset-inline-end:-190px}
-.rg-r2{width:420px;height:420px;bottom:-120px;inset-inline-start:-110px;animation-duration:55s;animation-direction:reverse;border-color:rgba(0,176,80,.3)}
-.rg-r2::after{background:#00B050;box-shadow:0 0 14px 3px rgba(0,176,80,.7)}
+.rg-r2{width:420px;height:420px;bottom:-120px;inset-inline-start:-110px;animation-duration:55s;animation-direction:reverse;border-color:rgba(1,77,111,.3)}
+.rg-r2::after{background:#014D6F;box-shadow:0 0 14px 3px rgba(1,77,111,.7)}
 @keyframes rgspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.rg-blob,.rg-ring,.rg-card,.rg-drop,.rg-in,.rg-logo,.rg-btn::after{animation:none!important}}
 `;
@@ -135,6 +135,10 @@ export default function SpikeRegisterAndAuthPage() {
         const { data } = await supabase.from('platform_kv').select('value').eq('key', 'theme_colors').maybeSingle();
         if (data?.value) {
           const j = JSON.parse(data.value);
+          /* القيم القديمة الافتراضية (الأخضر والنيلي) المحفوظة قبل الهوية الجديدة تتعامل كأنها غير محددة */
+          const OLD = ['#f4f6f9', '#0b132b', '#0e1e38', '#00b050'];
+          const keep = (o = {}) => Object.fromEntries(Object.entries(o).filter(([, v]) => !OLD.includes(String(v).toLowerCase())));
+          j.light = keep(j.light); j.dark = keep(j.dark);
           setTheme({
             light: { ...DEFAULT_THEME.light, ...(j.light || {}) },
             dark: { ...DEFAULT_THEME.dark, ...(j.dark || {}) },
@@ -284,12 +288,12 @@ export default function SpikeRegisterAndAuthPage() {
         <span className="rg-ring rg-r2" />
       </div>
 
-      <header className={`rg-head sticky top-0 z-40 border-b backdrop-blur-xl transition-colors ${isDark ? 'bg-[#060d1f]/75 border-white/10' : 'bg-white/80 border-slate-200/80'}`}>
+      <header className={`rg-head sticky top-0 z-40 border-b backdrop-blur-xl transition-colors ${isDark ? 'bg-[#04141F]/75 border-white/10' : 'bg-white/80 border-slate-200/80'}`}>
         <div className="max-w-7xl mx-auto h-[72px] px-4 sm:px-8 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3 shrink-0 group">
             <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
             <span className="hidden sm:flex flex-col leading-none">
-              <span className={`text-xl font-black tracking-[0.2em] ${isDark ? 'text-white' : 'text-[#0E1E38]'}`}>SPIKE</span>
+              <span className={`text-xl font-black tracking-[0.2em] ${isDark ? 'text-white' : 'text-[#0A2A3E]'}`}>SPIKE</span>
               <span className="text-[10px] font-bold tracking-[0.14em] text-[var(--ac)] mt-1.5">{isAr ? 'منصة التجارة بالدفع عند الاستلام' : 'COD COMMERCE PLATFORM'}</span>
             </span>
           </Link>
@@ -322,7 +326,7 @@ export default function SpikeRegisterAndAuthPage() {
           <div className="flex justify-center rg-drop"><img src={SPIKE_LOGO_URL} alt="SPIKE" className="rg-logo h-24 w-auto object-contain" /></div>
           <div key={`h-${mode}`} className="space-y-2">
             <div className="rg-in flex items-center justify-center gap-1.5 font-black text-xl" style={{ '--i': 0 }}>
-              <span className={isDark ? 'text-white' : 'text-[#0E1E38]'}>سبايك</span>
+              <span className={isDark ? 'text-white' : 'text-[#0A2A3E]'}>سبايك</span>
               <span className="text-slate-400 font-light">|</span>
               <span className="text-[var(--ac)] font-mono tracking-wider">SPIKE</span>
             </div>

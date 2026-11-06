@@ -91,7 +91,7 @@ export default function AdminAuditLog({ isDark }) {
     document.body.appendChild(a); a.click(); a.remove();
   };
 
-  const card = `p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`;
+  const card = `p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`;
   const ctl = `px-3 py-2 rounded-lg border text-xs ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`;
 
   return (
@@ -103,7 +103,7 @@ export default function AdminAuditLog({ isDark }) {
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={load} className={`${ctl} font-black cursor-pointer`}>↻ تحديث</button>
-          <button type="button" onClick={exportCsv} className="px-3 py-2 rounded-lg bg-[#00B050] text-white text-xs font-black cursor-pointer">⬇ تصدير CSV</button>
+          <button type="button" onClick={exportCsv} className="px-3 py-2 rounded-lg bg-[#014D6F] text-white text-xs font-black cursor-pointer">⬇ تصدير CSV</button>
         </div>
       </div>
 

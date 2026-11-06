@@ -37,9 +37,9 @@ export default function ResetPasswordPage() {
     setTimeout(() => router.replace('/register'), 2500);
   };
 
-  const inp = 'w-full p-3 rounded-xl border border-slate-300 bg-slate-50 outline-none text-sm focus:border-[#00B050] focus:bg-white';
+  const inp = 'w-full p-3 rounded-xl border border-slate-300 bg-slate-50 outline-none text-sm focus:border-[#014D6F] focus:bg-white';
   return (
-    <div dir="rtl" className="min-h-screen bg-[#F4F6F9] flex items-center justify-center px-4 font-sans">
+    <div dir="rtl" className="min-h-screen bg-[#ECF3FD] flex items-center justify-center px-4 font-sans">
       <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
         <h1 className="text-xl font-black mb-1 text-slate-900">تعيين كلمة مرور جديدة</h1>
         {done ? (
@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
         ) : !ready ? (
           <div className="text-sm text-slate-500 mt-4 space-y-3">
             <p>جاري التحقق من الرابط... لو الصفحة فضلت كده، يبقى الرابط منتهي أو غير صالح.</p>
-            <Link href="/register" className="text-[#00B050] font-black underline">طلب رابط جديد</Link>
+            <Link href="/register" className="text-[#014D6F] font-black underline">طلب رابط جديد</Link>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4 mt-4 text-xs font-bold">
@@ -63,7 +63,7 @@ export default function ResetPasswordPage() {
               <input type={show ? 'text' : 'password'} autoComplete="new-password" dir="ltr" value={p2} onChange={(e) => setP2(e.target.value)} className={inp} required />
             </div>
             {msg ? <p className="text-rose-600">{msg}</p> : null}
-            <button type="submit" disabled={busy} className="w-full py-3 bg-[#00B050] hover:bg-[#009644] text-white rounded-xl text-sm font-black cursor-pointer disabled:opacity-60">{busy ? 'جاري الحفظ...' : 'حفظ كلمة المرور'}</button>
+            <button type="submit" disabled={busy} className="w-full py-3 bg-[#014D6F] hover:bg-[#013A55] text-white rounded-xl text-sm font-black cursor-pointer disabled:opacity-60">{busy ? 'جاري الحفظ...' : 'حفظ كلمة المرور'}</button>
           </form>
         )}
       </div>

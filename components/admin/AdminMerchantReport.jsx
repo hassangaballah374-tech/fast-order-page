@@ -76,7 +76,7 @@ export default function AdminMerchantReport({ stores = [], orders = [], isDark }
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
 
-  const card = isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200';
+  const card = isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200';
   const mut = isDark ? 'text-slate-400' : 'text-slate-500';
   const inp = isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900';
   const rateCls = (v, bad) => (bad ? (v >= 25 ? 'text-rose-500 font-black' : v >= 12 ? 'text-amber-500 font-bold' : '') : (v >= 70 ? 'text-emerald-500 font-black' : v > 0 && v < 40 ? 'text-amber-500 font-bold' : ''));
@@ -88,7 +88,7 @@ export default function AdminMerchantReport({ stores = [], orders = [], isDark }
           <h3 className="text-lg font-black">🏆 تقرير أداء التجار</h3>
           <p className={`text-xs ${mut}`}>ترتيب التجار حسب المبيعات ونسب التسليم والإلغاء والمرتجع (من آخر 3000 طلب محمّل).</p>
         </div>
-        <button type="button" onClick={exportCsv} className="px-4 py-2 rounded-xl bg-[#00B050] hover:bg-[#009644] text-white text-xs font-black cursor-pointer">⬇ تصدير CSV</button>
+        <button type="button" onClick={exportCsv} className="px-4 py-2 rounded-xl bg-[#014D6F] hover:bg-[#013A55] text-white text-xs font-black cursor-pointer">⬇ تصدير CSV</button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
@@ -108,7 +108,7 @@ export default function AdminMerchantReport({ stores = [], orders = [], isDark }
 
       <div className="flex flex-wrap gap-2 items-center">
         {[[7, '7 أيام'], [30, '30 يوم'], [90, '90 يوم'], [0, 'الكل']].map(([v, l]) => (
-          <button key={v} type="button" onClick={() => setRange(v)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${range === v ? 'bg-[#00B050] text-white border-[#00B050]' : `${inp}`}`}>{l}</button>
+          <button key={v} type="button" onClick={() => setRange(v)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border cursor-pointer ${range === v ? 'bg-[#014D6F] text-white border-[#014D6F]' : `${inp}`}`}>{l}</button>
         ))}
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث باسم المتجر..." className={`flex-1 min-w-[140px] px-3 py-1.5 rounded-lg text-xs border outline-none ${inp}`} />
       </div>
@@ -119,7 +119,7 @@ export default function AdminMerchantReport({ stores = [], orders = [], isDark }
             <tr className={`border-b ${isDark ? 'border-slate-800' : 'border-slate-200'} ${mut}`}>
               {COLS.map(([k, l]) => (
                 <th key={k} className="p-2.5 text-right whitespace-nowrap">
-                  {k === 'rank' ? l : <button type="button" onClick={() => sortBy(k)} className="font-bold cursor-pointer hover:text-[#00B050]">{l}{sort === k ? (asc ? ' ▲' : ' ▼') : ''}</button>}
+                  {k === 'rank' ? l : <button type="button" onClick={() => sortBy(k)} className="font-bold cursor-pointer hover:text-[#014D6F]">{l}{sort === k ? (asc ? ' ▲' : ' ▼') : ''}</button>}
                 </th>
               ))}
             </tr>
@@ -130,7 +130,7 @@ export default function AdminMerchantReport({ stores = [], orders = [], isDark }
                 <td className="p-2.5 font-mono">{r.rank <= 3 && r.orders > 0 ? ['🥇', '🥈', '🥉'][r.rank - 1] : r.rank}</td>
                 <td className="p-2.5 font-bold whitespace-nowrap">{r.name}{!r.active && <span className="ms-1 text-[10px] text-rose-500">(معطل)</span>}</td>
                 <td className="p-2.5 font-mono">{fmt(r.orders)}</td>
-                <td className="p-2.5 font-mono font-bold text-[#00B050]">{fmt(r.sales)}</td>
+                <td className="p-2.5 font-mono font-bold text-[#014D6F]">{fmt(r.sales)}</td>
                 <td className="p-2.5 font-mono">{fmt(r.delivered)}</td>
                 <td className={`p-2.5 font-mono ${rateCls(r.deliveryRate, false)}`}>{r.orders ? `${r.deliveryRate}%` : '—'}</td>
                 <td className={`p-2.5 font-mono ${rateCls(r.cancelRate, true)}`}>{r.orders ? `${r.cancelRate}%` : '—'}</td>

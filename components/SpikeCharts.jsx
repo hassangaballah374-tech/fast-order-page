@@ -65,7 +65,7 @@ export function Segmented({ options, value, onChange }) {
             key={o.value}
             type="button"
             onClick={() => onChange(o.value)}
-            className={active ? 'bg-[#00B050] text-white' : 'border'}
+            className={active ? 'bg-[#014D6F] text-white' : 'border'}
             style={{ minHeight: 30, padding: '0 12px', fontSize: 12, borderRadius: 999 }}
           >
             {o.label}
@@ -157,7 +157,7 @@ export function AreaChart({ labels = [], values = [], color = 'var(--teal)', hei
               const by = Math.max(y(values[hover]) - 54, 2);
               return (
                 <g>
-                  <rect x={bx} y={by} width={bw} height="42" rx="10" fill="var(--teal-deep, #06494e)" />
+                  <rect x={bx} y={by} width={bw} height="42" rx="10" fill="var(--teal-deep, #013A55)" />
                   <text x={bx + bw / 2} y={by + 17} textAnchor="middle" fontSize="11" fill="#d9ecec" fontFamily="Inter, sans-serif">
                     {labels[hover]}
                   </text>

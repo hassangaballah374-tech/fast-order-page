@@ -188,8 +188,8 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
     await after('تم حفظ التسعير');
   };
 
-  const box = `rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`;
-  const inp = 'w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent text-xs outline-none focus:border-[#00B050]';
+  const box = `rounded-2xl border ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`;
+  const inp = 'w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent text-xs outline-none focus:border-[#014D6F]';
   const btn = 'px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-[11px] font-bold cursor-pointer hover:bg-slate-500/10 disabled:opacity-50';
   const pending = reqs.filter((r) => r.status === 'pending').length;
 
@@ -197,9 +197,9 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2 items-center">
         {[['stores', 'المتاجر والأرصدة'], ['reqs', `طلبات الاشتراك${pending ? ` (${pending})` : ''}`], ['plans', 'الباقات والأسعار']].map(([id, l]) => (
-          <button key={id} onClick={() => setTab(id)} className={`px-4 py-2 rounded-xl text-xs font-black cursor-pointer border ${tab === id ? 'bg-[#00B050] text-white border-[#00B050]' : 'border-slate-300 dark:border-slate-700'}`}>{l}</button>
+          <button key={id} onClick={() => setTab(id)} className={`px-4 py-2 rounded-xl text-xs font-black cursor-pointer border ${tab === id ? 'bg-[#014D6F] text-white border-[#014D6F]' : 'border-slate-300 dark:border-slate-700'}`}>{l}</button>
         ))}
-        {msg ? <span className="text-xs font-bold text-[#00B050] mx-2">{msg}</span> : null}
+        {msg ? <span className="text-xs font-bold text-[#014D6F] mx-2">{msg}</span> : null}
       </div>
 
       {tab === 'stores' && (
@@ -297,7 +297,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs items-end">
             <label>عمولة الطلب بالدولار (الافتراضي 0.03 = 3 سنت)<input className={inp} type="number" step="0.001" min="0" value={pc} onChange={(e) => setPc(e.target.value)} /></label>
             <label>سعر الدولار يدوي بالجنيه (فارغ = تلقائي، الآن {rate || '...'})<input className={inp} type="number" step="0.01" min="0" value={manual} onChange={(e) => setManual(e.target.value)} placeholder="اتركه فارغاً للسعر التلقائي" /></label>
-            <button className="py-2 bg-[#00B050] text-white rounded-lg font-bold cursor-pointer" onClick={savePricing}>حفظ التسعير</button>
+            <button className="py-2 bg-[#014D6F] text-white rounded-lg font-bold cursor-pointer" onClick={savePricing}>حفظ التسعير</button>
           </div>
         </div>
       )}
@@ -310,7 +310,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             {plans.map((p) => (
-              <div key={p.id} className={`p-4 rounded-xl border space-y-2 text-xs ${p.highlight ? 'border-[#00B050]' : 'border-slate-200 dark:border-slate-800'}`}>
+              <div key={p.id} className={`p-4 rounded-xl border space-y-2 text-xs ${p.highlight ? 'border-[#014D6F]' : 'border-slate-200 dark:border-slate-800'}`}>
                 <div className="flex justify-between items-center"><span className="font-mono text-slate-400" dir="ltr">{p.code}</span><button className="text-rose-500 font-bold cursor-pointer" onClick={() => delPlan(p)}>حذف</button></div>
                 <label className="block">الاسم<input className={inp} value={dv(p, 'name')} onChange={(e) => setD(p, 'name', e.target.value)} /></label>
                 <div className="grid grid-cols-2 gap-2">
@@ -323,7 +323,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
                   <label className="flex gap-1 items-center"><input type="checkbox" checked={!!dv(p, 'highlight')} onChange={(e) => setD(p, 'highlight', e.target.checked)} />مميزة</label>
                   <label className="flex gap-1 items-center"><input type="checkbox" checked={dv(p, 'enabled') !== false} onChange={(e) => setD(p, 'enabled', e.target.checked)} />ظاهرة للتجار</label>
                 </div>
-                <button disabled={busy || !draft[p.id]} className="w-full py-2 bg-[#00B050] text-white rounded-lg font-bold cursor-pointer disabled:opacity-40" onClick={() => savePlan(p)}>حفظ</button>
+                <button disabled={busy || !draft[p.id]} className="w-full py-2 bg-[#014D6F] text-white rounded-lg font-bold cursor-pointer disabled:opacity-40" onClick={() => savePlan(p)}>حفظ</button>
               </div>
             ))}
           </div>

@@ -70,19 +70,19 @@ export default function AdminBell({ isDark, onNewOrder, onOpenTab }) {
         {unread > 0 && <span className="absolute -top-1.5 -left-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center">{unread > 99 ? '99+' : unread}</span>}
       </button>
       {open && (
-        <div className={`absolute top-11 left-0 z-50 w-80 max-w-[90vw] rounded-2xl border shadow-2xl p-3 ${isDark ? 'bg-[#0E1E38] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
+        <div className={`absolute top-11 left-0 z-50 w-80 max-w-[90vw] rounded-2xl border shadow-2xl p-3 ${isDark ? 'bg-[#0A2A3E] border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-800'}`}>
           <div className="flex justify-between items-center mb-2">
             <b className="text-sm">الإشعارات</b>
-            <button className="text-[11px] text-[#00B050] font-bold cursor-pointer" onClick={markAll}>تعليم الكل كمقروء</button>
+            <button className="text-[11px] text-[#014D6F] font-bold cursor-pointer" onClick={markAll}>تعليم الكل كمقروء</button>
           </div>
           {perm !== 'granted' && typeof Notification !== 'undefined' && perm !== 'denied' && (
-            <button className="w-full mb-2 py-2 rounded-lg bg-[#00B050] text-white text-xs font-bold cursor-pointer" onClick={enable}>تفعيل إشعارات المتصفح</button>
+            <button className="w-full mb-2 py-2 rounded-lg bg-[#014D6F] text-white text-xs font-bold cursor-pointer" onClick={enable}>تفعيل إشعارات المتصفح</button>
           )}
           {perm === 'denied' && <p className="text-[10px] text-amber-600 mb-2">إشعارات المتصفح مرفوضة، فعّلها من إعدادات الموقع في المتصفح.</p>}
           <div className="max-h-80 overflow-y-auto space-y-1.5">
             {list.length === 0 && <div className="text-center text-xs text-slate-400 py-6">لا توجد إشعارات</div>}
             {list.map((r) => (
-              <button key={r.id} onClick={() => click(r)} className={`w-full text-right p-2.5 rounded-xl border text-xs cursor-pointer ${r.read ? 'border-slate-200/60 dark:border-slate-800 opacity-70' : 'border-[#00B050]/40 bg-[#00B050]/5'}`}>
+              <button key={r.id} onClick={() => click(r)} className={`w-full text-right p-2.5 rounded-xl border text-xs cursor-pointer ${r.read ? 'border-slate-200/60 dark:border-slate-800 opacity-70' : 'border-[#014D6F]/40 bg-[#014D6F]/5'}`}>
                 <div className="font-bold">{ICON_OF[r.kind] || '💳'} {r.title}</div>
                 {r.body ? <div className="text-slate-500 dark:text-slate-400 truncate">{r.body}</div> : null}
                 <div className="text-[10px] text-slate-400 mt-0.5" dir="ltr">{new Date(r.created_at).toLocaleString()}</div>

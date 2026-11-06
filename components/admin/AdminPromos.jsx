@@ -48,19 +48,19 @@ export default function AdminPromos({ isDark }) {
   };
   const del = async (r) => { if (!confirm(`حذف الكود ${r.code}؟`)) return; const { error } = await supabase.from('promo_codes').delete().eq('id', r.id); if (error) flash('خطأ: ' + error.message); else load(); };
 
-  const box = `p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`;
-  const inp = 'w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent text-xs outline-none focus:border-[#00B050]';
+  const box = `p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`;
+  const inp = 'w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent text-xs outline-none focus:border-[#014D6F]';
   const btn = 'px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-[11px] font-bold cursor-pointer hover:bg-slate-500/10';
   return (
     <div className={box}>
       <div className="flex flex-wrap items-center gap-3 mb-3">
         <h3 className="font-black text-sm">🎁 الطلبات المجانية والأكواد الترحيبية</h3>
-        {msg ? <span className="text-xs font-bold text-[#00B050]">{msg}</span> : null}
+        {msg ? <span className="text-xs font-bold text-[#014D6F]">{msg}</span> : null}
       </div>
 
       <div className="flex flex-wrap items-end gap-2 mb-4 text-xs">
         <label>الطلبات المجانية لكل تاجر جديد تلقائياً<input className={`${inp} w-40`} type="number" min="0" value={def} onChange={(e) => setDef(e.target.value)} /></label>
-        <button className="px-4 py-2 bg-[#00B050] text-white rounded-lg font-bold cursor-pointer" onClick={saveDef}>حفظ</button>
+        <button className="px-4 py-2 bg-[#014D6F] text-white rounded-lg font-bold cursor-pointer" onClick={saveDef}>حفظ</button>
         <span className="text-slate-400">يسري على المتاجر التي تُنشأ بعد الحفظ.</span>
       </div>
 
@@ -74,7 +74,7 @@ export default function AdminPromos({ isDark }) {
         </label>
         <label>أقصى استخدامات<input className={inp} type="number" min="1" value={f.max_uses} onChange={(e) => setF({ ...f, max_uses: e.target.value })} placeholder="بلا حد" /></label>
         <label>ينتهي في<input className={inp} type="date" value={f.ends_at} onChange={(e) => setF({ ...f, ends_at: e.target.value })} /></label>
-        <button className="py-2 bg-[#00B050] text-white rounded-lg font-bold cursor-pointer" onClick={add}>+ إضافة كود</button>
+        <button className="py-2 bg-[#014D6F] text-white rounded-lg font-bold cursor-pointer" onClick={add}>+ إضافة كود</button>
         <label className="col-span-2 md:col-span-6">ملاحظة داخلية (اختياري)<input className={inp} value={f.note} onChange={(e) => setF({ ...f, note: e.target.value })} /></label>
       </div>
 
