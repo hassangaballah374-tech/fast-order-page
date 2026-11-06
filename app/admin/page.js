@@ -20,6 +20,7 @@ import PaymentNote from '../../components/admin/PaymentNote';
 import ThemeColors from '../../components/admin/ThemeColors'; 
 import AdminPromos from '../../components/admin/AdminPromos';
 import AdminApps from '../../components/admin/AdminApps';
+import SpikeLogo from '../../components/SpikeLogo';
 import AdminFeatureLocks from '../../components/admin/AdminFeatureLocks';
 import AdminServiceRequests from '../../components/admin/AdminServiceRequests';
 const BRAND_BASE = 'https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding';
@@ -699,11 +700,7 @@ export default function SpikeSuperAdminDashboard() {
             </span>
 
               <Link href="/" className="flex flex-col items-center gap-1">
-              <img
-                src="https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding/logo.png?v=1"
-                alt="SPIKE | سبايك"
-                className={`h-16 sm:h-20 w-auto object-contain ${isDark ? 'bg-white/95 rounded-xl p-1.5' : ''}`}
-              />
+              <SpikeLogo dark={!!isDark} className="h-16 sm:h-20 w-auto object-contain" />
               <span className="text-[10px] text-slate-400 block font-bold">لوحة التحكم والإدارة</span>
             </Link>
           </div>
