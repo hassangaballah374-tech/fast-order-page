@@ -7,6 +7,7 @@ import { track } from './tracker';
 import SearchBox from './SearchBox';
 import MiniCart from './MiniCart';
 import WaIcon from './WaIcon';
+import MobileMenu, { useNightMode } from './MobileMenu';
 import { fillTemplate, ago, safeUrl, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 const sget = (k) => { try { return sessionStorage.getItem(k); } catch { return null; } };
@@ -139,23 +140,8 @@ function WelcomeBack() {
 /* زر نهاري/ليلي: بيبدّل ألوان المتجر كله ويفتكر اختيار العميل */
 function ModeToggle() {
   const { slug } = useShop();
-  const [night, setNight] = useState(false);
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    const r = document.querySelector('.spk[data-ob]');
-    if (!r || r.getAttribute('data-dk0') === '1') return;
-    setShow(true);
-    setNight(r.getAttribute('data-mode') === 'night');
-  }, []);
+  const { show, night, flip } = useNightMode(slug);
   if (!show) return null;
-  const flip = () => {
-    const r = document.querySelector('.spk[data-ob]');
-    if (!r) return;
-    const nx = !night;
-    if (nx) { r.setAttribute('data-mode', 'night'); r.setAttribute('data-dk', '1'); } else { r.removeAttribute('data-mode'); r.setAttribute('data-dk', '0'); }
-    try { if (nx) localStorage.setItem(`spike_mode_${slug}`, 'night'); else localStorage.removeItem(`spike_mode_${slug}`); } catch { /* تجاهل */ }
-    setNight(nx);
-  };
   return <button type="button" className="mode" onClick={flip} aria-label={night ? 'الوضع النهاري' : 'الوضع الليلي'} title={night ? 'الوضع النهاري' : 'الوضع الليلي'}>{night ? '☀️' : '🌙'}</button>;
 }
 
@@ -176,6 +162,7 @@ export default function Shell({ children, footerExtra }) {
       {b.announcement ? <div className="ann">{annLink ? <a href={annLink}>{b.announcement}</a> : b.announcement}</div> : null}
       <header className="hd">
         <div className="wrap hd-in">
+          <MobileMenu nightToggle={b.night_toggle !== false} />
           <Link href={base} className="logo">{b.logo ? <img src={b.logo} alt={name} /> : null}<span>{name}</span></Link>
           <nav className="nav" aria-label="القائمة">
             <Link href={base}>الرئيسية</Link>
@@ -188,7 +175,7 @@ export default function Shell({ children, footerExtra }) {
           <span className="hd-sp" />
           <SearchBox />
           {b.night_toggle !== false ? <ModeToggle /> : null}
-          <Link href={`${base}/cart`} className="cartb" aria-label="السلة" onClick={(e) => { if (cfg.cart?.drawer === false || /\/(cart|checkout)/.test(path || '')) return; e.preventDefault(); window.dispatchEvent(new Event('spike:cart-open')); }}>🛒 السلة{count > 0 ? <span className="cnt num">{count}</span> : null}</Link>
+          <Link href={`${base}/cart`} className="cartb" aria-label="السلة" onClick={(e) => { if (cfg.cart?.drawer === false || /\/(cart|checkout)/.test(path || '')) return; e.preventDefault(); window.dispatchEvent(new Event('spike:cart-open')); }}><span aria-hidden="true">🛒</span><span className="cb-t">السلة</span>{count > 0 ? <span className="cnt num">{count}</span> : null}</Link>
         </div>
       </header>
 
