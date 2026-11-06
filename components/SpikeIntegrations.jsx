@@ -244,7 +244,7 @@ export default function SpikeIntegrations({ stores = [], isAr = true, canManage 
               <span className="text-sm font-black">{isAr ? `تم قراءة ${preview.items.length} سجل — معاينة أول 5` : `${preview.items.length} rows parsed`}</span>
               <div className="flex gap-2">
                 <button type="button" className="border" onClick={() => setPreview(null)}>{isAr ? 'إلغاء' : 'Cancel'}</button>
-                <button type="button" className="bg-[#00B050] text-white" disabled={importing || !preview.items.length} onClick={runImport}>
+                <button type="button" className="bg-[#014D6F] text-white" disabled={importing || !preview.items.length} onClick={runImport}>
                   {importing ? '...' : isAr ? 'استيراد للمتجر المحدد' : 'Import'}
                 </button>
               </div>
@@ -278,7 +278,7 @@ export default function SpikeIntegrations({ stores = [], isAr = true, canManage 
       {/* التصنيفات */}
       <div className="flex flex-wrap gap-2">
         {CATS.map((c) => (
-          <button key={c.id} type="button" onClick={() => setCat(c.id)} className={cat === c.id ? 'bg-[#00B050] text-white' : 'border'} style={{ minHeight: 34, borderRadius: 999 }}>
+          <button key={c.id} type="button" onClick={() => setCat(c.id)} className={cat === c.id ? 'bg-[#014D6F] text-white' : 'border'} style={{ minHeight: 34, borderRadius: 999 }}>
             {isAr ? c.ar : c.en}
           </button>
         ))}
@@ -328,7 +328,7 @@ export default function SpikeIntegrations({ stores = [], isAr = true, canManage 
                       />
                     </div>
                   ))}
-                  <button type="button" className={dirty ? 'bg-[#00B050] text-white' : 'border'} disabled={!dirty} onClick={() => save(it.key, true)} style={{ minHeight: 34 }}>
+                  <button type="button" className={dirty ? 'bg-[#014D6F] text-white' : 'border'} disabled={!dirty} onClick={() => save(it.key, true)} style={{ minHeight: 34 }}>
                     {isAr ? 'حفظ الإعدادات' : 'Save'}
                   </button>
                 </div>
