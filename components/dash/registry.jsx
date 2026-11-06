@@ -48,6 +48,7 @@ const base = {
 
   themes: L(D, 'ThemesScreen'),
   browse: L(() => import('./screens/Browse'), 'BrowseScreen'),
+  looks: L(() => import('./screens/Looks'), 'LooksScreen'),
   sizing: L(() => import('./screens/Sizing'), 'SizingScreen'),
   home: L(D, 'HomeScreen'),
   pages: L(D, 'PagesScreen'),

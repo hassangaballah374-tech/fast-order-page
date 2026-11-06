@@ -180,6 +180,7 @@ export default function Shell({ children, footerExtra }) {
           <nav className="nav" aria-label="القائمة">
             <Link href={base}>الرئيسية</Link>
             <Link href={`${base}/products`}>كل المنتجات</Link>
+            {(cfg.looks?.enabled !== false && (cfg.looks?.items || []).length) ? <Link href={`${base}/looks`}>الإطلالات</Link> : null}
             <Link href={`${base}/favorites`}>♥ المفضلة</Link>
             <Link href={`${base}/track`}>تتبع طلبك</Link>
           </nav>

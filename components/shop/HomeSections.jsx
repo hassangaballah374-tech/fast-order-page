@@ -5,6 +5,8 @@ import { safeUrl, HOME_SECTION_TYPES } from '../../lib/storeKit';
 import { orderByIds } from '../../lib/storeData';
 import BrowseView from './BrowseView';
 import { pickStyle } from '../../lib/browse';
+import { liveLooks } from '../../lib/looks';
+import LooksView from './LooksView';
 
 const DEFAULT_TRUST = ['🚚|شحن سريع|لكل محافظات مصر', '💵|الدفع عند الاستلام|ادفع بعد ما تعاين طلبك', '📞|دعم عبر واتساب|نرد عليك بسرعة'];
 const lines = (v) => (Array.isArray(v) ? v : String(v || '').split('\n')).map((x) => String(x).trim()).filter(Boolean);
@@ -52,6 +54,11 @@ export default function HomeSections({ cfg, base, products, categories, reviews,
               </div>
             </div>
           );
+        }
+        if (s.type === 'looks') {
+          const lk = liveLooks(cfg, products);
+          if (!lk.length) return null;
+          return <section className="wrap sec" key={key}><LooksView looks={lk} title={s.title || cfg.looks?.title || ''} /></section>;
         }
         if (s.type === 'trust') {
           const items = lines(s.items);
