@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useShop } from './StoreContext';
-import { track } from './tracker'; 
+import { track } from './tracker';
 import { money, waLink, normalizePhone, isValidEgPhone, safeUrl } from '../../lib/storeKit';
 import { flowHit } from './flowClient';
 
