@@ -135,13 +135,15 @@ export const SHOP_CSS = `
 @media(min-width:560px){.spk .r2{grid-template-columns:1fr 1fr}}
 .spk .err{background:#fee2e2;color:#991b1b;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:700}
 .spk .okm{color:#166534;font-size:13px;font-weight:700}
-.spk .cpn{display:flex;gap:8px}
+.spk .cpn{display:flex;gap:8px;min-width:0}
+.spk .cpn .in{flex:1 1 0;min-width:0;width:auto}
+.spk .cpn .b{flex:none}
 .spk .sum{background:var(--bg);border:1px solid var(--ln);border-radius:14px;padding:12px 14px;display:grid;gap:6px;font-size:14px}
 .spk .sum div{display:flex;justify-content:space-between}
 .spk .sum .tot{font-size:18px;font-weight:900;border-top:1px dashed var(--ln);padding-top:8px;margin-top:2px}
 .spk .prog{height:8px;border-radius:8px;background:var(--ln);overflow:hidden}
 .spk .prog i{display:block;height:100%;background:var(--c)}
-.spk .hp{position:absolute;inset-inline-start:-9999px;opacity:0;height:0;width:0}
+.spk .hp{position:absolute;left:0;top:0;opacity:0;height:1px;width:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);pointer-events:none;border:0;padding:0;margin:0;z-index:-1}
 
 .spk .ci{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--ln);border-radius:var(--r);padding:10px;margin-bottom:10px}
 .spk .ci img{width:70px;height:70px;border-radius:12px;object-fit:cover;background:var(--ln)}
@@ -520,7 +522,7 @@ export const SHOP_CSS = `
 .spk .mm-btn i:nth-child(2){width:14px;align-self:center}
 .spk .mm-root{position:fixed;inset:0;z-index:2147483000}
 .spk .mm-scrim{position:absolute;inset:0;background:rgba(3,15,24,.55);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);animation:mmf .2s ease}
-.spk .mm-pn{position:absolute;top:0;bottom:0;inset-inline-start:0;width:min(88vw,360px);background:var(--card);color:var(--ink);display:flex;flex-direction:column;box-shadow:0 0 50px rgba(0,0,0,.35);animation:mms .26s cubic-bezier(.2,.8,.2,1);height:100%;max-height:100dvh}
+.spk .mm-pn{position:absolute;top:0;bottom:0;inset-inline-start:0;width:min(74vw,320px);background:var(--card);color:var(--ink);display:flex;flex-direction:column;box-shadow:0 0 50px rgba(0,0,0,.35);animation:mms .26s cubic-bezier(.2,.8,.2,1);height:100%;max-height:100dvh}
 .spk .mm-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--ln);padding-top:max(14px,env(safe-area-inset-top))}
 .spk .mm-logo{display:flex;align-items:center;gap:10px;flex:1;min-width:0;font-weight:900;font-size:17px;color:var(--ink)}
 .spk .mm-logo img{height:34px;width:auto;max-width:90px;object-fit:contain}
@@ -602,4 +604,16 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 @supports (background:color-mix(in srgb,red 50%,blue)){.spk .offer.act{background:color-mix(in srgb,var(--c) 16%,var(--card))}}
 .spk .ob-x,.spk .ob-cartp{background:var(--card)}
 @supports (background:color-mix(in srgb,red 50%,blue)){.spk .ob-x,.spk .ob-cartp{background:color-mix(in srgb,var(--card) 80%,transparent)}}
+
+/* حقول النماذج ما تتعداش عرض الشاشة (input له عرض افتراضي كان بيوسّع الجريد) */
+.spk .r2{grid-template-columns:minmax(0,1fr)}
+@media(min-width:560px){.spk .r2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.spk .r2>*,.spk .fld,.spk .frm,.spk .card,.spk form{min-width:0}
+.spk .in,.spk input,.spk select,.spk textarea{max-width:100%;min-width:0}
+
+/* الحواف: .sec كان بيصفّر الحشو الأفقي بتاع .wrap فالأقسام كانت لازقة في حرف الشاشة */
+.spk div.wrap,.spk section.wrap,.spk header .wrap,.spk footer .wrap{padding-left:16px;padding-right:16px}
+.spk .ft .pwl,.spk .ft .pw{padding-left:16px;padding-right:16px}
+.spk .pwl img{max-width:70%;height:auto;max-height:44px}
+@media(min-width:700px){.spk div.wrap,.spk section.wrap{padding-left:24px;padding-right:24px}}
 `;
