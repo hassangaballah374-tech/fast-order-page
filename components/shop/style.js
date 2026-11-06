@@ -135,13 +135,15 @@ export const SHOP_CSS = `
 @media(min-width:560px){.spk .r2{grid-template-columns:1fr 1fr}}
 .spk .err{background:#fee2e2;color:#991b1b;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:700}
 .spk .okm{color:#166534;font-size:13px;font-weight:700}
-.spk .cpn{display:flex;gap:8px}
+.spk .cpn{display:flex;gap:8px;min-width:0}
+.spk .cpn .in{flex:1 1 0;min-width:0;width:auto}
+.spk .cpn .b{flex:none}
 .spk .sum{background:var(--bg);border:1px solid var(--ln);border-radius:14px;padding:12px 14px;display:grid;gap:6px;font-size:14px}
 .spk .sum div{display:flex;justify-content:space-between}
 .spk .sum .tot{font-size:18px;font-weight:900;border-top:1px dashed var(--ln);padding-top:8px;margin-top:2px}
 .spk .prog{height:8px;border-radius:8px;background:var(--ln);overflow:hidden}
 .spk .prog i{display:block;height:100%;background:var(--c)}
-.spk .hp{position:absolute;inset-inline-start:-9999px;opacity:0;height:0;width:0}
+.spk .hp{position:absolute;left:0;top:0;opacity:0;height:1px;width:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);pointer-events:none;border:0;padding:0;margin:0;z-index:-1}
 
 .spk .ci{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--ln);border-radius:var(--r);padding:10px;margin-bottom:10px}
 .spk .ci img{width:70px;height:70px;border-radius:12px;object-fit:cover;background:var(--ln)}
@@ -602,4 +604,10 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 @supports (background:color-mix(in srgb,red 50%,blue)){.spk .offer.act{background:color-mix(in srgb,var(--c) 16%,var(--card))}}
 .spk .ob-x,.spk .ob-cartp{background:var(--card)}
 @supports (background:color-mix(in srgb,red 50%,blue)){.spk .ob-x,.spk .ob-cartp{background:color-mix(in srgb,var(--card) 80%,transparent)}}
+
+/* حقول النماذج ما تتعداش عرض الشاشة (input له عرض افتراضي كان بيوسّع الجريد) */
+.spk .r2{grid-template-columns:minmax(0,1fr)}
+@media(min-width:560px){.spk .r2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.spk .r2>*,.spk .fld,.spk .frm,.spk .card,.spk form{min-width:0}
+.spk .in,.spk input,.spk select,.spk textarea{max-width:100%;min-width:0}
 `;
