@@ -7,6 +7,7 @@ import { track } from './tracker';
 import SearchBox from './SearchBox';
 import MiniCart from './MiniCart';
 import WaIcon from './WaIcon';
+import SpikeLogo from '../SpikeLogo';
 import MobileMenu, { useNightMode } from './MobileMenu';
 import { fillTemplate, ago, safeUrl, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
@@ -207,7 +208,7 @@ export default function Shell({ children, footerExtra }) {
             {waOk ? <p style={{ marginTop: 10 }}><a className="b wa sm" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer"><WaIcon size={16} /> تواصل معنا على واتساب</a></p> : null}
           </div>
         </div>
-        <a className="pwl" href="/" target="_blank" rel="noopener noreferrer" title="سبايك"><img src="https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding/logo.png?v=3" alt="سبايك" loading="lazy" /></a>
+        <a className="pwl" href="/" target="_blank" rel="noopener noreferrer" title="سبايك"><SpikeLogo loading="lazy" /></a>
         <p className="pw">متجر مبني على منصة سبايك · الدفع عند الاستلام</p>
       </footer>
 
