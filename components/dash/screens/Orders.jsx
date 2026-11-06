@@ -4,7 +4,7 @@ import { useDash, PageHead, Modal, Field, Empty, Spin, Tabs, Pager, useDebounced
 import { useTable, useProducts, api, useInterval } from '../hooks';
 import { useNetRisk, NetBadge } from '../netRisk';
 import { Crud } from '../forms';
-import { MANUAL_COURIERS, courierName } from '../../../lib/couriers'; 
+import { MANUAL_COURIERS, courierName } from '../../../lib/couriers';
 import {
   useOrders, useRange, RangeBar, inRange, StatusBadge, RiskBadge, FLAG_LABEL, useWa, orderProfit, isLive, downloadCsvFile, fdate, fday,
 } from '../shared';

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDash, PageHead } from '../ui';
 import { useTable } from '../hooks';
- 
+
 const STYLES = [
   { k: 'orbit', t: 'المدار', i: '🪐', d: 'منتجات بتدور على مسار منحني، سحب بالعجلة، وإضافة بضغطة على المقاس.' },
   { k: 'rail', t: 'رف الشماعات', i: '👗', d: 'قطع معلّقة على سكة أفقية، القطعة الأوسط تكبر وتتقدم. مناسب للملابس.' },

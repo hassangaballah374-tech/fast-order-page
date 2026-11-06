@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDash, PageHead, Field, Empty, Spin, Badge, Stat } from '../ui';
 import { useTable, uploadAsset } from '../hooks';
-import { fdate } from '../shared'; 
+import { fdate } from '../shared';
 import { storeStateOf, commissionOf, ordersLeft, freeLeft, ordersCovered, monthlyActive, toEgp, egpFmt, setPlatformCommission } from '../../../lib/billing';
 import { useUsdRate } from '../../useUsdRate';
 import { supabase } from '../../../lib/supabase'; 

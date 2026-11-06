@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useDash, PageHead, Modal, Field, Empty, Spin, Badge, Tabs, Tog } from '../ui';
-import { useTable, useProducts } from '../hooks'; 
+import { useTable, useProducts } from '../hooks';
 import { Crud, ConfigForm } from '../forms';
 import { useSection, SaveBtn, LinkBox, MultiProductPick, asNumber } from '../bits';
 import { useWa, ProductSelect, fdate } from '../shared';
