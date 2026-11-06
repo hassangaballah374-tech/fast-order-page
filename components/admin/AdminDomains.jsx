@@ -26,7 +26,7 @@ export default function AdminDomains({ isDark }) {
     load();
   };
 
-  const box = `p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`;
+  const box = `p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`;
   return (
     <div className={box}>
       <h3 className="font-black text-sm mb-3">طلبات شراء الدومين</h3>

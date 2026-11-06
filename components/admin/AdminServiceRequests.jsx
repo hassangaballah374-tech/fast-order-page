@@ -54,20 +54,20 @@ export default function AdminServiceRequests({ isDark }) {
     load();
   };
 
-  const box = `p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`;
+  const box = `p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`;
   const btn = 'px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-[11px] font-bold cursor-pointer hover:bg-slate-500/10';
   return (
     <div className={box}>
       <div className="flex flex-wrap items-center gap-3 mb-3">
         <h3 className="font-black text-sm">🧰 طلبات الخدمات من التجار</h3>
-        {msg ? <span className="text-xs font-bold text-[#00B050]">{msg}</span> : null}
+        {msg ? <span className="text-xs font-bold text-[#014D6F]">{msg}</span> : null}
         <span className="flex-1" />
         <button className={btn} onClick={load}>🔄 تحديث</button>
       </div>
       {err ? <div className="text-xs text-rose-500 mb-3">⚠️ {err} — شغّل ملف sql/service_requests.sql في Supabase ثم حدّث الصفحة.</div> : null}
       <div className="flex flex-wrap gap-2 mb-3">
         {[['new', 'جديد'], ['contacted', 'تم التواصل'], ['done', 'مكتمل'], ['cancelled', 'ملغي'], ['all', 'الكل']].map(([k, l]) => (
-          <button key={k} className={`${btn} ${filter === k ? 'bg-[#00B050] text-white border-[#00B050]' : ''}`} onClick={() => setFilter(k)}>{l} ({counts[k] || 0})</button>
+          <button key={k} className={`${btn} ${filter === k ? 'bg-[#014D6F] text-white border-[#014D6F]' : ''}`} onClick={() => setFilter(k)}>{l} ({counts[k] || 0})</button>
         ))}
       </div>
       {rows === null ? <p className="text-xs text-slate-400">جاري التحميل...</p> : list.length === 0 ? <p className="text-xs text-slate-400">لا توجد طلبات في هذا القسم.</p> : (
@@ -90,7 +90,7 @@ export default function AdminServiceRequests({ isDark }) {
                   {r.contact ? <a className={`${btn} text-emerald-600`} target="_blank" rel="noreferrer" href={waUrl(r.contact, `أهلاً، بخصوص طلبك «${r.title}» على سبايك…`)}>💬 واتساب</a> : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <input className="flex-1 min-w-[180px] p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent outline-none focus:border-[#00B050]" placeholder="ملاحظة تظهر للتاجر (السعر المتفق عليه، موعد التسليم…)" value={notes[r.id] ?? r.admin_note ?? ''} onChange={(e) => setNotes({ ...notes, [r.id]: e.target.value })} />
+                  <input className="flex-1 min-w-[180px] p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent outline-none focus:border-[#014D6F]" placeholder="ملاحظة تظهر للتاجر (السعر المتفق عليه، موعد التسليم…)" value={notes[r.id] ?? r.admin_note ?? ''} onChange={(e) => setNotes({ ...notes, [r.id]: e.target.value })} />
                   {['contacted', 'done', 'cancelled'].filter((k) => k !== (r.status || 'new')).map((k) => (
                     <button key={k} className={`${btn} ${k === 'done' ? 'text-emerald-600' : k === 'cancelled' ? 'text-rose-500' : ''}`} onClick={() => setStatus(r, k)}>{ST[k][0]}</button>
                   ))}

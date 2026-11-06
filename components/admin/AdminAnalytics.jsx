@@ -29,7 +29,7 @@ function Delta({ cur, prev, points = false }) {
 
 function Kpi({ label, value, sub, delta, isDark }) {
   return (
-    <div className={`p-4 rounded-2xl border ${isDark ? 'bg-[#0B132B] border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+    <div className={`p-4 rounded-2xl border ${isDark ? 'bg-[#061C2A] border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
       <div className="text-[11px] font-bold text-slate-400">{label}</div>
       <div className="text-2xl font-black mt-1" dir="ltr" style={{ textAlign: 'right' }}>{value}</div>
       <div className="flex items-center justify-between gap-2 mt-1 min-h-[16px]">
@@ -123,7 +123,7 @@ export default function AdminAnalytics({ isDark }) {
     document.body.appendChild(a); a.click(); a.remove();
   };
 
-  const card = `p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`;
+  const card = `p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`;
   const verdictCls = { emerald: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600', rose: 'bg-rose-500/10 border-rose-500/30 text-rose-600', amber: 'bg-amber-500/10 border-amber-500/30 text-amber-600', slate: 'bg-slate-500/10 border-slate-500/30 text-slate-500' };
 
   return (
@@ -136,7 +136,7 @@ export default function AdminAnalytics({ isDark }) {
           </div>
           <div className="flex flex-wrap gap-1.5">
             {PERIODS.map((x) => (
-              <button key={x.k} type="button" onClick={() => setPk(x.k)} className={`px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer border ${pk === x.k ? 'bg-[#00B050] text-white border-[#00B050]' : isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'}`}>{x.t}</button>
+              <button key={x.k} type="button" onClick={() => setPk(x.k)} className={`px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer border ${pk === x.k ? 'bg-[#014D6F] text-white border-[#014D6F]' : isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'}`}>{x.t}</button>
             ))}
             <button type="button" onClick={load} className={`px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer border ${isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'}`}>↻ تحديث</button>
           </div>
@@ -147,7 +147,7 @@ export default function AdminAnalytics({ isDark }) {
       {loading && !cur ? <div className={card}>جاري التحميل...</div> : null}
 
       {all ? (
-        <div className={`${card} bg-gradient-to-l from-[#00B050]/10 to-transparent`}>
+        <div className={`${card} bg-gradient-to-l from-[#014D6F]/10 to-transparent`}>
           <div className="text-xs font-black text-slate-400 mb-2">🌍 الإجمالي من أول يوم لحد اللحظة دي</div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
             <div><div className="text-2xl font-black">{fmt(all.orders)}</div><div className="text-[11px] text-slate-400">طلب على المنصة</div></div>
@@ -180,7 +180,7 @@ export default function AdminAnalytics({ isDark }) {
                 {series.map((s) => (
                   <div key={s.bucket} className="flex flex-col items-center justify-end shrink-0" style={{ width: Math.max(18, Math.min(46, 900 / series.length)), height: '100%' }} title={`${label(s.bucket)} — ${fmt(s.orders)} طلب · ${fmt(s.gmv)} ج.م · ${usd(s.commission_usd)} عمولة`}>
                     <span className="text-[9px] text-slate-400">{fmt(s.orders)}</span>
-                    <div className="w-full rounded-t bg-[#00B050]" style={{ height: `${Math.max(3, (num(s.orders) / maxOrders) * 100)}px` }} />
+                    <div className="w-full rounded-t bg-[#014D6F]" style={{ height: `${Math.max(3, (num(s.orders) / maxOrders) * 100)}px` }} />
                     <span className="text-[9px] text-slate-400 mt-1">{label(s.bucket)}</span>
                   </div>
                 ))}
@@ -201,7 +201,7 @@ export default function AdminAnalytics({ isDark }) {
                   <option value="left">الأقل طلبات متبقية</option>
                   <option value="name">الاسم</option>
                 </select>
-                <button type="button" onClick={exportCsv} className="px-3 py-1.5 rounded-lg bg-[#00B050] text-white text-xs font-black cursor-pointer">⬇ تصدير CSV</button>
+                <button type="button" onClick={exportCsv} className="px-3 py-1.5 rounded-lg bg-[#014D6F] text-white text-xs font-black cursor-pointer">⬇ تصدير CSV</button>
               </div>
             </div>
             <div className="overflow-x-auto">

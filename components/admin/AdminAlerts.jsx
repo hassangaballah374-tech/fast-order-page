@@ -39,7 +39,7 @@ export default function AdminAlerts({ isDark }) {
     return { ...s, bad, reasons };
   }).filter((s) => s.reasons.length).sort((x, y) => y.reasons.length - x.reasons.length || y.bad - x.bad), [rows, th]);
 
-  const card = `p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`;
+  const card = `p-4 sm:p-6 rounded-2xl border ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`;
   const inp = `w-16 px-2 py-1 rounded-lg border text-xs text-center ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`;
 
   return (
@@ -52,7 +52,7 @@ export default function AdminAlerts({ isDark }) {
           </div>
           <div className="flex flex-wrap gap-1.5">
             {[7, 30, 90].map((d) => (
-              <button key={d} type="button" onClick={() => setDays(d)} className={`px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer border ${days === d ? 'bg-[#00B050] text-white border-[#00B050]' : isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'}`}>آخر {d} يوم</button>
+              <button key={d} type="button" onClick={() => setDays(d)} className={`px-3 py-1.5 rounded-lg text-xs font-black cursor-pointer border ${days === d ? 'bg-[#014D6F] text-white border-[#014D6F]' : isDark ? 'border-slate-700 text-slate-300' : 'border-slate-200 text-slate-600'}`}>آخر {d} يوم</button>
             ))}
           </div>
         </div>

@@ -78,15 +78,15 @@ export default function AdminApps({ isDark }) {
     return g;
   }, [apps]);
 
-  const box = `p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0E1E38] border-slate-800' : 'bg-white border-slate-200'}`;
-  const inp = 'w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent text-xs outline-none focus:border-[#00B050]';
+  const box = `p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`;
+  const inp = 'w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent text-xs outline-none focus:border-[#014D6F]';
   const btn = 'px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-700 text-[11px] font-bold cursor-pointer hover:bg-slate-500/10';
   return (
     <div>
       <div className={box}>
         <div className="flex flex-wrap items-center gap-3">
           <h3 className="font-black text-sm">🧩 التطبيقات والمميزات</h3>
-          {msg ? <span className="text-xs font-bold text-[#00B050]">{msg}</span> : null}
+          {msg ? <span className="text-xs font-bold text-[#014D6F]">{msg}</span> : null}
           <span className="flex-1" />
           <button className={btn} onClick={() => setShowAdd(!showAdd)}>{showAdd ? 'إلغاء' : '+ إضافة تطبيق'}</button>
         </div>
@@ -106,7 +106,7 @@ export default function AdminApps({ isDark }) {
             <label>أيقونة<input className={inp} value={f.icon} onChange={(e) => setF({ ...f, icon: e.target.value })} /></label>
             <label>القسم<select className={inp} value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>{Object.entries(CATS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
             <label>الحالة<select className={inp} value={f.state} onChange={(e) => setF({ ...f, state: e.target.value })}>{SECTIONS.map((s) => <option key={s.id} value={s.id}>{s.icon} {s.title}</option>)}</select></label>
-            <button className="py-2 bg-[#00B050] text-white rounded-lg font-bold cursor-pointer" onClick={add}>+ إضافة</button>
+            <button className="py-2 bg-[#014D6F] text-white rounded-lg font-bold cursor-pointer" onClick={add}>+ إضافة</button>
             <label className="col-span-2 md:col-span-3">الوصف<input className={inp} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></label>
             <label className="col-span-2 md:col-span-3">شاشة الإعدادات (اختياري)<input className={`${inp} font-mono`} dir="ltr" value={f.screen} onChange={(e) => setF({ ...f, screen: e.target.value })} placeholder="pixels" /></label>
           </div>
