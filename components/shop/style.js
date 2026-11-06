@@ -579,4 +579,27 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 @media(min-width:900px){.spk .pv{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}}
 .spk h1,.spk h2,.spk h3,.spk .pc-t,.spk .pc-name,.spk .price,.spk .desc,.spk .info p,.spk .ci,.spk .ob-finfo h2{overflow-wrap:anywhere;word-break:normal}
 .spk .chips{min-width:0}
+
+/* ===== توافق الآيفون (Safari/iOS) والأندرويد ===== */
+.spk{-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-tap-highlight-color:transparent;min-height:100vh;min-height:100svh}
+.spk button,.spk a,.spk label,.spk select,.spk summary{touch-action:manipulation}
+.spk input,.spk select,.spk textarea,.spk button{-webkit-appearance:none;appearance:none;font-family:inherit}
+.spk select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5l5 5 5-5' fill='none' stroke='%23888' stroke-width='1.8' stroke-linecap='round'/></svg>");background-repeat:no-repeat;background-position:left 12px center;padding-inline-end:12px;padding-inline-start:32px}
+.spk input[type=checkbox],.spk input[type=radio]{-webkit-appearance:auto;appearance:auto}
+.spk img{-webkit-touch-callout:none}
+@supports not (overflow:clip){html,body{overflow-x:hidden}}
+/* الآيفون بيعمل زووم تلقائي لما حقل خطه أصغر من 16px — بنثبّته 16px على الموبايل */
+@media(max-width:899px){
+.spk input,.spk select,.spk textarea,.spk .in,.spk .sbx-in,.spk .mm-search input{font-size:16px!important}
+}
+.spk .sf-box{max-height:90vh;max-height:90dvh}
+.spk .mm-pn{max-height:100vh;max-height:100dvh}
+.spk .stk{background:var(--card)}
+@supports (background:color-mix(in srgb,red 50%,blue)){.spk .stk{background:color-mix(in srgb,var(--card) 84%,transparent)}}
+.spk .chip.act{background:var(--tint,var(--card))}
+@supports (background:color-mix(in srgb,red 50%,blue)){.spk .chip.act{background:color-mix(in srgb,var(--c) 12%,var(--card))}}
+.spk .offer.act{background:var(--tint,var(--card))}
+@supports (background:color-mix(in srgb,red 50%,blue)){.spk .offer.act{background:color-mix(in srgb,var(--c) 16%,var(--card))}}
+.spk .ob-x,.spk .ob-cartp{background:var(--card)}
+@supports (background:color-mix(in srgb,red 50%,blue)){.spk .ob-x,.spk .ob-cartp{background:color-mix(in srgb,var(--card) 80%,transparent)}}
 `;
