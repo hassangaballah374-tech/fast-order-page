@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { useApp } from '../../context/AppContext';
-import { SPIKE_LOGO_URL } from '../../components/SpikeBrandHeader';
+import SpikeLogo from '../../components/SpikeLogo';
 
 const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
@@ -291,7 +291,7 @@ export default function SpikeRegisterAndAuthPage() {
       <header className={`rg-head sticky top-0 z-40 border-b backdrop-blur-xl transition-colors ${isDark ? 'bg-[#04141F]/75 border-white/10' : 'bg-white/80 border-slate-200/80'}`}>
         <div className="max-w-7xl mx-auto h-[72px] px-4 sm:px-8 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3 shrink-0 group">
-            <img src={SPIKE_LOGO_URL} alt="SPIKE" className="h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
+            <SpikeLogo dark={isDark} alt="SPIKE" className="h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
             <span className="hidden sm:flex flex-col leading-none">
               <span className={`text-xl font-black tracking-[0.2em] ${isDark ? 'text-white' : 'text-[#0A2A3E]'}`}>SPIKE</span>
               <span className="text-[10px] font-bold tracking-[0.14em] text-[var(--ac)] mt-1.5">{isAr ? 'منصة التجارة بالدفع عند الاستلام' : 'COD COMMERCE PLATFORM'}</span>
@@ -323,7 +323,7 @@ export default function SpikeRegisterAndAuthPage() {
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-10 w-full max-w-lg mx-auto">
         <div className="text-center space-y-2 mb-5">
-          <div className="flex justify-center rg-drop"><img src={SPIKE_LOGO_URL} alt="SPIKE" className="rg-logo h-24 w-auto object-contain" /></div>
+          <div className="flex justify-center rg-drop"><SpikeLogo dark={isDark} alt="SPIKE" className="rg-logo h-28 w-auto object-contain" /></div>
           <div key={`h-${mode}`} className="space-y-2">
             <div className="rg-in flex items-center justify-center gap-1.5 font-black text-xl" style={{ '--i': 0 }}>
               <span className={isDark ? 'text-white' : 'text-[#0A2A3E]'}>سبايك</span>

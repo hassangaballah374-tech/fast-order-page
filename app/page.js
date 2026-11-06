@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useApp } from '../context/AppContext';
 import SpikeBrandHeader, { SPIKE_LOGO_URL } from '../components/SpikeBrandHeader';
+import SpikeLogo from '../components/SpikeLogo';
 import HomeExtras from '../components/home/HomeExtras';
 
 export default function SpikeLandingPage() {
@@ -218,11 +219,7 @@ export default function SpikeLandingPage() {
           <div className="flex justify-center">
             <div className="relative inline-flex items-center justify-center" style={{ animation: 'spikeFloat 6s ease-in-out infinite' }}>
               <div className="absolute -inset-6 bg-gradient-to-r from-[#E86A53] via-emerald-400 to-[#E86A53] rounded-full blur-3xl opacity-35 animate-pulse" />
-              <img
-                src="https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding/logo.png?v=1"
-                alt="SPIKE | سبايك - Shop Smarter"
-                className={`relative h-56 sm:h-80 lg:h-96 w-auto object-contain transition-transform duration-500 hover:scale-110 cursor-pointer drop-shadow-2xl ${isDark ? 'bg-white/95 rounded-3xl p-4' : ''}`}
-              />
+              <SpikeLogo dark={isDark} alt="SPIKE | سبايك - Shop Smarter" className="relative h-56 sm:h-80 lg:h-96 w-auto object-contain transition-transform duration-500 hover:scale-110 cursor-pointer drop-shadow-2xl" />
             </div>
           </div>
 

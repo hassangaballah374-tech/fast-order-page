@@ -1,38 +1,25 @@
-'use client';
-
 import React from 'react';
 
-export const SPIKE_LOGO_URL = 'https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding/icon.png?v=1';
+/* شعار سبايك: نسخة للمود النهاري ونسخة للمود الليلي.
+   - لو مرّرت dark (true/false) بيتعرض الشعار المناسب مباشرة (صفحات React-state زي الرئيسية والأدمن).
+   - لو ما مرّرتش، بيتعرض الاتنين والـ CSS يختار حسب ثيم الصفحة: لوحة التاجر (.app.dk) والمتجر (.spk[data-dk="1"]). */
+export const LOGO_LIGHT = '/brand/spike-light.png';
+export const LOGO_NIGHT = '/brand/spike-night.jpg';
 
-export default function SpikeBrandHeader({ 
-  height = 'h-11', 
-  className = '', 
-  showSlogan = true 
-}) {
+const CSS = `.spk-lg-n{display:none!important}
+.app.dk .spk-lg-n,.spk[data-dk="1"] .spk-lg-n{display:block!important}
+.app.dk .spk-lg-l,.spk[data-dk="1"] .spk-lg-l{display:none!important}
+.spk-lg-n{border-radius:14%/12%}`;
+
+export default function SpikeLogo({ dark, className = '', style, alt = 'سبايك | SPIKE', ...rest }) {
+  if (typeof dark === 'boolean') {
+    return <img src={dark ? LOGO_NIGHT : LOGO_LIGHT} alt={alt} className={`${className}${dark ? ' spk-lg-round' : ''}`} style={dark ? { borderRadius: '10%/9%', ...style } : style} {...rest} />;
+  }
   return (
-    <div className={`flex items-center gap-3 select-none ${className}`}>
-      <img
-        src={SPIKE_LOGO_URL}
-        alt="سبايك | SPIKE"
-        className={`${height} w-auto object-contain`}
-        loading="eager"
-      />
-      <div className="flex flex-col justify-center leading-none">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xl font-black tracking-tight text-[#0E1E38] dark:text-white">
-            سبايك
-          </span>
-          <span className="text-xl font-light text-slate-400">|</span>
-          <span className="text-xl font-black tracking-tight text-[#0E1E38] dark:text-white">
-            SPIKE
-          </span>
-        </div>
-        {showSlogan && (
-          <span className="text-[10px] font-bold text-[#E86A53] mt-1 tracking-normal">
-            ابنِ متجرك.. وضاعف طلباتك
-          </span>
-        )}
-      </div>
-    </div>
+    <>
+      <style>{CSS}</style>
+      <img src={LOGO_LIGHT} alt={alt} className={`spk-lg-l ${className}`} style={style} {...rest} />
+      <img src={LOGO_NIGHT} alt={alt} className={`spk-lg-n ${className}`} style={style} {...rest} />
+    </>
   );
 }
