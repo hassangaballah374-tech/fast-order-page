@@ -522,7 +522,7 @@ export const SHOP_CSS = `
 .spk .mm-btn i:nth-child(2){width:14px;align-self:center}
 .spk .mm-root{position:fixed;inset:0;z-index:2147483000}
 .spk .mm-scrim{position:absolute;inset:0;background:rgba(3,15,24,.55);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);animation:mmf .2s ease}
-.spk .mm-pn{position:absolute;top:0;bottom:0;inset-inline-start:0;width:min(88vw,360px);background:var(--card);color:var(--ink);display:flex;flex-direction:column;box-shadow:0 0 50px rgba(0,0,0,.35);animation:mms .26s cubic-bezier(.2,.8,.2,1);height:100%;max-height:100dvh}
+.spk .mm-pn{position:absolute;top:0;bottom:0;inset-inline-start:0;width:min(74vw,320px);background:var(--card);color:var(--ink);display:flex;flex-direction:column;box-shadow:0 0 50px rgba(0,0,0,.35);animation:mms .26s cubic-bezier(.2,.8,.2,1);height:100%;max-height:100dvh}
 .spk .mm-top{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--ln);padding-top:max(14px,env(safe-area-inset-top))}
 .spk .mm-logo{display:flex;align-items:center;gap:10px;flex:1;min-width:0;font-weight:900;font-size:17px;color:var(--ink)}
 .spk .mm-logo img{height:34px;width:auto;max-width:90px;object-fit:contain}
@@ -610,4 +610,10 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 @media(min-width:560px){.spk .r2{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .spk .r2>*,.spk .fld,.spk .frm,.spk .card,.spk form{min-width:0}
 .spk .in,.spk input,.spk select,.spk textarea{max-width:100%;min-width:0}
+
+/* الحواف: .sec كان بيصفّر الحشو الأفقي بتاع .wrap فالأقسام كانت لازقة في حرف الشاشة */
+.spk div.wrap,.spk section.wrap,.spk header .wrap,.spk footer .wrap{padding-left:16px;padding-right:16px}
+.spk .ft .pwl,.spk .ft .pw{padding-left:16px;padding-right:16px}
+.spk .pwl img{max-width:70%;height:auto;max-height:44px}
+@media(min-width:700px){.spk div.wrap,.spk section.wrap{padding-left:24px;padding-right:24px}}
 `;
