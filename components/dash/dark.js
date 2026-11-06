@@ -5,7 +5,7 @@ export const DARK_CSS = `
 .app.dk,.app.dk *{color-scheme:dark}
 .app.dk .card{box-shadow:0 10px 30px -16px rgba(0,0,0,.6)}
 .app.dk .nv.act,.app.dk .btn.p{color:#04202F}
-.app.dk .nv.act .bn{background:rgba(0,0,0,.25);color:#04202F} 
+.app.dk .nv.act .bn{background:rgba(0,0,0,.25);color:#04202F}
 .app.dk .errbox{background:#3a1a1a;border-color:#7a2a2a;color:#feb2b2}
 .app.dk .bn{background:var(--cream);color:var(--b2)}
 .app.dk .bn.sp{background:#4a2f17;color:#f6ad55}

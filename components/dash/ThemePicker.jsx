@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { SHOP_CSS } from '../shop/style';
 import { THEMES } from '../../lib/storeKit';
-import { THEME_CATS, allThemeCss, FONTS_ALL } from '../../lib/themes100'; 
+import { THEME_CATS, allThemeCss, FONTS_ALL } from '../../lib/themes100';
 
 /* اختيار الثيم: بحث + تصنيفات + معاينة حية مصغّرة لكل ثيم بنفس CSS المتجر الحقيقي */
 const fontsHref = `https://fonts.googleapis.com/css2?${FONTS_ALL.map((f) => `family=${f.replace(/ /g, '+')}`).join('&')}&display=swap`;
