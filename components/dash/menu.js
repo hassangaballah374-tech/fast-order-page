@@ -32,6 +32,7 @@ export const MENU = [
       { id: 'themes', t: 'الثيمات' },
       { id: 'browse', t: 'شكل عرض المنتجات', badge: 'جديد' },
       { id: 'looks', t: 'الإطلالات', badge: 'جديد' },
+      { id: 'fitting', t: 'غرفة القياس', badge: 'جديد' },
       { id: 'sizing', t: 'باحث المقاس', badge: 'جديد' },
       { id: 'home', t: 'تعديل الصفحة الرئيسية' },
       { id: 'pages', t: 'الصفحات' },
