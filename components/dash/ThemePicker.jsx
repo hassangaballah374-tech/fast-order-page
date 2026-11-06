@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { SHOP_CSS } from '../shop/style';
 import { THEMES } from '../../lib/storeKit';
 import { THEME_CATS, allThemeCss, FONTS_ALL } from '../../lib/themes100';
+const CATS = ['الكل', 'المجالات', ...THEME_CATS.slice(1)];
 
 /* اختيار الثيم: بحث + تصنيفات + معاينة حية مصغّرة لكل ثيم بنفس CSS المتجر الحقيقي */
 const fontsHref = `https://fonts.googleapis.com/css2?${FONTS_ALL.map((f) => `family=${f.replace(/ /g, '+')}`).join('&')}&display=swap`;
@@ -70,7 +71,7 @@ export default function ThemePicker({ value, onPick }) {
         style={{ width: '100%', marginBottom: 10 }}
       />
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-        {THEME_CATS.map((c) => (
+        {CATS.map((c) => (
           <button key={c} type="button" onClick={() => setCat(c)} className={'btn sm' + (cat === c ? ' p' : '')}>{c}</button>
         ))}
       </div>
