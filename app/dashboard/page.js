@@ -5,6 +5,8 @@ import { supabase } from '../../lib/supabase';
 import { DashCtx, Spin, Field } from '../../components/dash/ui';
 import { MENU, flatMenu, groupOf } from '../../components/dash/menu';
 import { SCREENS } from '../../components/dash/registry';
+import Locked from '../../components/dash/Locked';
+import { LOCKS_KEY, EMPTY_LOCKS, parseLocks, isLocked } from '../../lib/featureLocks';
 import { DASH_CSS } from '../../components/dash/style';
 import { DARK_CSS } from '../../components/dash/dark';
 import { mergeConfig } from '../../lib/storeKit';
@@ -54,6 +56,7 @@ export default function MerchantDashboard() {
   const [authId, setAuthId] = useState('');
   const [store, setStore] = useState(null);
   const [rawCfg, setRawCfg] = useState({});
+  const [locks, setLocks] = useState(EMPTY_LOCKS);
   const [tab, setTab] = useState('stats');
   const [open, setOpen] = useState({});
   const [toast, setToast] = useState('');
@@ -105,6 +108,7 @@ export default function MerchantDashboard() {
       await loadStore(key);
       const { data: c } = await supabase.from('store_config').select('config').eq('store_id', key).maybeSingle();
       rawRef.current = c?.config && typeof c.config === 'object' ? c.config : {};
+      try { const { data: lk } = await supabase.from('platform_kv').select('value').eq('key', LOCKS_KEY).maybeSingle(); if (!off) setLocks(parseLocks(lk?.value)); } catch { /* بدون أقفال */ }
       if (!off) { setRawCfg(rawRef.current); setReady(true); }
     })();
     return () => { off = true; };
@@ -200,15 +204,18 @@ export default function MerchantDashboard() {
     );
   }
 
-  const Screen = SCREENS[tab] || SCREENS.stats;
+  /* الأدمن بيشوف كل الشاشات مفتوحة (الأقفال للتجار بس) */
+  const lockedId = (id) => !isAdmin && isLocked(locks, id, uid);
+  const Screen = lockedId(tab) ? () => <Locked title={(FLAT.find((x) => x.id === tab) || {}).t} /> : (SCREENS[tab] || SCREENS.stats);
   const curGroup = groupOf(tab);
   const isOpen = (g) => (open[g] ?? curGroup === g);
   const initial = (store?.store_name || 'S').trim().charAt(0).toUpperCase();
 
   const NavItem = ({ it, sub }) => (
-    <button type="button" className={'nv' + (tab === it.id ? ' act' : '')} onClick={() => go(it.id)}>
+    <button type="button" className={'nv' + (tab === it.id ? ' act' : '') + (lockedId(it.id) ? ' lk' : '')} onClick={() => go(it.id)}>
       {it.i && !sub && <span className="ic">{it.i}</span>}
       <span className="tx">{it.t}</span>
+      {lockedId(it.id) && <span title="غير مفعّلة" aria-label="مقفولة">🔒</span>}
       {it.spike && <span className="spk" title="إضافة حصرية من سبايك">✦</span>}
       {it.badge && <em className={'bn' + (it.badge === 'سبايك' ? ' sp' : '')}>{it.badge}</em>}
     </button>
@@ -308,7 +315,7 @@ export default function MerchantDashboard() {
                 <div style={{ marginTop: 10, display: 'grid', gap: 2 }}>
                   {cmdList.map((x) => (
                     <button key={x.id} type="button" className="nv" onClick={() => { go(x.id); setCmd(false); setCq(''); }}>
-                      <span className="tx">{x.t}</span><small className="mut">{x.group}</small>
+                      <span className="tx">{lockedId(x.id) ? '🔒 ' : ''}{x.t}</span><small className="mut">{x.group}</small>
                     </button>
                   ))}
                   {cmdList.length === 0 && <div className="c mut">لا توجد نتائج</div>}

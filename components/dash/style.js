@@ -28,6 +28,7 @@ export const DASH_CSS = `
 .nv .chev{font-size:11px;opacity:.55;transition:transform .08s}
 .nv.open .chev{transform:rotate(180deg)}
 .nvsub{display:flex;flex-direction:column;gap:1px;margin:2px 0 6px;margin-inline-start:22px;padding-inline-start:10px;border-inline-start:2px solid var(--ln)}
+.nv.lk{opacity:.55}
 .nvsub .nv{min-height:36px;font-weight:600;font-size:13px;color:#3a5266}
 .nvsub .nv.act{color:#fff}
 .nvh{margin:14px 12px 4px;color:var(--mut);font-size:11.5px;font-weight:800}

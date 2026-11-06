@@ -20,6 +20,7 @@ import PaymentNote from '../../components/admin/PaymentNote';
 import ThemeColors from '../../components/admin/ThemeColors'; 
 import AdminPromos from '../../components/admin/AdminPromos';
 import AdminApps from '../../components/admin/AdminApps';
+import AdminFeatureLocks from '../../components/admin/AdminFeatureLocks';
 import AdminServiceRequests from '../../components/admin/AdminServiceRequests';
 const BRAND_BASE = 'https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding';
 const ICON_PNG = `${BRAND_BASE}/icon.png?v=3`;
@@ -117,6 +118,7 @@ export default function SpikeSuperAdminDashboard() {
     services: 'manage_stores',
     promos: 'manage_finance',
     apps: 'manage_stores',
+    features: 'manage_stores',
     admins: 'manage_admins',
     audit: 'manage_admins',
     broadcast: 'manage_admins',
@@ -588,6 +590,7 @@ export default function SpikeSuperAdminDashboard() {
     { id: 'services', title: 'طلبات الخدمات', icon: '🧰', count: null },
     { id: 'promos', title: isAr ? 'العروض والأكواد' : 'Offers & Codes', icon: '🎟️', count: null },
     { id: 'apps', title: isAr ? 'التطبيقات والمميزات' : 'Apps & Features', icon: '🧩', count: null },
+    { id: 'features', title: isAr ? 'قفل ميزات التاجر' : 'Merchant feature locks', icon: '🔒', count: null },
     { id: 'orders', title: t.navOrders, icon: '📦', count: orders.length },
     { id: 'inventory', title: t.navInventory, icon: '🏷️', count: products.length },
     { id: 'integrations', title: t.navIntegrations, icon: '🔌', count: null },
@@ -1475,6 +1478,7 @@ export default function SpikeSuperAdminDashboard() {
           {shown('promos') && <AdminPromos isDark={isDark} />}
           {shown('services') && <AdminServiceRequests isDark={isDark} />}
           {shown('apps') && <AdminApps isDark={isDark} />}
+          {shown('features') && <AdminFeatureLocks isDark={isDark} />}
           {shown('billing') && <AdminBilling isDark={isDark} initial="stores" onChanged={fetchAllData} />}
 
           {/* تبويب سجل الحركات */}
