@@ -5,7 +5,7 @@ import { PageHead, Empty } from './ui';
 
 const Loading = () => <div className="card"><p className="mut">جاري التحميل...</p></div>;
 const L = (loader, name) => dynamic(() => loader().then((m) => m[name]), { ssr: false, loading: Loading });
- 
+
 function Soon() {
   return (
     <>
@@ -48,6 +48,7 @@ const base = {
 
   themes: L(D, 'ThemesScreen'),
   browse: L(() => import('./screens/Browse'), 'BrowseScreen'),
+  looks: L(() => import('./screens/Looks'), 'LooksScreen'),
   sizing: L(() => import('./screens/Sizing'), 'SizingScreen'),
   home: L(D, 'HomeScreen'),
   pages: L(D, 'PagesScreen'),
