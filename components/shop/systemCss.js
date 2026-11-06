@@ -129,8 +129,8 @@ export const SYS_CSS = `
 /* الثيمات الداكنة: بلاطة الصورة بيضاء عشان خلفيات الصور البيضا تذوب */
 .spk[data-ob][data-dk="1"] .pc-img,.spk[data-ob][data-dk="1"] .gal-main,.spk[data-ob][data-dk="1"] .gal-th button,.spk[data-ob][data-dk="1"] .cat img,.spk[data-ob][data-dk="1"] .cat .ph{background:#fff}
 /* ===== هوية سبايك (نهاري/ليلي): تفعل مع ثيمي «سبايك نهاري/ليلي» فقط ===== */
-.spk[data-mode="night"]{--bg:#061C2A!important;--card:#0A2A3E!important;--ink:#E8F1F8!important;--mut:#8FA9BC!important;--ln:#16435D!important;--tint:#0F3650!important;--tint2:#082436!important;--deep:#02131E!important;color-scheme:dark}
-.spk[data-mode="night"][data-pal="1"]{--c:#5BB6E0!important;--onc:#04202F!important}
+.spk[data-mode="night"]{--bg:var(--n-bg,#061C2A)!important;--card:var(--n-card,#0A2A3E)!important;--ink:var(--n-ink,#E8F1F8)!important;--mut:var(--n-mut,#8FA9BC)!important;--ln:var(--n-ln,#16435D)!important;--tint:var(--n-tint,#0F3650)!important;--tint2:var(--n-tint2,#082436)!important;--deep:var(--n-deep,#02131E)!important;color-scheme:dark}
+.spk[data-mode="night"][data-pal="1"]{--c:var(--n-c,#5BB6E0)!important;--onc:var(--n-onc,#04202F)!important}
 .spk[data-mode="night"]{background:var(--bg);color:var(--ink)}
 .spk .mode{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--ln2,var(--ln));background:transparent;color:var(--ink);font-size:17px;cursor:pointer;flex:none;display:inline-flex;align-items:center;justify-content:center;line-height:1}
 .spk .mode:hover{border-color:var(--ink)}
