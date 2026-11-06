@@ -570,4 +570,13 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .sbx-ic{width:42px;height:42px;padding:0;border:1.5px solid var(--ln);border-radius:12px}
 .spk .hd .mode{display:none}
 }
+
+/* ===== منع تمدد الصفحة أفقياً (عنوان/كلمة طويلة بدون مسافات كانت بتوسّع الشاشة على الموبايل) ===== */
+.spk{overflow-x:clip}
+.spk .pv,.spk .cl,.spk .ob-fgrid,.spk .lk-grid,.spk .fr-grid{min-width:0}
+.spk .pv>*,.spk .cl>*,.spk .info,.spk .gal,.spk .wrap,.spk .ob-fgrid>*,.spk .lk-grid>*,.spk .fr-grid>*{min-width:0;max-width:100%}
+.spk .pv{grid-template-columns:minmax(0,1fr)}
+@media(min-width:900px){.spk .pv{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}}
+.spk h1,.spk h2,.spk h3,.spk .pc-t,.spk .pc-name,.spk .price,.spk .desc,.spk .info p,.spk .ci,.spk .ob-finfo h2{overflow-wrap:anywhere;word-break:normal}
+.spk .chips{min-width:0}
 `;
