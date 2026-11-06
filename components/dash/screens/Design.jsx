@@ -42,15 +42,42 @@ function ThemePreview({ d }) {
 /* شبكة الثيمات: بتعرض أول 12 بس والباقي بزرار، عشان الصفحة ماتبقاش بطول آلاف البكسلات */
 function ThemeGrid({ draft, set }) {
   const [all, setAll] = useState(false);
-  const shown = all ? THEMES : THEMES.slice(0, 12).concat(THEMES.slice(12).filter((t) => t.id === draft.theme));
+  const ind = THEMES.filter((t) => t.industry);
+  const rest = THEMES.filter((t) => !t.industry);
+  const shown = all ? rest : rest.slice(0, 12).concat(rest.slice(12).filter((t) => t.id === draft.theme));
+  const pickTheme = (t) => { set('theme', t.id); set('color', t.color); set('radius', t.radius); };
   return (
     <div style={{ marginTop: 16 }}>
-      <h3>🎨 اختر الثيم <small>({shown.length} من {THEMES.length})</small></h3>
+      <h3>🏷️ ثيمات مقترحة حسب المجال <small>({ind.length})</small></h3>
+      <p className="mut" style={{ fontSize: 12.5, margin: '0 0 10px' }}>كل ثيم مبني على ألوان وهوية مجاله، وله نسخة ليلية يبدّل لها العميل بزر 🌙 في المتجر.</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 12, marginBottom: 22 }}>
+        {ind.map((t) => (
+          <button key={t.id} type="button" className={'thm' + (draft.theme === t.id ? ' act' : '')} onClick={() => pickTheme(t)} aria-label={t.name}>
+            <div style={{ background: t.bg, border: `1px solid ${t.ln}`, borderRadius: 10, padding: 8, display: 'grid', gap: 6 }}>
+              <div style={{ background: t.tint, borderRadius: 8, padding: '10px 8px', display: 'grid', gap: 5 }}>
+                <i style={{ display: 'block', height: 7, width: '62%', borderRadius: 4, background: t.ink }} />
+                <i style={{ display: 'block', height: 5, width: '40%', borderRadius: 4, background: t.mut }} />
+                <i style={{ display: 'block', height: 12, width: 44, borderRadius: Math.min(10, t.radius), background: t.color }} />
+              </div>
+              <div style={{ display: 'flex', gap: 5 }}>
+                {[1, 2, 3].map((k) => <i key={k} style={{ flex: 1, height: 26, borderRadius: Math.min(8, t.radius), background: t.card, border: `1px solid ${t.ln}` }} />)}
+              </div>
+              <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                <i style={{ flex: 1, height: 12, borderRadius: 4, background: t.deep }} />
+                <i title="النسخة الليلية" style={{ width: 34, height: 12, borderRadius: 4, background: t.n.bg, border: `1px solid ${t.n.ln}`, boxShadow: `inset -14px 0 0 ${t.n.c}` }} />
+              </div>
+            </div>
+            <b style={{ display: 'block', marginTop: 8 }}>{t.icon} {t.name}</b>
+            <small className="mut" style={{ display: 'block' }}>{t.desc}</small>
+          </button>
+        ))}
+      </div>
+      <h3>🎨 كل الثيمات <small>({shown.length} من {rest.length})</small></h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
         {shown.map((t) => (
           <button
             key={t.id} type="button" className={'thm' + (draft.theme === t.id ? ' act' : '')}
-            onClick={() => { set('theme', t.id); set('color', t.color); set('radius', t.radius); }}
+            onClick={() => pickTheme(t)}
           >
             <div className="pvw" style={{ background: t.bg, border: `1px solid ${t.ln}` }}>
               <i style={{ background: t.color, width: '45%' }} />
@@ -62,8 +89,8 @@ function ThemeGrid({ draft, set }) {
           </button>
         ))}
       </div>
-      {THEMES.length > 12 && (
-        <button type="button" className="btn" style={{ marginTop: 12 }} onClick={() => setAll(!all)}>{all ? 'عرض أقل' : `عرض كل الثيمات (${THEMES.length})`}</button>
+      {rest.length > 12 && (
+        <button type="button" className="btn" style={{ marginTop: 12 }} onClick={() => setAll(!all)}>{all ? 'عرض أقل' : `عرض كل الثيمات (${rest.length})`}</button>
       )}
     </div>
   );
