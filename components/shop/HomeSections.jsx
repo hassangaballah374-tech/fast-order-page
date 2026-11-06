@@ -8,6 +8,7 @@ import { pickStyle } from '../../lib/browse';
 import { liveLooks } from '../../lib/looks';
 import LooksView from './LooksView';
 import FittingRoom from './FittingRoom';
+import { liveShowcases } from '../../lib/showcases';
 import { fittingReady } from '../../lib/fitting';
 
 const DEFAULT_TRUST = ['🚚|شحن سريع|لكل محافظات مصر', '💵|الدفع عند الاستلام|ادفع بعد ما تعاين طلبك', '📞|دعم عبر واتساب|نرد عليك بسرعة'];
@@ -55,6 +56,20 @@ export default function HomeSections({ cfg, base, products, categories, reviews,
                 </div>
               </div>
             </div>
+          );
+        }
+        if (s.type === 'showcases') {
+          const scs = liveShowcases(cfg, products).filter((x) => x.home);
+          if (!scs.length) return null;
+          return (
+            <React.Fragment key={key}>
+              {scs.map((x) => (
+                <section className="sec" key={x.id}>
+                  <div className="wrap"><div className="sh"><h2>{x.name}</h2>{x.subtitle ? <p className="mut">{x.subtitle}</p> : null}<a className="ob-lnk" href={`${base}/s/${x.id}`}>عرض الكل ←</a></div></div>
+                  <BrowseView style={x.style} list={x.list} />
+                </section>
+              ))}
+            </React.Fragment>
           );
         }
         if (s.type === 'fitting') {
