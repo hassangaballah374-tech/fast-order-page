@@ -52,6 +52,7 @@ export default async function ShopLayout({ children, params }) {
   const style = {
     '--c': color, '--onc': onColor(color), '--bg': th.bg, '--card': th.card, '--ink': th.ink, '--mut': th.mut, '--ln': th.ln,
     ...(th.pal ? { '--tint': th.tint, '--tint2': th.tint2, '--deep': th.deep } : {}),
+    ...(th.pal && th.n ? { '--n-bg': th.n.bg, '--n-card': th.n.card, '--n-ink': th.n.ink, '--n-mut': th.n.mut, '--n-ln': th.n.ln, '--n-tint': th.n.tint, '--n-tint2': th.n.tint2, '--n-deep': th.n.deep, '--n-c': th.n.c, '--n-onc': th.n.onc } : {}),
     '--r': `${radius}px`, '--cols': cols, '--font': `'${font}'`, colorScheme: th.dark ? 'dark' : 'light',
   };
   const cls = `spk ${b.card_style === 'outline' ? 'outline' : b.card_style === 'flat' ? 'flat' : 'soft'}`;
