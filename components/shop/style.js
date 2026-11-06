@@ -304,7 +304,8 @@ export const SHOP_CSS = `
 .spk .ob-th{position:absolute;top:3px;bottom:3px;border-radius:99px;background:linear-gradient(var(--card),color-mix(in srgb,var(--ink) 8%,var(--card)));box-shadow:0 2px 6px color-mix(in srgb,var(--ink) 35%,transparent),inset 0 0 0 1px color-mix(in srgb,var(--ink) 8%,transparent)}
 .spk .ob-pick{max-width:560px;margin:14px auto 0;padding:0 16px;text-align:center;color:var(--ink)}
 .spk .ob-lbl{font-size:11px;letter-spacing:.06em;color:var(--mut);margin-bottom:10px;font-weight:700}
-.spk .ob-sz{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.spk .ob-sz{display:flex;flex-wrap:wrap;gap:8px}
+.spk .ob-sz button{flex:1 1 56px;min-width:56px}
 .spk .ob-sz button{border:1.5px solid var(--ln);background:var(--card);color:var(--ink);border-radius:10px;padding:11px 6px;font:inherit;font-weight:800;font-size:14px;cursor:pointer;min-height:44px;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s,border-color .15s}
 .spk .ob-sz button:hover:not(:disabled){border-color:var(--ink)}
 .spk .ob-sz button.ld,.spk .ob-sz button.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -476,7 +477,7 @@ export const SHOP_CSS = `
 .spk .lk-pr{font-weight:800;font-size:14px;margin:2px 0 6px}
 .spk .lk-sold{color:#c53030;font-size:12.5px;font-weight:700}
 .spk .lk-chips{display:flex;flex-wrap:wrap;gap:6px}
-.spk .lk-chips button{min-width:38px;height:34px;padding:0 10px;border-radius:10px;border:1.5px solid var(--ln);background:var(--bg);color:var(--ink);font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.spk .lk-chips button{flex:1 1 44px;min-width:44px;height:34px;padding:0 10px;border-radius:10px;border:1.5px solid var(--ln);background:var(--bg);color:var(--ink);font:inherit;font-weight:700;font-size:13px;cursor:pointer}
 .spk .lk-chips button.sel{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .spk .lk-opt{margin-top:6px}
 .spk .lk-ac{display:flex;flex-direction:column;gap:8px;align-items:center;flex:none}

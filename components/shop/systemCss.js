@@ -158,4 +158,12 @@ export const SYS_CSS = `
 .spk[data-ob][data-pal="1"] .ft .pw{color:rgba(255,255,255,.55)}
 .spk[data-mode="night"] .pc-img,.spk[data-mode="night"] .gal-main,.spk[data-mode="night"] .gal-th button,.spk[data-mode="night"] .cat img,.spk[data-mode="night"] .cat .ph{background:#fff}
 .spk[data-mode="night"] .ob-it,.spk[data-mode="night"] .ob-fpic,.spk[data-mode="night"] .ob-ths img{mix-blend-mode:normal}
+@media(max-width:699px){
+.spk[data-ob] .chips{display:flex;flex-wrap:wrap;gap:6px}
+.spk[data-ob] .chips .chip{flex:1 1 52px;min-width:52px;padding:10px 6px}
+.spk .ob-sz{gap:6px}
+.spk .ob-sz button{flex:1 1 48px;min-width:48px}
+.spk .lk-chips{gap:6px}
+.spk .sf-link{padding:10px 0;font-size:13.5px}
+}
 `;
