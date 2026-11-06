@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabase';
-
+ 
 /* ================= إعدادات: عدّل السطرين دول فقط ================= */
 export const ADMIN_EMAIL = 'hassanhosny2007@gmail.com'; 
 const ADMIN_ROUTE = '/admin';         // مسار صفحة الإدارة
