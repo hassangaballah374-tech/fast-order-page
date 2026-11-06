@@ -6,7 +6,7 @@ export const DASH_CSS = `
   color:var(--ink);font-family:'Tajawal',sans-serif;font-size:14px;line-height:1.55}
 .app *{box-sizing:border-box}
 .app button{font-family:inherit}
-.num{font-family:Inter,'Tajawal',sans-serif;font-variant-numeric:tabular-nums}
+.num{font-family:Inter,'Tajawal',sans-serif;font-variant-numeric:tabular-nums} 
 .app h1,.app h2,.app h3{margin:0}
 .app a{color:var(--b2)}
 
