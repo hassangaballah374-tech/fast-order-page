@@ -7,6 +7,8 @@ import BrowseView from './BrowseView';
 import { pickStyle } from '../../lib/browse';
 import { liveLooks } from '../../lib/looks';
 import LooksView from './LooksView';
+import FittingRoom from './FittingRoom';
+import { fittingReady } from '../../lib/fitting';
 
 const DEFAULT_TRUST = ['🚚|شحن سريع|لكل محافظات مصر', '💵|الدفع عند الاستلام|ادفع بعد ما تعاين طلبك', '📞|دعم عبر واتساب|نرد عليك بسرعة'];
 const lines = (v) => (Array.isArray(v) ? v : String(v || '').split('\n')).map((x) => String(x).trim()).filter(Boolean);
@@ -54,6 +56,11 @@ export default function HomeSections({ cfg, base, products, categories, reviews,
               </div>
             </div>
           );
+        }
+        if (s.type === 'fitting') {
+          const fd = fittingReady(cfg, products);
+          if (!fd) return null;
+          return <section className="wrap sec" key={key}><FittingRoom data={{ ...fd, title: s.title || fd.title }} /></section>;
         }
         if (s.type === 'looks') {
           const lk = liveLooks(cfg, products);
