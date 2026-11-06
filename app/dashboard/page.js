@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { DashCtx, Spin, Field } from '../../components/dash/ui';
 import { MENU, flatMenu, groupOf } from '../../components/dash/menu';
 import { SCREENS } from '../../components/dash/registry';
+import SpikeLogo from '../../components/SpikeLogo';
 import Locked from '../../components/dash/Locked';
 import { LOCKS_KEY, EMPTY_LOCKS, parseLocks, isLocked } from '../../lib/featureLocks';
 import { DASH_CSS } from '../../components/dash/style';
@@ -228,7 +229,7 @@ export default function MerchantDashboard() {
         <div className={'scrim' + (side ? ' on' : '')} onClick={() => setSide(false)} />
 
         <aside className={'side' + (side ? ' open' : '')} aria-label="القائمة الرئيسية">
-          <a href="/" className="spkbrand" title="سبايك"><img src="https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding/logo.png?v=3" alt="سبايك" /></a>
+          <a href="/" className="spkbrand" title="سبايك"><SpikeLogo /></a>
           <div className="sidehd">
             <div className="lg">{cfg.brand.logo ? <img src={cfg.brand.logo} alt="" /> : initial}</div>
             <div style={{ minWidth: 0 }}>
