@@ -46,6 +46,11 @@ export default function SearchBox() {
     setOpen(false); setMob(false);
     router.push(`${base}/products?q=${encodeURIComponent(term)}`);
   };
+  useEffect(() => {
+    const openIt = () => { setMob(true); setTimeout(() => { try { box.current?.querySelector('input')?.focus(); } catch { /* */ } }, 60); };
+    window.addEventListener('spike:search-open', openIt);
+    return () => window.removeEventListener('spike:search-open', openIt);
+  }, []);
   const done = () => { setOpen(false); setMob(false); setQ(''); };
 
   return (
