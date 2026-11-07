@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useShop } from './StoreContext';
 import { track } from './tracker';
 import { useFavs } from './favs';
-import { money, effectivePrice, saleActive, safeUrl, youtubeId, swatchGroup, isHttpUrl } from '../../lib/storeKit';
+import { money, effectivePrice, priceRange, overridePrice, saleActive, safeUrl, youtubeId, swatchGroup, isHttpUrl } from '../../lib/storeKit';
 
 const HEX = /^#[0-9a-fA-F]{3,8}$/;
 const lines = (v) => (Array.isArray(v) ? v : String(v || '').split('\n')).map((x) => String(x).trim()).filter(Boolean);
@@ -24,8 +24,9 @@ export function ProductCard({ p }) {
   const sg = swatchGroup(p);
   const [color, setColor] = useState('');
   const front = (sg && color && isHttpUrl(sg.images[color])) ? sg.images[color] : p.images[0];
+  const rg = priceRange(p);
   const price = effectivePrice(p);
-  const onSale = saleActive(p) && p.compare_price > price;
+  const onSale = !rg.varies && saleActive(p) && p.compare_price > price;
   const off = onSale ? Math.round((1 - price / p.compare_price) * 100) : 0;
   const out = soldOut(p);
   return (
@@ -57,7 +58,7 @@ export function ProductCard({ p }) {
         <Link href={`${base}/p/${p.id}`} className="pc-t">{p.title}</Link>
         {p.rating_count > 0 ? <div className="pc-r"><Stars value={p.rating_avg} /> <span className="mut num">{p.rating_avg} ({p.rating_count})</span></div> : null}
         <div className="pc-p">
-          <b className="num">{money(price, cur)}</b>
+          <b className="num">{rg.varies ? <small style={{ fontWeight: 600, marginInlineEnd: 4 }}>من</small> : null}{money(rg.min, cur)}</b>
           {onSale && <span className="old num">{money(p.compare_price, cur)}</span>}
         </div>
         <Link href={`${base}/p/${p.id}`} className="b p sm blk">{out ? 'التفاصيل' : 'عرض التفاصيل'}</Link>
