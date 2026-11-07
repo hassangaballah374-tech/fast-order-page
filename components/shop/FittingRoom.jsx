@@ -7,7 +7,7 @@ import { soldOut } from './ui';
 import { flyToCart } from './fly';
 import SizeHelp from './SizeFinder';
 import { chartFor, isSizeGroup } from '../../lib/sizeFinder';
-import { money, effectivePrice } from '../../lib/storeKit';
+import { money, effectivePrice, unitPrice } from '../../lib/storeKit';
 import { SLOTS } from '../../lib/fitting';
 
 /* غرفة القياس: اختار موديل، اضغط على قطع عشان تلبّسها، اسحب القطعة على الموديل لتظبيطها، ثم اختار المقاس وأضف اللي عجبك للسلة. */
@@ -67,7 +67,7 @@ export default function FittingRoom({ data }) {
     if (missing || !buyable.length) return;
     flyToCart(box.current && box.current.querySelector('img'), (buyable[0].images || [])[0]);
     buyable.forEach((p) => {
-      const price = effectivePrice(p);
+      const price = unitPrice(p, opts[p.id] || {});
       add({ product_id: p.id, title: p.title, image: p.images[0] || p.fit.image, price, qty: 1, options: opts[p.id] || {} });
       track('AddToCart', { value: price, items: [{ id: p.id, title: p.title, price, qty: 1 }] });
       hit(slug, 'cart', { product: String(p.id) });

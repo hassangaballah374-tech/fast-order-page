@@ -4,7 +4,7 @@ import { useShop } from './StoreContext';
 import { track } from './tracker';
 import Checkout from './Checkout';
 import { soldOut } from './ui';
-import { money, effectivePrice, saleActive } from '../../lib/storeKit';
+import { money, effectivePrice, unitPrice, overridePrice, saleActive } from '../../lib/storeKit';
 
 function ytId(u) {
   const m = String(u || '').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
@@ -40,8 +40,8 @@ export default function FunnelView({ funnel: fn, product: p }) {
   const [opts, setOpts] = useState({});
   const [qty, setQty] = useState(1);
   const sold = soldOut(p);
-  const price = effectivePrice(p);
-  const onSale = saleActive(p) && p.compare_price > price;
+  const price = unitPrice(p, opts);
+  const onSale = !(overridePrice(p, opts) > 0) && saleActive(p) && p.compare_price > price;
   const groups = p.variants || [];
   const optsOk = groups.every((g) => opts[g.name]);
   const vid = ytId(fn.video_url);

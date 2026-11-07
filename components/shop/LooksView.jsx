@@ -8,7 +8,7 @@ import { soldOut } from './ui';
 import { flyToCart } from './fly';
 import SizeHelp from './SizeFinder';
 import { chartFor, isSizeGroup } from '../../lib/sizeFinder';
-import { money, effectivePrice } from '../../lib/storeKit';
+import { money, effectivePrice, unitPrice } from '../../lib/storeKit';
 
 /* تسوّق الإطلالة: صف موديلز، ضغطة على إطلالة تعرض قطعها بمقاس لكل قطعة، وزر «أضف الإطلالة كاملة» بإجمالي السعر. */
 
@@ -42,7 +42,7 @@ export default function LooksView({ looks = [], title = '' }) {
   const openCart = () => { if (cfg.cart?.drawer === false) router.push(`${base}/cart`); else window.dispatchEvent(new Event('spike:cart-open')); };
   const setOpt = (p, g, v) => setOpts((c) => ({ ...c, [p.id]: { ...(c[p.id] || {}), [g.name]: v } }));
   const pushLine = (s) => {
-    const price = effectivePrice(s.p);
+    const price = unitPrice(s.p, s.o);
     add({ product_id: s.p.id, title: s.p.title, image: s.p.images[0] || '', price, qty: 1, options: s.o });
     track('AddToCart', { value: price, items: [{ id: s.p.id, title: s.p.title, price, qty: 1 }] });
     hit(slug, 'cart', { product: String(s.p.id) });
