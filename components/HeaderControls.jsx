@@ -14,7 +14,7 @@ export default function HeaderControls({ className = '' }) {
         onClick={toggleMobileView}
         className={`w-9 h-9 rounded-xl border flex items-center justify-center text-base transition cursor-pointer ${
           isMobileView
-            ? 'bg-[#00B050] text-white border-[#00B050] shadow-sm'
+            ? 'bg-[#0E8FC0] text-white border-[#0E8FC0] shadow-sm'
             : isDark
             ? 'border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700'
             : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
