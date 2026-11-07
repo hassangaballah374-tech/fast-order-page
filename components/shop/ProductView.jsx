@@ -94,7 +94,13 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
     return () => { clearTimeout(t); window.removeEventListener('scroll', onScroll); };
   }, [p.id]);
 
-  const toCheckout = () => { document.getElementById('checkout')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+  const toCheckout = () => {
+    const form = document.getElementById('checkout');
+    if (!form) return;
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    /* أول خانة = الاسم: نركّز عليها بعد ما السكرول يخلص */
+    setTimeout(() => { try { form.querySelector('input[autocomplete="name"]')?.focus({ preventScroll: true }); } catch (e) {} }, 450);
+  };
 
   const addToCart = () => {
     setMsg('');
