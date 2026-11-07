@@ -42,24 +42,70 @@ function Gallery({ value, onChange }) {
     setUrl('');
   };
   const makeFirst = (i) => onChange([list[i], ...list.filter((_, k) => k !== i)]);
+  const makeBack = (i) => { const rest = list.filter((_, k) => k !== i); onChange([rest[0], list[i], ...rest.slice(1)].filter(Boolean)); };
+  const slotHint = (n) => (n === 0 ? 'وجه المنتج' : 'ظهر المنتج');
 
   return (
     <div>
       <div className="gal">
         {list.map((u, i) => (
-          <div key={u + i} className={'gi' + (i === 0 ? ' first' : '')}>
-            <img src={u} alt="" onClick={() => i > 0 && makeFirst(i)} title={i > 0 ? 'اضغط لجعلها الصورة الرئيسية' : ''} style={{ cursor: i > 0 ? 'pointer' : 'default' }} />
+          <div key={u + i} className={'gi' + (i === 0 ? ' first' : i === 1 ? ' back' : '')}>
+            <img src={u} alt="" onClick={() => i > 0 && makeFirst(i)} title={i > 0 ? 'اضغط لجعلها وجه المنتج (الصورة الرئيسية)' : ''} style={{ cursor: i > 0 ? 'pointer' : 'default' }} />
             <button type="button" onClick={() => onChange(list.filter((_, k) => k !== i))} aria-label="حذف">✕</button>
+            {i > 1 && <button type="button" className="mkb" onClick={() => makeBack(i)} title="اجعلها ظهر المنتج" aria-label="اجعلها ظهر المنتج">ظهر</button>}
           </div>
         ))}
-        {list.length < 10 && <button type="button" className="add" disabled={busy} onClick={() => ref.current?.click()}>{busy ? '...' : '+'}</button>}
+        {list.length < 2 && Array.from({ length: 2 - list.length }).map((_, k) => (
+          <button key={'ph' + k} type="button" className="add slot" disabled={busy} onClick={() => ref.current?.click()}>
+            <span>{busy ? '...' : '+'}</span><small>{slotHint(list.length + k)}</small>
+          </button>
+        ))}
+        {list.length >= 2 && list.length < 10 && <button type="button" className="add" disabled={busy} onClick={() => ref.current?.click()}>{busy ? '...' : '+'}</button>}
       </div>
       <input ref={ref} type="file" accept="image/*" multiple hidden onChange={pick} />
       <div className="row" style={{ marginTop: 10, marginBottom: 0 }}>
         <input className="in num" dir="ltr" placeholder="أو الصق رابط صورة https://..." value={url} onChange={(e) => setUrl(e.target.value)} />
         <button type="button" className="btn sm" onClick={addUrl}>إضافة الرابط</button>
       </div>
-      <small className="hint">أول صورة هي الرئيسية. اضغط أي صورة لتصبح الرئيسية. حتى 10 صور.</small>
+      <small className="hint">الصورة الأولى = <b>وجه المنتج</b> (الرئيسية). الصورة الثانية = <b>ظهر المنتج</b>: لما العميل يضغط على المنتج في المتجر بيلف ويظهر الظهر، وضغطة تانية ترجعه للوجه. اضغط أي صورة لتصبح الوجه، أو زر «ظهر» لتصبح الظهر. حتى 10 صور.</small>
+    </div>
+  );
+}
+
+/* صورة لكل قيمة خيار (مثلاً صورة المنتج بكل لون). العميل بيضغط اللون فتظهر صورته. */
+const valuesOf = (text) => [...new Set(String(text || '').split(/[,،\n]/).map((s) => s.trim()).filter(Boolean))];
+function ValueImages({ values, map, onChange, isColor }) {
+  const { uid, say } = useDash();
+  const [open, setOpen] = useState(() => Object.keys(map || {}).length > 0 || isColor);
+  const [busyV, setBusyV] = useState('');
+  const refs = useRef({});
+  if (!values.length) return null;
+  const upload = async (v, f) => {
+    if (!f) return;
+    if (!/^image\//.test(f.type)) { say('الملف ليس صورة'); return; }
+    setBusyV(v);
+    try { const r = await uploadAsset(uid, f, 'products'); onChange({ ...(map || {}), [v]: r.url }); } catch (err) { say(err.message || 'تعذر الرفع'); }
+    setBusyV('');
+  };
+  if (!open) return <button type="button" className="btn sm" style={{ margin: '-4px 0 12px' }} onClick={() => setOpen(true)}>🖼 صورة لكل قيمة (مثلاً لكل لون)</button>;
+  return (
+    <div className="vimg" style={{ marginBottom: 14 }}>
+      <small className="hint" style={{ display: 'block', marginBottom: 8 }}>{isColor ? '🎨 ارفع صورة المنتج بكل لون. لما العميل يضغط على اللون بتظهر صورته.' : 'ارفع صورة لكل قيمة (اختياري). لما العميل يختارها بتظهر صورتها.'}</small>
+      <div className="vimg-g">
+        {values.map((v) => {
+          const u = (map || {})[v];
+          return (
+            <div className="vimg-i" key={v}>
+              <button type="button" className={'vimg-p' + (u ? ' has' : '')} disabled={busyV === v} onClick={() => refs.current[v]?.click()} aria-label={`صورة ${v}`}>
+                {u ? <img src={u} alt={v} /> : <span>{busyV === v ? '...' : '+'}</span>}
+              </button>
+              {u && <button type="button" className="vimg-x" aria-label={`حذف صورة ${v}`} onClick={() => { const m = { ...(map || {}) }; delete m[v]; onChange(m); }}>✕</button>}
+              <b>{v}</b>
+              <input ref={(el) => { refs.current[v] = el; }} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; upload(v, f); }} />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -80,7 +126,7 @@ function ProductEditor({ product, cats, products, api, onClose }) {
     description: product.description || '',
   }));
   const [images, setImages] = useState(() => (Array.isArray(product.images) ? product.images : []));
-  const [groups, setGroups] = useState(() => (Array.isArray(product.variants) ? product.variants : []).map((g) => ({ name: g.name || '', text: (g.values || []).join('، ') })));
+  const [groups, setGroups] = useState(() => (Array.isArray(product.variants) ? product.variants : []).map((g) => ({ imgs: g.images && typeof g.images === 'object' ? g.images : {}, name: g.name || '', text: (g.values || []).join('، ') })));
   const [offers, setOffers] = useState(() => (Array.isArray(product.offers) ? product.offers : []).map((o) => (
     o.percent ? { qty: o.qty, mode: 'percent', value: o.percent, label: o.label || '' } : { qty: o.qty, mode: 'total', value: o.total, label: o.label || '' }
   )));
@@ -105,7 +151,9 @@ function ProductEditor({ product, cats, products, api, onClose }) {
       const values = [...new Set(String(g.text || '').split(/[,،\n]/).map((s) => s.trim()).filter(Boolean))];
       if (!name && !values.length) continue;
       if (!name || values.length < 1) { setTab('variants'); say('كل خيار لازم له اسم وقيمة واحدة على الأقل'); return; }
-      variants.push({ name, values });
+      const images = {};
+      for (const v of values) if (/^https?:\/\//i.test((g.imgs || {})[v] || '')) images[v] = g.imgs[v];
+      variants.push(Object.keys(images).length ? { name, values, images } : { name, values });
     }
     const cleanOffers = [];
     for (const o of offers) {
@@ -177,13 +225,16 @@ function ProductEditor({ product, cats, products, api, onClose }) {
         <div>
           <p className="mut dsc">أضف خيارات مثل المقاس واللون. العميل لازم يختار كل خيار قبل الطلب. افصل القيم بفاصلة.</p>
           {groups.map((g, i) => (
-            <div className="row" key={i}>
+            <React.Fragment key={i}>
+            <div className="row">
               <input className="in" style={{ maxWidth: 160 }} placeholder="اسم الخيار (المقاس)" value={g.name} onChange={(e) => setGroups((gs) => gs.map((x, k) => (k === i ? { ...x, name: e.target.value } : x)))} />
               <input className="in" style={{ flex: 3 }} placeholder="S، M، L، XL" value={g.text} onChange={(e) => setGroups((gs) => gs.map((x, k) => (k === i ? { ...x, text: e.target.value } : x)))} />
               <button type="button" className="btn sm dng" onClick={() => setGroups((gs) => gs.filter((_, k) => k !== i))}>✕</button>
             </div>
+              <ValueImages values={valuesOf(g.text)} map={g.imgs || {}} isColor={/لون|الوان|ألوان|color|colour/i.test(g.name || '')} onChange={(m) => setGroups((gs) => gs.map((x, k) => (k === i ? { ...x, imgs: m } : x)))} />
+            </React.Fragment>
           ))}
-          {groups.length < 3 && <button type="button" className="btn sm" onClick={() => setGroups((gs) => [...gs, { name: '', text: '' }])}>+ إضافة خيار</button>}
+          {groups.length < 3 && <button type="button" className="btn sm" onClick={() => setGroups((gs) => [...gs, { name: '', text: '', imgs: {} }])}>+ إضافة خيار</button>}
           {groups.length > 0 && <small className="hint" style={{ marginTop: 10 }}>ملاحظة: المنتج اللي له خيارات لا يصلح كـ Order Bump.</small>}
         </div>
       )}
