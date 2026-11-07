@@ -616,4 +616,29 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .ft .pwl,.spk .ft .pw{padding-left:16px;padding-right:16px}
 .spk .pwl img{max-width:78%;height:104px;width:auto;object-fit:contain}
 @media(min-width:700px){.spk div.wrap,.spk section.wrap{padding-left:24px;padding-right:24px}}
+
+/* ===== قلب كارت المنتج: وجه/ظهر ===== */
+.spk .pc-flip{position:relative;cursor:pointer;perspective:1000px;-webkit-tap-highlight-color:transparent;outline:none}
+.spk .pc-flip .pc-face{position:absolute;inset:0;display:block;backface-visibility:hidden;-webkit-backface-visibility:hidden;transition:transform .6s cubic-bezier(.4,.2,.2,1);will-change:transform;background:inherit}
+.spk .pc-flip .pc-face img{width:100%;height:100%;object-fit:cover;display:block}
+.spk[data-ob] .pc-flip .pc-face img{object-fit:contain;padding:6%}
+.spk .pc-flip .pc-face:first-of-type{transform:rotateY(0deg)}
+.spk .pc-flip .pc-back{transform:rotateY(-180deg)}
+.spk .pc-flip.on .pc-face:first-of-type{transform:rotateY(180deg)}
+.spk .pc-flip.on .pc-back{transform:rotateY(0deg)}
+.spk .pc-flip:focus-visible{box-shadow:0 0 0 3px var(--c)}
+.spk .pc-hint{position:absolute;bottom:8px;inset-inline-end:8px;z-index:2;background:rgba(0,0,0,.62);color:#fff;font-style:normal;font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;pointer-events:none;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.spk .pc:hover .pc-flip img{transform:none}
+@media(prefers-reduced-motion:reduce){.spk .pc-flip .pc-face{transition:none}}
+
+/* ===== ألوان المنتج بصورها ===== */
+.spk .chip.sw{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 5px}
+.spk .chip.sw img{width:34px;height:34px;border-radius:8px;object-fit:cover;flex:none;border:1px solid var(--ln)}
+.spk .gal-sw{animation:swIn .35s ease}
+@keyframes swIn{from{opacity:.2;transform:scale(.97)}to{opacity:1;transform:none}}
+.spk .pc-sws{display:flex;gap:6px;padding:8px 12px 0;flex-wrap:wrap}
+.spk .pc-sw{width:26px;height:26px;border-radius:50%;border:2px solid var(--ln);padding:0;overflow:hidden;background:var(--card);cursor:pointer;flex:none}
+.spk .pc-sw img{width:100%;height:100%;object-fit:cover;display:block}
+.spk .pc-sw.on{border-color:var(--c);box-shadow:0 0 0 2px var(--tint,rgba(0,0,0,.08))}
+@media(prefers-reduced-motion:reduce){.spk .gal-sw{animation:none}}
 `;
