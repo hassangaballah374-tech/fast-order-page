@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useShop } from './StoreContext';
 import { track } from './tracker';
 import { useFavs } from './favs';
-import { money, effectivePrice, saleActive, safeUrl, youtubeId } from '../../lib/storeKit';
+import { money, effectivePrice, saleActive, safeUrl, youtubeId, swatchGroup, isHttpUrl } from '../../lib/storeKit';
 
 const HEX = /^#[0-9a-fA-F]{3,8}$/;
 const lines = (v) => (Array.isArray(v) ? v : String(v || '').split('\n')).map((x) => String(x).trim()).filter(Boolean);
@@ -17,17 +17,40 @@ export function Stars({ value = 5 }) {
 export const soldOut = (p) => p.track_stock && p.stock_quantity <= 0;
 
 export function ProductCard({ p }) {
-  const { base, cur, slug } = useShop();
+  const { base, cur, slug, cfg } = useShop();
   const fav = useFavs(slug);
+  const [flipped, setFlipped] = useState(false);
+  const canFlip = cfg?.browse?.flip !== false && (p.images || []).length >= 2;
+  const sg = swatchGroup(p);
+  const [color, setColor] = useState('');
+  const front = (sg && color && isHttpUrl(sg.images[color])) ? sg.images[color] : p.images[0];
   const price = effectivePrice(p);
   const onSale = saleActive(p) && p.compare_price > price;
   const off = onSale ? Math.round((1 - price / p.compare_price) * 100) : 0;
   const out = soldOut(p);
   return (
     <div className="pc">
-      <Link href={`${base}/p/${p.id}`} className="pc-img" aria-label={p.title}>
-        {p.images[0] ? <img src={p.images[0]} alt={p.title} loading="lazy" /> : null}
-      </Link>
+      {canFlip ? (
+        <div className={'pc-img pc-flip' + (flipped ? ' on' : '')} role="button" tabIndex={0} aria-pressed={flipped}
+          aria-label={flipped ? `${p.title} - اضغط لعرض الوجه` : `${p.title} - اضغط لعرض الظهر`}
+          onClick={() => setFlipped((v) => !v)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFlipped((v) => !v); } }}>
+          <span className="pc-face"><img src={front} alt={p.title} loading="lazy" /></span>
+          <span className="pc-face pc-back"><img src={p.images[1]} alt={`${p.title} - الظهر`} loading="lazy" /></span>
+          <i className="pc-hint" aria-hidden="true">{flipped ? 'الوجه ⟲' : 'الظهر ⟳'}</i>
+        </div>
+      ) : (
+        <Link href={`${base}/p/${p.id}`} className="pc-img" aria-label={p.title}>
+          {front ? <img src={front} alt={p.title} loading="lazy" /> : null}
+        </Link>
+      )}
+      {sg ? (
+        <div className="pc-sws" role="group" aria-label={sg.name}>
+          {sg.values.filter((v) => isHttpUrl(sg.images[v])).slice(0, 6).map((v) => (
+            <button key={v} type="button" className={'pc-sw' + (color === v ? ' on' : '')} title={v} aria-label={`${sg.name}: ${v}`} aria-pressed={color === v}
+              onClick={() => { setColor(color === v ? '' : v); setFlipped(false); }}><img src={sg.images[v]} alt="" loading="lazy" /></button>
+          ))}
+        </div>
+      ) : null}
       <button type="button" className={'pc-fav' + (fav.has(p.id) ? ' on' : '')} aria-label="المفضلة" onClick={() => fav.toggle(p.id)}>{fav.has(p.id) ? '♥' : '♡'}</button>
       {out ? <span className="bdg so">نفدت الكمية</span> : off > 0 ? <span className="bdg">خصم {off}%</span> : null}
       <div className="pc-b">
