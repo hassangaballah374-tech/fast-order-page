@@ -11,7 +11,7 @@ import { useFavs, pushViewed, readViewed } from './favs';
 import Checkout from './Checkout';
 import { Stars, ProductCard, Blocks, soldOut } from './ui';
 import FlipPic from './FlipPic';
-import { money, effectivePrice, saleActive, applyOffer, optionImage, isHttpUrl, splitImages, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
+import { money, effectivePrice, unitPrice, overridePrice, saleActive, applyOffer, optionImage, isHttpUrl, splitImages, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 function ReviewForm({ productId }) {
   const { slug } = useShop();
@@ -51,14 +51,15 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const { slug, cfg, cur, base, add, setBump: saveBump } = useShop();
   const router = useRouter();
   const [img, setImg] = useState(0);
-  const [opts, setOpts] = useState({});
   const [pinned, setPinned] = useState(true);
   const [qty, setQty] = useState(1);
   const [bumpOn, setBumpOn] = useState(false);
   const [msg, setMsg] = useState('');
   const sold = soldOut(p);
-  const price = effectivePrice(p);
-  const onSale = saleActive(p) && p.compare_price > price;
+  const [opts, setOpts] = useState({});
+  const ovr = overridePrice(p, opts) > 0;
+  const price = unitPrice(p, opts);
+  const onSale = !ovr && saleActive(p) && p.compare_price > price;
   const maxQty = p.track_stock ? Math.max(1, Math.min(50, p.stock_quantity)) : 50;
   const groups = p.variants || [];
   const sizeChart = chartFor(cfg.sizing, p);
@@ -167,7 +168,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
                 return (
                   <button type="button" key={v} className={'chip' + (sw ? ' sw' : '') + (opts[g.name] === v ? ' act' : '')} aria-pressed={opts[g.name] === v}
                     onClick={() => { setOpts({ ...opts, [g.name]: v }); if (sw) setPinned(true); }}>
-                    {sw ? <img src={sw} alt="" loading="lazy" /> : null}<span>{v}</span>
+                    {sw ? <img src={sw} alt="" loading="lazy" /> : null}<span>{v}</span>{Number(g.prices?.[v]) > 0 ? <small className="num" style={{ marginInlineStart: 6, opacity: .75 }}>{money(Number(g.prices[v]), cur)}</small> : null}
                   </button>
                 );
               })}</div>

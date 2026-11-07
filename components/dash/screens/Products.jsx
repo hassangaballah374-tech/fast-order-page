@@ -126,7 +126,7 @@ function ProductEditor({ product, cats, products, api, onClose }) {
     description: product.description || '',
   }));
   const [images, setImages] = useState(() => (Array.isArray(product.images) ? product.images : []));
-  const [groups, setGroups] = useState(() => (Array.isArray(product.variants) ? product.variants : []).map((g) => ({ imgs: g.images && typeof g.images === 'object' ? g.images : {}, name: g.name || '', text: (g.values || []).join('، ') })));
+  const [groups, setGroups] = useState(() => (Array.isArray(product.variants) ? product.variants : []).map((g) => ({ prices: g.prices && typeof g.prices === 'object' ? g.prices : {}, imgs: g.images && typeof g.images === 'object' ? g.images : {}, name: g.name || '', text: (g.values || []).join('، ') })));
   const [offers, setOffers] = useState(() => (Array.isArray(product.offers) ? product.offers : []).map((o) => (
     o.percent ? { qty: o.qty, mode: 'percent', value: o.percent, label: o.label || '' } : { qty: o.qty, mode: 'total', value: o.total, label: o.label || '' }
   )));
@@ -153,7 +153,18 @@ function ProductEditor({ product, cats, products, api, onClose }) {
       if (!name || values.length < 1) { setTab('variants'); say('كل خيار لازم له اسم وقيمة واحدة على الأقل'); return; }
       const images = {};
       for (const v of values) if (/^https?:\/\//i.test((g.imgs || {})[v] || '')) images[v] = g.imgs[v];
-      variants.push(Object.keys(images).length ? { name, values, images } : { name, values });
+      const prices = {};
+      for (const v of values) {
+        const raw = (g.prices || {})[v];
+        if (raw === undefined || raw === '' || raw === null) continue;
+        const n = asNumber(raw);
+        if (!(n > 0)) { setTab('variants'); say(`سعر «${v}» لازم يكون رقم أكبر من صفر (أو سيبه فاضي)`); return; }
+        prices[v] = n;
+      }
+      const vg = { name, values };
+      if (Object.keys(images).length) vg.images = images;
+      if (Object.keys(prices).length) vg.prices = prices;
+      variants.push(vg);
     }
     const cleanOffers = [];
     for (const o of offers) {
@@ -231,11 +242,25 @@ function ProductEditor({ product, cats, products, api, onClose }) {
               <input className="in" style={{ flex: 3 }} placeholder="S، M، L، XL" value={g.text} onChange={(e) => setGroups((gs) => gs.map((x, k) => (k === i ? { ...x, text: e.target.value } : x)))} />
               <button type="button" className="btn sm dng" onClick={() => setGroups((gs) => gs.filter((_, k) => k !== i))}>✕</button>
             </div>
+              {valuesOf(g.text).length > 0 && (
+                <div className="vprice" style={{ margin: '-2px 0 14px', padding: 10, border: '1px dashed var(--bd, #ccc)', borderRadius: 10 }}>
+                  <small className="hint" style={{ display: 'block', marginBottom: 8 }}>💰 سعر خاص لكل قيمة (اختياري). سيب الخانة فاضية وهياخد السعر الأساسي ({money(asNumber(price) || 0, cur)}).</small>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {valuesOf(g.text).map((v) => (
+                      <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                        <b style={{ minWidth: 28 }}>{v}</b>
+                        <input className="in" inputMode="decimal" style={{ width: 90, fontSize: 16 }} placeholder={String(asNumber(price) || '')} value={(g.prices || {})[v] ?? ''}
+                          onChange={(e) => { const val = e.target.value; setGroups((gs) => gs.map((x, k) => (k === i ? { ...x, prices: { ...(x.prices || {}), [v]: val } } : x))); }} />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
               <ValueImages values={valuesOf(g.text)} map={g.imgs || {}} isColor={/لون|الوان|ألوان|color|colour/i.test(g.name || '')} onChange={(m) => setGroups((gs) => gs.map((x, k) => (k === i ? { ...x, imgs: m } : x)))} />
             </React.Fragment>
           ))}
-          {groups.length < 3 && <button type="button" className="btn sm" onClick={() => setGroups((gs) => [...gs, { name: '', text: '', imgs: {} }])}>+ إضافة خيار</button>}
-          {groups.length > 0 && <small className="hint" style={{ marginTop: 10 }}>ملاحظة: المنتج اللي له خيارات لا يصلح كـ Order Bump.</small>}
+          {groups.length < 3 && <button type="button" className="btn sm" onClick={() => setGroups((gs) => [...gs, { name: '', text: '', imgs: {}, prices: {} }])}>+ إضافة خيار</button>}
+          {groups.length > 0 && <small className="hint" style={{ marginTop: 10 }}>ملاحظة: المنتج اللي له خيارات لا يصلح كـ Order Bump. لو أكتر من خيار له سعر خاص، بيتطبق الأعلى.</small>}
         </div>
       )}
 
