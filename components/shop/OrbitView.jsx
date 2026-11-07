@@ -7,9 +7,10 @@ import { track } from './tracker';
 import { soldOut } from './ui';
 import { flyToCart } from './fly';
 import { lockScroll } from './scrollLock';
+import FlipPic from './FlipPic';
 import SizeHelp from './SizeFinder';
 import { chartFor, isSizeGroup } from '../../lib/sizeFinder';
-import { money, effectivePrice, saleActive } from '../../lib/storeKit';
+import { money, effectivePrice, saleActive, splitImages } from '../../lib/storeKit';
 
 /* عرض «المدار»: المنتجات بتدور على مسار منحني، والعميل بيسحب العجلة (أو الشاشة) عشان يتنقل.
    ضغطة على مقاس = إضافة للسلة، وضغطة على المنتج الأوسط بتفتح العرض المركّز. */
@@ -198,6 +199,7 @@ export default function OrbitView({ list = [] }) {
   const p = cur0;
   const groups = p.variants || [];
   const chart = chartFor(cfg.sizing, p);
+  const gi = splitImages(p, cfg.browse?.flip !== false);
   const price = effectivePrice(p);
   const onSale = saleActive(p) && p.compare_price > price;
   const sold = soldOut(p);
@@ -325,12 +327,12 @@ export default function OrbitView({ list = [] }) {
           <button type="button" className="ob-cartp" data-fly-target="1" onClick={openCart} aria-label="السلة">🛒 <span className="num">{count}</span></button>
           <div className="ob-fgrid">
             <div className="ob-fimg">
-              <div className="ob-fpic" key={`${p.id}-${swap}`}>
-                {p.images[imgI] ? <img src={p.images[imgI]} alt={p.title} decoding="async" /> : <Ph p={p} />}
+              <FlipPic key={`${p.id}-${swap}`} className="ob-fpic" front={gi.list[imgI]} back={imgI === 0 ? gi.back : ''} alt={p.title}>
+                {!gi.list[imgI] ? <Ph p={p} /> : null}
                 <i className="ob-sh big" />
-              </div>
-              {p.images.length > 1 && (
-                <div className="ob-dots">{p.images.map((_, k) => <button key={k} type="button" className={k === imgI ? 'on' : ''} aria-label={`صورة ${k + 1}`} onClick={() => setImgI(k)} />)}</div>
+              </FlipPic>
+              {gi.list.length > 1 && (
+                <div className="ob-dots">{gi.list.map((_, k) => <button key={k} type="button" className={k === imgI ? 'on' : ''} aria-label={`صورة ${k + 1}`} onClick={() => setImgI(k)} />)}</div>
               )}
             </div>
             <div className="ob-finfo" key={`i-${p.id}`}>

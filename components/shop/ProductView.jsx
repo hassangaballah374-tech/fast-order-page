@@ -10,7 +10,8 @@ import { chartFor, isSizeGroup } from '../../lib/sizeFinder';
 import { useFavs, pushViewed, readViewed } from './favs'; 
 import Checkout from './Checkout';
 import { Stars, ProductCard, Blocks, soldOut } from './ui';
-import { money, effectivePrice, saleActive, applyOffer, optionImage, isHttpUrl, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
+import FlipPic from './FlipPic';
+import { money, effectivePrice, saleActive, applyOffer, optionImage, isHttpUrl, splitImages, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 function ReviewForm({ productId }) {
   const { slug } = useShop();
@@ -63,7 +64,9 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const sizeChart = chartFor(cfg.sizing, p);
   const optsOk = groups.every((g) => opts[g.name]);
   const colorImg = optionImage(p, opts);
-  const mainImg = (pinned && colorImg) || p.images[img] || '';
+  const gi = splitImages(p, cfg?.browse?.flip !== false);
+  const mainImg = (pinned && colorImg) || gi.list[img] || '';
+  const onFront = (pinned && colorImg) || img === 0;
   const offer = applyOffer(price, qty, p.offers);
   const bumpProd = p.upsell ? catalog.find((x) => x.id === String(p.upsell.product_id) && !soldOut(x)) : null;
   const bumpPct = p.upsell ? Math.min(90, Math.max(0, Number(p.upsell.percent) || 0)) : 0;
@@ -128,16 +131,16 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
       <Blocks list={blocks.filter((b) => b.placement === 'product_top')} />
       <div className="pv">
         <div className="gal">
-        <div className="gal-main">{mainImg ? <img key={mainImg} className="gal-sw" src={mainImg} alt={p.title} fetchPriority="high" decoding="async" /> : null}</div>
-          {p.images.length > 1 && (
+        <FlipPic key={mainImg} className="gal-main gal-sw" front={mainImg} back={onFront ? gi.back : ''} alt={p.title} fetchPriority="high" />
+          {gi.list.length > 1 && (
             <div className="gal-nav">
-              <button type="button" onClick={() => { setPinned(false); setImg((img - 1 + p.images.length) % p.images.length); }} aria-label="السابق">→</button>
-              <span className="num" dir="ltr">{String(img + 1).padStart(2, '0')} / {String(p.images.length).padStart(2, '0')}</span>
-              <button type="button" className="dk" onClick={() => { setPinned(false); setImg((img + 1) % p.images.length); }} aria-label="التالي">←</button>
+              <button type="button" onClick={() => { setPinned(false); setImg((img - 1 + gi.list.length) % gi.list.length); }} aria-label="السابق">→</button>
+              <span className="num" dir="ltr">{String(img + 1).padStart(2, '0')} / {String(gi.list.length).padStart(2, '0')}</span>
+              <button type="button" className="dk" onClick={() => { setPinned(false); setImg((img + 1) % gi.list.length); }} aria-label="التالي">←</button>
             </div>
           )}
-          {p.images.length > 1 && (
-            <div className="gal-th">{p.images.map((s, i) => <button key={i} type="button" className={i === img && !(pinned && colorImg) ? 'act' : ''} onClick={() => { setPinned(false); setImg(i); }} aria-label={`صورة ${i + 1}`}><img src={s} alt="" loading="lazy" /></button>)}</div>
+          {gi.list.length > 1 && (
+            <div className="gal-th">{gi.list.map((s, i) => <button key={i} type="button" className={i === img && !(pinned && colorImg) ? 'act' : ''} onClick={() => { setPinned(false); setImg(i); }} aria-label={`صورة ${i + 1}`}><img src={s} alt="" loading="lazy" /></button>)}</div>
           )}
         </div>
 
