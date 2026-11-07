@@ -25,7 +25,10 @@ export async function generateMetadata({ params }) {
     description,
     openGraph: { title, description, type: 'website', locale: 'ar_EG', images: cfg.seo.og_image ? [cfg.seo.og_image] : undefined },
   };
-  if (cfg.brand.favicon) meta.icons = { icon: cfg.brand.favicon };
+  meta.manifest = `/shop/${store.store_slug || params.slug}/manifest.webmanifest`;
+  meta.applicationName = store.store_name || title;
+  meta.appleWebApp = { capable: true, title: store.store_name || title, statusBarStyle: 'default' };
+  if (cfg.brand.favicon || /^https?:\/\//i.test(cfg.brand.logo || '')) meta.icons = { ...(cfg.brand.favicon ? { icon: cfg.brand.favicon } : {}), ...(/^https?:\/\//i.test(cfg.brand.logo || '') ? { apple: cfg.brand.logo } : {}) };
   if (cfg.seo.robots_index === false) meta.robots = { index: false, follow: false };
   if (cfg.tracking.google_site_verification) meta.verification = { google: cfg.tracking.google_site_verification };
   if (cfg.tracking.facebook_domain_verification) meta.other = { 'facebook-domain-verification': cfg.tracking.facebook_domain_verification };
