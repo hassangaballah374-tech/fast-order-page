@@ -312,4 +312,33 @@ html,body{max-width:100%;overflow-x:clip}
 @keyframes dshu{from{transform:translateY(100%)}to{transform:none}}
 @keyframes dshf{from{opacity:0}}
 @media(prefers-reduced-motion:reduce){.dsh-pn,.dsh-sc{animation:none}.dtab-i svg{transition:none}}
+/* تلميع الموبايل: أزرار بحجم لمس مريح + الطلبات ككروت */
+@media(max-width:900px){
+.btn{min-height:44px}
+.btn.sm{min-height:40px}
+.top .btn{min-height:40px}
+.in,select.in,textarea.in{font-size:16px}
+button,.btn,a,.nv,.tb{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+}
+@media(max-width:700px){
+.tbl.ord{min-width:0;display:block}
+.tbl.ord thead{display:none}
+.tbl.ord tbody{display:grid;gap:10px}
+.tbl.ord tr{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:5px 8px;align-items:start;padding:12px;border:1px solid var(--ln);border-radius:16px;background:var(--s)}
+.tbl.ord tr.sel{border-color:var(--b)}
+.tbl.ord td,.tbl.ord tr.sel td{padding:0;border:0;min-width:0;background:none}
+.tbl.ord td:nth-child(1){grid-column:1;grid-row:1}
+.tbl.ord td:nth-child(2){grid-column:2;grid-row:1}
+.tbl.ord td:nth-child(7){grid-column:3;grid-row:1;text-align:end}
+.tbl.ord td:nth-child(3){grid-column:2/4;grid-row:2}
+.tbl.ord td:nth-child(4){grid-column:2/4;grid-row:3;color:var(--mut);font-size:13px}
+.tbl.ord td:nth-child(5){grid-column:2/4;grid-row:4;max-width:none!important}
+.tbl.ord td:nth-child(5) span{white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:13px}
+.tbl.ord td:nth-child(6){grid-column:2;grid-row:5;font-size:16px}
+.tbl.ord td:nth-child(8){grid-column:3;grid-row:5;text-align:end}
+.tbl.ord td:nth-child(9){grid-column:2/4;grid-row:6;font-size:13px}
+.tbl.ord td:nth-child(10){grid-column:1/4;grid-row:7;margin-top:4px}
+.tbl.ord td:nth-child(10) .btn{width:100%}
+.tbl.ord input[type=checkbox]{width:22px;height:22px}
+}
 `;

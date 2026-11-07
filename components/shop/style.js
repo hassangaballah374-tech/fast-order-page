@@ -683,4 +683,11 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 }
 @keyframes bnup{from{transform:translateY(100%)}to{transform:none}}
 @media(prefers-reduced-motion:reduce){.spk .bn-pn{animation:none}.spk .bn-i svg{transition:none}}
+/* تلميع الموبايل: أهداف لمس مريحة */
+@media(max-width:699px){
+.spk button,.spk a,.spk .chip,.spk .b{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.spk .b{min-height:46px}
+.spk .chip{min-height:44px;display:inline-flex;align-items:center}
+.spk .qty button{width:46px;height:46px}
+}
 `;
