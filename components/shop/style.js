@@ -646,4 +646,11 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .gal-main.pc-flip:hover img{transform:none}
 .spk .ob-fpic.pc-flip{position:relative}
 .spk .ob-fpic .pc-face img{width:100%;height:100%;object-fit:contain}
+/* شعار التاجر في منتصف الهيدر على الشاشات الكبيرة */
+@media(min-width:1180px){
+.spk .hd-in{position:relative;height:72px}
+.spk .hd .logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);flex:none;z-index:1;max-width:260px}
+.spk .hd .logo img{max-height:52px;max-width:200px;width:auto;height:auto;object-fit:contain;border-radius:10px}
+.spk .hd .logo span{font-size:18px}
+}
 `;
