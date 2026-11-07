@@ -34,10 +34,10 @@ function Pick({ value, onChange, allowInherit, name }) {
 export function BrowseScreen() {
   const { cfg, saveCfg, say } = useDash();
   const cats = useTable('store_categories', { order: 'sort_order', asc: true });
-  const [d, setD] = useState(() => ({ style: 'orbit', by_cat: {}, ...(cfg.browse || {}) }));
+  const [d, setD] = useState(() => ({ style: 'orbit', by_cat: {}, flip: true, ...(cfg.browse || {}) }));
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { setD({ style: 'orbit', by_cat: {}, ...(cfg.browse || {}) }); setDirty(false); }, [cfg.browse]);
+  useEffect(() => { setD({ style: 'orbit', by_cat: {}, flip: true, ...(cfg.browse || {}) }); setDirty(false); }, [cfg.browse]);
 
   const setCat = (id, v) => {
     const by = { ...(d.by_cat || {}) };
@@ -46,7 +46,7 @@ export function BrowseScreen() {
   };
   const save = async () => {
     setBusy(true);
-    const ok = await saveCfg('browse', { style: d.style || 'orbit', by_cat: d.by_cat || {} });
+    const ok = await saveCfg('browse', { style: d.style || 'orbit', by_cat: d.by_cat || {}, flip: d.flip !== false });
     setBusy(false);
     if (ok !== false) { setDirty(false); say('تم حفظ شكل عرض المنتجات ✓'); }
   };
@@ -56,6 +56,12 @@ export function BrowseScreen() {
       <PageHead title="شكل عرض المنتجات" sub="اختر الطريقة اللي العميل بيتصفح بيها منتجاتك: الصفحة الرئيسية وصفحة كل المنتجات والأقسام.">
         <button className="b p" type="button" disabled={!dirty || busy} onClick={save}>{busy ? 'جاري الحفظ...' : 'حفظ'}</button>
       </PageHead>
+      <div className="card" style={{ marginBottom: 14 }}>
+        <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer' }}>
+          <input type="checkbox" checked={d.flip !== false} onChange={(e) => { setD({ ...d, flip: e.target.checked }); setDirty(true); }} style={{ marginTop: 4 }} />
+          <span><b>🔄 قلب الكارت (وجه وظهر)</b><span className="mut" style={{ display: 'block', fontSize: 12.5, marginTop: 4, lineHeight: 1.6 }}>لما العميل يضغط على صورة المنتج في الشبكة بيلف ويظهر الظهر، وضغطة تانية ترجعه للوجه. بيشتغل على المنتجات اللي ليها صورتين أو أكتر (الثانية = الظهر). الاسم وزر «عرض التفاصيل» تحت الصورة بيفتحوا صفحة المنتج.</span></span>
+        </label>
+      </div>
       <div className="card" style={{ marginBottom: 14 }}>
         <div><b>الشكل الافتراضي للمتجر</b><p className="mut" style={{ fontSize: 12.5, margin: '4px 0 12px' }}>بيتطبق على كل المنتجات ما عدا الأقسام اللي تخصصها تحت. العميل يقدر يبدّل بين الأشكال من صفحة المنتجات.</p>
           <Pick value={d.style} onChange={(v) => { setD({ ...d, style: v }); setDirty(true); }} name="الافتراضي" />
