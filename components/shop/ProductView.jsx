@@ -168,7 +168,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
                 return (
                   <button type="button" key={v} className={'chip' + (sw ? ' sw' : '') + (opts[g.name] === v ? ' act' : '')} aria-pressed={opts[g.name] === v}
                     onClick={() => { setOpts({ ...opts, [g.name]: v }); if (sw) setPinned(true); }}>
-                    {sw ? <img src={sw} alt="" loading="lazy" /> : null}<span>{v}</span>{Number(g.prices?.[v]) > 0 ? <small className="num" style={{ marginInlineStart: 6, opacity: .75 }}>{money(Number(g.prices[v]), cur)}</small> : null}
+                    {sw ? <img src={sw} alt="" loading="lazy" /> : null}<span>{v}</span>
                   </button>
                 );
               })}</div>
