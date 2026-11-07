@@ -42,24 +42,32 @@ function Gallery({ value, onChange }) {
     setUrl('');
   };
   const makeFirst = (i) => onChange([list[i], ...list.filter((_, k) => k !== i)]);
+  const makeBack = (i) => { const rest = list.filter((_, k) => k !== i); onChange([rest[0], list[i], ...rest.slice(1)].filter(Boolean)); };
+  const slotHint = (n) => (n === 0 ? 'وجه المنتج' : 'ظهر المنتج');
 
   return (
     <div>
       <div className="gal">
         {list.map((u, i) => (
-          <div key={u + i} className={'gi' + (i === 0 ? ' first' : '')}>
-            <img src={u} alt="" onClick={() => i > 0 && makeFirst(i)} title={i > 0 ? 'اضغط لجعلها الصورة الرئيسية' : ''} style={{ cursor: i > 0 ? 'pointer' : 'default' }} />
+          <div key={u + i} className={'gi' + (i === 0 ? ' first' : i === 1 ? ' back' : '')}>
+            <img src={u} alt="" onClick={() => i > 0 && makeFirst(i)} title={i > 0 ? 'اضغط لجعلها وجه المنتج (الصورة الرئيسية)' : ''} style={{ cursor: i > 0 ? 'pointer' : 'default' }} />
             <button type="button" onClick={() => onChange(list.filter((_, k) => k !== i))} aria-label="حذف">✕</button>
+            {i > 1 && <button type="button" className="mkb" onClick={() => makeBack(i)} title="اجعلها ظهر المنتج" aria-label="اجعلها ظهر المنتج">ظهر</button>}
           </div>
         ))}
-        {list.length < 10 && <button type="button" className="add" disabled={busy} onClick={() => ref.current?.click()}>{busy ? '...' : '+'}</button>}
+        {list.length < 2 && Array.from({ length: 2 - list.length }).map((_, k) => (
+          <button key={'ph' + k} type="button" className="add slot" disabled={busy} onClick={() => ref.current?.click()}>
+            <span>{busy ? '...' : '+'}</span><small>{slotHint(list.length + k)}</small>
+          </button>
+        ))}
+        {list.length >= 2 && list.length < 10 && <button type="button" className="add" disabled={busy} onClick={() => ref.current?.click()}>{busy ? '...' : '+'}</button>}
       </div>
       <input ref={ref} type="file" accept="image/*" multiple hidden onChange={pick} />
       <div className="row" style={{ marginTop: 10, marginBottom: 0 }}>
         <input className="in num" dir="ltr" placeholder="أو الصق رابط صورة https://..." value={url} onChange={(e) => setUrl(e.target.value)} />
         <button type="button" className="btn sm" onClick={addUrl}>إضافة الرابط</button>
       </div>
-      <small className="hint">أول صورة هي الرئيسية. اضغط أي صورة لتصبح الرئيسية. حتى 10 صور.</small>
+      <small className="hint">الصورة الأولى = <b>وجه المنتج</b> (الرئيسية). الصورة الثانية = <b>ظهر المنتج</b>: لما العميل يضغط على المنتج في المتجر بيلف ويظهر الظهر، وضغطة تانية ترجعه للوجه. اضغط أي صورة لتصبح الوجه، أو زر «ظهر» لتصبح الظهر. حتى 10 صور.</small>
     </div>
   );
 }
