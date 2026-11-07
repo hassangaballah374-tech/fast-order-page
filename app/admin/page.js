@@ -700,7 +700,7 @@ export default function SpikeSuperAdminDashboard() {
             </span>
 
               <Link href="/" className="flex flex-col items-center gap-1">
-              <SpikeLogo dark={!!isDark} className="h-16 sm:h-20 w-auto object-contain" />
+              <SpikeLogo dark={!!isDark} className="h-24 sm:h-28 w-auto object-contain" />
               <span className="text-[10px] text-slate-400 block font-bold">لوحة التحكم والإدارة</span>
             </Link>
           </div>

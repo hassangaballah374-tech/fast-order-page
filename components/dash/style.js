@@ -14,8 +14,8 @@ export const DASH_CSS = `
 .side{align-self:flex-start;width:268px;flex:none;background:var(--s);border-inline-start:1px solid var(--ln);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;z-index:40}
 .sidehd{padding:16px 14px 8px;display:flex;gap:10px;align-items:center}
 .lg{width:40px;height:40px;border-radius:12px;background:var(--b);color:#fff;display:grid;place-items:center;font-weight:800;font-size:18px;overflow:hidden;flex:none}
-.spkbrand{display:flex;justify-content:center;background:transparent;padding:10px 12px 4px;margin:0}
-.spkbrand img{height:44px;width:auto;max-width:100%;object-fit:contain;display:block}
+.spkbrand{display:flex;justify-content:center;background:transparent;padding:12px 12px 6px;margin:0}
+.spkbrand img{height:92px;width:auto;max-width:100%;object-fit:contain;display:block}
 .lg img{width:100%;height:100%;object-fit:cover}
 .sidehd b{display:block;font-size:15px;line-height:1.5;padding-top:2px}
 .sidehd small{display:block;color:var(--mut);font-size:11.5px;line-height:1.5;margin-top:2px}

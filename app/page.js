@@ -102,7 +102,7 @@ export default function SpikeLandingPage() {
       }`}>
         <div className="flex items-center gap-8">
           <Link href="/">
-          <SpikeBrandHeader height="h-16" showSlogan={true} />
+          <SpikeBrandHeader height="h-14 sm:h-20" showSlogan={true} />
           </Link>
 
           <div className="hidden lg:flex items-center gap-6 text-sm font-bold">
@@ -347,7 +347,7 @@ export default function SpikeLandingPage() {
       }`}>
         <div className="max-w-6xl mx-auto space-y-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <SpikeBrandHeader height="h-11" showSlogan={true} />
+            <SpikeBrandHeader height="h-14 sm:h-16" showSlogan={true} />
 
             <div className="flex flex-wrap gap-6 text-xs font-bold">
               <Link href="#" className="hover:text-[#E86A53] transition">{t.terms}</Link>
