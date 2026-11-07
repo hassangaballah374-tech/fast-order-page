@@ -24,7 +24,7 @@ export default function SpikeBrandHeader({
       <SpikeLogo dark={isDark} className={`${height} w-auto object-contain shrink-0`} loading="eager" />
 
       {showSlogan && (
-        <span className="hidden sm:block text-[11px] font-bold text-[#E86A53] tracking-normal">
+        <span className="hidden sm:block text-[11px] font-bold text-[#0E8FC0] tracking-normal">
           ابنِ متجرك.. وضاعف طلباتك
         </span>
       )}
