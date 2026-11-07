@@ -10,7 +10,7 @@ import { chartFor, isSizeGroup } from '../../lib/sizeFinder';
 import { useFavs, pushViewed, readViewed } from './favs'; 
 import Checkout from './Checkout';
 import { Stars, ProductCard, Blocks, soldOut } from './ui';
-import { money, effectivePrice, saleActive, applyOffer, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
+import { money, effectivePrice, saleActive, applyOffer, optionImage, isHttpUrl, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 function ReviewForm({ productId }) {
   const { slug } = useShop();
@@ -51,6 +51,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const router = useRouter();
   const [img, setImg] = useState(0);
   const [opts, setOpts] = useState({});
+  const [pinned, setPinned] = useState(true);
   const [qty, setQty] = useState(1);
   const [bumpOn, setBumpOn] = useState(false);
   const [msg, setMsg] = useState('');
@@ -61,6 +62,8 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const groups = p.variants || [];
   const sizeChart = chartFor(cfg.sizing, p);
   const optsOk = groups.every((g) => opts[g.name]);
+  const colorImg = optionImage(p, opts);
+  const mainImg = (pinned && colorImg) || p.images[img] || '';
   const offer = applyOffer(price, qty, p.offers);
   const bumpProd = p.upsell ? catalog.find((x) => x.id === String(p.upsell.product_id) && !soldOut(x)) : null;
   const bumpPct = p.upsell ? Math.min(90, Math.max(0, Number(p.upsell.percent) || 0)) : 0;
@@ -69,7 +72,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const wa = normalizePhone(cfg.contact?.whatsapp);
   const waOk = cfg.whatsapp?.enabled && cfg.whatsapp?.show_on_product !== false && isValidEgPhone(wa);
   const scarce = cfg.scarcity?.enabled && p.track_stock && p.stock_quantity > 0 && p.stock_quantity <= (Number(cfg.scarcity.threshold) || 5);
-  const item = useMemo(() => ({ key: p.id, product_id: p.id, title: p.title, image: p.images[0] || '', price, qty, options: opts }), [p.id, qty, opts, price]);
+  const item = useMemo(() => ({ key: p.id, product_id: p.id, title: p.title, image: colorImg || p.images[0] || '', price, qty, options: opts }), [p.id, qty, opts, price, colorImg]);
   const sent = useRef({ scroll: false });
   const fav = useFavs(slug);
   const [viewed, setViewed] = useState([]);
@@ -94,8 +97,8 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
     setMsg('');
     if (sold) return; 
     if (!optsOk) { setMsg(`اختر ${groups.filter((g) => !opts[g.name]).map((g) => g.name).join(' و ')} أولاً`); return; }
-    const flyMs = flyToCart(document.querySelector('.spk .gal-main img'), p.images[img] || p.images[0]);
-    add({ product_id: p.id, title: p.title, image: p.images[0] || '', price, qty, options: opts });
+    const flyMs = flyToCart(document.querySelector('.spk .gal-main img'), mainImg || p.images[0]);
+    add({ product_id: p.id, title: p.title, image: colorImg || p.images[0] || '', price, qty, options: opts });
     saveBump(bumpOn && bumpProd ? { product_id: bumpProd.id } : null);
     track('AddToCart', { value: offer.total, items: [{ id: p.id, title: p.title, price, qty }] });
     hit(slug, 'cart', { product: String(p.id) });
@@ -115,7 +118,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
     if (!optsOk) { setMsg(`اختر ${groups.filter((g) => !opts[g.name]).map((g) => g.name).join(' و ')} أولاً`); return; }
     fireInitiateCheckout(slug, offer.total, [{ id: p.id, title: p.title, price, qty }]);
     if (onePage) { toCheckout(); return; }
-    add({ product_id: p.id, title: p.title, image: p.images[0] || '', price, qty, options: opts });
+    add({ product_id: p.id, title: p.title, image: colorImg || p.images[0] || '', price, qty, options: opts });
     saveBump(bumpOn && bumpProd ? { product_id: bumpProd.id } : null);
     router.push(`${base}/cart`);
   };
@@ -125,16 +128,16 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
       <Blocks list={blocks.filter((b) => b.placement === 'product_top')} />
       <div className="pv">
         <div className="gal">
-        <div className="gal-main">{p.images[img] ? <img src={p.images[img]} alt={p.title} fetchPriority="high" decoding="async" /> : null}</div>
+        <div className="gal-main">{mainImg ? <img key={mainImg} className="gal-sw" src={mainImg} alt={p.title} fetchPriority="high" decoding="async" /> : null}</div>
           {p.images.length > 1 && (
             <div className="gal-nav">
-              <button type="button" onClick={() => setImg((img - 1 + p.images.length) % p.images.length)} aria-label="السابق">→</button>
+              <button type="button" onClick={() => { setPinned(false); setImg((img - 1 + p.images.length) % p.images.length); }} aria-label="السابق">→</button>
               <span className="num" dir="ltr">{String(img + 1).padStart(2, '0')} / {String(p.images.length).padStart(2, '0')}</span>
-              <button type="button" className="dk" onClick={() => setImg((img + 1) % p.images.length)} aria-label="التالي">←</button>
+              <button type="button" className="dk" onClick={() => { setPinned(false); setImg((img + 1) % p.images.length); }} aria-label="التالي">←</button>
             </div>
           )}
           {p.images.length > 1 && (
-            <div className="gal-th">{p.images.map((s, i) => <button key={i} type="button" className={i === img ? 'act' : ''} onClick={() => setImg(i)} aria-label={`صورة ${i + 1}`}><img src={s} alt="" loading="lazy" /></button>)}</div>
+            <div className="gal-th">{p.images.map((s, i) => <button key={i} type="button" className={i === img && !(pinned && colorImg) ? 'act' : ''} onClick={() => { setPinned(false); setImg(i); }} aria-label={`صورة ${i + 1}`}><img src={s} alt="" loading="lazy" /></button>)}</div>
           )}
         </div>
 
@@ -150,7 +153,15 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
           {groups.map((g) => (
             <div className="opt" key={g.name}>
               <b>{g.name}</b>
-              <div className="chips">{g.values.map((v) => <button type="button" key={v} className={'chip' + (opts[g.name] === v ? ' act' : '')} onClick={() => setOpts({ ...opts, [g.name]: v })}>{v}</button>)}</div>
+              <div className="chips">{g.values.map((v) => {
+                const sw = g.images && isHttpUrl(g.images[v]) ? g.images[v] : '';
+                return (
+                  <button type="button" key={v} className={'chip' + (sw ? ' sw' : '') + (opts[g.name] === v ? ' act' : '')} aria-pressed={opts[g.name] === v}
+                    onClick={() => { setOpts({ ...opts, [g.name]: v }); if (sw) setPinned(true); }}>
+                    {sw ? <img src={sw} alt="" loading="lazy" /> : null}<span>{v}</span>
+                  </button>
+                );
+              })}</div>
               {sizeChart && isSizeGroup(g.name) ? <SizeHelp chart={sizeChart} values={g.values} onPick={(v) => setOpts((o) => ({ ...o, [g.name]: v }))} /> : null}
             </div>
           ))}

@@ -630,4 +630,15 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .pc-hint{position:absolute;bottom:8px;inset-inline-end:8px;z-index:2;background:rgba(0,0,0,.62);color:#fff;font-style:normal;font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;pointer-events:none;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 .spk .pc:hover .pc-flip img{transform:none}
 @media(prefers-reduced-motion:reduce){.spk .pc-flip .pc-face{transition:none}}
+
+/* ===== ألوان المنتج بصورها ===== */
+.spk .chip.sw{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 5px}
+.spk .chip.sw img{width:34px;height:34px;border-radius:8px;object-fit:cover;flex:none;border:1px solid var(--ln)}
+.spk .gal-sw{animation:swIn .35s ease}
+@keyframes swIn{from{opacity:.2;transform:scale(.97)}to{opacity:1;transform:none}}
+.spk .pc-sws{display:flex;gap:6px;padding:8px 12px 0;flex-wrap:wrap}
+.spk .pc-sw{width:26px;height:26px;border-radius:50%;border:2px solid var(--ln);padding:0;overflow:hidden;background:var(--card);cursor:pointer;flex:none}
+.spk .pc-sw img{width:100%;height:100%;object-fit:cover;display:block}
+.spk .pc-sw.on{border-color:var(--c);box-shadow:0 0 0 2px var(--tint,rgba(0,0,0,.08))}
+@media(prefers-reduced-motion:reduce){.spk .gal-sw{animation:none}}
 `;
