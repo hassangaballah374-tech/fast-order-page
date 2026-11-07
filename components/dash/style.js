@@ -113,7 +113,19 @@ select.in{padding-inline-end:8px}
 .gal .gi{position:relative;width:78px;height:78px;border-radius:12px;overflow:hidden;border:1px solid var(--ln)}
 .gal .gi img{width:100%;height:100%;object-fit:cover}
 .gal .gi button{position:absolute;top:3px;inset-inline-start:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:12px}
-.gal .gi.first::after{content:'الرئيسية';position:absolute;bottom:0;inset-inline:0;background:rgba(1,77,111,.92);color:#fff;font-size:10px;text-align:center;font-weight:700}
+.gal .gi.back::after{content:'الظهر ⟳';position:absolute;bottom:0;inset-inline:0;background:rgba(224,122,0,.94);color:#fff;font-size:10px;text-align:center;font-weight:700}
+.gal .gi .mkb{top:auto;bottom:3px;inset-inline-start:3px;width:auto;height:20px;border-radius:10px;padding:0 8px;font-size:10px;font-weight:700}
+.vimg{border:1px dashed var(--ln);border-radius:14px;padding:12px;background:var(--s2)}
+.vimg-g{display:flex;gap:12px;flex-wrap:wrap}
+.vimg-i{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;width:78px}
+.vimg-i b{font-size:12px;max-width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vimg-p{width:78px;height:78px;border-radius:12px;border:2px dashed var(--ln);background:var(--bg,#fff);display:grid;place-items:center;cursor:pointer;font-size:22px;color:var(--mut);overflow:hidden;padding:0}
+.vimg-p.has{border-style:solid}
+.vimg-p img{width:100%;height:100%;object-fit:cover}
+.vimg-x{position:absolute;top:3px;inset-inline-start:3px;width:20px;height:20px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:11px;cursor:pointer}
+.gal .add.slot{flex-direction:column;gap:2px;font-size:22px;padding:4px;text-align:center}
+.gal .add.slot small{font-size:10px;font-weight:700;line-height:1.2}
+.gal .gi.first::after{content:'الوجه';position:absolute;bottom:0;inset-inline:0;background:rgba(1,77,111,.92);color:#fff;font-size:10px;text-align:center;font-weight:700}
 .gal .add{width:78px;height:78px;border-radius:12px;border:2px dashed var(--ln);background:var(--s2);display:grid;place-items:center;cursor:pointer;font-size:22px;color:var(--mut)}
 
 /* ---------- جداول ---------- */
