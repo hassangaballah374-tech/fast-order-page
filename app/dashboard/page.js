@@ -20,17 +20,30 @@ const FLAT = flatMenu();
 const VALID = new Set(FLAT.map((x) => x.id));
 const asciiSlug = (s) => String(s || '').toLowerCase().trim().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 
+const isChunkError = (e) => /ChunkLoadError|Loading chunk [\w-]+ failed|Failed to fetch dynamically imported|Importing a module script failed/i.test(String((e && (e.name + ' ' + e.message)) || e || ''));
+
 class Boundary extends React.Component {
   constructor(p) { super(p); this.state = { e: null }; }
   static getDerivedStateFromError(e) { return { e }; }
-  componentDidCatch(e) { console.error('screen error', e); }
+  componentDidCatch(e) {
+    console.error('screen error', e);
+    /* بعد كل نشر جديد المتصفح ممكن يفضل ماسك ملفات قديمة (Loading chunk failed): نحمّل الصفحة مرة واحدة تلقائياً */
+    if (isChunkError(e)) {
+      try {
+        const last = Number(sessionStorage.getItem('spk_chunk_reload') || 0);
+        if (Date.now() - last > 30000) { sessionStorage.setItem('spk_chunk_reload', String(Date.now())); window.location.reload(); }
+      } catch { /* تجاهل */ }
+    }
+  }
   render() {
     if (this.state.e) {
+      const chunk = isChunkError(this.state.e);
       return (
         <div className="card errbox">
           <b>⚠️ حدث خطأ في عرض هذه الشاشة</b>
           <p className="mut" style={{ margin: '6px 0 12px' }}>{String(this.state.e?.message || this.state.e)}</p>
-          <button type="button" className="btn p" onClick={() => this.setState({ e: null })}>إعادة المحاولة</button>
+          {chunk ? <p className="mut" style={{ margin: '0 0 12px' }}>اتحدّث الموقع بنسخة جديدة. حمّل الصفحة من جديد.</p> : null}
+          <button type="button" className="btn p" onClick={() => (chunk ? window.location.reload() : this.setState({ e: null }))}>{chunk ? 'تحميل الصفحة من جديد' : 'إعادة المحاولة'}</button>
         </div>
       );
     }

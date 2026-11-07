@@ -9,7 +9,8 @@ import { flyToCart } from './fly';
 import { lockScroll } from './scrollLock';
 import SizeHelp from './SizeFinder';
 import { chartFor, isSizeGroup } from '../../lib/sizeFinder';
-import { money, effectivePrice, saleActive } from '../../lib/storeKit';
+import FlipPic from './FlipPic';
+import { money, effectivePrice, saleActive, splitImages } from '../../lib/storeKit';
 
 /* أجزاء مشتركة بين تخطيطات التصفح (رف الشماعات، شبكة الخلط...):
    منطق الإضافة للسلة + تأثير الطيران، لوحة اختيار المقاس السريعة، والعرض المركّز للمنتج. */
@@ -100,6 +101,7 @@ export function FocusSheet({ list, idx, onGo, onClose, cart }) {
   const { cfg, cur, base, count, busy, added, openCart, addMulti } = cart;
   const p = list[idx];
   const n = list.length;
+  const gi = splitImages(p, cfg?.browse?.flip !== false);
   const [fopts, setFopts] = useState({});
   const [imgI, setImgI] = useState(0);
   const [swap, setSwap] = useState(0);
@@ -125,11 +127,11 @@ export function FocusSheet({ list, idx, onGo, onClose, cart }) {
       <button type="button" className="ob-cartp" data-fly-target="1" onClick={openCart} aria-label="السلة">🛒 <span className="num">{count}</span></button>
       <div className="ob-fgrid">
         <div className="ob-fimg">
-          <div className="ob-fpic" key={`${p.id}-${swap}`}>
-            {p.images[imgI] ? <img src={p.images[imgI]} alt={p.title} decoding="async" /> : <Ph p={p} />}
+          <FlipPic key={`${p.id}-${swap}`} className="ob-fpic" front={gi.list[imgI]} back={imgI === 0 ? gi.back : ''} alt={p.title}>
+            {!gi.list[imgI] ? <Ph p={p} /> : null}
             <i className="ob-sh big" />
-          </div>
-          {p.images.length > 1 && <div className="ob-dots">{p.images.map((_, k) => <button key={k} type="button" className={k === imgI ? 'on' : ''} aria-label={`صورة ${k + 1}`} onClick={() => setImgI(k)} />)}</div>}
+          </FlipPic>
+          {gi.list.length > 1 && <div className="ob-dots">{gi.list.map((_, k) => <button key={k} type="button" className={k === imgI ? 'on' : ''} aria-label={`صورة ${k + 1}`} onClick={() => setImgI(k)} />)}</div>}
         </div>
         <div className="ob-finfo" key={`i-${p.id}`}>
           <h2>{p.title}</h2>

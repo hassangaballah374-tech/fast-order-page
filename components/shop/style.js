@@ -641,4 +641,9 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .pc-sw img{width:100%;height:100%;object-fit:cover;display:block}
 .spk .pc-sw.on{border-color:var(--c);box-shadow:0 0 0 2px var(--tint,rgba(0,0,0,.08))}
 @media(prefers-reduced-motion:reduce){.spk .gal-sw{animation:none}}
+
+.spk .gal-main.pc-flip{position:relative}
+.spk .gal-main.pc-flip:hover img{transform:none}
+.spk .ob-fpic.pc-flip{position:relative}
+.spk .ob-fpic .pc-face img{width:100%;height:100%;object-fit:contain}
 `;
