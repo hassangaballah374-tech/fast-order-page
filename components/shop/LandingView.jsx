@@ -4,7 +4,7 @@ import { useShop } from './StoreContext';
 import { track } from './tracker';
 import Checkout from './Checkout';
 import { soldOut } from './ui';
-import { money, effectivePrice, saleActive } from '../../lib/storeKit'; 
+import { money, effectivePrice, unitPrice, overridePrice, saleActive } from '../../lib/storeKit'; 
 import { fontHref, isDark } from '../../lib/themes100';
 import { lpThemeCss } from '../../lib/landingThemes';
 import WaIcon from './WaIcon';
@@ -218,9 +218,12 @@ function Section({ s, ctx }) {
 }
 
 function OrderBox({ s, ctx }) {
-  const { fn, p, price, onSale, cur, scarce } = ctx;
+  const { fn, p, price: basePrice, onSale: baseSale, cur, scarce } = ctx;
   const d = s.data || {};
   const [opts, setOpts] = useState({});
+  const ovr = overridePrice(p, opts) > 0;
+  const price = unitPrice(p, opts);
+  const onSale = baseSale && !ovr;
   const [qty, setQty] = useState(1);
   const groups = p.variants || [];
   const optsOk = groups.every((g) => opts[g.name]);

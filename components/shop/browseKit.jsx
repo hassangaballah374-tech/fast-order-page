@@ -10,7 +10,7 @@ import { lockScroll } from './scrollLock';
 import SizeHelp from './SizeFinder';
 import { chartFor, isSizeGroup } from '../../lib/sizeFinder';
 import FlipPic from './FlipPic';
-import { money, effectivePrice, saleActive, splitImages } from '../../lib/storeKit';
+import { money, effectivePrice, unitPrice, priceRange, saleActive, splitImages } from '../../lib/storeKit';
 
 /* أجزاء مشتركة بين تخطيطات التصفح (رف الشماعات، شبكة الخلط...):
    منطق الإضافة للسلة + تأثير الطيران، لوحة اختيار المقاس السريعة، والعرض المركّز للمنتج. */
@@ -31,7 +31,7 @@ export function useBrowseCart() {
   const openCart = () => { if (cfg.cart?.drawer === false) router.push(`${base}/cart`); else window.dispatchEvent(new Event('spike:cart-open')); };
   const addLine = (p, opts, label, srcSel) => {
     if (soldOut(p)) return;
-    const price = effectivePrice(p);
+    const price = unitPrice(p, opts);
     if (srcSel) flyToCart(document.querySelector(srcSel), p.images[0]);
     add({ product_id: p.id, title: p.title, image: p.images[0] || '', price, qty: 1, options: opts });
     track('AddToCart', { value: price, items: [{ id: p.id, title: p.title, price, qty: 1 }] });
@@ -47,9 +47,10 @@ export function useBrowseCart() {
 }
 
 export function PriceEl({ p, cur }) {
+  const rg = priceRange(p);
   const price = effectivePrice(p);
-  const onSale = saleActive(p) && p.compare_price > price;
-  return <div className="ob-price num">{money(price, cur)}{onSale ? <s>{money(p.compare_price, cur)}</s> : null}</div>;
+  const onSale = !rg.varies && saleActive(p) && p.compare_price > price;
+  return <div className="ob-price num">{rg.varies ? <small style={{ fontWeight: 600, marginInlineEnd: 4 }}>من</small> : null}{money(rg.min, cur)}{onSale ? <s>{money(p.compare_price, cur)}</s> : null}</div>;
 }
 
 export function AddedLine({ p, cart }) {

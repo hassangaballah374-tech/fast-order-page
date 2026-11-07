@@ -10,7 +10,7 @@ import { lockScroll } from './scrollLock';
 import FlipPic from './FlipPic';
 import SizeHelp from './SizeFinder';
 import { chartFor, isSizeGroup } from '../../lib/sizeFinder';
-import { money, effectivePrice, saleActive, splitImages } from '../../lib/storeKit';
+import { money, effectivePrice, unitPrice, overridePrice, priceRange, saleActive, splitImages } from '../../lib/storeKit';
 
 /* عرض «المدار»: المنتجات بتدور على مسار منحني، والعميل بيسحب العجلة (أو الشاشة) عشان يتنقل.
    ضغطة على مقاس = إضافة للسلة، وضغطة على المنتج الأوسط بتفتح العرض المركّز. */
@@ -173,7 +173,7 @@ export default function OrbitView({ list = [] }) {
   /* الإضافة للسلة */
   const addLine = (p, opts, label) => {
     if (soldOut(p)) return;
-    const price = effectivePrice(p);
+    const price = unitPrice(p, opts);
     const srcEl = document.querySelector(focus ? '.ob-focus .ob-fpic img' : '.ob-it.on img');
     flyToCart(srcEl, p.images[0]);
     add({ product_id: p.id, title: p.title, image: p.images[0] || '', price, qty: 1, options: opts });
@@ -200,8 +200,11 @@ export default function OrbitView({ list = [] }) {
   const groups = p.variants || [];
   const chart = chartFor(cfg.sizing, p);
   const gi = splitImages(p, cfg.browse?.flip !== false);
-  const price = effectivePrice(p);
-  const onSale = saleActive(p) && p.compare_price > price;
+  const rg = priceRange(p);
+  const picked = Object.keys(fopts).length > 0;
+  const ovr = overridePrice(p, fopts) > 0;
+  const price = picked ? unitPrice(p, fopts) : effectivePrice(p);
+  const onSale = !ovr && !(rg.varies && !picked) && saleActive(p) && p.compare_price > price;
   const sold = soldOut(p);
   const justAdded = added && added.id === p.id;
   const needed = groups.filter((g) => !fopts[g.name]);
@@ -214,7 +217,7 @@ export default function OrbitView({ list = [] }) {
   };
 
   const PriceEl = () => (
-    <div className="ob-price num">{money(price, cur)}{onSale ? <s>{money(p.compare_price, cur)}</s> : null}</div>
+    <div className="ob-price num">{rg.varies && !picked ? <small style={{ fontWeight: 600, marginInlineEnd: 4 }}>من</small> : null}{money(rg.varies && !picked ? rg.min : price, cur)}{onSale ? <s>{money(p.compare_price, cur)}</s> : null}</div>
   );
   const AddedLine = () => (justAdded ? (
     <div className="ob-added" role="status">
