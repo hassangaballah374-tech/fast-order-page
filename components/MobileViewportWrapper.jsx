@@ -26,7 +26,7 @@ export default function MobileViewportWrapper({ children }) {
         }}
         className={`relative flex flex-col rounded-lg border-[3px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] overflow-hidden transition-all duration-200 ${
           isDark 
-            ? 'border-slate-700 bg-[#0E1E38] text-white' 
+            ? 'border-slate-700 bg-[#0A2A3E] text-white' 
             : 'border-slate-700 bg-white text-slate-900'
         }`}
       >
