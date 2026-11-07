@@ -219,7 +219,7 @@ export default function MerchantDashboard() {
   }
 
   /* الأدمن بيشوف كل الشاشات مفتوحة (الأقفال للتجار بس) */
-  const lockedId = (id) => !isAdmin && isLocked(locks, id, uid);
+  const lockedId = (id) => !isAdmin && isLocked(locks, id, uid, store?.plan_type || 'starter');
   const Screen = lockedId(tab) ? () => <Locked title={(FLAT.find((x) => x.id === tab) || {}).t} /> : (SCREENS[tab] || SCREENS.stats);
   const curGroup = groupOf(tab);
   const isOpen = (g) => (open[g] ?? curGroup === g);

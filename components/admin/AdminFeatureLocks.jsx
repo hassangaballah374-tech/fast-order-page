@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { MENU } from '../dash/menu';
-import { LOCKS_KEY, NEVER_LOCK, EMPTY_LOCKS, parseLocks, cleanLocks, isLocked, storeState } from '../../lib/featureLocks';
+import { LOCKS_KEY, NEVER_LOCK, EMPTY_LOCKS, PLAN_TYPES, parseLocks, cleanLocks, isLocked, storeState } from '../../lib/featureLocks';
 
 /* أدمن: قفل وتفعيل شاشات لوحة التاجر لكل التجار أو لتاجر معين (الاستثناء بيغلب الإعداد العام) */
 const GROUPS = MENU.map((m) => {
@@ -27,7 +27,7 @@ export default function AdminFeatureLocks({ isDark }) {
   const load = useCallback(async () => {
     const [k, s] = await Promise.all([
       supabase.from('platform_kv').select('value').eq('key', LOCKS_KEY).maybeSingle(),
-      supabase.from('store_profiles').select('user_id,store_name,store_slug').order('store_name'),
+      supabase.from('store_profiles').select('user_id,store_name,store_slug,plan_type').order('store_name'),
     ]);
     setLocks(parseLocks(k.data?.value));
     setStores(s.data || []);
@@ -39,6 +39,13 @@ export default function AdminFeatureLocks({ isDark }) {
   const ensure = (n, uid) => { if (!n.stores[uid]) n.stores[uid] = { lock: [], allow: [] }; return n.stores[uid]; };
 
   const setGlobal = (ids, lockIt) => change((n) => {
+    if (scope.startsWith('plan:')) {
+      const k = scope.slice(5);
+      const sp = new Set((n.plans || {})[k] || []);
+      ids.forEach((id) => { if (lockIt) sp.add(id); else sp.delete(id); });
+      n.plans = { ...(n.plans || {}), [k]: [...sp] };
+      return;
+    }
     const s = new Set(n.global);
     ids.forEach((id) => { if (lockIt) s.add(id); else s.delete(id); });
     n.global = [...s];
@@ -61,7 +68,8 @@ export default function AdminFeatureLocks({ isDark }) {
     setDirty(false); flash('تم الحفظ ✓ — التجار هيشوفوا التغيير عند فتح لوحتهم');
   };
 
-  const isGlobal = scope === 'global';
+  const planKey = scope.startsWith('plan:') ? scope.slice(5) : '';
+  const isGlobal = scope === 'global' || !!planKey; /* العام والباقة بيتعدلوا بنفس الزرار (مفتوحة/مقفولة) */
   const storeName = (s) => s.store_name || s.store_slug || String(s.user_id).slice(0, 8);
   const sections = useMemo(() => SECTIONS.map((g) => ({ ...g, items: g.items.filter((it) => !q.trim() || it.t.includes(q.trim()) || g.title.includes(q.trim())) })).filter((g) => g.items.length), [q]);
   const lockedGlobal = locks.global.filter((x) => !NEVER_LOCK.includes(x)).length;
@@ -82,11 +90,12 @@ export default function AdminFeatureLocks({ isDark }) {
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <select value={scope} onChange={(e) => setScope(e.target.value)} aria-label="النطاق" style={{ padding: '9px 12px', borderRadius: 10, border: `1px solid ${c.line}`, background: c.soft, color: c.ink, fontWeight: 700, minWidth: 220 }}>
             <option value="global">🌍 كل التجار (الإعداد العام)</option>
+            {PLAN_TYPES.map(([k, l]) => <option key={k} value={`plan:${k}`}>💎 باقة {l}{(locks.plans || {})[k]?.length ? ` • ${locks.plans[k].length} مقفولة` : ''}</option>)}
             {stores.map((s) => <option key={s.user_id} value={String(s.user_id)}>🏬 {storeName(s)}{(locks.stores[String(s.user_id)] ? ' • له استثناءات' : '')}</option>)}
           </select>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث عن ميزة..." aria-label="بحث" style={{ flex: 1, minWidth: 160, padding: '9px 12px', borderRadius: 10, border: `1px solid ${c.line}`, background: c.soft, color: c.ink }} />
         </div>
-        <div style={{ color: c.mut, fontSize: 12.5, marginTop: 10 }}>مقفول عند الجميع حالياً: <b className="num">{lockedGlobal}</b> ميزة{!isGlobal ? ' · أنت بتعدّل تاجر واحد بس' : ''}</div>
+        <div style={{ color: c.mut, fontSize: 12.5, marginTop: 10 }}>مقفول عند الجميع حالياً: <b className="num">{lockedGlobal}</b> ميزة{!isGlobal ? ' · أنت بتعدّل تاجر واحد بس' : planKey ? ' · أنت بتعدّل باقة كاملة (تتطبق على كل تجارها)' : ''}</div>
       </div>
 
       {sections.map((g) => {
@@ -112,9 +121,10 @@ export default function AdminFeatureLocks({ isDark }) {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 8 }}>
               {g.items.map((it) => {
                 const never = NEVER_LOCK.includes(it.id);
-                const globalLocked = locks.global.includes(it.id);
+                const sPlan = ((stores.find((x) => String(x.user_id) === scope) || {}).plan_type) || 'starter';
+                const globalLocked = planKey ? ((locks.plans || {})[planKey] || []).includes(it.id) : (locks.global.includes(it.id) || (!isGlobal && ((locks.plans || {})[sPlan] || []).includes(it.id)));
                 const st = isGlobal ? null : storeState(locks, it.id, scope);
-                const effective = !never && isLocked(locks, it.id, isGlobal ? '__none__' : scope);
+                const effective = !never && (planKey ? globalLocked : isLocked(locks, it.id, isGlobal ? '__none__' : scope, ((stores.find((x) => String(x.user_id) === scope) || {}).plan_type) || 'starter'));
                 return (
                   <div key={it.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 12, background: effective ? (isDark ? '#3a1f26' : '#FDECEC') : c.soft, border: `1px solid ${c.line}` }}>
                     <span style={{ flex: 1, fontWeight: 700, fontSize: 13 }}>{effective ? '🔒 ' : ''}{it.t}</span>
