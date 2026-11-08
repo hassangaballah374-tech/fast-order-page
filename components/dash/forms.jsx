@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDash, Tog, Field, Modal, PageHead, Empty, Spin } from './ui';
 import { useTable, uploadAsset } from './hooks';
+import { GOVERNORATES } from '../../lib/storeKit';
 
 export const toLocalInput = (iso) => {
   if (!iso) return '';
@@ -68,6 +69,21 @@ export function FieldInput({ f, value, onChange, draft }) {
       return <div className="row" style={{ marginBottom: 0 }}><input type="color" className="clr" value={v || '#6B8E23'} onChange={(e) => onChange(e.target.value)} /><input className="in num" dir="ltr" style={{ maxWidth: 130 }} value={v} onChange={(e) => onChange(e.target.value)} /></div>;
     case 'image':
       return <ImageInput value={v} onChange={onChange} folder={f.folder} />;
+    case 'govs': {
+      const sel = Array.isArray(value) ? value : [];
+      const flip = (g) => onChange(sel.includes(g) ? sel.filter((x) => x !== g) : [...sel, g]);
+      return (
+        <div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', maxHeight: 190, overflow: 'auto' }}>
+            {GOVERNORATES.map(([g]) => (
+              <button key={g} type="button" onClick={() => flip(g)} aria-pressed={sel.includes(g)}
+                style={{ minHeight: 38, padding: '0 12px', borderRadius: 99, border: '1px solid ' + (sel.includes(g) ? 'var(--b)' : 'var(--ln)'), background: sel.includes(g) ? 'color-mix(in srgb,var(--b) 12%,var(--s))' : 'var(--s)', color: sel.includes(g) ? 'var(--b)' : 'var(--ink)', font: '700 12.5px Tajawal,sans-serif', cursor: 'pointer' }}>{sel.includes(g) ? '✓ ' : ''}{g}</button>
+            ))}
+          </div>
+          <small className="mut" style={{ display: 'block', marginTop: 6 }}>{sel.length ? `${sel.length} محافظة محددة` : 'بدون تحديد = كل المحافظات'}</small>
+        </div>
+      );
+    }
     case 'datetime':
       return <input className="in num" type="datetime-local" value={toLocalInput(value)} onChange={(e) => onChange(fromLocalInput(e.target.value))} />;
     case 'date':
