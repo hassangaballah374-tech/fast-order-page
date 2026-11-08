@@ -11,6 +11,7 @@ export function WaCloudCard() {
   const [row, setRow] = useState(undefined);
   const [f, setF] = useState({ phone_number_id: '', template_name: '', template_lang: 'ar' });
   const [token, setToken] = useState('');
+  const [appSecret, setAppSecret] = useState('');
   const [enabled, setEnabled] = useState(false);
   const [auto, setAuto] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -30,11 +31,12 @@ export function WaCloudCard() {
     setBusy(true);
     const config = { ...(row?.config || {}), phone_number_id: f.phone_number_id.trim(), template_name: f.template_name.trim(), template_lang: f.template_lang.trim() || 'ar', auto_confirm: auto };
     if (token.trim()) config.access_token = token.trim();
+    if (appSecret.trim()) config.app_secret = appSecret.trim();
     if (!config.webhook_secret) config.webhook_secret = (globalThis.crypto?.randomUUID?.() || `${Date.now()}${Math.random()}`).replace(/-/g, '');
     const { error } = await supabase.from('store_integrations').upsert({ store_id: uid, provider: 'whatsapp_cloud', enabled, config, updated_at: new Date().toISOString() }, { onConflict: 'store_id,provider' });
     setBusy(false);
     if (error) { say(`تعذر الحفظ: ${error.message}`); return; }
-    setToken(''); say('✅ تم الحفظ'); load();
+    setToken(''); setAppSecret(''); say('✅ تم الحفظ'); load();
   };
 
   const wh = row?.config?.webhook_secret && typeof window !== 'undefined' ? `${window.location.origin}/api/webhooks/whatsapp?s=${uid}` : '';
@@ -50,6 +52,7 @@ export function WaCloudCard() {
           <div className="fgrid">
             <Field l="Phone number ID" hint="من Meta ← WhatsApp ← API Setup"><input className="in num" dir="ltr" value={f.phone_number_id} onChange={(e) => setF({ ...f, phone_number_id: e.target.value })} /></Field>
             <Field l="Access token" hint={has ? 'محفوظ ✓ اتركه فارغاً للإبقاء عليه' : 'يُفضّل token دائم (System User)'}><input className="in num" dir="ltr" type="password" autoComplete="off" placeholder={has ? '••••••••••••' : ''} value={token} onChange={(e) => setToken(e.target.value)} /></Field>
+            <Field l="App Secret (موصى به للأمان)" hint={row?.config?.app_secret ? 'محفوظ ✓ التحقق من توقيع Meta شغّال' : 'من Meta ← App settings ← Basic. بيمنع أي حد يزوّر ضغطات التأكيد والإلغاء'}><input className="in num" dir="ltr" type="password" autoComplete="off" value={appSecret} onChange={(e) => setAppSecret(e.target.value)} placeholder={row?.config?.app_secret ? '••••••••' : ''} /></Field>
             <Field l="اسم القالب المعتمد"><input className="in num" dir="ltr" value={f.template_name} onChange={(e) => setF({ ...f, template_name: e.target.value })} placeholder="order_confirm" /></Field>
             <Field l="لغة القالب"><input className="in num" dir="ltr" value={f.template_lang} onChange={(e) => setF({ ...f, template_lang: e.target.value })} placeholder="ar" /></Field>
             <Field l="الإرسال التلقائي" full><div className="tgrow"><Tog on={auto} set={setAuto} /><span>إرسال رسالة التأكيد أول ما يتسجّل الطلب</span></div></Field>

@@ -26,3 +26,12 @@ select p.proname as function_name, pg_get_userbyid(p.proowner) as owner,
 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'public' and p.prosecdef
 order by 1;
+
+-- 5) سياسات جداول الأدمن والبيانات الحساسة (لوحة الأدمن بتشتغل بمفتاح المتصفح، فالحماية الوحيدة هنا هي RLS):
+--    لازم كل سياسة على الجداول دي تقيّد بـ: مالك المتجر (auth.uid() = user_id/store_id) أو إيميل الأدمن.
+--    سياسة زي using (true) أو using (auth.role() = 'authenticated') معناها أي تاجر مسجّل يقدر يوصل للبيانات دي.
+select tablename, policyname, cmd, roles, qual, with_check
+from pg_policies
+where schemaname = 'public'
+  and tablename in ('admin_users', 'audit_logs', 'broadcasts', 'platform_kv', 'store_profiles', 'store_integrations', 'store_settings', 'store_blocklist', 'store_config')
+order by tablename, cmd, policyname;

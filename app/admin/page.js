@@ -219,7 +219,7 @@ export default function SpikeSuperAdminDashboard() {
         const user = sess?.session?.user || null;
         const authEmail = user?.email?.toLowerCase().trim();
 
-        if (authEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
+        if (authEmail === SUPER_ADMIN_EMAIL.toLowerCase() && (user?.email_confirmed_at || user?.confirmed_at)) {
           localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
           setIsSuper(true);
           setActorEmail(authEmail);

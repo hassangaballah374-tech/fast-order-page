@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreBySlug, storeKey, getConfig, priceCart, takeStockForLines, restoreStockForLines, orderRowItems, rateLimit, clientIp } from '../../../../lib/storeServer';
+import { getStoreBySlug, storeKey, getConfig, priceCart, takeStockForLines, restoreStockForLines, orderRowItems, rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
 import { normalizePhone, isValidEgPhone } from '../../../../lib/storeKit';
 import { runAfter } from '../../../../lib/after';
 import { sendCapiPurchase } from '../../../../lib/capi';
@@ -16,7 +16,7 @@ const fail = (error, status = 400) => NextResponse.json({ ok: false, error }, { 
 
 export async function POST(req) {
   let body;
-  try { body = await req.json(); } catch { return fail('بيانات غير صالحة'); }
+  try { body = await readJson(req); } catch { return fail('بيانات غير صالحة'); }
 
   const ip = clientIp(req);
   if (!rateLimit(`order:${ip}`, 8, 60_000)) return fail('محاولات كثيرة، حاول بعد دقيقة', 429);

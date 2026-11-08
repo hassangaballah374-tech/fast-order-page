@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreBySlug, storeKey, getConfig, takeStockForLines, restoreStockForLines, rateLimit, clientIp } from '../../../../lib/storeServer';
+import { getStoreBySlug, storeKey, getConfig, takeStockForLines, restoreStockForLines, rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
 import { getFlow } from '../../../../lib/storeData';
 import { effectivePrice } from '../../../../lib/storeKit';
 import { OFFER_TYPES } from '../../../../lib/flowKit';
@@ -16,7 +16,7 @@ const r2 = (n) => Math.round(n * 100) / 100;
 /* قبول عرض Upsell/Downsell بضغطة واحدة: بيتضاف لنفس الطلب (بنفس بيانات العميل) بسعر العرض المحسوب هنا من السيرفر */
 export async function POST(req) {
   let body;
-  try { body = await req.json(); } catch { return fail('بيانات غير صالحة'); }
+  try { body = await readJson(req); } catch { return fail('بيانات غير صالحة'); }
   const ip = clientIp(req);
   if (!rateLimit(`upsell:${ip}`, 12, 60_000)) return fail('محاولات كثيرة، حاول بعد دقيقة', 429);
 

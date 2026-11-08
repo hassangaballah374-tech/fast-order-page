@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreFast, storeKey, rateLimit, clientIp } from '../../../../lib/storeServer';
+import { getStoreFast, storeKey, rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,7 +13,7 @@ const PID = /^[A-Za-z0-9_-]{1,64}$/;
    بيقبل حدث واحد {event,...} أو مجموعة {events:[...]} (أقصى 6) في طلب واحد لتقليل الضغط على القاعدة */
 export async function POST(req) {
   let body;
-  try { body = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+  try { body = await readJson(req); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const list = (Array.isArray(body.events) ? body.events : [body]).slice(0, 6).filter((x) => x && EVENTS[x.event || 'visit']);
   if (!list.length) return NextResponse.json({ ok: false }, { status: 400 });
   if (!rateLimit(`hit:${clientIp(req)}`, 120, 60_000)) return NextResponse.json({ ok: false }, { status: 429 });

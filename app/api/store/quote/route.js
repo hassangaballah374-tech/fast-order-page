@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreFast, getConfigFast, storeKey, priceCart, rateLimit, clientIp } from '../../../../lib/storeServer';
+import { getStoreFast, getConfigFast, storeKey, priceCart, rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 /* معاينة السعر النهائي (منتجات + عرض + كوبون + شحن + رسوم) من السيرفر */
 export async function POST(req) {
   let body; 
-  try { body = await req.json(); } catch { return NextResponse.json({ ok: false, error: 'بيانات غير صالحة' }, { status: 400 }); }
+  try { body = await readJson(req); } catch { return NextResponse.json({ ok: false, error: 'بيانات غير صالحة' }, { status: 400 }); }
   if (!rateLimit(`quote:${clientIp(req)}`, 90, 60_000)) return NextResponse.json({ ok: false, error: 'محاولات كثيرة' }, { status: 429 });
 
   let sb;

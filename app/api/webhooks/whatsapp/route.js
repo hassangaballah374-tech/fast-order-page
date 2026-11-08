@@ -38,7 +38,16 @@ export async function POST(req) {
   const c = await integ(sb, sid);
   if (!c) return ok({ ignored: 'off' });
 
-  let body; try { body = await req.json(); } catch { return ok(); }
+  /* توقيع Meta (X-Hub-Signature-256): لو التاجر حط App Secret بنرفض أي طلب مش موقّع منها (يمنع تزوير ضغطات «تأكيد/إلغاء») */
+  let raw = '';
+  try { raw = await req.text(); } catch { return ok(); }
+  if (raw.length > 500_000) return NextResponse.json({ ok: false }, { status: 413 });
+  if (c.app_secret) {
+    const sig = String(req.headers.get('x-hub-signature-256') || '').replace(/^sha256=/, '');
+    const exp = crypto.createHmac('sha256', String(c.app_secret)).update(raw).digest('hex');
+    if (!same(exp, sig)) return NextResponse.json({ ok: false, error: 'bad signature' }, { status: 401 });
+  }
+  let body; try { body = JSON.parse(raw); } catch { return ok(); }
   const msgs = [];
   for (const e of body?.entry || []) for (const ch of e?.changes || []) {
     // نتأكد إن الرسالة وصلت على رقم هذا التاجر
