@@ -26,7 +26,7 @@ export default function ResetPasswordPage() {
   const submit = async (e) => {
     e.preventDefault();
     setMsg('');
-    if (p1.length < 6) { setMsg('كلمة المرور يجب ألا تقل عن 6 أحرف'); return; }
+    if (p1.length < 8 || !(/\d/.test(p1) && /[a-zA-Z]/.test(p1))) { setMsg('كلمة المرور لازم تكون 8 أحرف على الأقل وتجمع حروف وأرقام'); return; }
     if (p1 !== p2) { setMsg('كلمتا المرور غير متطابقتين'); return; }
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: p1 });

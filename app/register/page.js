@@ -141,7 +141,7 @@ export default function SpikeRegisterAndAuthPage() {
   const { lang, toggleLanguage, toggleTheme, isDark } = useApp();
   const isAr = lang === 'ar';
 
-  const [mode, setMode] = useState('register'); // register | login | forgot | verify
+  const [mode, setMode] = useState('register'); // register | login | forgot | verify | reset
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [showPass2, setShowPass2] = useState(false);
@@ -157,11 +157,11 @@ export default function SpikeRegisterAndAuthPage() {
       loginTitle: 'تسجيل الدخول إلى حسابك', registerTitle: 'انشئ حساب مجاني', forgotTitle: 'استعادة كلمة المرور',
       storeNameLabel: 'اسم موقعك', currencyLabel: 'العملة الأساسية', nameLabel: 'اسمك واسم العائلة', phoneLabel: 'رقم الهاتف',
       emailLabel: 'البريد الالكتروني', passLabel: 'الرقم السري', confirmPassLabel: 'اعد كتابة الرقم السري',
-      submitRegister: 'انشاء حساب', submitLogin: 'تسجيل الدخول', submitForgot: 'أرسل رابط الاستعادة', processing: 'جاري المعالجة...',
+      submitRegister: 'انشاء حساب', submitLogin: 'تسجيل الدخول', submitForgot: 'أرسل كود الاستعادة', processing: 'جاري المعالجة...',
       noAccount: 'ليس لديك حساب بعد؟', hasAccount: 'لديك حساب بالفعل؟', switchRegister: 'انشئ حساب مجاني جديد', switchLogin: 'تسجيل الدخول',
       remember: 'تذكّرني', forgot: 'نسيت كلمة المرور؟', backLogin: 'العودة لتسجيل الدخول',
       agreePre: 'أوافق على', agreeLink: 'الشروط والسياسات', autoLogin: 'تسجيل الدخول تلقائياً بعد إنشاء المتجر',
-      forgotHint: 'اكتب بريدك وسنرسل لك رابطاً لتعيين كلمة مرور جديدة.',
+      forgotHint: 'اكتب بريدك وسنرسل لك كود من 6 أرقام لتعيين كلمة مرور جديدة.',
       aboutTitle: 'عن سبايك', academyTitle: 'الأكاديمية', devsTitle: 'للمطورين', appTitle: 'حمّل التطبيق', rights: 'Copyright © SPIKE | 2026',
     },
     en: {
@@ -169,11 +169,11 @@ export default function SpikeRegisterAndAuthPage() {
       loginTitle: 'Sign In to Your Account', registerTitle: 'Create Free Account', forgotTitle: 'Reset Password',
       storeNameLabel: 'Your Store Name', currencyLabel: 'Base Currency', nameLabel: 'Full Name', phoneLabel: 'Phone Number',
       emailLabel: 'Email Address', passLabel: 'Password', confirmPassLabel: 'Confirm Password',
-      submitRegister: 'Create Account', submitLogin: 'Sign In', submitForgot: 'Send reset link', processing: 'Processing...',
+      submitRegister: 'Create Account', submitLogin: 'Sign In', submitForgot: 'Send reset code', processing: 'Processing...',
       noAccount: "Don't have an account?", hasAccount: 'Already have an account?', switchRegister: 'Create a new free account', switchLogin: 'Sign In',
       remember: 'Remember me', forgot: 'Forgot password?', backLogin: 'Back to sign in',
       agreePre: 'I agree to the', agreeLink: 'Terms & Policies', autoLogin: 'Sign in automatically after creating my store',
-      forgotHint: "Enter your email and we'll send you a link to set a new password.",
+      forgotHint: "Enter your email and we'll send you a 6-digit code to set a new password.",
       aboutTitle: 'About SPIKE', academyTitle: 'Academy', devsTitle: 'Developers', appTitle: 'Download App', rights: 'Copyright © SPIKE | 2026',
     },
   }[lang || 'ar'];
@@ -237,6 +237,53 @@ export default function SpikeRegisterAndAuthPage() {
     say(isAr ? `📧 بعتنا كود من 6 أرقام على ${em}. اكتبه هنا لتأكيد حسابك.` : `📧 We sent a 6-digit code to ${em}. Enter it below.`, 'ok', 'verify');
   };
 
+  /* قفل مؤقت بعد محاولات دخول غلط متكررة (حماية واجهة؛ سوبابيز عنده حد خاص من السيرفر) */
+  const LOCK_KEY = 'spike_login_lock';
+  const lockLeft = () => {
+    try { const j = JSON.parse(localStorage.getItem(LOCK_KEY) || '{}'); return Math.max(0, Math.ceil(((j.until || 0) - Date.now()) / 1000)); } catch { return 0; }
+  };
+  const noteFail = () => {
+    try {
+      const j = JSON.parse(localStorage.getItem(LOCK_KEY) || '{}');
+      const fresh = Date.now() - (j.at || 0) < 15 * 60000;
+      const n = (fresh ? j.n || 0 : 0) + 1;
+      localStorage.setItem(LOCK_KEY, JSON.stringify({ n, at: Date.now(), until: n >= 5 ? Date.now() + 5 * 60000 : 0 }));
+      return n;
+    } catch { return 0; }
+  };
+  const clearFails = () => { try { localStorage.removeItem(LOCK_KEY); } catch { /* تجاهل */ } };
+
+  const startReset = async (em) => {
+    setPendingEmail(em); setOtp(''); setCooldown(60);
+    setFormData((p) => ({ ...p, email: em, password: '', confirmPassword: '' }));
+    setMode('reset');
+    say(isAr ? `📧 لو ${em} مسجّل عندنا هيوصله كود من 6 أرقام. اكتبه مع كلمة المرور الجديدة.` : `📧 If ${em} is registered, a 6-digit code is on its way. Enter it with your new password.`, 'ok', 'reset');
+  };
+
+  const resendReset = async () => {
+    if (cooldown > 0 || !pendingEmail) return;
+    const { error } = await supabase.auth.resetPasswordForEmail(pendingEmail, { redirectTo: `${window.location.origin}/reset-password` });
+    if (error) { say((isAr ? 'تعذر الإرسال: ' : 'Failed: ') + error.message, 'err', 'reset'); return; }
+    setCooldown(60); setOtp('');
+    say(isAr ? '📧 بعتنا كود جديد' : '📧 New code sent', 'ok', 'reset');
+  };
+
+  const handleReset = async () => {
+    const code = otp.replace(/\D/g, '');
+    if (code.length !== 6) { say(isAr ? 'اكتب الكود كامل (6 أرقام)' : 'Enter the full 6-digit code'); return; }
+    if (formData.password !== formData.confirmPassword) { say(isAr ? 'كلمتا المرور غير متطابقتين!' : 'Passwords do not match!'); return; }
+    if (formData.password.length < 8 || passScore(formData.password) < 2) { say(isAr ? 'كلمة المرور لازم تكون 8 أحرف على الأقل وتجمع حروف وأرقام' : 'Password must be 8+ characters mixing letters and numbers'); return; }
+    const { data, error } = await supabase.auth.verifyOtp({ email: pendingEmail, token: code, type: 'recovery' });
+    if (error || !data?.user) { say(isAr ? 'الكود غلط أو انتهت صلاحيته. اطلب كود جديد.' : 'Invalid or expired code. Request a new one.'); setOtp(''); return; }
+    const { error: upErr } = await supabase.auth.updateUser({ password: formData.password });
+    if (upErr) { await supabase.auth.signOut(); say((isAr ? 'تعذر تغيير كلمة المرور: ' : 'Could not change password: ') + upErr.message); return; }
+    await supabase.auth.signOut();
+    clearFails();
+    setFormData((p) => ({ ...p, email: pendingEmail, password: '', confirmPassword: '' }));
+    setMode('login');
+    say(isAr ? '✅ تم تغيير كلمة المرور. سجّل الدخول بالجديدة.' : '✅ Password changed. Sign in with the new one.', 'ok', 'login');
+  };
+
   const handleVerify = async () => {
     const code = otp.replace(/\D/g, '');
     if (code.length !== 6) { say(isAr ? 'اكتب الكود كامل (6 أرقام)' : 'Enter the full 6-digit code'); return; }
@@ -292,8 +339,7 @@ export default function SpikeRegisterAndAuthPage() {
     if (!em) { say(isAr ? 'اكتب بريدك الإلكتروني' : 'Enter your email'); return; }
     const { error } = await supabase.auth.resetPasswordForEmail(em, { redirectTo: `${window.location.origin}/reset-password` });
     if (error) { say((isAr ? 'تعذر الإرسال: ' : 'Failed: ') + error.message); return; }
-    say(isAr ? '📧 لو البريد مسجل عندنا هيوصلك رابط لتعيين كلمة مرور جديدة. راجع صندوق الوارد والسبام.' : '📧 If the email exists, a reset link is on its way. Check inbox and spam.', 'ok');
-    setMode('login');
+    await startReset(em);
   };
 
   const handleSubmit = async (e) => {
@@ -303,13 +349,17 @@ export default function SpikeRegisterAndAuthPage() {
       setMsg(null);
       if (mode === 'forgot') { await handleForgot(); setLoading(false); return; }
       if (mode === 'verify') { await handleVerify(); setLoading(false); return; }
+      if (mode === 'reset') { await handleReset(); setLoading(false); return; }
       const emailInput = formData.email.trim().toLowerCase();
 
       if (mode === 'login') {
         if (!emailInput || !formData.password) { say(isAr ? 'يرجى كتابة البريد الإلكتروني وكلمة المرور' : 'Please enter email and password'); setLoading(false); return; }
+        const left = lockLeft();
+        if (left > 0) { say(isAr ? `محاولات كتير غلط. جرّب بعد ${Math.ceil(left / 60)} دقيقة أو استعد كلمة المرور.` : `Too many attempts. Try again in ${Math.ceil(left / 60)} min or reset your password.`); setLoading(false); return; }
         const { data, error: loginError } = await supabase.auth.signInWithPassword({ email: emailInput, password: formData.password });
         if (/not confirmed/i.test(loginError?.message || '')) { await startVerify(emailInput, true); setLoading(false); return; }
-        if (loginError || !data?.user) { say(/invalid login/i.test(loginError?.message || '') ? (isAr ? 'البريد أو كلمة المرور غير صحيحة' : 'Incorrect email or password') : (isAr ? 'تعذر تسجيل الدخول: ' : 'Login error: ') + (loginError?.message || '')); setLoading(false); return; }
+        if (loginError || !data?.user) { const nf = /invalid login/i.test(loginError?.message || '') ? noteFail() : 0; if (nf >= 3 && nf < 5) say(isAr ? `كلمة المرور غلط (${nf}/5). فاضل ${5 - nf} محاولات قبل القفل المؤقت.` : `Wrong password (${nf}/5).`); else if (nf >= 5) say(isAr ? 'اتقفل الدخول 5 دقايق بسبب المحاولات الغلط. تقدر تستعيد كلمة المرور.' : 'Locked for 5 minutes. You can reset your password.'); else say(/invalid login/i.test(loginError?.message || '') ? (isAr ? 'البريد أو كلمة المرور غير صحيحة' : 'Incorrect email or password') : (isAr ? 'تعذر تسجيل الدخول: ' : 'Login error: ') + (loginError?.message || '')); setLoading(false); return; }
+        clearFails();
         if (emailInput === SUPER_ADMIN_EMAIL.toLowerCase()) { rememberSession(data.user, true); router.replace('/admin'); return; }
         await ensureStore(data.user);
         rememberSession(data.user, false);
@@ -357,7 +407,7 @@ export default function SpikeRegisterAndAuthPage() {
   const inp = `rg-inp w-full p-3 rounded-xl border outline-none text-xs transition-all focus:border-[var(--ac)] ${isDark ? 'bg-slate-900/70 border-slate-700 text-white placeholder-slate-500' : 'bg-white/80 border-slate-300 text-slate-900 placeholder-slate-400 focus:bg-white'}`;
   const grp = `rg-inp flex items-stretch rounded-xl border overflow-hidden transition-all focus-within:border-[var(--ac)] ${isDark ? 'border-slate-700 bg-slate-900/70' : 'border-slate-300 bg-white/80 focus-within:bg-white'}`;
   const addon = `px-3 flex items-center font-mono text-xs select-none ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-200/80 text-slate-700'}`;
-  const title = mode === 'verify' ? (isAr ? 'أكّد بريدك الإلكتروني' : 'Verify your email') : mode === 'forgot' ? t.forgotTitle : (showLogin ? t.loginTitle : t.registerTitle);
+  const title = mode === 'reset' ? (isAr ? 'تعيين كلمة مرور جديدة' : 'Set a new password') : mode === 'verify' ? (isAr ? 'أكّد بريدك الإلكتروني' : 'Verify your email') : mode === 'forgot' ? t.forgotTitle : (showLogin ? t.loginTitle : t.registerTitle);
 
   /* ترتيب ظهور العناصر: كل عنصر يتأخر عن اللي قبله */
   let n = 1;
@@ -434,6 +484,17 @@ export default function SpikeRegisterAndAuthPage() {
               <div role="alert" className="rounded-xl p-3 text-[12px] font-bold leading-relaxed" style={{ background: msg.kind === 'ok' ? 'rgba(22,163,74,.12)' : 'rgba(239,68,68,.12)', color: msg.kind === 'ok' ? '#16a34a' : '#ef4444', border: `1px solid ${msg.kind === 'ok' ? 'rgba(22,163,74,.35)' : 'rgba(239,68,68,.35)'}` }}>{msg.text}</div>
             )}
             {mode === 'forgot' && <p className="rg-in font-normal text-slate-500" style={st()}>{t.forgotHint}</p>}
+            {mode === 'reset' && (
+              <div className="rg-in space-y-4" style={st()}>
+                <p className="font-normal text-slate-500 text-center">{isAr ? 'اكتب الكود اللي وصلك على بريدك، وبعدها كلمة المرور الجديدة.' : 'Enter the emailed code, then your new password.'}</p>
+                <OtpInput value={otp} onChange={setOtp} disabled={loading} isDark={isDark} />
+                <div className="text-center">
+                  <button type="button" disabled={cooldown > 0} onClick={resendReset} className="text-[var(--ac)] font-black cursor-pointer hover:underline disabled:opacity-50 disabled:no-underline">
+                    {cooldown > 0 ? (isAr ? `إعادة الإرسال بعد ${cooldown} ث` : `Resend in ${cooldown}s`) : (isAr ? 'إعادة إرسال الكود' : 'Resend code')}
+                  </button>
+                </div>
+              </div>
+            )}
             {mode === 'verify' && (
               <div className="rg-in space-y-4" style={st()}>
                 <p className="font-normal text-slate-500 text-center">{isAr ? 'اكتب الكود اللي وصلك على بريدك. لو ما لقيتوش راجع السبام.' : 'Enter the code sent to your email. Check spam if you can’t find it.'}</p>
@@ -489,7 +550,7 @@ export default function SpikeRegisterAndAuthPage() {
               </>
             )}
 
-            {mode !== 'verify' && <div className="rg-in space-y-1.5" style={st()}>
+            {mode !== 'verify' && mode !== 'reset' && <div className="rg-in space-y-1.5" style={st()}>
               <label className={lbl}>{t.emailLabel}</label>
               <input type="email" name="email" autoComplete="username" required dir="ltr" placeholder="name@example.com" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} className={`${inp} font-mono text-left`} />
             </div>}
@@ -500,7 +561,7 @@ export default function SpikeRegisterAndAuthPage() {
               </div>
             )}
 
-            {showRegisterFields && formData.password && (
+            {(showRegisterFields || mode === 'reset') && formData.password && (
               <div className="rg-in" style={{ marginTop: -6 }}>
                 <div style={{ display: 'flex', gap: 4 }}>
                   {[0, 1, 2, 3].map((k) => <span key={k} style={{ flex: 1, height: 5, borderRadius: 4, background: k < score ? strengthMeta(score, isAr)[1] : (isDark ? '#334155' : '#e2e8f0'), transition: 'background .2s' }} />)}
@@ -511,7 +572,7 @@ export default function SpikeRegisterAndAuthPage() {
               </div>
             )}
 
-            {showRegisterFields && (
+            {(showRegisterFields || mode === 'reset') && (
               <div className="rg-in" style={st()}>
                 <PassField id="confirm-password" label={t.confirmPassLabel} value={formData.confirmPassword} onChange={(v) => handleChange('confirmPassword', v)} shown={showPass2} setShown={setShowPass2} autoComplete="new-password" inp={inp} lbl={lbl} isAr={isAr} />
               </div>
@@ -543,12 +604,12 @@ export default function SpikeRegisterAndAuthPage() {
             <div className="pt-3 space-y-3">
               <div className="rg-in" style={st()}>
                 <button type="submit" disabled={loading} className="rg-btn w-full py-3.5 text-white rounded-xl text-sm font-black transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60">
-                  <span className="relative z-10">{loading ? t.processing : mode === 'verify' ? (isAr ? 'تأكيد الحساب' : 'Verify account') : mode === 'forgot' ? t.submitForgot : showLogin ? t.submitLogin : t.submitRegister}</span>
+                  <span className="relative z-10">{loading ? t.processing : mode === 'reset' ? (isAr ? 'تغيير كلمة المرور' : 'Change password') : mode === 'verify' ? (isAr ? 'تأكيد الحساب' : 'Verify account') : mode === 'forgot' ? t.submitForgot : showLogin ? t.submitLogin : t.submitRegister}</span>
                 </button>
               </div>
 
               <div className="rg-in text-center pt-1" style={st()}>
-                {mode === 'forgot' || mode === 'verify' ? (
+                {mode === 'forgot' || mode === 'verify' || mode === 'reset' ? (
                   <button type="button" onClick={() => switchMode('login')} className="w-full py-2.5 border-2 border-[var(--ac)] text-[var(--ac)] hover:opacity-80 rounded-xl text-xs font-black transition cursor-pointer">{t.backLogin}</button>
                 ) : (
                   <>
