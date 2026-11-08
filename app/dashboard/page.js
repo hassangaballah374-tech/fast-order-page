@@ -81,6 +81,7 @@ export default function MerchantDashboard() {
   useEffect(() => { try { setDark(localStorage.getItem('spike_dash_dark') === '1'); } catch { /* تجاهل */ } }, []);
   const toggleDark = () => setDark((d) => { const v = !d; try { localStorage.setItem('spike_dash_dark', v ? '1' : '0'); } catch { /* تجاهل */ } return v; });
   const [cmd, setCmd] = useState(false);
+  const [bypass, setBypass] = useState(''); /* شاشة مقفولة الأدمن اختار يتخطاها */
   const [cq, setCq] = useState('');
   const [origin, setOrigin] = useState('');
   const [setup, setSetup] = useState({ name: '', slug: '', busy: false });
@@ -222,7 +223,6 @@ export default function MerchantDashboard() {
 
   /* الأدمن بيشوف كل الشاشات مفتوحة (الأقفال للتجار بس) */
   /* الأدمن في متجره هو: مفيش أقفال. لكن لما يفتح متجر تاجر (من لوحة الأدمن) بيشوف الأقفال زي ما التاجر بيشوفها، وممكن يتخطاها لشاشة واحدة */
-  const [bypass, setBypass] = useState('');
   const lockedId = (id) => !(isAdmin && uid === authId) && bypass !== id && isLocked(locks, id, uid, store?.plan_type || 'starter');
   const Screen = lockedId(tab) ? () => <Locked title={(FLAT.find((x) => x.id === tab) || {}).t} onBypass={isAdmin ? () => setBypass(tab) : undefined} /> : (SCREENS[tab] || SCREENS.stats);
   const curGroup = groupOf(tab);
