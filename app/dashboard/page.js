@@ -15,6 +15,7 @@ import { spikeLogout } from '../../components/SpikeSessionBar';
 import { MerchantBell, UsageBanner } from '../../components/dash/MerchantBell';
 import NewOrderAlert from '../../components/dash/NewOrderAlert';
 import DashTabs from '../../components/dash/DashTabs';
+import { api } from '../../components/dash/hooks';
 
 const ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 const FLAT = flatMenu();
@@ -123,7 +124,7 @@ export default function MerchantDashboard() {
       await loadStore(key);
       const { data: c } = await supabase.from('store_config').select('config').eq('store_id', key).maybeSingle();
       rawRef.current = c?.config && typeof c.config === 'object' ? c.config : {};
-      try { const { data: lk } = await supabase.from('platform_kv').select('value').eq('key', LOCKS_KEY).maybeSingle(); if (!off) setLocks(parseLocks(lk?.value)); } catch { /* بدون أقفال */ }
+      try { const r = await api('/api/platform/locks', { action: 'get', uid: key }); if (!off && r?.ok) setLocks(parseLocks(r.locks)); } catch { /* بدون أقفال */ }
       if (!off) { setRawCfg(rawRef.current); setReady(true); }
     })();
     return () => { off = true; };
