@@ -1,80 +1,84 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { supabase } from '../../../lib/supabase';
+import { adminClient } from '../../../lib/supabaseAdmin';
+import { rateLimit, clientIp } from '../../../lib/storeServer';
 
-function hashData(data) {
-  if (!data) return '';
-  const cleaned = String(data).trim().toLowerCase();
-  return crypto.createHash('sha256').update(cleaned).digest('hex');
+export const runtime = 'nodejs';
+
+const hashData = (data) => (data ? crypto.createHash('sha256').update(String(data).trim().toLowerCase()).digest('hex') : '');
+const str = (v, n = 200) => (typeof v === 'string' ? v.slice(0, n) : '');
+const ok = (extra = {}, status = 200) => NextResponse.json({ success: false, ...extra }, { status });
+
+/* مسموح بس لطلبات جاية من نفس الموقع (مش من موقع تاني بيستغل توكنات المتجر) */
+function sameOrigin(req) {
+  const host = req.headers.get('host') || '';
+  for (const h of ['origin', 'referer']) {
+    const v = req.headers.get(h);
+    if (!v) continue;
+    try { return new URL(v).host === host; } catch { return false; }
+  }
+  return true;
 }
 
 export async function POST(req) {
   try {
-    const body = await req.json();
-    const { event_name, event_id, event_source_url, user_data, custom_data } = body;
+    if (!sameOrigin(req)) return ok({ message: 'forbidden' }, 403);
+    if (!rateLimit(`fbc:${clientIp(req)}`, 60, 60_000)) return ok({ message: 'too many requests' }, 429);
 
-    // جلب جميع البيكسلات ورموز الوصول المستقلة من قاعدة البيانات
-    const { data: storeData } = await supabase.from('store_settings').select('pixel_1, token_1, pixel_2, token_2, pixel_3, token_3, pixel_4, token_4').limit(1).maybeSingle();
+    let body;
+    try { body = await req.json(); } catch { return ok({ message: 'invalid' }, 400); }
+    if (!body || typeof body !== 'object') return ok({ message: 'invalid' }, 400);
+    const event_name = str(body.event_name, 60) || 'PageView';
+    const event_id = str(body.event_id, 80);
+    const event_source_url = str(body.event_source_url, 500);
+    const user_data = body.user_data && typeof body.user_data === 'object' ? body.user_data : {};
+    const custom_data = body.custom_data && typeof body.custom_data === 'object' ? body.custom_data : {};
 
-    if (!storeData) {
-      return NextResponse.json({ success: false, message: 'Store settings not found' }, { status: 200 });
-    }
+    /* التوكنات تتقرأ بالسيرفر فقط (مش بمفتاح المتصفح) */
+    let storeData;
+    try {
+      ({ data: storeData } = await adminClient().from('store_settings').select('pixel_1, token_1, pixel_2, token_2, pixel_3, token_3, pixel_4, token_4').limit(1).maybeSingle());
+    } catch { return ok({ message: 'not configured' }); }
+    if (!storeData) return ok({ message: 'Store settings not found' });
 
-    const pairs = [
-      { pixel: storeData.pixel_1, token: storeData.token_1 },
-      { pixel: storeData.pixel_2, token: storeData.token_2 },
-      { pixel: storeData.pixel_3, token: storeData.token_3 },
-      { pixel: storeData.pixel_4, token: storeData.token_4 },
-    ].filter(p => p.pixel && p.token);
+    const pairs = [1, 2, 3, 4].map((i) => ({ pixel: storeData[`pixel_${i}`], token: storeData[`token_${i}`] }))
+      .filter((p) => p.pixel && p.token && /^\d{5,25}$/.test(String(p.pixel).trim()));
+    if (!pairs.length) return ok({ message: 'No valid pixel and token pairs found' });
 
-    if (pairs.length === 0) {
-      return NextResponse.json({ success: false, message: 'No valid pixel and token pairs found' }, { status: 200 });
-    }
+    let rawPhone = str(user_data.phone, 30).replace(/[^0-9]/g, '');
+    if (rawPhone.startsWith('01')) rawPhone = `2${rawPhone}`;
+    const fwd = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim();
 
-    let rawPhone = user_data?.phone ? String(user_data.phone).replace(/[^0-9]/g, '') : '';
-    if (rawPhone.startsWith('01')) rawPhone = '2' + rawPhone;
-
-    // إرسال الأحداث لكل بيكسل برمز الوصول المستقل الخاص به من السيرفر (يعمل في الخلفية دائماً)
-    const promises = pairs.map(({ pixel, token }) => {
+    await Promise.all(pairs.map(({ pixel, token }) => {
       const payload = {
-        data: [
-          {
-            event_name: event_name || 'PageView',
-            event_time: Math.floor(Date.now() / 1000),
-            event_id: event_id || `evt_${Date.now()}_${Math.random()}`,
-            event_source_url: event_source_url || '',
-            action_source: 'website',
-            user_data: {
-              ph: rawPhone ? [hashData(rawPhone)] : [],
-              fn: user_data?.name ? [hashData(user_data.name.split(' ')[0])] : [],
-              ct: user_data?.city ? [hashData(user_data.city)] : [],
-              st: user_data?.governorate ? [hashData(user_data.governorate)] : [],
-              country: [hashData('eg')],
-              client_ip_address: req.headers.get('x-forwarded-for') || '',
-              client_user_agent: req.headers.get('user-agent') || '',
-            },
-            custom_data: {
-              currency: 'EGP',
-              value: Number(custom_data?.value) || 0,
-              content_name: custom_data?.content_name || '',
-            }
-          }
-        ],
-        access_token: token.trim(),
+        data: [{
+          event_name,
+          event_time: Math.floor(Date.now() / 1000),
+          event_id: event_id || `evt_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
+          event_source_url,
+          action_source: 'website',
+          user_data: {
+            ph: rawPhone ? [hashData(rawPhone)] : [],
+            fn: str(user_data.name, 80) ? [hashData(str(user_data.name, 80).split(' ')[0])] : [],
+            ct: str(user_data.city, 80) ? [hashData(str(user_data.city, 80))] : [],
+            st: str(user_data.governorate, 80) ? [hashData(str(user_data.governorate, 80))] : [],
+            country: [hashData('eg')],
+            client_ip_address: fwd,
+            client_user_agent: str(req.headers.get('user-agent') || '', 300),
+          },
+          custom_data: { currency: 'EGP', value: Math.max(0, Number(custom_data.value) || 0), content_name: str(custom_data.content_name, 200) },
+        }],
+        access_token: String(token).trim(),
       };
+      return fetch(`https://graph.facebook.com/v19.0/${encodeURIComponent(String(pixel).trim())}/events`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: AbortSignal.timeout(8000),
+      }).then((r) => r.json()).catch(() => null);
+    }));
 
-      return fetch(`https://graph.facebook.com/v19.0/${pixel.trim()}/events`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).then(res => res.json()).catch(err => ({ error: err.message }));
-    });
-
-    const results = await Promise.all(promises);
-
-    return NextResponse.json({ success: true, results });
+    /* مفيش رد تفصيلي من فيسبوك للمتصفح */
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('CAPI Server Error:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return ok({ message: 'server error' }, 500);
   }
 }

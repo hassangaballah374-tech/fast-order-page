@@ -52,7 +52,7 @@ function initTt(id) {
       ttq._t = ttq._t || {}; ttq._t[e] = +new Date();
       ttq._o = ttq._o || {}; ttq._o[e] = n || {};
       const o = document.createElement('script');
-      o.type = 'text/javascript'; o.async = true; o.src = `${r}?sdkid=${e}&lib=ttq`;
+      o.type = 'text/javascript'; o.async = true; o.src = `${r}?sdkid=${encodeURIComponent(e)}&lib=ttq`;
       const a = document.getElementsByTagName('script')[0];
       a.parentNode.insertBefore(o, a);
     };
