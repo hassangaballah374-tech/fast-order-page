@@ -3,6 +3,7 @@ import { AppProvider } from '../context/AppContext';
 import MobileViewportWrapper from '../components/MobileViewportWrapper';
 import MotionFX from '../components/MotionFX';
 import PwaBoot from '../components/PwaBoot';
+import PullRefresh from '../components/PullRefresh';
 
 const ICON = '/brand/icon-512.png?v=2';
 
@@ -39,6 +40,7 @@ export default function RootLayout({ children }) {
             <MotionFX />
             {children}
             <PwaBoot />
+            <PullRefresh />
           </MobileViewportWrapper>
         </AppProvider>
       </body>
