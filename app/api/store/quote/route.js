@@ -21,7 +21,7 @@ export async function POST(req) {
   if (priced.errors?.length) return NextResponse.json({ ok: false, error: priced.errors[0] });
 
   let couponMsg = '';
-  if (body.coupon) couponMsg = priced.coupon ? 'تم تطبيق الكود ✓' : 'كود الخصم غير صالح أو لا ينطبق على طلبك';
+  if (body.coupon) couponMsg = priced.coupon ? 'تم تطبيق الكود ✓' : (priced.couponCondition || 'كود الخصم غير صالح أو لا ينطبق على طلبك');
   const after = priced.subtotal - priced.discount;
   const remainingFree = priced.freeOver > 0 ? Math.max(0, Math.round((priced.freeOver - after) * 100) / 100) : null;
 

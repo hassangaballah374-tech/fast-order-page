@@ -50,7 +50,7 @@ export async function POST(req) {
   const since = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString();
   const [blockedRes, priced, recentRes, historyRes, otpRes, netRes] = await Promise.all([
     sb.from('store_blocklist').select('id').eq('store_id', sid).eq('phone', phone).eq('kind', 'order').maybeSingle(),
-    priceCart(sb, store, cfg, { items: body.items, bump: body.bump, governorate, coupon: body.coupon }),
+    priceCart(sb, store, cfg, { items: body.items, bump: body.bump, governorate, coupon: body.coupon, phone }),
     sb.from('orders')
       .select('id, status, items, public_token, order_no, created_at')
       .eq('store_id', sid).eq('customer_phone', phone)
@@ -62,6 +62,7 @@ export async function POST(req) {
   ]);
   if (blockedRes.data) return fail('تعذر إتمام الطلب حالياً. تواصل معنا عبر واتساب.', 403);
   if (priced.errors?.length) return fail(priced.errors[0]);
+  if (priced.couponCondition) return fail(`${priced.couponCondition}. شيل كود الخصم وكمّل الطلب.`);
   const recent = recentRes.data;
   const history = historyRes.data;
   const otpHit = otpRes.data;
