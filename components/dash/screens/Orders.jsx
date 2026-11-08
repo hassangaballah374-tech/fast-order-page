@@ -178,7 +178,7 @@ export function OrdersScreen() {
         {t.loading ? <div className="c"><Spin /></div> : rows.length === 0 ? (
           <Empty icon="📦" t="لا توجد طلبات" d={t.rows.length ? 'جرّب تغيير الفلاتر' : 'ستظهر هنا طلبات متجرك فور وصولها'} />
         ) : (
-          <table className="tbl">
+          <table className="tbl ord">
             <thead><tr>
               <th style={{ width: 36 }}><input type="checkbox" checked={allOnPage} onChange={toggleAll} aria-label="تحديد الكل" /></th>
               <th>الطلب</th><th>العميل</th><th>المحافظة</th><th>المنتجات</th><th>الإجمالي</th><th>الحالة</th><th>مخاطرة</th><th>الشحن</th><th />
