@@ -22,7 +22,8 @@ async function lookup(host) {
     if (!r.ok) return '';
     const rows = await r.json();
     const row = rows && rows[0];
-    const slug = row && (row.status === 'active' || row.status === 'manual') ? String(row.slug) : '';
+    /* أي دومين وصل لهنا فهو مضاف فعلاً على Vercel، فمفيش داعي نشترط حالة 'active' */
+    const slug = row && row.slug ? String(row.slug) : '';
     cache.set(host, { slug, until: Date.now() + TTL });
     return slug;
   } catch { return ''; }
