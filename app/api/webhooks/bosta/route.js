@@ -69,7 +69,7 @@ export async function POST(req) {
     const { data: prods } = await sb.from('products').select('id, track_stock').in('id', ids);
     (prods || []).forEach((p) => { if (p.track_stock !== false) tracked.add(String(p.id)); });
   }
-  const lines = items.map((i) => ({ product_id: String(i.product_id), qty: Number(i.qty) || 1, title: i.title, track: tracked.has(String(i.product_id)) }));
+  const lines = items.map((i) => ({ product_id: String(i.product_id), qty: Number(i.qty) || 1, title: i.title, options: i.options || {}, track: tracked.has(String(i.product_id)) }));
 
   if (!DEAD.includes(prev) && target === 'returned') await restoreStockForLines(sb, lines);
   if (DEAD.includes(prev) && !DEAD.includes(target)) { const t = await takeStockForLines(sb, lines); if (!t.ok) return ok({ ignored: 'stock' }); }

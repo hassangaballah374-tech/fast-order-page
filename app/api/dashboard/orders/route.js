@@ -41,7 +41,7 @@ export async function POST(req) {
       const prev = o.status || 'pending';
       if (prev === status) { results.push({ id: o.id, ok: true }); continue; }
       const lines = (Array.isArray(o.items) ? o.items : []).map((i) => ({
-        product_id: String(i.product_id), qty: Number(i.qty) || 1, title: i.title, track: trackedSet.has(String(i.product_id)),
+        product_id: String(i.product_id), qty: Number(i.qty) || 1, title: i.title, options: i.options || {}, track: trackedSet.has(String(i.product_id)),
       }));
       if (!DEAD.includes(prev) && DEAD.includes(status)) {
         await restoreStockForLines(sb, lines);
@@ -85,7 +85,7 @@ export async function POST(req) {
     };
     const { data: created, error } = await sb.from('orders').insert([row]).select('id, order_no').single();
     if (error) {
-      for (const l of stock.taken) await sb.rpc('take_stock', { p_product: l.product_id, p_qty: -l.qty });
+      await restoreStockForLines(sb, stock.taken);
       return bad('تعذر حفظ الطلب', 500);
     }
     if (priced.coupon?.code) await sb.rpc('claim_coupon', { p_store: sid, p_code: priced.coupon.code });

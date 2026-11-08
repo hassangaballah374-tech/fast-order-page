@@ -4,7 +4,7 @@ import { useShop } from './StoreContext';
 import { track } from './tracker';
 import Checkout from './Checkout';
 import { soldOut } from './ui';
-import { money, effectivePrice, unitPrice, overridePrice, saleActive } from '../../lib/storeKit'; 
+import { money, effectivePrice, unitPrice, overridePrice, valueSoldOut, saleActive } from '../../lib/storeKit'; 
 import { fontHref, isDark } from '../../lib/themes100';
 import { lpThemeCss } from '../../lib/landingThemes';
 import WaIcon from './WaIcon';
@@ -247,7 +247,7 @@ function OrderBox({ s, ctx }) {
               {groups.map((g) => (
                 <div className="opt" key={g.name}>
                   <b>{g.name}</b>
-                  <div className="chips">{g.values.map((v) => <button type="button" key={v} className={'chip' + (opts[g.name] === v ? ' act' : '')} onClick={() => setOpts({ ...opts, [g.name]: v })}>{v}</button>)}</div>
+                  <div className="chips">{g.values.map((v) => <button type="button" key={v} className={'chip' + (opts[g.name] === v ? ' act' : '') + (valueSoldOut(g, v) ? ' off' : '')} disabled={valueSoldOut(g, v)} onClick={() => setOpts({ ...opts, [g.name]: v })}>{v}{valueSoldOut(g, v) ? ' (نفد)' : ''}</button>)}</div>
                 </div>
               ))}
               <div className="lp-qrow"><span>الكمية</span>

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreBySlug, storeKey, getConfig, priceCart, takeStockForLines, orderRowItems, rateLimit, clientIp } from '../../../../lib/storeServer';
+import { getStoreBySlug, storeKey, getConfig, priceCart, takeStockForLines, restoreStockForLines, orderRowItems, rateLimit, clientIp } from '../../../../lib/storeServer';
 import { normalizePhone, isValidEgPhone } from '../../../../lib/storeKit';
 import { runAfter } from '../../../../lib/after';
 import { sendCapiPurchase } from '../../../../lib/capi';
@@ -115,7 +115,7 @@ export async function POST(req) {
 
   const { data: created, error } = await sb.from('orders').insert([row]).select('id, order_no, public_token').single();
   if (error) {
-    for (const l of stock.taken) await sb.rpc('take_stock', { p_product: l.product_id, p_qty: -l.qty });
+    await restoreStockForLines(sb, stock.taken);
     console.error('ORDER_INSERT_ERROR', error.message, error.details, error.hint);
     return fail('تعذر تسجيل الطلب، حاول مرة أخرى', 500);
   }

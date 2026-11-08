@@ -65,7 +65,7 @@ export async function POST(req) {
       const ids = [...new Set(items.map((i) => String(i.product_id)))];
       const tracked = new Set();
       if (ids.length) { const { data: p } = await sb.from('products').select('id, track_stock').in('id', ids); (p || []).forEach((x) => { if (x.track_stock !== false) tracked.add(String(x.id)); }); }
-      await restoreStockForLines(sb, items.map((i) => ({ product_id: String(i.product_id), qty: Number(i.qty) || 1, track: tracked.has(String(i.product_id)) })));
+      await restoreStockForLines(sb, items.map((i) => ({ product_id: String(i.product_id), qty: Number(i.qty) || 1, options: i.options || {}, track: tracked.has(String(i.product_id)) })));
       await sb.from('orders').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', o.id);
       await sendText(c, m.from, 'تم إلغاء طلبك. لو غيّرت رأيك تقدر تطلب تاني في أي وقت 🌷');
     }
