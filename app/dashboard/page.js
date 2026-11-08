@@ -14,6 +14,7 @@ import { mergeConfig } from '../../lib/storeKit';
 import { spikeLogout } from '../../components/SpikeSessionBar';
 import { MerchantBell, UsageBanner } from '../../components/dash/MerchantBell';
 import NewOrderAlert from '../../components/dash/NewOrderAlert';
+import DashTabs from '../../components/dash/DashTabs';
 
 const ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 const FLAT = flatMenu();
@@ -288,10 +289,10 @@ export default function MerchantDashboard() {
             <NewOrderAlert />
             <MerchantBell />
             <button type="button" className="btn" onClick={toggleDark} title={dark ? 'الوضع النهاري' : 'الوضع الداكن'}>{dark ? '☀️' : '🌙'}</button>
-            {storeUrl && <a className="btn" href={storeUrl} target="_blank" rel="noreferrer">معاينة المتجر ↗</a>}
-            <button type="button" className="btn p" onClick={() => go('products')}>+ منتج</button>
-            {isAdmin && <button type="button" className="btn" onClick={() => router.push('/admin')}>🛡️ الإدارة</button>}
-            <button type="button" className="btn dng" onClick={() => spikeLogout(router)}>🚪 خروج</button>
+            {storeUrl && <a className="btn hide-m" href={storeUrl} target="_blank" rel="noreferrer">معاينة المتجر ↗</a>}
+            <button type="button" className="btn p hide-m" onClick={() => go('products')}>+ منتج</button>
+            {isAdmin && <button type="button" className="btn hide-m" onClick={() => router.push('/admin')}>🛡️ الإدارة</button>}
+            <button type="button" className="btn dng hide-m" onClick={() => spikeLogout(router)}>🚪 خروج</button>
           </div>
 
           <section className="pg">
@@ -316,6 +317,8 @@ export default function MerchantDashboard() {
             )}
           </section>
         </main>
+
+        <DashTabs tab={tab} go={go} uid={uid} lockedId={lockedId} storeName={store?.store_name} logo={cfg.brand.logo} storeUrl={storeUrl} dark={dark} toggleDark={toggleDark} onSearch={() => setCmd(true)} onLogout={() => spikeLogout(router)} isAdmin={isAdmin} onAdmin={() => router.push('/admin')} />
 
         {cmd && (
           <div className="ov topv" onClick={() => { setCmd(false); setCq(''); }}>
