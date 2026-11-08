@@ -216,6 +216,7 @@ export function CouponsScreen() {
         { l: 'الكود', render: (r) => <b className="num" dir="ltr">{r.code}</b> },
         { l: 'الخصم', render: (r) => (r.kind === 'free_ship' ? 'شحن مجاني' : r.kind === 'percent' ? `${r.value}%` : money(r.value, cur)) },
         { l: 'حد أدنى', render: (r) => (Number(r.min_order) ? money(r.min_order, cur) : '—') },
+        { l: 'شروط', render: (r) => (r.first_order_only || (r.governorates || []).length ? <small>{r.first_order_only ? 'طلب أول ' : ''}{(r.governorates || []).length ? `· ${r.governorates.length} محافظة` : ''}</small> : '—') },
         { l: 'الاستخدام', render: (r) => <span className="num">{r.uses || 0}{r.max_uses ? ` / ${r.max_uses}` : ''}</span> },
         { l: 'الحالة', render: (r) => { const [t, c] = state(r); return <Badge c={c}>{t}</Badge>; } },
       ]}
@@ -225,6 +226,8 @@ export function CouponsScreen() {
         { k: 'value', l: 'قيمة الخصم', type: 'number', min: 0, showIf: (d) => d.kind !== 'free_ship', hint: 'نسبة % أو مبلغ بالجنيه حسب النوع' },
         { k: 'min_order', l: 'الحد الأدنى للطلب', type: 'number', min: 0 },
         { k: 'max_uses', l: 'أقصى عدد استخدامات (فارغ = بلا حد)', type: 'number', min: 1 },
+        { k: 'first_order_only', l: 'شرط العميل', type: 'toggle', text: 'للطلب الأول فقط (العميل الجديد)', hint: 'بيتم التحقق منه برقم الموبايل لحظة تأكيد الطلب' },
+        { k: 'governorates', l: 'المحافظات المسموحة', type: 'govs' },
         { k: 'starts_at', l: 'يبدأ في', type: 'datetime' },
         { k: 'ends_at', l: 'ينتهي في', type: 'datetime' },
       ]}
@@ -241,6 +244,8 @@ export function CouponsScreen() {
       transform={(e) => ({
         ...e, code: String(e.code).trim().toUpperCase(), value: e.kind === 'free_ship' ? 0 : Number(e.value), min_order: Number(e.min_order) || 0,
         max_uses: e.max_uses === '' || e.max_uses == null ? null : Math.floor(Number(e.max_uses)), starts_at: e.starts_at || null, ends_at: e.ends_at || null,
+        ...(e.first_order_only || 'first_order_only' in e ? { first_order_only: !!e.first_order_only } : {}),
+        ...((Array.isArray(e.governorates) && e.governorates.length) || 'governorates' in e ? { governorates: Array.isArray(e.governorates) && e.governorates.length ? e.governorates : null } : {}),
       })}
     />
   );
