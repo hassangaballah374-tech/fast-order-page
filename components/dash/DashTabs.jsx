@@ -58,18 +58,17 @@ export default function DashTabs({ tab, go, uid, lockedId, storeName, logo, stor
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', k); };
   }, [more]);
 
-  const secs = useMemo(() => sections(), []);
+  const secs = sections().map((s) => ({ ...s, items: s.items.filter((it) => !lockedId(it.id)) })).filter((s) => s.items.length);
   const term = q.trim();
-  const flat = useMemo(() => (term ? secs.flatMap((s) => s.items.map((it) => ({ ...it, g: s.title }))).filter((it) => it.t.includes(term) || it.g.includes(term) || it.id.includes(term.toLowerCase())) : []), [secs, term]);
+  const flat = term ? secs.flatMap((s) => s.items.map((it) => ({ ...it, g: s.title }))).filter((it) => it.t.includes(term) || it.g.includes(term) || it.id.includes(term.toLowerCase())) : [];
   const tap = () => { try { navigator.vibrate && navigator.vibrate(6); } catch { /* */ } };
   const inMain = TABS.some(([id]) => id === tab);
   const pick = (id) => { tap(); setMore(false); setQ(''); go(id); };
 
   const Tile = ({ it }) => (
-    <button type="button" className={'dsh-t' + (tab === it.id ? ' act' : '') + (lockedId(it.id) ? ' lk' : '')} onClick={() => pick(it.id)}>
+    <button type="button" className={'dsh-t' + (tab === it.id ? ' act' : '') + ''} onClick={() => pick(it.id)}>
       {it.i ? <span className="dsh-i">{it.i}</span> : null}
       <span className="dsh-x">{it.t}</span>
-      {lockedId(it.id) ? <span aria-label="مقفولة">🔒</span> : null}
       {it.badge ? <em>{it.badge}</em> : null}
     </button>
   );
@@ -77,7 +76,7 @@ export default function DashTabs({ tab, go, uid, lockedId, storeName, logo, stor
   return (
     <>
       <nav className="dtab" aria-label="التنقل السريع">
-        {TABS.map(([id, label, ic]) => (
+        {TABS.filter(([id]) => !lockedId(id)).map(([id, label, ic]) => (
           <button key={id} type="button" className={'dtab-i' + (tab === id ? ' on' : '')} onClick={() => { tap(); go(id); }} aria-current={tab === id ? 'page' : undefined}>
             <Ico n={ic} /><span>{label}</span>
             {id === 'orders' && pending > 0 ? <em className="dtab-b">{pending > 99 ? '99+' : pending}</em> : null}

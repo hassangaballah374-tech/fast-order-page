@@ -207,10 +207,12 @@ export default function MerchantDashboard() {
     say('✅ تم إنشاء متجرك');
   };
 
+  /* الأدمن في متجره هو: مفيش أقفال. لما يفتح متجر تاجر (من لوحة الأدمن) بيشوف الأقفال زي التاجر. الشاشة المقفولة بتختفي من كل القوائم. */
+  const lockedId = (id) => !(isAdmin && uid === authId) && bypass !== id && isLocked(locks, id, uid, store?.plan_type || 'starter');
   const cmdList = useMemo(() => {
     const q = cq.trim();
-    return FLAT.filter((x) => !q || x.t.includes(q) || x.group.includes(q) || x.id.includes(q.toLowerCase())).slice(0, 12);
-  }, [cq]);
+    return FLAT.filter((x) => !lockedId(x.id)).filter((x) => !q || x.t.includes(q) || x.group.includes(q) || x.id.includes(q.toLowerCase())).slice(0, 12);
+  }, [cq, locks, uid, authId, isAdmin, store?.plan_type, bypass]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!ready) {
     return (
@@ -223,21 +225,19 @@ export default function MerchantDashboard() {
 
   /* الأدمن بيشوف كل الشاشات مفتوحة (الأقفال للتجار بس) */
   /* الأدمن في متجره هو: مفيش أقفال. لكن لما يفتح متجر تاجر (من لوحة الأدمن) بيشوف الأقفال زي ما التاجر بيشوفها، وممكن يتخطاها لشاشة واحدة */
-  const lockedId = (id) => !(isAdmin && uid === authId) && bypass !== id && isLocked(locks, id, uid, store?.plan_type || 'starter');
   const Screen = lockedId(tab) ? () => <Locked title={(FLAT.find((x) => x.id === tab) || {}).t} onBypass={isAdmin ? () => setBypass(tab) : undefined} /> : (SCREENS[tab] || SCREENS.stats);
   const curGroup = groupOf(tab);
   const isOpen = (g) => (open[g] ?? curGroup === g);
   const initial = (store?.store_name || 'S').trim().charAt(0).toUpperCase();
 
-  const NavItem = ({ it, sub }) => (
+  const NavItem = ({ it, sub }) => (lockedId(it.id) ? null : (
     <button type="button" className={'nv' + (tab === it.id ? ' act' : '') + (lockedId(it.id) ? ' lk' : '')} onClick={() => go(it.id)}>
       {it.i && !sub && <span className="ic">{it.i}</span>}
       <span className="tx">{it.t}</span>
-      {lockedId(it.id) && <span title="غير مفعّلة" aria-label="مقفولة">🔒</span>}
       {it.spike && <span className="spk" title="إضافة حصرية من سبايك">✦</span>}
       {it.badge && <em className={'bn' + (it.badge === 'سبايك' ? ' sp' : '')}>{it.badge}</em>}
     </button>
-  );
+  ));
 
   return (
     <DashCtx.Provider value={ctx}>
@@ -258,20 +258,24 @@ export default function MerchantDashboard() {
             {MENU.map((m, i) => {
               if (m.id) return <NavItem key={m.id} it={m} />;
               if (m.g) {
+                const vis = m.items.filter((it) => !lockedId(it.id));
+                if (!vis.length) return null;
                 const o = isOpen(m.g);
                 return (
                   <div key={m.g}>
                     <button type="button" className={'nv' + (o ? ' open' : '') + (curGroup === m.g && !o ? ' act' : '')} aria-expanded={o} onClick={() => toggleGroup(m.g)}>
                       <span className="ic">{m.i}</span><span className="tx">{m.t}</span><span className="chev">▾</span>
                     </button>
-                    {o && <div className="nvsub">{m.items.map((it) => <NavItem key={it.id} it={it} sub />)}</div>}
+                    {o && <div className="nvsub">{vis.map((it) => <NavItem key={it.id} it={it} sub />)}</div>}
                   </div>
                 );
               }
+              const visH = m.items.filter((it) => !lockedId(it.id));
+              if (!visH.length) return null;
               return (
                 <div key={`h${i}`}>
                   <div className="nvh">{m.h}</div>
-                  {m.items.map((it) => <NavItem key={it.id} it={it} />)}
+                  {visH.map((it) => <NavItem key={it.id} it={it} />)}
                 </div>
               );
             })}
