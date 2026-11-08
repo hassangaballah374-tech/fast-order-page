@@ -447,6 +447,75 @@ function ContactForm() {
   );
 }
 
+/* ربط الدومين الخاص مباشرة من لوحة التاجر */
+function DomainPanel() {
+  const { uid, say, reloadStore } = useDash();
+  const [st, setSt] = useState(null);
+  const [val, setVal] = useState('');
+  const [busy, setBusy] = useState(false);
+  const call = async (action, extra) => api('/api/dashboard/domain', { action, uid, ...(extra || {}) });
+  const load = async () => { const r = await call('get'); setSt(r); };
+  useEffect(() => { if (uid) load(); }, [uid]);
+  const run = async (action, extra, okMsg) => {
+    setBusy(true);
+    const r = await call(action, extra);
+    setBusy(false);
+    if (!r.ok) { say(r.error || 'حصل خطأ', 'err'); return; }
+    if (okMsg) say(okMsg);
+    setSt(r.domain === undefined ? { ok: true, live: st?.live, domain: '' } : r);
+    if (action === 'remove') { setVal(''); await load(); }
+    try { reloadStore && reloadStore(); } catch { /* اختياري */ }
+  };
+  if (!st) return <div className="card"><Spin /></div>;
+  const has = !!st.domain;
+  const stateBadge = !has ? null : st.connected ? <Badge c="#16a34a">شغّال</Badge> : st.status === 'manual' ? <Badge c="#d97706">بانتظار الإضافة اليدوية</Badge> : <Badge c="#d97706">بانتظار ضبط الـ DNS</Badge>;
+  return (
+    <div className="card">
+      <h3 style={{ margin: '0 0 6px' }}>الدومين الخاص</h3>
+      <p className="muted" style={{ margin: '0 0 14px' }}>اربط دومينك بمتجرك مباشرة، ويفتح المتجر عليه بدل رابط سبايك.</p>
+      {!has ? (
+        <>
+          <Field l="الدومين" hint="بدون https:// مثل shop.example.com">
+            <input className="in" dir="ltr" placeholder="shop.example.com" value={val} onChange={(e) => setVal(e.target.value)} />
+          </Field>
+          <button className="btn pri" disabled={busy || !val.trim()} onClick={() => run('connect', { domain: val }, 'تم تسجيل الدومين')}>{busy ? 'جارٍ الربط…' : 'ربط الدومين'}</button>
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+            <b dir="ltr">{st.domain}</b>{stateBadge}
+          </div>
+          {!st.connected && (
+            <>
+              <p style={{ margin: '0 0 8px' }}>{st.live ? 'ادخل على لوحة مزوّد الدومين (مكان ما اشتريته) وأضف السجل ده في إعدادات DNS:' : 'الربط التلقائي غير مفعّل حالياً. سجّل الدومين عندنا، وإدارة سبايك هتكمل الربط. ولو عايز تضبط الـ DNS بنفسك أضف السجل ده:'}</p>
+              {(st.records || []).map((r, i) => (
+                <div key={i} className="pv" style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 10, alignItems: 'center', marginBottom: 8 }}>
+                  <b>{r.type}</b>
+                  <span dir="ltr" style={{ wordBreak: 'break-all' }}>الاسم: {r.name} ← القيمة: {r.value}</span>
+                  <CopyBtn text={r.value} />
+                </div>
+              ))}
+              {(st.verification || []).map((v, i) => (
+                <div key={`v${i}`} className="pv" style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 10, alignItems: 'center', marginBottom: 8 }}>
+                  <b>{String(v.type || 'TXT').toUpperCase()}</b>
+                  <span dir="ltr" style={{ wordBreak: 'break-all' }}>الاسم: {v.domain} ← القيمة: {v.value}</span>
+                  <CopyBtn text={v.value} />
+                </div>
+              ))}
+              <p className="muted" style={{ margin: '8px 0 14px' }}>التفعيل بياخد من دقائق لحد ساعات حسب مزوّد الدومين. بعد ما تضيف السجل اضغط «تحقق».</p>
+            </>
+          )}
+          {st.connected && <p style={{ margin: '0 0 14px' }}>متجرك شغّال على <b dir="ltr">https://{st.domain}</b></p>}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {!st.connected && <button className="btn pri" disabled={busy} onClick={() => run('verify', null, null)}>{busy ? 'جارٍ التحقق…' : 'تحقق'}</button>}
+            <button className="btn" disabled={busy} onClick={() => { if (window.confirm('فصل الدومين عن المتجر؟')) run('remove'); }}>فصل الدومين</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function SettingsScreen() {
   const [tab, setTab] = useState('store');
   const { cfg, saveCfg, say } = useDash();
@@ -479,15 +548,7 @@ export function SettingsScreen() {
             ]}
           />
         )}
-        {tab === 'domain' && (
-          <ConfigForm
-            section="domain" title="الدومين الخاص" desc="سجّل الدومين الذي تريد ربطه بمتجرك."
-            fields={[{ k: 'custom_domain', l: 'الدومين', type: 'ltr', ph: 'shop.example.com', hint: 'بدون https://' }]}
-            validate={(d) => (d.custom_domain && !/^(?!-)([a-z0-9-]+\.)+[a-z]{2,}$/i.test(String(d.custom_domain).trim()) ? 'اكتب دومين صحيحاً مثل shop.example.com' : '')}
-          >
-            {() => <div className="pv" style={{ marginTop: 14 }}><b>ملاحظة مهمة</b><span>حفظ الدومين هنا يسجّله فقط. الربط الفعلي يحتاج إضافة الدومين في إعدادات الاستضافة وضبط الـ DNS، وهو يتم عن طريق إدارة سبايك حالياً.</span></div>}
-          </ConfigForm>
-        )}
+        {tab === 'domain' && <DomainPanel />}
         {tab === 'currency' && (
           <div className="card">
             <Field l="رمز العملة الظاهر في المتجر" hint="مثل: ج.م أو EGP">
