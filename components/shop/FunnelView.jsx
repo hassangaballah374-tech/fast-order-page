@@ -4,7 +4,7 @@ import { useShop } from './StoreContext';
 import { track } from './tracker';
 import Checkout from './Checkout';
 import { soldOut } from './ui';
-import { money, effectivePrice, unitPrice, overridePrice, saleActive } from '../../lib/storeKit';
+import { money, effectivePrice, unitPrice, overridePrice, valueSoldOut, saleActive } from '../../lib/storeKit';
 
 function ytId(u) {
   const m = String(u || '').match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([A-Za-z0-9_-]{11})/);
@@ -82,7 +82,7 @@ export default function FunnelView({ funnel: fn, product: p }) {
           {groups.map((g) => (
             <div className="opt" key={g.name}>
               <b>{g.name}</b>
-              <div className="chips">{g.values.map((v) => <button type="button" key={v} className={'chip' + (opts[g.name] === v ? ' act' : '')} onClick={() => setOpts({ ...opts, [g.name]: v })}>{v}</button>)}</div>
+              <div className="chips">{g.values.map((v) => <button type="button" key={v} className={'chip' + (opts[g.name] === v ? ' act' : '') + (valueSoldOut(g, v) ? ' off' : '')} disabled={valueSoldOut(g, v)} onClick={() => setOpts({ ...opts, [g.name]: v })}>{v}{valueSoldOut(g, v) ? ' (نفد)' : ''}</button>)}</div>
             </div>
           ))}
           <div className="qty" style={{ margin: '10px 0' }}>

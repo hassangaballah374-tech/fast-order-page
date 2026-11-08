@@ -690,4 +690,5 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .chip{min-height:44px;display:inline-flex;align-items:center}
 .spk .qty button{width:46px;height:46px}
 }
+.spk .chip.off,.spk .chip:disabled{opacity:.45;text-decoration:line-through;cursor:not-allowed}
 `;

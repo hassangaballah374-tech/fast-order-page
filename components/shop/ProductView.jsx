@@ -11,7 +11,7 @@ import { useFavs, pushViewed, readViewed } from './favs';
 import Checkout from './Checkout';
 import { Stars, ProductCard, Blocks, soldOut } from './ui';
 import FlipPic from './FlipPic';
-import { money, effectivePrice, unitPrice, overridePrice, saleActive, applyOffer, optionImage, isHttpUrl, splitImages, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
+import { money, effectivePrice, unitPrice, overridePrice, valueSoldOut, optionAvail, saleActive, applyOffer, optionImage, isHttpUrl, splitImages, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 function ReviewForm({ productId }) {
   const { slug } = useShop();
@@ -60,7 +60,8 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const ovr = overridePrice(p, opts) > 0;
   const price = unitPrice(p, opts);
   const onSale = !ovr && saleActive(p) && p.compare_price > price;
-  const maxQty = p.track_stock ? Math.max(1, Math.min(50, p.stock_quantity)) : 50;
+  const oav = optionAvail(p, opts);
+  const maxQty = Math.max(1, Math.min(50, p.track_stock ? p.stock_quantity : 50, oav === null ? 50 : oav));
   const groups = p.variants || [];
   const sizeChart = chartFor(cfg.sizing, p);
   const optsOk = groups.every((g) => opts[g.name]);
@@ -166,9 +167,9 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
               <div className="chips">{g.values.map((v) => {
                 const sw = g.images && isHttpUrl(g.images[v]) ? g.images[v] : '';
                 return (
-                  <button type="button" key={v} className={'chip' + (sw ? ' sw' : '') + (opts[g.name] === v ? ' act' : '')} aria-pressed={opts[g.name] === v}
+                  <button type="button" key={v} className={'chip' + (sw ? ' sw' : '') + (opts[g.name] === v ? ' act' : '') + (valueSoldOut(g, v) ? ' off' : '')} aria-pressed={opts[g.name] === v} disabled={valueSoldOut(g, v)} title={valueSoldOut(g, v) ? 'نفد' : undefined}
                     onClick={() => { setOpts({ ...opts, [g.name]: v }); if (sw) setPinned(true); }}>
-                    {sw ? <img src={sw} alt="" loading="lazy" /> : null}<span>{v}</span>
+                    {sw ? <img src={sw} alt="" loading="lazy" /> : null}<span>{v}</span>{valueSoldOut(g, v) ? <small style={{ marginInlineStart: 6, opacity: .8 }}>نفد</small> : null}
                   </button>
                 );
               })}</div>
