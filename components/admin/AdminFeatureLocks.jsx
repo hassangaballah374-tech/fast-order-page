@@ -1,6 +1,7 @@
 'use client';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { api } from '../dash/hooks';
 import { MENU } from '../dash/menu';
 import { LOCKS_KEY, NEVER_LOCK, EMPTY_LOCKS, PLAN_TYPES, parseLocks, cleanLocks, isLocked, storeState } from '../../lib/featureLocks';
 
@@ -26,10 +27,10 @@ export default function AdminFeatureLocks({ isDark }) {
   const c = isDark ? { bg: '#0A2A3E', line: '#16435D', ink: '#E8F1F8', mut: '#8FA9BC', soft: '#0F3650' } : { bg: '#FFFFFF', line: '#D6E2F0', ink: '#0F2A3D', mut: '#5B6B7A', soft: '#F2F6FF' };
   const load = useCallback(async () => {
     const [k, s] = await Promise.all([
-      supabase.from('platform_kv').select('value').eq('key', LOCKS_KEY).maybeSingle(),
+      api('/api/platform/locks', { action: 'all' }),
       supabase.from('store_profiles').select('user_id,store_name,store_slug,plan_type').order('store_name'),
     ]);
-    setLocks(parseLocks(k.data?.value));
+    if (k?.ok) setLocks(parseLocks(k.locks)); else flash('تعذر تحميل الأقفال: ' + (k?.error || ''));
     setStores(s.data || []);
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -61,10 +62,9 @@ export default function AdminFeatureLocks({ isDark }) {
 
   const save = async () => {
     setBusy(true);
-    const value = JSON.stringify(cleanLocks(locks));
-    const { error } = await supabase.from('platform_kv').upsert({ key: LOCKS_KEY, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    const r = await api('/api/platform/locks', { action: 'save', value: cleanLocks(locks) });
     setBusy(false);
-    if (error) { flash('خطأ: ' + error.message); return; }
+    if (!r?.ok) { flash('خطأ: ' + (r?.error || 'فشل الحفظ')); return; }
     setDirty(false); flash('تم الحفظ ✓ — التجار هيشوفوا التغيير عند فتح لوحتهم');
   };
 
