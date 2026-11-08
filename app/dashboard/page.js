@@ -221,8 +221,10 @@ export default function MerchantDashboard() {
   }
 
   /* الأدمن بيشوف كل الشاشات مفتوحة (الأقفال للتجار بس) */
-  const lockedId = (id) => !isAdmin && isLocked(locks, id, uid, store?.plan_type || 'starter');
-  const Screen = lockedId(tab) ? () => <Locked title={(FLAT.find((x) => x.id === tab) || {}).t} /> : (SCREENS[tab] || SCREENS.stats);
+  /* الأدمن في متجره هو: مفيش أقفال. لكن لما يفتح متجر تاجر (من لوحة الأدمن) بيشوف الأقفال زي ما التاجر بيشوفها، وممكن يتخطاها لشاشة واحدة */
+  const [bypass, setBypass] = useState('');
+  const lockedId = (id) => !(isAdmin && uid === authId) && bypass !== id && isLocked(locks, id, uid, store?.plan_type || 'starter');
+  const Screen = lockedId(tab) ? () => <Locked title={(FLAT.find((x) => x.id === tab) || {}).t} onBypass={isAdmin ? () => setBypass(tab) : undefined} /> : (SCREENS[tab] || SCREENS.stats);
   const curGroup = groupOf(tab);
   const isOpen = (g) => (open[g] ?? curGroup === g);
   const initial = (store?.store_name || 'S').trim().charAt(0).toUpperCase();
