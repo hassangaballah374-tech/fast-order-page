@@ -691,4 +691,8 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .qty button{width:46px;height:46px}
 }
 .spk .chip.off,.spk .chip:disabled{opacity:.45;text-decoration:line-through;cursor:not-allowed}
+/* كارت المدار الأمامي: على الأجهزة اللي فيها ماوس، الظهر يظهر عند التمرير (على اللمس الضغط بيفتح العرض الكامل وفيه اللف) */
+.spk .ob-fl .ob-bk{position:absolute;inset:0;margin:auto;max-width:100%;max-height:100%;object-fit:contain;opacity:0;transition:opacity .28s;pointer-events:none;mix-blend-mode:multiply}
+@media(hover:hover){.spk .ob-it.on:hover .ob-fl .ob-bk{opacity:1}.spk .ob-it.on:hover .ob-fl .ob-fr{opacity:0;transition:opacity .28s}}
+.spk[data-dk="1"] .ob-fl .ob-bk{mix-blend-mode:normal}
 `;

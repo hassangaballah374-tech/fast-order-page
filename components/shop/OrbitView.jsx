@@ -271,7 +271,8 @@ export default function OrbitView({ list = [] }) {
               tabIndex={front ? 0 : -1}
             >
               <span className="ob-fl">
-                {it.images[0] ? <img src={it.images[0]} alt="" draggable={false} decoding="async" /> : <Ph p={it} />}
+                {it.images[0] ? <img className="ob-fr" src={it.images[0]} alt="" draggable={false} decoding="async" /> : <Ph p={it} />}
+                {front && cfg.browse?.flip !== false && splitImages(it, true).back ? <img className="ob-bk" src={splitImages(it, true).back} alt="" draggable={false} loading="lazy" /> : null}
               </span>
               <i className="ob-sh" />
             </button>
