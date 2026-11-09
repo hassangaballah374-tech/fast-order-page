@@ -6,10 +6,10 @@ from pg_trigger
 where tgrelid = 'public.orders'::regclass and not tgisinternal;
 
 -- 2) أي دالة بتلمس رصيد التاجر أو الطلبات المجانية (دي اللي بتخصم العمولة)
-select p.proname as function_name, pg_get_functiondef(p.oid) as definition
+select p.proname as function_name, p.prosrc as definition
 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-where n.nspname = 'public'
-  and (pg_get_functiondef(p.oid) ilike '%wallet_balance_usd%' or pg_get_functiondef(p.oid) ilike '%free_orders_left%' or pg_get_functiondef(p.oid) ilike '%commission%');
+where n.nspname = 'public' and p.prokind = 'f'
+  and (p.prosrc ilike '%wallet_balance_usd%' or p.prosrc ilike '%free_orders_left%' or p.prosrc ilike '%commission%');
 
 -- 3) جداول فيها كلمة commission أو ledger أو billing
 select table_name from information_schema.tables
