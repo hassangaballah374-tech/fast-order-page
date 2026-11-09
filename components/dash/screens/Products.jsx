@@ -8,6 +8,8 @@ import { LinkBox, MultiProductPick, asNumber } from '../bits';
 import { downloadCsvFile, fday, fdate } from '../shared';
 import { money, toCSV, parseCSV, saleActive, applyOffer } from '../../../lib/storeKit';
 import { supabase } from '../../../lib/supabase';
+import { readTableFile } from '../../../lib/xlsxRead';
+import { parseProductRows, planImport, insertPayload, updatePatch, TEMPLATE_HEAD, TEMPLATE_ROWS } from '../../../lib/productImport';
 
 const PER = 20;
 const PRODUCT_COPY_FIELDS = ['title', 'description', 'price', 'compare_price', 'cost_price', 'category_id', 'featured', 'track_stock', 'stock_quantity', 'images', 'variants', 'offers', 'upsell', 'cross_sell', 'sort_order'];
@@ -330,79 +332,154 @@ function ProductEditor({ product, cats, products, api, onClose }) {
   );
 }
 
-/* ====================== استيراد CSV ====================== */
-const CSV_HEAD = 'title,price,compare_price,cost_price,stock,sku,category,image,description,status';
+/* ====================== استيراد من Excel / CSV ====================== */
+const ACTION_LABEL = { insert: ['جديد', '#2f855a'], update: ['تحديث', '#2b6cb0'], skip: ['تخطي', '#718096'], invalid: ['خطأ', '#c53030'] };
 
-function ImportModal({ cats, onClose, onDone }) {
+function ImportModal({ cats, existing, onClose, onDone }) {
   const { uid, say } = useDash();
-  const [rows, setRows] = useState([]);
+  const [parsed, setParsed] = useState(null);
+  const [fileName, setFileName] = useState('');
+  const [mode, setMode] = useState('update');
+  const [mkCats, setMkCats] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [result, setResult] = useState(null);
   const ref = useRef(null);
+
+  const plan = useMemo(() => (parsed && !parsed.error ? planImport(parsed.items, existing, cats, mode) : []), [parsed, existing, cats, mode]);
+  const cnt = useMemo(() => {
+    const c = { insert: 0, update: 0, skip: 0, invalid: 0 };
+    plan.forEach((r) => { c[r.action] += 1; });
+    return c;
+  }, [plan]);
+  const newCats = useMemo(() => [...new Set(plan.filter((r) => r.action !== 'invalid' && r.action !== 'skip' && r.missingCat).map((r) => r.missingCat))], [plan]);
 
   const onFile = async (e) => {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f) return;
-    const text = await f.text();
-    const parsed = parseCSV(text).slice(0, 500).map((r) => ({
-      title: r.title, price: asNumber(r.price), compare_price: asNumber(r.compare_price) || null, cost_price: asNumber(r.cost_price),
-      stock: parseInt(r.stock, 10), sku: r.sku || null, category: r.category || '', image: r.image || '', description: r.description || '',
-      status: r.status === 'draft' ? 'draft' : 'active',
-    }));
-    setRows(parsed);
+    setErr(''); setResult(null); setParsed(null); setFileName(f.name);
+    try {
+      const rows = await readTableFile(f);
+      const r = parseProductRows(rows);
+      if (r.error) setErr(r.error);
+      setParsed(r);
+    } catch (ex) {
+      setErr(ex?.message || 'تعذر قراءة الملف');
+    }
   };
-  const valid = rows.filter((r) => r.title && r.price > 0);
 
   const run = async () => {
     setBusy(true);
-    const payload = valid.map((r) => {
-      const cat = cats.find((c) => String(c.name).trim().toLowerCase() === String(r.category).trim().toLowerCase());
-      const stock = Number.isFinite(r.stock) ? r.stock : 100;
-      return {
-        store_id: uid, title: r.title.slice(0, 150), price: r.price, compare_price: r.compare_price && r.compare_price > r.price ? r.compare_price : null,
-        cost_price: r.cost_price, stock_quantity: Math.max(0, stock), track_stock: true, sku: r.sku, category_id: cat ? String(cat.id) : null,
-        images: /^https?:\/\//i.test(r.image) ? [r.image] : [], description: r.description, status: r.status,
-      };
-    });
-    let added = 0;
-    for (let i = 0; i < payload.length; i += 100) {
-      const { error } = await supabase.from('products').insert(payload.slice(i, i + 100));
-      if (error) { say(`توقف الاستيراد: ${error.message}`); break; }
-      added += payload.slice(i, i + 100).length;
+    let added = 0, updated = 0, failed = 0, createdCats = 0;
+    try {
+      /* الأقسام الناقصة */
+      const catIds = new Map((cats || []).map((c) => [String(c.name).trim().toLowerCase(), String(c.id)]));
+      if (mkCats && newCats.length) {
+        const base = (cats || []).length;
+        const { data, error } = await supabase.from('store_categories').insert(newCats.map((name, i) => ({ store_id: uid, name: name.slice(0, 80), sort_order: base + i + 1, enabled: true }))).select('id, name');
+        if (error) say(`تعذر إنشاء الأقسام: ${error.message}`);
+        else (data || []).forEach((c) => { catIds.set(String(c.name).trim().toLowerCase(), String(c.id)); createdCats += 1; });
+      }
+      const catOf = (r) => (r.category ? catIds.get(r.category.toLowerCase()) || null : null);
+
+      const inserts = plan.filter((r) => r.action === 'insert').map((r) => insertPayload(r, uid, catOf(r)));
+      for (let i = 0; i < inserts.length; i += 100) {
+        const chunk = inserts.slice(i, i + 100);
+        const { error } = await supabase.from('products').insert(chunk);
+        if (error) { failed += chunk.length; say(`تعذر إضافة دفعة: ${error.message}`); } else added += chunk.length;
+      }
+      const ups = plan.filter((r) => r.action === 'update');
+      for (let i = 0; i < ups.length; i += 10) {
+        const res = await Promise.all(ups.slice(i, i + 10).map((r) => {
+          const patch = updatePatch(r, catOf(r));
+          if (!Object.keys(patch).length) return Promise.resolve({ error: null });
+          return supabase.from('products').update(patch).eq('id', r.target.id).eq('store_id', uid);
+        }));
+        res.forEach((x) => { if (x.error) failed += 1; else updated += 1; });
+      }
+    } catch (ex) {
+      say(`توقف الاستيراد: ${ex?.message || ''}`);
     }
     setBusy(false);
-    say(`✅ تم استيراد ${added} منتج`);
-    onDone();
+    setResult({ added, updated, failed, createdCats, skipped: cnt.skip, invalid: cnt.invalid });
+    say(`✅ تم: ${added} جديد، ${updated} تحديث`);
+    onDone(false);
   };
 
+  const todo = cnt.insert + cnt.update;
   return (
     <Modal
-      wide t="استيراد منتجات من ملف CSV" x={onClose}
-      foot={<><button type="button" className="btn" onClick={onClose}>إغلاق</button><button type="button" className="btn p" disabled={busy || !valid.length} onClick={run}>{busy ? '...' : `استيراد ${valid.length} منتج`}</button></>}
+      wide t="استيراد منتجات من Excel" x={() => onClose()}
+      foot={result ? <button type="button" className="btn p" onClick={() => onClose()}>تم</button> : <><button type="button" className="btn" onClick={() => onClose()}>إغلاق</button><button type="button" className="btn p" disabled={busy || !todo} onClick={run}>{busy ? 'جاري الاستيراد...' : `استيراد ${todo} منتج`}</button></>}
     >
-      <p className="mut dsc">الأعمدة المطلوبة: title و price. الباقي اختياري. اسم القسم لازم يطابق قسماً موجوداً عندك.</p>
-      <div className="row">
-        <button type="button" className="btn" onClick={() => downloadCsvFile('spike-products-template.csv', `﻿${CSV_HEAD}\nقميص قطن,250,300,120,50,SH-01,ملابس,https://example.com/a.jpg,قميص قطن 100%,active`)}>⬇️ تحميل النموذج</button>
-        <button type="button" className="btn p" onClick={() => ref.current?.click()}>اختيار ملف CSV</button>
-        <input ref={ref} type="file" accept=".csv,text/csv" hidden onChange={onFile} />
-      </div>
-      {rows.length > 0 && (
-        <div className="card tw">
-          <table className="tbl">
-            <thead><tr><th>الاسم</th><th>السعر</th><th>المخزون</th><th>القسم</th><th>الحالة</th></tr></thead>
-            <tbody>
-              {rows.slice(0, 50).map((r, i) => (
-                <tr key={i}>
-                  <td>{r.title || <span className="warn">بدون اسم</span>}</td>
-                  <td className="num">{r.price > 0 ? r.price : <span className="warn">سعر غير صحيح</span>}</td>
-                  <td className="num">{Number.isFinite(r.stock) ? r.stock : 100}</td>
-                  <td>{r.category || '—'}</td>
-                  <td>{r.title && r.price > 0 ? <Badge c="#2f855a">جاهز</Badge> : <Badge c="#c53030">سيتجاهل</Badge>}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {result ? (
+        <div className="pv">
+          <b>✅ انتهى الاستيراد</b>
+          <span>
+            تمت إضافة {result.added} منتج جديد وتحديث {result.updated}.
+            {result.createdCats ? ` وإنشاء ${result.createdCats} قسم جديد.` : ''}
+            {result.skipped ? ` تم تخطي ${result.skipped}.` : ''}
+            {result.invalid ? ` وتجاهل ${result.invalid} صف فيهم أخطاء.` : ''}
+            {result.failed ? ` فشل ${result.failed}، راجع الرسائل وجرّب تاني.` : ''}
+          </span>
         </div>
+      ) : (
+        <>
+          <p className="mut dsc">ارفع ملف Excel (.xlsx) أو CSV فيه منتجاتك. العمود الوحيد المطلوب هو «الاسم» (و«السعر» للمنتجات الجديدة). الأعمدة بتتعرّف عليها بالعربي أو الإنجليزي: الاسم، السعر، السعر قبل الخصم، سعر التكلفة، الكمية، الكود، القسم، الصور، الوصف، الحالة.</p>
+          <div className="row">
+            <button type="button" className="btn p" onClick={() => ref.current?.click()}>اختيار ملف Excel أو CSV</button>
+            <button type="button" className="btn" onClick={() => downloadCsvFile('spike-products-template.csv', `﻿${[TEMPLATE_HEAD, ...TEMPLATE_ROWS].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')}`)}>⬇️ تحميل نموذج جاهز</button>
+            <input ref={ref} type="file" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden onChange={onFile} />
+          </div>
+          {fileName && <p className="mut dsc">الملف: <b>{fileName}</b></p>}
+          {err && <div className="card errbox">⚠️ {err}</div>}
+          {parsed && !parsed.error && (
+            <>
+              <div className="grid3">
+                <Stat label="منتجات جديدة" value={cnt.insert} color="#2f855a" />
+                <Stat label="هتتحدّث" value={cnt.update} color="#2b6cb0" />
+                <Stat label="أخطاء / تخطي" value={cnt.invalid + cnt.skip} color="#c53030" />
+              </div>
+              <div className="fgrid">
+                <Field l="لو الكود (SKU) موجود عندك بالفعل">
+                  <select className="in" value={mode} onChange={(e) => setMode(e.target.value)}>
+                    <option value="update">حدّث المنتج الموجود (السعر والكمية وغيرها)</option>
+                    <option value="skip">تخطّاه ومتغيّرش حاجة</option>
+                    <option value="add">أضفه كمنتج جديد برضه</option>
+                  </select>
+                </Field>
+                <Field l="الأقسام">
+                  <div className="tgrow"><Tog on={mkCats} set={setMkCats} /><span>{newCats.length ? `إنشاء ${newCats.length} قسم جديد (${newCats.slice(0, 3).join('، ')}${newCats.length > 3 ? '…' : ''})` : 'إنشاء الأقسام الناقصة تلقائياً'}</span></div>
+                </Field>
+              </div>
+              {parsed.ignored.length > 0 && <p className="mut dsc">أعمدة اتجاهلت (مش معروفة): {parsed.ignored.join('، ')}</p>}
+              <p className="mut dsc">في التحديث: الخلايا الفاضية بتتساب زي ما هي، والأسعار والكميات اللي في الملف بس هي اللي بتتغيّر. الصور لازم تكون روابط (https://...).</p>
+              <div className="card tw">
+                <table className="tbl">
+                  <thead><tr><th>صف</th><th>الاسم</th><th>السعر</th><th>الكمية</th><th>الكود</th><th>القسم</th><th>الإجراء</th></tr></thead>
+                  <tbody>
+                    {plan.slice(0, 100).map((r) => {
+                      const [l, c] = ACTION_LABEL[r.action];
+                      return (
+                        <tr key={r.line}>
+                          <td className="num">{r.line}</td>
+                          <td>{r.title || <span className="warn">—</span>}</td>
+                          <td className="num">{r.price ?? '—'}</td>
+                          <td className="num">{r.stock ?? '—'}</td>
+                          <td className="num">{r.sku || '—'}</td>
+                          <td>{r.category || '—'}</td>
+                          <td><Badge c={c}>{l}</Badge>{r.errors.length > 0 && <small className="warn" style={{ display: 'block' }}>{r.errors.join('، ')}</small>}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {plan.length > 100 && <p className="mut dsc" style={{ padding: 10 }}>معروض أول 100 صف من {plan.length}. الاستيراد هيشمل الكل.</p>}
+              </div>
+            </>
+          )}
+        </>
       )}
     </Modal>
   );
@@ -462,7 +539,7 @@ export function ProductsScreen() {
     <>
       <PageHead title="كل المنتجات" sub={`${t.rows.length} منتج`}>
         <button type="button" className="btn" onClick={exportCsv}>⬇️ تصدير</button>
-        <button type="button" className="btn" onClick={() => setImp(true)}>⬆️ استيراد CSV</button>
+        <button type="button" className="btn" onClick={() => setImp(true)}>⬆️ استيراد Excel</button>
         <button type="button" className="btn p" onClick={() => setEdit({ _new: true })}>+ منتج جديد</button>
       </PageHead>
       {t.err && <div className="card errbox">⚠️ {t.err}<br /><small>شغّل ملف spike_store_all.sql في Supabase.</small></div>}
@@ -513,7 +590,7 @@ export function ProductsScreen() {
         <Pager total={list.length} page={page} per={PER} onPage={setPage} />
       </div>
       {edit && <ProductEditor key={edit.id || 'new'} product={edit} cats={cats.rows} products={t.rows} api={t} onClose={() => setEdit(null)} />}
-      {imp && <ImportModal cats={cats.rows} onClose={() => setImp(false)} onDone={() => { setImp(false); t.reload(); }} />}
+      {imp && <ImportModal cats={cats.rows} existing={t.rows} onClose={() => { setImp(false); t.reload(); cats.reload && cats.reload(); }} onDone={() => { t.reload(); cats.reload && cats.reload(); }} />}
     </>
   );
 }
