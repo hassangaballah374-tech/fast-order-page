@@ -516,6 +516,72 @@ function DomainPanel() {
   );
 }
 
+/* الأمان: تغيير كلمة المرور (بعد التحقق من الحالية) وتسجيل الخروج من كل الأجهزة */
+function SecurityPanel() {
+  const { uid, authId, email, say } = useDash();
+  const [cur, setCur] = useState('');
+  const [p1, setP1] = useState('');
+  const [p2, setP2] = useState('');
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const own = !authId || !uid || authId === uid;
+  const sc = (() => {
+    const v = p1; let n = 0;
+    if (v.length >= 8) n++; if (v.length >= 12) n++;
+    if (/[a-z]/.test(v) && /[A-Z]/.test(v)) n++;
+    if (/\d/.test(v) && /[a-zA-Z]/.test(v)) n++;
+    if (/[^a-zA-Z0-9]/.test(v)) n++;
+    if (/^(.)\1+$/.test(v)) n = Math.min(n, 1);
+    return Math.min(4, n);
+  })();
+  const meta = [['ضعيفة جداً', '#ef4444'], ['ضعيفة', '#f97316'], ['مقبولة', '#eab308'], ['جيدة', '#22c55e'], ['قوية', '#16a34a']][sc];
+  const change = async () => {
+    if (!cur) { say('اكتب كلمة المرور الحالية'); return; }
+    if (p1.length < 8 || sc < 2) { say('كلمة المرور الجديدة لازم تكون 8 أحرف على الأقل وتجمع حروف وأرقام'); return; }
+    if (p1 !== p2) { say('كلمتا المرور غير متطابقتين'); return; }
+    if (p1 === cur) { say('الجديدة لازم تختلف عن الحالية'); return; }
+    setBusy(true);
+    const { error: e1 } = await supabase.auth.signInWithPassword({ email, password: cur });
+    if (e1) { setBusy(false); say('كلمة المرور الحالية غير صحيحة'); return; }
+    const { error } = await supabase.auth.updateUser({ password: p1 });
+    setBusy(false);
+    if (error) { say('تعذر التغيير: ' + error.message); return; }
+    setCur(''); setP1(''); setP2('');
+    say('تم تغيير كلمة المرور');
+  };
+  const signOutAll = async () => {
+    if (!window.confirm('هتخرج من كل الأجهزة بما فيهم ده. متأكد؟')) return;
+    await supabase.auth.signOut({ scope: 'global' });
+    try { localStorage.removeItem('merchant_user_id'); } catch { /* اختياري */ }
+    window.location.href = '/register';
+  };
+  if (!own) return <div className="card"><div className="pv"><b>تنبيه</b><span>أنت داخل على حساب تاجر آخر. تغيير كلمة المرور متاح من حساب التاجر نفسه فقط.</span></div></div>;
+  return (
+    <>
+      <div className="card">
+        <h3 style={{ margin: '0 0 6px' }}>تغيير كلمة المرور</h3>
+        <p className="muted" style={{ margin: '0 0 14px' }}>حسابك: <b dir="ltr">{email}</b></p>
+        <Field l="كلمة المرور الحالية"><input className="in" dir="ltr" type={show ? 'text' : 'password'} autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} /></Field>
+        <Field l="كلمة المرور الجديدة"><input className="in" dir="ltr" type={show ? 'text' : 'password'} autoComplete="new-password" value={p1} onChange={(e) => setP1(e.target.value)} /></Field>
+        {p1 && (
+          <div style={{ margin: '-4px 0 12px' }}>
+            <div style={{ display: 'flex', gap: 4 }}>{[0, 1, 2, 3].map((k) => <span key={k} style={{ flex: 1, height: 5, borderRadius: 4, background: k < sc ? meta[1] : '#e2e8f0' }} />)}</div>
+            <div style={{ marginTop: 5, fontSize: 12, color: meta[1] }}>قوة كلمة المرور: {meta[0]}</div>
+          </div>
+        )}
+        <Field l="إعادة كتابة الجديدة"><input className="in" dir="ltr" type={show ? 'text' : 'password'} autoComplete="new-password" value={p2} onChange={(e) => setP2(e.target.value)} /></Field>
+        <label style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '0 0 14px', cursor: 'pointer' }}><input type="checkbox" checked={show} onChange={(e) => setShow(e.target.checked)} /> إظهار كلمات المرور</label>
+        <button className="btn pri" disabled={busy} onClick={change}>{busy ? 'جارٍ الحفظ…' : 'تغيير كلمة المرور'}</button>
+      </div>
+      <div className="card">
+        <h3 style={{ margin: '0 0 6px' }}>الجلسات</h3>
+        <p className="muted" style={{ margin: '0 0 14px' }}>لو شاكك إن حد دخل على حسابك، اخرج من كل الأجهزة وغيّر كلمة المرور.</p>
+        <button className="btn" onClick={signOutAll}>تسجيل الخروج من كل الأجهزة</button>
+      </div>
+    </>
+  );
+}
+
 export function SettingsScreen() {
   const [tab, setTab] = useState('store');
   const { cfg, saveCfg, say } = useDash();
@@ -523,7 +589,7 @@ export function SettingsScreen() {
   return (
     <>
       <PageHead title="الإعدادات" sub="إعدادات المتجر العامة" />
-      <Tabs value={tab} onChange={setTab} tabs={[['store', 'المتجر'], ['contact', 'التواصل والسوشيال'], ['seo', 'SEO'], ['policies', 'السياسات'], ['domain', 'الدومين'], ['currency', 'العملة']]} />
+      <Tabs value={tab} onChange={setTab} tabs={[['store', 'المتجر'], ['contact', 'التواصل والسوشيال'], ['seo', 'SEO'], ['policies', 'السياسات'], ['domain', 'الدومين'], ['security', 'الأمان'], ['currency', 'العملة']]} />
       <div style={{ marginTop: 14 }}>
         {tab === 'store' && <StoreInfo />}
         {tab === 'contact' && <ContactForm />}
@@ -549,6 +615,7 @@ export function SettingsScreen() {
           />
         )}
         {tab === 'domain' && <DomainPanel />}
+        {tab === 'security' && <SecurityPanel />}
         {tab === 'currency' && (
           <div className="card">
             <Field l="رمز العملة الظاهر في المتجر" hint="مثل: ج.م أو EGP">
