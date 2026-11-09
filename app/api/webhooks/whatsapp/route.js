@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { adminClient } from '../../../../lib/supabaseAdmin';
 import { restoreStockForLines, rateLimit } from '../../../../lib/storeServer';
 import { sendText, toIntl } from '../../../../lib/waCloud';
+import { autoShipBosta } from '../../../../lib/bostaShip';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -38,7 +39,16 @@ export async function POST(req) {
   const c = await integ(sb, sid);
   if (!c) return ok({ ignored: 'off' });
 
-  let body; try { body = await req.json(); } catch { return ok(); }
+  /* توقيع Meta (X-Hub-Signature-256): لو التاجر حط App Secret بنرفض أي طلب مش موقّع منها (يمنع تزوير ضغطات «تأكيد/إلغاء») */
+  let raw = '';
+  try { raw = await req.text(); } catch { return ok(); }
+  if (raw.length > 500_000) return NextResponse.json({ ok: false }, { status: 413 });
+  if (c.app_secret) {
+    const sig = String(req.headers.get('x-hub-signature-256') || '').replace(/^sha256=/, '');
+    const exp = crypto.createHmac('sha256', String(c.app_secret)).update(raw).digest('hex');
+    if (!same(exp, sig)) return NextResponse.json({ ok: false, error: 'bad signature' }, { status: 401 });
+  }
+  let body; try { body = JSON.parse(raw); } catch { return ok(); }
   const msgs = [];
   for (const e of body?.entry || []) for (const ch of e?.changes || []) {
     // نتأكد إن الرسالة وصلت على رقم هذا التاجر
@@ -51,7 +61,7 @@ export async function POST(req) {
     const [action, id] = payload.split(':');
     if (!['confirm', 'cancel'].includes(action) || !id) continue;
 
-    const { data: o } = await sb.from('orders').select('id, store_id, status, items, customer_phone').eq('id', id).eq('store_id', sid).maybeSingle();
+    const { data: o } = await sb.from('orders').select('*').eq('id', id).eq('store_id', sid).maybeSingle();
     if (!o) continue;
     if (toIntl(o.customer_phone) !== toIntl(m.from)) continue; // لازم الرد يجي من نفس رقم العميل
     const prev = o.status || 'pending';
@@ -60,6 +70,7 @@ export async function POST(req) {
     if (action === 'confirm') {
       await sb.from('orders').update({ status: 'confirmed', verified: true, verified_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', o.id);
       await sendText(c, m.from, 'تم تأكيد طلبك ✅ شكراً لك، هنتواصل معاك لتجهيز الشحن.');
+      await autoShipBosta(sb, sid, { ...o, status: 'confirmed' }, 'after_confirm');
     } else {
       const items = Array.isArray(o.items) ? o.items : [];
       const ids = [...new Set(items.map((i) => String(i.product_id)))];
