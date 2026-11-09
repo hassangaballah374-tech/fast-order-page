@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { adminClient } from '../../../../lib/supabaseAdmin';
 import { restoreStockForLines, rateLimit } from '../../../../lib/storeServer';
 import { sendText, toIntl } from '../../../../lib/waCloud';
+import { autoShipBosta } from '../../../../lib/bostaShip';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -60,7 +61,7 @@ export async function POST(req) {
     const [action, id] = payload.split(':');
     if (!['confirm', 'cancel'].includes(action) || !id) continue;
 
-    const { data: o } = await sb.from('orders').select('id, store_id, status, items, customer_phone').eq('id', id).eq('store_id', sid).maybeSingle();
+    const { data: o } = await sb.from('orders').select('*').eq('id', id).eq('store_id', sid).maybeSingle();
     if (!o) continue;
     if (toIntl(o.customer_phone) !== toIntl(m.from)) continue; // لازم الرد يجي من نفس رقم العميل
     const prev = o.status || 'pending';
@@ -69,6 +70,7 @@ export async function POST(req) {
     if (action === 'confirm') {
       await sb.from('orders').update({ status: 'confirmed', verified: true, verified_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', o.id);
       await sendText(c, m.from, 'تم تأكيد طلبك ✅ شكراً لك، هنتواصل معاك لتجهيز الشحن.');
+      await autoShipBosta(sb, sid, { ...o, status: 'confirmed' }, 'after_confirm');
     } else {
       const items = Array.isArray(o.items) ? o.items : [];
       const ids = [...new Set(items.map((i) => String(i.product_id)))];

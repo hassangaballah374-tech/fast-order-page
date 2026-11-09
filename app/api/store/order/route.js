@@ -7,6 +7,7 @@ import { runAfter } from '../../../../lib/after';
 import { sendCapiPurchase } from '../../../../lib/capi';
 import { getFlow } from '../../../../lib/storeData';
 import { sendWaConfirm } from '../../../../lib/waCloud';
+import { autoShipBosta } from '../../../../lib/bostaShip';
 import { netLevel } from '../../../../lib/netRisk';
 
 export const runtime = 'nodejs';
@@ -148,6 +149,7 @@ export async function POST(req) {
   } catch { /* لا نوقف الطلب */ }
 
   if (!heldUntil) await runAfter(sendWaConfirm(sb, sid, { ...row, id: created.id, order_no: created.order_no }));
+  if (!heldUntil) await runAfter(autoShipBosta(sb, sid, { ...row, id: created.id, order_no: created.order_no }, 'immediate'));
 
   const eventId = `order-${created.order_no}`;
   await runAfter(sendCapiPurchase(sb, sid, {

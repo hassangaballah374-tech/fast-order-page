@@ -197,18 +197,20 @@ export function BostaCard() {
   const [row, setRow] = useState(undefined);
   const [key, setKey] = useState('');
   const [enabled, setEnabled] = useState(false);
+  const [autoShip, setAutoShip] = useState('off');
   const [busy, setBusy] = useState(false);
   const load = async () => {
     const { data } = await supabase.from('store_integrations').select('*').eq('store_id', uid).eq('provider', 'bosta').maybeSingle();
     setRow(data || null);
     setEnabled(!!data?.enabled);
+    setAutoShip(['immediate', 'after_confirm'].includes(data?.config?.auto_ship) ? data.config.auto_ship : 'off');
   };
   useEffect(() => { if (uid) load(); }, [uid]);
   const has = !!row?.config?.api_key;
   const save = async () => {
     if (enabled && !key.trim() && !has) { say('أدخل مفتاح الـ API من حساب بوسطة'); return; }
     setBusy(true);
-    const config = { ...(row?.config || {}) };
+    const config = { ...(row?.config || {}), auto_ship: enabled ? autoShip : 'off' };
     if (key.trim()) config.api_key = key.trim();
     if (!config.webhook_secret) config.webhook_secret = (globalThis.crypto?.randomUUID?.() || `${Date.now()}${Math.random()}`).replace(/-/g, '');
     const { error } = await supabase.from('store_integrations').upsert({ store_id: uid, provider: 'bosta', enabled, config, updated_at: new Date().toISOString() }, { onConflict: 'store_id,provider' });
@@ -228,6 +230,18 @@ export function BostaCard() {
           <Field l="مفتاح API" hint={has ? 'محفوظ ✓ اتركه فارغاً للإبقاء عليه' : 'من لوحة بوسطة ← Settings ← API Integration'}>
             <input className="in num" dir="ltr" type="password" autoComplete="off" placeholder={has ? '••••••••••••' : ''} value={key} onChange={(e) => setKey(e.target.value)} />
           </Field>
+        )}
+        {row !== undefined && (
+          <Field l="طريقة الشحن" hint={autoShip === 'immediate' ? 'الطلبات النظيفة (من غير أي علامة مخاطر ولا تكرار) بتتبعت لبوسطة أول ما تتسجّل. الطلبات المشبوهة بتفضل عندك للمراجعة.' : autoShip === 'after_confirm' ? 'الطلب بيتبعت لبوسطة أول ما العميل يضغط «تأكيد» على رسالة الواتساب. محتاج واتساب كلاود مفعّل.' : 'انت اللي بتبعت الطلبات لبوسطة بنفسك من «كل الطلبات».'}>
+            <select className="in" value={autoShip} onChange={(e) => setAutoShip(e.target.value)}>
+              <option value="off">يدوي: أنا أرسل من «كل الطلبات»</option>
+              <option value="immediate">تلقائي: أول ما الطلب يتسجّل (الطلبات النظيفة فقط)</option>
+              <option value="after_confirm">تلقائي: بعد ما العميل يؤكد على واتساب</option>
+            </select>
+          </Field>
+        )}
+        {row?.config?.last_auto_error && (
+          <div className="card errbox">⚠️ آخر فشل في الشحن التلقائي{row.config.last_auto_error.order_no ? ` (طلب ${row.config.last_auto_error.order_no})` : ''}: {row.config.last_auto_error.msg}. الطلب فضل عندك وتقدر تبعته يدوي.</div>
         )}
         <div><button type="button" className="btn p" disabled={busy || row === undefined} onClick={save}>{busy ? '...' : 'حفظ'}</button></div>
         {row?.config?.webhook_secret && typeof window !== 'undefined' && (() => {
