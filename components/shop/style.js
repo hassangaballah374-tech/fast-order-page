@@ -691,8 +691,14 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .qty button{width:46px;height:46px}
 }
 .spk .chip.off,.spk .chip:disabled{opacity:.45;text-decoration:line-through;cursor:not-allowed}
-/* كارت المدار الأمامي: على الأجهزة اللي فيها ماوس، الظهر يظهر عند التمرير (على اللمس الضغط بيفتح العرض الكامل وفيه اللف) */
-.spk .ob-fl .ob-bk{position:absolute;inset:0;margin:auto;max-width:100%;max-height:100%;object-fit:contain;opacity:0;transition:opacity .28s;pointer-events:none;mix-blend-mode:multiply}
-@media(hover:hover){.spk .ob-it.on:hover .ob-fl .ob-bk{opacity:1}.spk .ob-it.on:hover .ob-fl .ob-fr{opacity:0;transition:opacity .28s}}
-.spk[data-dk="1"] .ob-fl .ob-bk{mix-blend-mode:normal}
+/* قلب منتج المدار: بالضغط على زرار «الخلف» بس (مفيش قلب بالتمرير) */
+.spk .ob-fl{perspective:900px}
+.spk .ob-3d{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,.2,.2,1)}
+.spk .ob-it.flp .ob-3d{transform:rotateY(180deg)}
+.spk .ob-3d .ob-fr,.spk .ob-3d .ob-bk{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.spk .ob-3d .ob-bk{position:absolute;inset:0;margin:auto;max-width:100%;max-height:100%;object-fit:contain;transform:rotateY(180deg);pointer-events:none}
+.spk .ob-flipbtn{position:absolute;left:0;top:0;z-index:300;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:999px;border:1px solid color-mix(in srgb,var(--ink) 14%,transparent);background:var(--card,#fff);color:var(--ink);font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(15,23,42,.12);white-space:nowrap;transition:background .2s,color .2s}
+.spk .ob-flipbtn:hover,.spk .ob-flipbtn.on{background:var(--c);color:#fff;border-color:var(--c)}
+.spk .ob-flipbtn:focus-visible{outline:2px solid var(--c);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.spk .ob-3d{transition:none}}
 `;

@@ -43,6 +43,7 @@ export default function OrbitView({ list = [] }) {
   const [fopts, setFopts] = useState({});
   const [swap, setSwap] = useState(0);
   const [imgI, setImgI] = useState(0);
+  const [flipId, setFlipId] = useState('');
 
   const idx = n ? clamp(Math.round(pos), 0, n - 1) : 0;
   const cur0 = list[idx];
@@ -74,7 +75,7 @@ export default function OrbitView({ list = [] }) {
   }, [n, setBoth]);
 
   /* تغيّر المنتج النشط: صفّر اختيارات العرض المركّز وأعد ضبط الصورة */
-  useEffect(() => { setFopts({}); setImgI(0); setSwap((s) => s + 1); setBusy(''); }, [idx]);
+  useEffect(() => { setFopts({}); setImgI(0); setSwap((s) => s + 1); setBusy(''); setFlipId(''); }, [idx]);
   useEffect(() => { if (!added) return undefined; const t = setTimeout(() => setAdded(null), 6000); return () => clearTimeout(t); }, [added]);
 
   /* هندسة المدار */
@@ -260,22 +261,44 @@ export default function OrbitView({ list = [] }) {
           const sc = 1 / (1 + 0.38 * ad);
           const op = ad <= 2 ? 1 : clamp(1 - (ad - 2) / 1.2, 0, 1);
           const front = ad < 0.5;
+          const bk = cfg.browse?.flip !== false ? splitImages(it, true).back : '';
+          const flipped = flipId === String(it.id);
+          const half = (S * sc) / 2;
+          const toLeft = q.x > w / 2; // لو المنتج في الجنب اليمين نحط الزرار على يساره والعكس
+          const bx = clamp(toLeft ? q.x - half - 10 - 78 : q.x + half + 10, 6, Math.max(6, w - 84));
           return (
-            <button
-              key={it.id}
-              type="button"
-              className={'ob-it' + (front ? ' on' : '')}
-              style={{ width: S, height: S, transform: `translate3d(${(q.x - S / 2).toFixed(1)}px,${(q.y - S / 2).toFixed(1)}px,0) scale(${sc.toFixed(3)}) rotate(${(-4 * clamp(d, -2, 2)).toFixed(1)}deg)`, opacity: op, zIndex: 100 - Math.round(ad * 10) }}
-              onClick={() => { if (moved.current) return; if (front) setFocus(true); else glide(i); }}
-              aria-label={it.title}
-              tabIndex={front ? 0 : -1}
-            >
-              <span className="ob-fl">
-                {it.images[0] ? <img className="ob-fr" src={it.images[0]} alt="" draggable={false} decoding="async" /> : <Ph p={it} />}
-                {front && cfg.browse?.flip !== false && splitImages(it, true).back ? <img className="ob-bk" src={splitImages(it, true).back} alt="" draggable={false} loading="lazy" /> : null}
-              </span>
-              <i className="ob-sh" />
-            </button>
+            <React.Fragment key={it.id}>
+              <button
+                type="button"
+                className={'ob-it' + (front ? ' on' : '') + (flipped ? ' flp' : '')}
+                style={{ width: S, height: S, transform: `translate3d(${(q.x - S / 2).toFixed(1)}px,${(q.y - S / 2).toFixed(1)}px,0) scale(${sc.toFixed(3)}) rotate(${(-4 * clamp(d, -2, 2)).toFixed(1)}deg)`, opacity: op, zIndex: 100 - Math.round(ad * 10) }}
+                onClick={() => { if (moved.current) return; if (front) setFocus(true); else glide(i); }}
+                aria-label={it.title}
+                tabIndex={front ? 0 : -1}
+              >
+                <span className="ob-fl">
+                  <span className="ob-3d">
+                    {it.images[0] ? <img className="ob-fr" src={it.images[0]} alt="" draggable={false} decoding="async" /> : <Ph p={it} />}
+                    {bk && (front || flipped) ? <img className="ob-bk" src={bk} alt="" draggable={false} loading="lazy" /> : null}
+                  </span>
+                </span>
+                <i className="ob-sh" />
+              </button>
+              {front && bk ? (
+                <button
+                  type="button"
+                  className={'ob-flipbtn' + (flipped ? ' on' : '')}
+                  style={{ transform: `translate3d(${bx.toFixed(1)}px,${(q.y - 18).toFixed(1)}px,0)`, opacity: op }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); setFlipId(flipped ? '' : String(it.id)); }}
+                  aria-pressed={flipped}
+                  aria-label={flipped ? 'عرض الصورة الأمامية' : 'عرض الصورة الخلفية'}
+                >
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16" /><path d="M3 21v-5h5" /></svg>
+                  <span>{flipped ? 'الأمام' : 'الخلف'}</span>
+                </button>
+              ) : null}
+            </React.Fragment>
           );
         })}
 
