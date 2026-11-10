@@ -14,6 +14,10 @@ const security = [
 
 const nextConfig = {
   poweredByHeader: false,
+  /* روابط المتجر القديمة /store/اسم → المتجر الجديد */
+  async redirects() {
+    return [{ source: '/store/:slug*', destination: '/shop/:slug*', permanent: true }];
+  },
   async headers() {
     return [
       { source: '/:path*', headers: security },

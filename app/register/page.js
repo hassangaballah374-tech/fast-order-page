@@ -318,10 +318,6 @@ export default function SpikeRegisterAndAuthPage() {
       is_active: false, subscription_status: 'active', plan_type: 'starter',
     }]);
     if (spErr) throw new Error(spErr.message);
-    await supabase.from('merchant_settings').insert([{
-      user_id: user.id, store_name: meta.store_slug, owner_name: meta.full_name || '', store_email: user.email,
-      support_phone: phone, about_us: 'Official verified store powered by SPIKE.',
-    }]);
     if (meta.promo_code) { try { await supabase.rpc('redeem_promo', { p_code: String(meta.promo_code) }); } catch { /* الكود اختياري */ } }
   };
 

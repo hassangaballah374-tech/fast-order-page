@@ -350,10 +350,9 @@ export default function SpikeLandingPage() {
             <SpikeBrandHeader height="h-14 sm:h-16" showSlogan={true} />
 
             <div className="flex flex-wrap gap-6 text-xs font-bold">
-              <Link href="#" className="hover:text-[#0E8FC0] transition">{t.terms}</Link>
-              <Link href="#" className="hover:text-[#0E8FC0] transition">{t.legal}</Link>
-              <Link href="#" className="hover:text-[#0E8FC0] transition">{t.privacy}</Link>
-              <Link href="#" className="hover:text-[#0E8FC0] transition">{t.sitemap}</Link>
+              <Link href="/terms" className="hover:text-[#0E8FC0] transition">{t.terms}</Link>
+              <Link href="/terms" className="hover:text-[#0E8FC0] transition">{t.legal}</Link>
+              <Link href="/terms" className="hover:text-[#0E8FC0] transition">{t.privacy}</Link>
             </div>
           </div>
 
