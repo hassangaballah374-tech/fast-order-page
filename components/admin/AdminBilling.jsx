@@ -35,7 +35,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState('all');
   const [draft, setDraft] = useState({});
-  const [pc, setPc] = useState('0.03');
+  const [pc, setPc] = useState('0.02');
   const [manual, setManual] = useState('');
   const { rate, source } = useUsdRate();
 
@@ -47,7 +47,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
       supabase.from('platform_kv').select('key,value').in('key', ['commission_usd', 'usd_egp_manual']),
     ]);
     (k.data || []).forEach((x) => {
-      if (x.key === 'commission_usd') { setPc(x.value || '0.03'); setPlatformCommission(Number(x.value) || 0); }
+      if (x.key === 'commission_usd') { setPc(x.value || '0.02'); setPlatformCommission(Number(x.value) || 0); }
       if (x.key === 'usd_egp_manual') setManual((cur) => (cur === '' ? x.value || '' : cur));
     });
     if (a.error) setMsg('تعذر تحميل المتاجر: ' + a.error.message);
@@ -295,7 +295,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
         <div className={`${box} p-4 mb-4`}>
           <h3 className="font-black mb-3">التسعير العام</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs items-end">
-            <label>عمولة الطلب بالدولار (الافتراضي 0.03 = 3 سنت)<input className={inp} type="number" step="0.001" min="0" value={pc} onChange={(e) => setPc(e.target.value)} /></label>
+            <label>عمولة الطلب بالدولار (الافتراضي 0.02 = 2 سنت، بتتخصم عند تسليم الطلب)<input className={inp} type="number" step="0.001" min="0" value={pc} onChange={(e) => setPc(e.target.value)} /></label>
             <label>سعر الدولار يدوي بالجنيه (فارغ = تلقائي، الآن {rate || '...'})<input className={inp} type="number" step="0.01" min="0" value={manual} onChange={(e) => setManual(e.target.value)} placeholder="اتركه فارغاً للسعر التلقائي" /></label>
             <button className="py-2 bg-[#014D6F] text-white rounded-lg font-bold cursor-pointer" onClick={savePricing}>حفظ التسعير</button>
           </div>

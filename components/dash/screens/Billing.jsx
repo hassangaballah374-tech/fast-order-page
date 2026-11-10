@@ -173,7 +173,7 @@ export function PlansScreen() {
                 <b style={{ fontSize: 17 }}>{p.name}</b>
                 <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--b)', margin: '6px 0 0' }}>{usd(p.price)}</div>
                 {rate ? <div className="mut dsc" style={{ margin: '0 0 6px' }}>≈ {egpFmt(toEgp(p.price, rate))}</div> : null}
-                <p className="mut dsc">{monthly ? 'طلبات غير محدودة · 30 يوم' : `≈ ${Math.floor(n(p.price) / c)} طلب (عمولة ${usd(c)} للطلب)`}</p>
+                <p className="mut dsc">{monthly ? 'طلبات غير محدودة · 30 يوم' : `≈ ${Math.floor(n(p.price) / c)} طلب (عمولة ${usd(c)} للطلب المُسلَّم)`}</p>
                 <ul style={{ margin: '8px 0 12px', paddingInlineStart: 18, fontSize: 13 }}>{(p.features || []).map((f, i) => <li key={i}>{f}</li>)}</ul>
                 <button type="button" className={'btn ' + (p.highlight ? 'p' : '')} style={{ width: '100%' }} disabled={hasPending} onClick={() => { setSel(p); setProof(''); }}>{hasPending ? 'لديك طلب قيد المراجعة' : (monthly ? 'اشترك شهرياً' : 'اشحن الآن')}</button>
               </div>
