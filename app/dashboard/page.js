@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { DashCtx, Spin, Field } from '../../components/dash/ui';
 import { MENU, flatMenu, groupOf } from '../../components/dash/menu';
 import { SCREENS } from '../../components/dash/registry';
+import ProfileModal from '../../components/ProfileModal';
 import SpikeLogo from '../../components/SpikeLogo';
 import Locked from '../../components/dash/Locked';
 import { LOCKS_KEY, EMPTY_LOCKS, parseLocks, isLocked } from '../../lib/featureLocks';
@@ -77,6 +78,7 @@ export default function MerchantDashboard() {
   const [open, setOpen] = useState({});
   const [toast, setToast] = useState('');
   const [side, setSide] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [dark, setDark] = useState(false);
   useEffect(() => { try { setDark(localStorage.getItem('spike_dash_dark') === '1'); } catch { /* تجاهل */ } }, []);
   const toggleDark = () => setDark((d) => { const v = !d; try { localStorage.setItem('spike_dash_dark', v ? '1' : '0'); } catch { /* تجاهل */ } return v; });
@@ -244,11 +246,19 @@ export default function MerchantDashboard() {
      <div className={'app' + (dark ? ' dk' : '')} dir="rtl">
       <style dangerouslySetInnerHTML={{ __html: DASH_CSS + DARK_CSS }} />
         <div className={'scrim' + (side ? ' on' : '')} onClick={() => setSide(false)} />
+        {profileOpen && (
+          <ProfileModal
+            uid={uid} mode={uid === authId ? 'self' : 'admin'} dark={dark} fallbackLogo={cfg.brand.logo}
+            onClose={() => setProfileOpen(false)}
+            onPhotoSave={async (url) => { if (url !== (cfg.contact?.owner_photo || '')) await saveCfg('contact', { ...cfg.contact, owner_photo: url }); }}
+            onSaved={() => { loadStore(uid); }}
+          />
+        )}
 
         <aside className={'side' + (side ? ' open' : '')} aria-label="القائمة الرئيسية">
           <a href="/" className="spkbrand" title="سبايك"><SpikeLogo /></a>
           <div className="sidehd">
-            <div className="lg">{cfg.brand.logo ? <img src={cfg.brand.logo} alt="" /> : initial}</div>
+            <button type="button" className="lg" style={{ border: 0, cursor: 'pointer', padding: 0 }} title="صفحتي الشخصية" aria-label="صفحتي الشخصية" onClick={() => setProfileOpen(true)}>{cfg.contact?.owner_photo || cfg.brand.logo ? <img src={cfg.contact?.owner_photo || cfg.brand.logo} alt="" /> : initial}</button>
             <div style={{ minWidth: 0 }}>
               <b style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.store_name || 'متجري'}</b>
               <small>لوحة تحكم سبايك</small>
@@ -325,7 +335,7 @@ export default function MerchantDashboard() {
           </section>
         </main>
 
-        <DashTabs tab={tab} go={go} uid={uid} lockedId={lockedId} storeName={store?.store_name} logo={cfg.brand.logo} storeUrl={storeUrl} dark={dark} toggleDark={toggleDark} onSearch={() => setCmd(true)} onLogout={() => spikeLogout(router)} isAdmin={isAdmin} onAdmin={() => router.push('/admin')} />
+        <DashTabs onProfile={() => setProfileOpen(true)} tab={tab} go={go} uid={uid} lockedId={lockedId} storeName={store?.store_name} logo={cfg.contact?.owner_photo || cfg.brand.logo} storeUrl={storeUrl} dark={dark} toggleDark={toggleDark} onSearch={() => setCmd(true)} onLogout={() => spikeLogout(router)} isAdmin={isAdmin} onAdmin={() => router.push('/admin')} />
 
         {cmd && (
           <div className="ov topv" onClick={() => { setCmd(false); setCq(''); }}>

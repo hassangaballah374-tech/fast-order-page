@@ -19,7 +19,7 @@ const sections = () => MENU.map((m) => {
   return { key: m.g || m.h, title: `${m.i ? m.i + ' ' : ''}${m.t || m.h}`, items: (m.items || []).map((x) => ({ id: x.id, t: x.t, i: x.i, badge: x.badge, spike: x.spike })) };
 });
 
-export default function DashTabs({ tab, go, uid, lockedId, storeName, logo, storeUrl, dark, toggleDark, onSearch, onLogout, isAdmin, onAdmin }) {
+export default function DashTabs({ tab, go, uid, lockedId, storeName, logo, storeUrl, dark, toggleDark, onSearch, onLogout, isAdmin, onAdmin, onProfile }) {
   const [more, setMore] = useState(false);
   const [q, setQ] = useState('');
   const [pending, setPending] = useState(0);
@@ -91,7 +91,7 @@ export default function DashTabs({ tab, go, uid, lockedId, storeName, logo, stor
           <div className="dsh-pn">
             <div className="dsh-gr" aria-hidden="true" />
             <div className="dsh-hd">
-              <div className="dsh-lg">{logo ? <img src={logo} alt="" /> : (storeName || 'S').trim().charAt(0).toUpperCase()}</div>
+              <button type="button" className="dsh-lg" style={{ border: 0, cursor: onProfile ? 'pointer' : 'default', padding: 0 }} aria-label="صفحتي الشخصية" onClick={onProfile}>{logo ? <img src={logo} alt="" /> : (storeName || 'S').trim().charAt(0).toUpperCase()}</button>
               <div className="dsh-nm"><b>{storeName || 'متجري'}</b><small>كل أقسام لوحة التحكم</small></div>
               <button type="button" className="dsh-x2" onClick={() => setMore(false)} aria-label="إغلاق">✕</button>
             </div>
