@@ -23,6 +23,9 @@ import AdminApps from '../../components/admin/AdminApps';
 import SpikeLogo from '../../components/SpikeLogo';
 import AdminFeatureLocks from '../../components/admin/AdminFeatureLocks';
 import AdminServiceRequests from '../../components/admin/AdminServiceRequests';
+import AdminDomains from '../../components/admin/AdminDomains';
+import AdminLinkedDomains from '../../components/admin/AdminLinkedDomains';
+import { api as dashApi } from '../../components/dash/hooks';
 const BRAND_BASE = 'https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding';
 const ICON_PNG = `${BRAND_BASE}/icon.png?v=3`;
 
@@ -219,7 +222,7 @@ export default function SpikeSuperAdminDashboard() {
         const user = sess?.session?.user || null;
         const authEmail = user?.email?.toLowerCase().trim();
 
-        if (authEmail === SUPER_ADMIN_EMAIL.toLowerCase()) {
+        if (authEmail === SUPER_ADMIN_EMAIL.toLowerCase() && (user?.email_confirmed_at || user?.confirmed_at)) {
           localStorage.setItem('user_email', SUPER_ADMIN_EMAIL);
           setIsSuper(true);
           setActorEmail(authEmail);
@@ -274,7 +277,7 @@ export default function SpikeSuperAdminDashboard() {
         light('admin_products_light', () => supabase.from('products').select('*').order('created_at', { ascending: false }).limit(3000)),
         q(supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50)),
         q(supabase.from('broadcasts').select('*').order('created_at', { ascending: false }).limit(5)),
-        q(supabase.from('custom_domains').select('*').order('created_at', { ascending: false }).limit(500)),
+        q(dashApi('/api/platform/domains', { action: 'list' }).then((r) => ({ data: r && r.ok ? r.rows : [] }))),
         q(supabase.from('admin_users').select('*').order('created_at', { ascending: false }).limit(200)),
         q(supabase.from('platform_settings').select('*').limit(1).maybeSingle()),
         q(supabase.rpc('admin_totals')),
@@ -1447,24 +1450,10 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* تبويب الدومينات */}
           {shown('domains') && (
-            <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`}>
-              <h3 className="text-lg font-black mb-2">{isAr ? 'إدارة الدومينات المخصصة والربط' : 'Custom Domains & DNS'}</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">حالة طلبات الدومينات المخصصة والربط بسيرفرات سبايك عبر Cloudflare و CNAME.</p>
-              {domains.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 text-xs">
-                  جميع المتاجر تستخدم النطاق المباشر الفرعي (.spike.shop) بشكل مستقر.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {domains.map((d, i) => (
-                    <div key={i} className="p-3 border rounded-xl flex justify-between items-center text-xs">
-                      <span className="font-mono">{d.domain_name}</span>
-                      <span className="text-emerald-500 font-bold">{d.status}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <>
+              <AdminLinkedDomains isDark={isDark} onLoaded={setDomains} />
+              <AdminDomains isDark={isDark} />
+            </>
           )}
           {/* تبويب إحصائيات المنصة */}
           {shown('analytics') && (<><AdminAnalytics isDark={isDark} /><AdminMerchantReport stores={stores} orders={orders} isDark={isDark} /><AdminAlerts isDark={isDark} /></>)}
