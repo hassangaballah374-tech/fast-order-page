@@ -1,6 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
-import { geometry, layout, shade, GROUND } from '../../lib/mannequin';
+import { geometry, geometryBody, bodyFor, layout, shade, GROUND } from '../../lib/mannequin';
 
 /* مانيكان بدون وجه بيتغيّر جسمه حسب المقاس، والقطع بتتركّب عليه (مع ظل وحجم) كأنها لابساها */
 
@@ -52,8 +52,11 @@ function Garment({ src, slot, g, id }) {
   );
 }
 
-export default function Mannequin({ size = 2, tone = '#d9d4cc', worn = [] }) {
-  const g = geometry(size);
+/* body = قياسات الشخص (الجسم الحقيقي)، garmentSize = مقاس القطعة اللي لابسها (عرضها). لو الجسم أكبر من المقاس هتبان القطعة ضيقة وجسمه طالع من حوافها. */
+export default function Mannequin({ size = 2, body = null, garmentSize = null, tone = '#d9d4cc', worn = [], zones = {}, onZone = null }) {
+  const g = geometryBody(body || bodyFor(size));
+  const gg = geometry(garmentSize == null ? size : garmentSize);
+  const gx = { ...gg, Y: g.Y, hs: g.hs };           /* عرض القطعة من مقاسها، وأماكنها الرأسية من طول الجسم */
   const { Y } = g;
   const dark = shade(tone, 0.16);
   const darker = shade(tone, 0.3);
@@ -100,6 +103,7 @@ export default function Mannequin({ size = 2, tone = '#d9d4cc', worn = [] }) {
         <linearGradient id="mn-sk" x1="0" x2="1" y1="0" y2="0">
           <stop offset="0" stopColor={darker} /><stop offset=".28" stopColor={tone} /><stop offset=".6" stopColor={tone} /><stop offset="1" stopColor={dark} />
         </linearGradient>
+        <radialGradient id="mn-bl" cx="50%" cy="40%" r="60%"><stop offset="0" stopColor="#fff" stopOpacity=".22" /><stop offset="1" stopColor="#fff" stopOpacity="0" /></radialGradient>
         <radialGradient id="mn-sh" cx="50%" cy="50%" r="50%"><stop offset="0" stopColor="#000" stopOpacity=".22" /><stop offset="1" stopColor="#000" stopOpacity="0" /></radialGradient>
       </defs>
       <ellipse cx={cx} cy={GROUND + 6} rx={g.legGap + g.thigh + 40} ry="11" fill="url(#mn-sh)" />
@@ -108,7 +112,16 @@ export default function Mannequin({ size = 2, tone = '#d9d4cc', worn = [] }) {
       <path d={torso} fill="url(#mn-sk)" />
       <path d={`M ${L(g.neck)} ${Y(108)} L ${L(g.neck)} ${Y(152)} Q ${cx} ${Y(166)} ${R(g.neck)} ${Y(152)} L ${R(g.neck)} ${Y(108)} Z`} fill={dark} />
       <ellipse cx={cx} cy={Y(70)} rx={g.headRx} ry={g.headRy * g.hs} fill="url(#mn-sk)" />
-      {bySlot.map((w) => <Garment key={w.id} id={String(w.id).replace(/[^a-z0-9]/gi, '')} src={w.image} slot={w.slot} g={g} />)}
+      {g.stomach > 0.05 && <ellipse cx={cx} cy={Y(338)} rx={g.waist * 0.78} ry={34 * g.hs} fill="url(#mn-bl)" />}
+      {bySlot.map((w) => <Garment key={w.id} id={String(w.id).replace(/[^a-z0-9]/gi, '')} src={w.image} slot={w.slot} g={gx} />)}
+      {onZone && [
+        ['chest', 'الصدر والكتف', `M ${cx - g.sh - 8} ${Y(168)} L ${cx + g.sh + 8} ${Y(168)} L ${cx + g.chest + 10} ${Y(290)} L ${cx - g.chest - 10} ${Y(290)} Z`],
+        ['stomach', 'البطن', `M ${cx - g.waist - 4} ${Y(296)} L ${cx + g.waist + 4} ${Y(296)} L ${cx + g.waist + 4} ${Y(400)} L ${cx - g.waist - 4} ${Y(400)} Z`],
+        ['hips', 'الجنب والأرداف', `M ${cx - g.hip - 8} ${Y(400)} L ${cx + g.hip + 8} ${Y(400)} L ${cx + g.hip + 8} ${Y(500)} L ${cx - g.hip - 8} ${Y(500)} Z`],
+      ].map(([k, t, d]) => (
+        <path key={k} d={d} className={'fr-zone' + (zones[k] ? ' on' : '')} fill={zones[k] ? 'rgba(14,143,192,.28)' : 'transparent'} stroke={zones[k] ? '#0E8FC0' : 'none'} strokeWidth="3" strokeDasharray="8 6"
+          role="button" tabIndex={0} aria-pressed={!!zones[k]} aria-label={t} style={{ cursor: 'pointer' }} onClick={() => onZone(k)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onZone(k); } }}><title>{t}</title></path>
+      ))}
     </svg>
   );
 }

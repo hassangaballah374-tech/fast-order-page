@@ -512,6 +512,28 @@ export const SHOP_CSS = `
 .spk .fr-mtab{display:grid;place-items:center;font-size:22px;line-height:1;gap:2px}
 .spk .fr-mtab small{font-size:10px;font-weight:700}
 .spk .fr-body{display:grid;gap:8px}
+.spk .bf{display:grid;gap:10px;padding:14px;border-radius:16px;background:var(--card);border:1px solid var(--ln)}
+.spk .bf-t{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.spk .bf-rs{border:0;background:none;color:var(--mut);font:inherit;font-size:12px;font-weight:700;cursor:pointer;text-decoration:underline}
+.spk .bf-sl{display:grid;gap:4px}
+.spk .bf-slh{display:flex;justify-content:space-between;font-size:13px;font-weight:700}
+.spk .bf-slr{display:flex;align-items:center;gap:8px}
+.spk .bf-slr input,.spk .fr-size input,.spk .sf-st input[type=range]{-webkit-appearance:auto;appearance:auto}
+.spk .bf-slr input{flex:1;min-width:0;width:100%;height:26px;padding:0;border:0;background:transparent;accent-color:var(--ink);cursor:pointer}
+.spk .bf-slr button{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--ln);background:var(--card);color:var(--ink);font-size:18px;line-height:1;cursor:pointer}
+.spk .bf-k{font-size:12.5px;font-weight:700;color:var(--mut)}
+.spk .bf-zs{display:flex;flex-wrap:wrap;gap:6px}
+.spk .bf-zs button{padding:8px 12px;border-radius:99px;border:1.5px solid var(--ln);background:var(--card);color:var(--ink);font:inherit;font-weight:700;font-size:13px;cursor:pointer}
+.spk .bf-zs button.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.spk .bf-rec{display:grid;gap:6px;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--ink) 6%,var(--card))}
+.spk .bf-rec>div:first-child{display:flex;justify-content:space-between;align-items:center;font-weight:800}
+.spk .bf-rec b{font-size:26px}
+.spk .bf-rf{display:grid;gap:4px;font-size:12.5px;font-weight:700}
+.spk .bf-rf i{display:block;height:6px;border-radius:9px;background:var(--ink)}
+.spk .bf-rec small{color:var(--mut);font-size:12px}
+.spk .bf-ap{padding:11px;border-radius:12px;border:0;background:var(--ink);color:var(--card);font:inherit;font-weight:800;cursor:pointer}
+.spk .fr-zone{transition:fill .15s;outline:none}
+.spk .fr-zone:focus-visible{stroke:#0E8FC0;stroke-width:3}
 .spk .fr-sizes{display:flex;flex-wrap:wrap;gap:6px}
 .spk .fr-sizes button{min-width:44px;padding:8px 10px;border-radius:10px;border:1.5px solid var(--ln);background:var(--card);color:var(--ink);font:inherit;font-weight:800;font-size:13px;cursor:pointer}
 .spk .fr-sizes button.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
