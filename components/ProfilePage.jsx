@@ -39,7 +39,9 @@ const CSS = `
    admin: الأدمن بيعدّل أي تاجر (uid) والإيميل بيتغيّر مباشرة */
 export default function ProfilePage({ uid, mode = 'self' }) {
   const router = useRouter();
-  const back = () => router.push(mode === 'admin' ? '/admin' : '/dashboard');
+  const [fromDash, setFromDash] = useState(false);
+  useEffect(() => { try { setFromDash(new URLSearchParams(window.location.search).get('from') === 'dashboard'); } catch { /* تجاهل */ } }, []);
+  const back = () => router.push(mode === 'admin' && !fromDash ? '/admin' : '/dashboard');
   const [dark, setDark] = useState(false);
   useEffect(() => { try { setDark(localStorage.getItem('spike_dash_dark') === '1'); } catch { /* تجاهل */ } }, []);
   const [f, setF] = useState(null);
@@ -56,8 +58,8 @@ export default function ProfilePage({ uid, mode = 'self' }) {
       if (!sess?.session) { router.replace('/register'); return; }
       const r = await api('/api/dashboard/profile', { action: 'get', uid });
       if (off) return;
-      if (!r.ok) { setMsg({ k: 'err', t: r.error || 'تعذر تحميل البيانات' }); setF({ name: '', phone: '', email: '', photo: '' }); return; }
-      setF({ name: r.profile.owner_name, phone: r.profile.phone, email: r.email, photo: r.photo });
+      if (!r.ok) { setMsg({ k: 'err', t: r.error || 'تعذر تحميل البيانات' }); setF({ store: '', name: '', phone: '', email: '', photo: '' }); return; }
+      setF({ store: r.profile.store_name, name: r.profile.owner_name, phone: r.profile.phone, email: r.email, photo: r.photo });
       setOrig(r.email);
       setMeta({ store: r.profile.store_name, slug: r.profile.store_slug, plan: r.profile.plan_type, since: r.profile.created_at, last: r.last_sign_in_at });
     })();
@@ -82,7 +84,7 @@ export default function ProfilePage({ uid, mode = 'self' }) {
   const save = async () => {
     setMsg(null);
     setBusy(true);
-    const payload = { action: 'save', uid, owner_name: f.name, phone: f.phone };
+    const payload = { action: 'save', uid, store_name: f.store, owner_name: f.name, phone: f.phone };
     payload.photo = f.photo;
     if (mode === 'admin') payload.email = f.email;
     const r = await api('/api/dashboard/profile', payload);
@@ -100,13 +102,13 @@ export default function ProfilePage({ uid, mode = 'self' }) {
     setMsg({ k: 'ok', t: note });
   };
 
-  const initial = (f?.name || meta.store || 'S').trim().charAt(0).toUpperCase();
+  const initial = (f?.store || f?.name || 'S').trim().charAt(0).toUpperCase();
   const pic = f?.photo || '';
   return (
     <div className={'pfp' + (dark ? ' dk' : '')} dir="rtl">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="pfp-top">
-        <button type="button" className="pfp-btn" onClick={back}>{mode === 'admin' ? '← رجوع للأدمن' : '← رجوع للوحة التحكم'}</button>
+        <button type="button" className="pfp-btn" onClick={back}>{mode === 'admin' && !fromDash ? '← رجوع للأدمن' : '← رجوع للوحة التحكم'}</button>
         <b>{mode === 'admin' ? 'بيانات التاجر' : 'صفحتي الشخصية'}</b>
         {mode === 'self' ? <button type="button" className="pfp-btn" onClick={() => spikeLogout(router)}>خروج</button> : <span />}
       </div>
@@ -116,8 +118,8 @@ export default function ProfilePage({ uid, mode = 'self' }) {
           <div className="pfp-hero">
             <div className="pfp-pic">{pic ? <img src={pic} alt="" /> : initial}</div>
             <div style={{ flex: 1, minWidth: 180 }}>
-              <h1>{f.name || meta.store || 'التاجر'}</h1>
-              <small>{meta.store || '—'} {meta.slug ? `· ${meta.slug}` : ''}</small>
+              <h1>{f.store || 'التاجر'}</h1>
+              <small>{meta.slug ? `رابط المتجر: ${meta.slug}` : ''}</small>
               <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                 <button type="button" className="pfp-btn" disabled={busy} onClick={() => fileRef.current?.click()}>{f.photo ? 'تغيير الصورة' : 'رفع صورة'}</button>
                 {f.photo && <button type="button" className="pfp-btn" disabled={busy} onClick={() => setF({ ...f, photo: '' })}>حذف الصورة</button>}
@@ -125,8 +127,9 @@ export default function ProfilePage({ uid, mode = 'self' }) {
             </div>
           </div>
           <div className="pfp-card">
+            <label className="pfp-l">اسم المتجر<input className="pfp-in" value={f.store} maxLength={60} onChange={(e) => setF({ ...f, store: e.target.value })} /></label>
             <div className="pfp-grid">
-              <label className="pfp-l">الاسم<input className="pfp-in" value={f.name} maxLength={80} onChange={(e) => setF({ ...f, name: e.target.value })} /></label>
+              <label className="pfp-l">اسم صاحب الحساب<input className="pfp-in" value={f.name} maxLength={80} onChange={(e) => setF({ ...f, name: e.target.value })} /></label>
               <label className="pfp-l">رقم الموبايل<input className="pfp-in" dir="ltr" inputMode="tel" value={f.phone} placeholder="01xxxxxxxxx" onChange={(e) => setF({ ...f, phone: e.target.value })} /></label>
             </div>
             <label className="pfp-l">الإيميل<input className="pfp-in" dir="ltr" type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></label>
