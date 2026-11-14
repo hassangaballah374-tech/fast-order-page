@@ -57,7 +57,7 @@ export default function MobileMenu({ nightToggle = true }) {
 
   const cats = (categories || []).filter((x) => x && x.enabled !== false && x.name);
   const showLooks = cfg.looks?.enabled !== false && (cfg.looks?.items || []).length;
-  const showFit = cfg.fitting?.enabled && (cfg.fitting?.models || []).length && Object.keys(cfg.fitting?.items || {}).length;
+  const showFit = cfg.fitting?.enabled && ((cfg.fitting?.models || []).length || cfg.fitting?.builtin !== false) && Object.keys(cfg.fitting?.items || {}).length;
   const links = [
     [base, '🏠', 'الرئيسية'],
     [`${base}/products`, '🛍️', 'كل المنتجات'],

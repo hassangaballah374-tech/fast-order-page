@@ -178,7 +178,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
             </div>
           ))}
 
-          {(cfg.fitting?.enabled && (cfg.fitting?.models || []).length && cfg.fitting?.items?.[String(p.id)]?.image) ? (
+          {(cfg.fitting?.enabled && ((cfg.fitting?.models || []).length || cfg.fitting?.builtin !== false) && cfg.fitting?.items?.[String(p.id)]?.image) ? (
             <Link href={`${base}/fitting?p=${encodeURIComponent(String(p.id))}`} className="b" style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 12px', gap: 8 }}>🪞 جرّبه على الموديل</Link>
           ) : null}
 
