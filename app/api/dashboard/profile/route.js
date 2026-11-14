@@ -44,13 +44,15 @@ export async function POST(req) {
   if (body.action !== 'save') return bad('طلب غير معروف');
 
   const name = String(body.owner_name ?? '').trim().slice(0, 80);
+  const storeName = String(body.store_name ?? sp.store_name ?? '').trim().replace(/\s+/g, ' ').slice(0, 60);
   const phone = digits(body.phone);
-  if (name.length < 2) return bad('اكتب اسم صحيح');
+  if (storeName.length < 2) return bad('اكتب اسم المتجر (حرفين على الأقل)');
+  if (name && name.length < 2) return bad('اكتب اسم صحيح');
   if (!/^01[0125]\d{8}$/.test(phone)) return bad('رقم الموبايل لازم يكون مصري صحيح (01xxxxxxxxx)');
 
-  const { error } = await sb.from('store_profiles').update({ owner_name: name, phone }).eq('user_id', target);
+  const { error } = await sb.from('store_profiles').update({ store_name: storeName, owner_name: name || sp.owner_name || '', phone }).eq('user_id', target);
   if (error) { console.error('PROFILE_SAVE', error.message); return bad('تعذر الحفظ', 500); }
-  await sb.auth.admin.updateUserById(target, { user_metadata: { ...(user.id === target ? user.user_metadata : {}), full_name: name, phone } }).catch(() => {});
+  await sb.auth.admin.updateUserById(target, { user_metadata: { ...(user.id === target ? user.user_metadata : {}), full_name: name || sp.owner_name || '', phone } }).catch(() => {});
 
   /* الصورة: بتتحفظ في إعدادات المتجر (الصفحة الشخصية مستقلة عن اللوحة فمفيش نسخة في الذاكرة بتتخرّب) */
   if (typeof body.photo === 'string') {
