@@ -44,6 +44,6 @@ export async function POST(req) {
     phone: String(meta.phone || ''), wallet_balance_usd: 0, is_active: true, subscription_status: 'active', plan_type: 'starter',
   };
   const { error } = await sb.from('store_profiles').insert([row]);
-  if (error) return bad(`تعذر إنشاء المتجر: ${error.message}`, 500);
+  if (error) { console.error('STORE_CREATE_ERROR', error.message); return bad('تعذر إنشاء المتجر', 500); }
   return NextResponse.json({ ok: true, created: true });
 }
