@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreFast, storeKey, rateLimit, clientIp } from '../../../../lib/storeServer';
+import { getStoreFast, storeKey, rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
 import { getFlow } from '../../../../lib/storeData';
 import { OFFER_TYPES } from '../../../../lib/flowKit';
 
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 /* إحصائيات خطوات الفانل من المتصفح: view (دخول الخطوة)، pass (ضغط «كمّل» في صفحة مخصصة)، decline (رفض عرض) */
 export async function POST(req) {
   let body;
-  try { body = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+  try { body = await readJson(req); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!rateLimit(`flow:${clientIp(req)}`, 120, 60_000)) return NextResponse.json({ ok: false }, { status: 429 });
   const ev = String(body.event || '');
   if (!['view', 'pass', 'decline'].includes(ev)) return NextResponse.json({ ok: false }, { status: 400 });
