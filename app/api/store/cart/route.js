@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreFast, storeKey, rateLimit, clientIp } from '../../../../lib/storeServer';
+import { getStoreFast, storeKey, rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
 import { normalizePhone, isValidEgPhone } from '../../../../lib/storeKit';
 
 export const runtime = 'nodejs';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 /* حفظ السلة المتروكة: يُستدعى لما العميل يكتب رقمه ولم يكمل الطلب */
 export async function POST(req) {
   let body;
-  try { body = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+  try { body = await readJson(req); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!rateLimit(`cart:${clientIp(req)}`, 20, 60_000)) return NextResponse.json({ ok: false }, { status: 429 });
 
   let sb;
