@@ -658,7 +658,7 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 @media(max-width:699px){
 .spk{padding-bottom:var(--spk-bar-h,0px)}
 .spk .bn{display:flex;position:fixed;inset-inline:0;bottom:0;z-index:42;background:var(--card);border-top:1px solid var(--ln);padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
-@supports (background:color-mix(in srgb,red 50%,blue)){.spk .bn{background:color-mix(in srgb,var(--card) 92%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}}
+@supports (background:color-mix(in srgb,red 50%,blue)){.spk .bn{background:color-mix(in srgb,var(--card) 97%,transparent)}}
 .spk .bn-i{flex:1;min-width:0;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;color:var(--mut);font:inherit;font-size:11px;font-weight:700;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;text-decoration:none}
 .spk .bn-i svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform .18s}
 .spk .bn-i:active svg{transform:scale(.88)}

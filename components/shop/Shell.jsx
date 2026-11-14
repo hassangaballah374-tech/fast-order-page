@@ -165,7 +165,7 @@ export default function Shell({ children, footerExtra }) {
       <header className="hd">
         <div className="wrap hd-in">
           <MobileMenu nightToggle={b.night_toggle !== false} />
-          <Link href={base} className="logo">{b.logo ? <img src={b.logo} alt={name} /> : null}<span>{name}</span></Link>
+          <Link href={base} className="logo">{(b.logo || c.owner_photo) ? <img src={b.logo || c.owner_photo} alt={name} decoding="async" /> : null}<span>{name}</span></Link>
           <nav className="nav" aria-label="القائمة">
             <Link href={base}>الرئيسية</Link>
             <Link href={`${base}/products`}>كل المنتجات</Link>

@@ -305,14 +305,17 @@ export default function LandingView({ funnel: fnProp, product: p, flow }) {
   }, [flowCtx?.next]);
   useEffect(() => {
     if (!st.sticky_cta) return undefined;
-    const on = () => {
+    let raf = 0;
+    const run = () => {
+      raf = 0;
       const o = document.getElementById('checkout');
       const y = o ? o.getBoundingClientRect().top : 9999;
       setShowSticky(window.scrollY > 300 && y > window.innerHeight);
     };
-    on();
+    const on = () => { if (!raf) raf = requestAnimationFrame(run); };
+    run();
     window.addEventListener('scroll', on, { passive: true });
-    return () => window.removeEventListener('scroll', on);
+    return () => { window.removeEventListener('scroll', on); if (raf) cancelAnimationFrame(raf); };
   }, [st.sticky_cta]);
   useEffect(() => {
     if (!light) return undefined;

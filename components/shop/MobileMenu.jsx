@@ -86,7 +86,7 @@ export default function MobileMenu({ nightToggle = true }) {
           <div className="mm-scrim" onClick={() => setOpen(false)} />
           <aside className="mm-pn" role="dialog" aria-modal="true" aria-label="القائمة">
             <div className="mm-top">
-              <Link href={base} className="mm-logo">{b.logo ? <img src={b.logo} alt={name} /> : null}<span>{name}</span></Link>
+              <Link href={base} className="mm-logo">{(b.logo || cfg.contact?.owner_photo) ? <img src={b.logo || cfg.contact?.owner_photo} alt={name} /> : null}<span>{name}</span></Link>
               <button type="button" className="mm-x" onClick={() => setOpen(false)} aria-label="إغلاق">✕</button>
             </div>
             <div className="mm-body">
