@@ -40,6 +40,14 @@ export default function FittingRoom({ data }) {
     });
     setCur2(id);
   };
+  /* فتح الغرفة من صفحة منتج (?p=ID): القطعة تتلبّس تلقائياً */
+  useEffect(() => {
+    try {
+      const id = new URLSearchParams(window.location.search).get('p');
+      const hit1 = id ? products.find((x) => String(x.id) === String(id)) : null;
+      if (hit1) { setWorn([String(hit1.id)]); setCur2(String(hit1.id)); }
+    } catch { /* تجاهل */ }
+  }, [products]);
   const wornP = worn.map((id) => byId.get(id)).filter(Boolean);
   const sel = byId.get(cur2) && worn.includes(cur2) ? byId.get(cur2) : wornP[wornP.length - 1];
 

@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useShop, hit } from './StoreContext';
 import { fireInitiateCheckout } from './icGuard';
@@ -176,6 +177,10 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
               {sizeChart && isSizeGroup(g.name) ? <SizeHelp chart={sizeChart} values={g.values} onPick={(v) => setOpts((o) => ({ ...o, [g.name]: v }))} /> : null}
             </div>
           ))}
+
+          {(cfg.fitting?.enabled && (cfg.fitting?.models || []).length && cfg.fitting?.items?.[String(p.id)]?.image) ? (
+            <Link href={`${base}/fitting?p=${encodeURIComponent(String(p.id))}`} className="b" style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 12px', gap: 8 }}>🪞 جرّبه على الموديل</Link>
+          ) : null}
 
           {(p.offers || []).length > 0 && (
             <div className="offers">
