@@ -321,7 +321,8 @@ export const SHOP_CSS = `
 .spk .ob-sold{color:#dc2626;font-weight:800;font-size:14px;margin:8px 0}
 .spk .ob-added{margin-top:12px;display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;font-size:13px;font-weight:700;color:var(--ink);animation:obIn .3s ease both}
 .spk .ob-added button,.spk .ob-fl2 button{border:0;background:none;color:var(--c);font:inherit;font-weight:800;cursor:pointer;text-decoration:underline;padding:0}
-.spk .ob-focus{position:fixed;inset:0;z-index:1000;background:var(--stage);color:var(--ink);display:flex;flex-direction:column;animation:obFade .25s ease both;overflow:auto}
+.spk:has(.ob-focus) .ob-stage{visibility:hidden}
+.spk .ob-focus{isolation:isolate;position:fixed;inset:0;height:100vh;height:100dvh;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-padding-bottom:96px;z-index:1000;background:var(--stage);color:var(--ink);display:flex;flex-direction:column;animation:obFade .25s ease both;overflow:auto}
 .spk .ob-x{position:absolute;inset-inline-end:18px;top:14px;z-index:5;border:0;background:color-mix(in srgb,var(--card) 80%,transparent);border-radius:99px;padding:8px 16px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;color:var(--ink)}
 .spk .ob-fgrid{flex:1 0 auto;display:grid;grid-template-columns:1.15fr 1fr;gap:clamp(16px,4vw,56px);align-items:center;padding:56px max(16px,5vw) 12px}
 .spk .ob-fimg{display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0}
@@ -334,7 +335,7 @@ export const SHOP_CSS = `
 .spk .ob-grp{margin:16px 0 14px}
 .spk .ob-gh{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.08em;color:color-mix(in srgb,var(--ink) 60%,transparent);font-weight:700;margin-bottom:8px}
 .spk .ob-fl2{display:flex;flex-direction:column;gap:8px;margin-top:14px;font-size:13px;font-weight:700;align-items:flex-start}
-.spk .ob-fbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px max(16px,5vw) calc(14px + env(safe-area-inset-bottom));flex-wrap:wrap}
+.spk .ob-fbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px max(16px,5vw) calc(40px + env(safe-area-inset-bottom));flex-wrap:wrap}
 .spk .ob-ths{display:flex;gap:8px;overflow-x:auto;max-width:min(100%,640px);padding:4px 2px;scrollbar-width:none}
 .spk .ob-ths::-webkit-scrollbar{display:none}
 .spk .ob-ths button{flex:none;width:54px;height:54px;border-radius:12px;border:1.5px solid color-mix(in srgb,var(--ink) 12%,transparent);background:color-mix(in srgb,var(--card) 80%,transparent);padding:4px;cursor:pointer;opacity:.7}

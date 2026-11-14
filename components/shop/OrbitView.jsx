@@ -1,5 +1,6 @@
 'use client';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useShop, hit } from './StoreContext';
@@ -227,6 +228,12 @@ export default function OrbitView({ list = [] }) {
     </div>
   ) : null);
 
+  /* النافذة بتتعرض داخل جذر المتجر مباشرة: لو أي عنصر أب فيه transform/animation كان بيخلّي fixed نسبي له فتظهر تحت الهيدر وتتقطع */
+  const inPortal = (node) => {
+    const host = typeof document !== 'undefined' ? document.querySelector('.spk') : null;
+    return host ? createPortal(node, host) : node;
+  };
+
   return (
     <div className="ob">
       <div
@@ -348,7 +355,7 @@ export default function OrbitView({ list = [] }) {
         <AddedLine />
       </div>
 
-      {focus && (
+      {focus && inPortal(
         <div className="ob-focus" role="dialog" aria-modal="true" aria-label={p.title}>
           <button type="button" className="ob-x" onClick={() => setFocus(false)}>إغلاق ✕</button>
           <button type="button" className="ob-cartp" data-fly-target="1" onClick={openCart} aria-label="السلة">🛒 <span className="num">{count}</span></button>
