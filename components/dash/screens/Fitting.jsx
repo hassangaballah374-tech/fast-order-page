@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDash, PageHead, Tog } from '../ui';
 import { useProducts, uploadAsset } from '../hooks';
 import { cleanFitting, newFitId, FITTING_DEFAULT, SLOTS } from '../../../lib/fitting';
+import { cutoutImage } from '../../../lib/cutout';
 
 /* غرفة القياس: التاجر يرفع صور موديلز، وصورة PNG شفافة (بدون خلفية) لكل قطعة يحب العميل يجربها عليهم. */
 
@@ -32,12 +33,29 @@ export function FittingScreen() {
     if (add.length) patch({ models: [...d.models, ...add] });
     setUp('');
   };
+  const cutExisting = async (pid, url) => {
+    setUp(pid);
+    try {
+      const c = await cutoutImage(url);
+      if (!c.blob) { say(c.reason === 'busy' ? 'الخلفية مش لون واحد، مقدرتش أشيلها. ارفع صورة القطعة لوحدها على خلفية بيضاء.' : 'تعذر إزالة الخلفية'); }
+      else { const r = await uploadAsset(uid, new File([c.blob], 'item.png', { type: 'image/png' }), 'fitting'); setItem(pid, { image: r.url }); say('تمت إزالة الخلفية ✓ اضغط حفظ'); }
+    } catch (err) { say('تعذر قراءة الصورة للمعالجة. ارفعها من جديد بدل كده.'); }
+    setUp('');
+  };
   const pickItem = async (e) => {
     const f = (e.target.files || [])[0]; e.target.value = '';
     const pid = target.current; if (!f || !pid) return;
-    if (f.type && f.type !== 'image/png' && f.type !== 'image/webp') say('الأفضل PNG أو WebP بخلفية شفافة عشان القطعة تتركب صح');
     setUp(pid);
-    try { const r = await uploadAsset(uid, f, 'fitting'); setItem(pid, { image: r.url }); } catch (err) { say(err.message || 'تعذر الرفع'); }
+    try {
+      /* إزالة الخلفية تلقائياً (للصور اللي خلفيتها لون واحد) وقص الصورة على حدود القطعة */
+      let file = f;
+      try {
+        const c = await cutoutImage(f);
+        if (c.blob) file = new File([c.blob], 'item.png', { type: 'image/png' });
+        else if (c.reason === 'busy') say('الصورة خلفيتها مش لون واحد (أو عليها شخص)، فمقدرتش أشيل الخلفية. الأفضل صورة القطعة لوحدها على خلفية بيضاء أو PNG شفاف.');
+      } catch { /* نرفع الأصل */ }
+      const r = await uploadAsset(uid, file, 'fitting'); setItem(pid, { image: r.url });
+    } catch (err) { say(err.message || 'تعذر الرفع'); }
     setUp('');
   };
   const save = async () => {
@@ -90,6 +108,7 @@ export function FittingScreen() {
                 <span style={{ flex: 1, minWidth: 120, fontWeight: 700 }}>{p.title}</span>
                 {it && it.image ? <img src={it.image} alt="" style={{ width: 40, height: 40, objectFit: 'contain', background: 'repeating-conic-gradient(#ddd 0 25%,#fff 0 50%) 0 0/10px 10px', borderRadius: 6 }} /> : null}
                 {it && it.image ? <select className="in" style={{ maxWidth: 190 }} value={it.slot} onChange={(e) => setItem(pid, { slot: e.target.value })} aria-label="مكان القطعة">{Object.entries(SLOTS).map(([k, v]) => <option key={k} value={k}>{v.t}</option>)}</select> : null}
+                {it && it.image ? <button type="button" className="btn sm" disabled={up === pid} title="يمسح الخلفية من الصورة المرفوعة" onClick={() => cutExisting(pid, it.image)}>✂️ إزالة الخلفية</button> : null}
                 <button type="button" className="btn sm" disabled={up === pid} onClick={() => { target.current = pid; iRef.current?.click(); }}>{up === pid ? '...' : it && it.image ? 'تغيير الصورة' : '⬆️ رفع صورة القطعة'}</button>
                 {it ? <button type="button" className="btn dng sm" onClick={() => rmItem(pid)}>إزالة</button> : null}
               </div>
