@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClient, userFromRequest, isAdminUser } from '../../../../lib/supabaseAdmin';
-import { rateLimit, readJson } from '../../../../lib/storeServer';
+import { rateLimit } from '../../../../lib/storeServer';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -20,7 +20,8 @@ export async function POST(req) {
   if (!user) return bad('غير مصرح', 401);
   if (!rateLimit(`prof:${user.id}`, 30, 60_000)) return bad('محاولات كثيرة، استنى شوية', 429);
   let body;
-  try { body = await readJson(req); } catch { return bad('بيانات غير صالحة'); }
+  try { body = await req.json(); } catch { return bad('بيانات غير صالحة'); }
+  if (!body || typeof body !== 'object') return bad('بيانات غير صالحة');
 
   const admin = isAdminUser(user);
   const target = admin && body.uid ? String(body.uid) : user.id;
@@ -51,8 +52,8 @@ export async function POST(req) {
   if (error) { console.error('PROFILE_SAVE', error.message); return bad('تعذر الحفظ', 500); }
   await sb.auth.admin.updateUserById(target, { user_metadata: { ...(user.id === target ? user.user_metadata : {}), full_name: name, phone } }).catch(() => {});
 
-  /* الصورة: الأدمن بس من هنا (التاجر بيحفظها بنفسه من اللوحة عشان نسخة الإعدادات اللي في المتصفح ماتتخرّبش) */
-  if (asAdmin && typeof body.photo === 'string') {
+  /* الصورة: بتتحفظ في إعدادات المتجر (الصفحة الشخصية مستقلة عن اللوحة فمفيش نسخة في الذاكرة بتتخرّب) */
+  if (typeof body.photo === 'string') {
     const url = body.photo.trim();
     if (url && !/^https:\/\/\S{3,490}$/.test(url)) return bad('رابط الصورة غير صالح');
     const { data: c } = await sb.from('store_config').select('config').eq('store_id', target).maybeSingle();
