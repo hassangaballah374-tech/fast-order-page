@@ -321,7 +321,8 @@ export const SHOP_CSS = `
 .spk .ob-sold{color:#dc2626;font-weight:800;font-size:14px;margin:8px 0}
 .spk .ob-added{margin-top:12px;display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;font-size:13px;font-weight:700;color:var(--ink);animation:obIn .3s ease both}
 .spk .ob-added button,.spk .ob-fl2 button{border:0;background:none;color:var(--c);font:inherit;font-weight:800;cursor:pointer;text-decoration:underline;padding:0}
-.spk .ob-focus{position:fixed;inset:0;height:100vh;height:100dvh;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-padding-bottom:96px;z-index:1000;background:var(--stage);color:var(--ink);display:flex;flex-direction:column;animation:obFade .25s ease both;overflow:auto}
+.spk:has(.ob-focus) .ob-stage{visibility:hidden}
+.spk .ob-focus{isolation:isolate;position:fixed;inset:0;height:100vh;height:100dvh;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-padding-bottom:96px;z-index:1000;background:var(--stage);color:var(--ink);display:flex;flex-direction:column;animation:obFade .25s ease both;overflow:auto}
 .spk .ob-x{position:absolute;inset-inline-end:18px;top:14px;z-index:5;border:0;background:color-mix(in srgb,var(--card) 80%,transparent);border-radius:99px;padding:8px 16px;font:inherit;font-weight:800;font-size:13px;cursor:pointer;color:var(--ink)}
 .spk .ob-fgrid{flex:1 0 auto;display:grid;grid-template-columns:1.15fr 1fr;gap:clamp(16px,4vw,56px);align-items:center;padding:56px max(16px,5vw) 12px}
 .spk .ob-fimg{display:flex;flex-direction:column;align-items:center;gap:12px;min-width:0}
