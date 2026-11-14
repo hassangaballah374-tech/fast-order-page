@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreBySlug, storeKey, rateLimit, clientIp } from '../../../../lib/storeServer';
+import { getStoreBySlug, storeKey, rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 /* اقتراحات البحث السريعة: أول 6 منتجات نشطة مطابقة للعنوان */
 export async function POST(req) {
   let body;
-  try { body = await req.json(); } catch { return NextResponse.json({ ok: false, items: [] }, { status: 400 }); }
+  try { body = await readJson(req); } catch { return NextResponse.json({ ok: false, items: [] }, { status: 400 }); }
   if (!rateLimit(`suggest:${clientIp(req)}`, 60, 60_000)) return NextResponse.json({ ok: false, items: [] }, { status: 429 });
 
   const q = String(body.q || '').replace(/[%,_()]/g, ' ').trim().slice(0, 40);
