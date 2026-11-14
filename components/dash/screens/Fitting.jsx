@@ -4,6 +4,8 @@ import { useDash, PageHead, Tog } from '../ui';
 import { useProducts, uploadAsset } from '../hooks';
 import { cleanFitting, newFitId, FITTING_DEFAULT, SLOTS } from '../../../lib/fitting';
 import { cutoutImage } from '../../../lib/cutout';
+import { supabase } from '../../../lib/supabase';
+import { TRYON_MODELS, TRYON_MODEL_DEFAULT } from '../../../lib/tryonModels';
 
 /* غرفة القياس: التاجر يرفع صور موديلز، وصورة PNG شفافة (بدون خلفية) لكل قطعة يحب العميل يجربها عليهم. */
 
@@ -19,6 +21,25 @@ export function FittingScreen() {
   const iRef = useRef(null);
   const target = useRef('');
   useEffect(() => { setD({ ...FITTING_DEFAULT, ...(cfg.fitting || {}) }); setDirty(false); }, [cfg.fitting]);
+
+  /* التلبيس بالذكاء الاصطناعي: التفعيل في إعدادات المتجر (d.ai.enabled)، والمفتاح في store_integrations (للتاجر بس، مابيوصلش للمتصفح العام) */
+  const [ai, setAi] = useState({ has: false, model: TRYON_MODEL_DEFAULT, cap: 120, key: '', busy: false, msg: '' });
+  useEffect(() => {
+    let ok = true;
+    (async () => {
+      const { data } = await supabase.from('store_integrations').select('enabled, config').eq('store_id', uid).eq('provider', 'gemini_tryon').maybeSingle();
+      if (ok && data) setAi((a) => ({ ...a, has: !!(data.config && data.config.api_key), model: (data.config && data.config.model) || TRYON_MODEL_DEFAULT, cap: (data.config && data.config.daily_cap) || 120 }));
+    })();
+    return () => { ok = false; };
+  }, [uid]);
+  const saveAi = async () => {
+    setAi((a) => ({ ...a, busy: true, msg: '' }));
+    const { data: row } = await supabase.from('store_integrations').select('config').eq('store_id', uid).eq('provider', 'gemini_tryon').maybeSingle();
+    const config = { ...(row?.config || {}), model: ai.model, daily_cap: Math.min(1000, Math.max(5, Number(ai.cap) || 120)) };
+    if (ai.key.trim()) config.api_key = ai.key.trim();
+    const { error } = await supabase.from('store_integrations').upsert({ store_id: uid, provider: 'gemini_tryon', enabled: true, config, updated_at: new Date().toISOString() }, { onConflict: 'store_id,provider' });
+    setAi((a) => ({ ...a, busy: false, key: '', has: !!config.api_key, msg: error ? `تعذر الحفظ: ${error.message}` : '✅ تم حفظ إعدادات الذكاء الاصطناعي' }));
+  };
 
   const patch = (p) => { setD((c) => ({ ...c, ...p })); setDirty(true); };
   const setItem = (pid, p) => patch({ items: { ...d.items, [pid]: { slot: 'top', image: '', ...(d.items[pid] || {}), ...p } } });
@@ -59,6 +80,7 @@ export function FittingScreen() {
     setUp('');
   };
   const save = async () => {
+    if (d.enabled && d.ai && d.ai.enabled && !ai.has) { say('احفظ مفتاح Gemini الأول عشان تفعّل التلبيس بالذكاء الاصطناعي'); return; }
     if (d.enabled && !d.builtin && !d.models.length) { say('فعّل الموديل المدمج أو ارفع صورة موديل واحدة على الأقل'); return; }
     setBusy(true);
     const ok = await saveCfg('fitting', cleanFitting(d));
@@ -85,6 +107,26 @@ export function FittingScreen() {
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexBasis: '100%' }}>
           <Tog on={d.builtin !== false} set={(v) => patch({ builtin: v })} />
           <span><b>الموديل المدمج (مانيكان)</b> <span className="mut" style={{ fontSize: 12 }}>جسم بيكبر ويطول حسب المقاس اللي العميل يختاره (XS → 4XL)، والقطع بتتلبّس عليه تلقائياً. مش لازم ترفع موديل.</span></span>
+        </div>
+      </div>
+      <div className="card" style={{ marginBottom: 14, display: 'grid', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Tog on={!!(d.ai && d.ai.enabled)} set={(v) => patch({ ai: { ...(d.ai || {}), enabled: v } })} />
+          <b>✨ التلبيس الواقعي بالذكاء الاصطناعي</b>
+          <span className="mut" style={{ fontSize: 12 }}>العميل يضغط زر الشماعة على أي منتج، فالموديل يلبس القطعة بصورة حقيقية (Gemini). تفعيله بعد ما تحط المفتاح.</span>
+        </div>
+        <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))' }}>
+          <label style={{ display: 'grid', gap: 4, fontSize: 12.5, fontWeight: 700 }}>مفتاح Gemini API {ai.has ? <span className="mut">(محفوظ ✓ — سيبه فاضي لو مش هتغيّره)</span> : null}
+            <input className="in" type="password" autoComplete="off" dir="ltr" value={ai.key} placeholder={ai.has ? '••••••••••••' : 'AIza...'} onChange={(e) => setAi({ ...ai, key: e.target.value })} /></label>
+          <label style={{ display: 'grid', gap: 4, fontSize: 12.5, fontWeight: 700 }}>الموديل
+            <select className="in" value={ai.model} onChange={(e) => setAi({ ...ai, model: e.target.value })}>{TRYON_MODELS.map((m) => <option key={m} value={m}>{m}</option>)}</select></label>
+          <label style={{ display: 'grid', gap: 4, fontSize: 12.5, fontWeight: 700 }}>الحد اليومي لعدد التلبيسات
+            <input className="in" type="number" min="5" max="1000" value={ai.cap} onChange={(e) => setAi({ ...ai, cap: e.target.value })} /></label>
+        </div>
+        <div className="mut" style={{ fontSize: 12, lineHeight: 1.8 }}>المفتاح من <b dir="ltr">aistudio.google.com/apikey</b>. كل تلبيسة بتتحسب عليك عند Google حسب خطتك عندهم، والحد اليومي بيحمي من الاستهلاك الزايد. المفتاح بيتخزن عندك بس ومابيظهرش للزوار.</div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button className="btn" type="button" disabled={ai.busy} onClick={saveAi}>{ai.busy ? 'جاري الحفظ...' : 'حفظ إعدادات المفتاح'}</button>
+          {ai.msg ? <span style={{ fontSize: 12.5 }}>{ai.msg}</span> : null}
         </div>
       </div>
       <div className="card" style={{ marginBottom: 14 }}>
