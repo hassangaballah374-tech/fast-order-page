@@ -6,11 +6,12 @@ import { track } from './tracker';
 import { soldOut } from './ui';
 import { flyToCart } from './fly';
 import SizeHelp from './SizeFinder';
-import { chartFor, isSizeGroup } from '../../lib/sizeFinder';
+import { chartFor, isSizeGroup, recommend, matchValue, chartFromTemplate } from '../../lib/sizeFinder';
 import { money, effectivePrice, unitPrice } from '../../lib/storeKit';
 import { SLOTS } from '../../lib/fitting';
 import Mannequin from './Mannequin';
-import { SIZES, TONES, parseSize } from '../../lib/mannequin';
+import BodyFit from './BodyFit';
+import { SIZES, TONES, parseSize, bodyFor } from '../../lib/mannequin';
 
 /* غرفة القياس: اختار موديل، اضغط على قطع عشان تلبّسها، اسحب القطعة على الموديل لتظبيطها، ثم اختار المقاس وأضف اللي عجبك للسلة. */
 
@@ -23,6 +24,9 @@ export default function FittingRoom({ data }) {
   const [mi, setMi] = useState(builtin ? -1 : 0);           /* -1 = الموديل المدمج */
   const [msz, setMsz] = useState(2);
   const [tone, setTone] = useState(TONES[0][0]);
+  const [bodyC, setBodyC] = useState(null);                 /* قياسات الشخص لو غيّرها، وإلا الجسم النموذجي لمقاس القطعة */
+  const [zones, setZones] = useState({ chest: false, stomach: false, hips: false });
+  const [fitPref, setFitPref] = useState(0);
   const [worn, setWorn] = useState([]);
   const [tf, setTf] = useState({});
   const [cur2, setCur2] = useState('');
@@ -89,6 +93,23 @@ export default function FittingRoom({ data }) {
     if (isSizeGroup(name)) { const i = parseSize(v); if (i >= 0) setMsz(i); }
   };
 
+  const bd = bodyC || bodyFor(msz);
+  const bodyNow = { ...bd, chest: zones.chest ? 1 : 0, stomach: zones.stomach ? 1 : 0, hips: zones.hips ? 1 : 0 };
+  const touch = (p) => setBodyC((c) => ({ ...(c || bodyFor(msz)), ...p }));
+  const toggleZone = (k) => { if (!bodyC) setBodyC(bodyFor(msz)); setZones((z) => (k === 'none' ? { chest: false, stomach: false, hips: false } : { ...z, [k]: !z[k] })); };
+  const resetBody = () => { setBodyC(null); setZones({ chest: false, stomach: false, hips: false }); setFitPref(0); };
+  const recChart = useMemo(() => { for (const p of wornP) { const c = chartFor(cfg.sizing, p); if (c && c.kind !== 'shoes') return c; } return chartFromTemplate('men_top'); }, [wornP, cfg.sizing]);
+  const rec = useMemo(() => recommend(recChart, { h: bd.h, w: bd.w, chest: zones.chest ? 1 : 0, stomach: zones.stomach ? 1 : 0, hips: zones.hips ? 1 : 0, fit: fitPref }), [recChart, bd.h, bd.w, zones, fitPref]);
+  const applyRec = () => {
+    if (!rec) return;
+    const i = parseSize(rec.size); if (i >= 0) setMsz(i);
+    setOpts((c) => {
+      const n = { ...c };
+      wornP.forEach((p) => (p.variants || []).forEach((gr) => { if (!isSizeGroup(gr.name)) return; const v = matchValue(rec.size, gr.values); if (v) n[p.id] = { ...(n[p.id] || {}), [gr.name]: v }; }));
+      return n;
+    });
+  };
+
   const missing = wornP.filter((p) => !soldOut(p)).map((p) => ({ p, g: (p.variants || []).find((g) => !(opts[p.id] || {})[g.name]) })).find((x) => x.g);
   const buyable = wornP.filter((p) => !soldOut(p));
   const total = buyable.reduce((a, p) => a + effectivePrice(p), 0);
@@ -121,12 +142,14 @@ export default function FittingRoom({ data }) {
           {mi < 0 ? (
             <>
               <div className="fr-canvas fr-built" ref={box}>
-                <Mannequin size={msz} tone={tone} worn={wornP.map((p) => ({ id: p.id, slot: p.fit.slot, image: p.fit.image }))} />
+                <Mannequin size={msz} body={bodyNow} garmentSize={msz} tone={tone} zones={zones} onZone={toggleZone} worn={wornP.map((p) => ({ id: p.id, slot: p.fit.slot, image: p.fit.image }))} />
                 {!wornP.length && <div className="fr-hint">اختار قطعة من تحت عشان تلبّسها للموديل</div>}
               </div>
               <div className="fr-body">
-                <div className="lk-k">مقاس الموديل: <b>{SIZES[msz]}</b> — الجسم بيكبر ويطول حسب المقاس</div>
+                <div className="lk-k">مقاس القطعة اللي لابسها: <b>{SIZES[msz]}</b></div>
                 <div className="fr-sizes" role="group" aria-label="مقاس الموديل">{SIZES.map((z, i) => <button key={z} type="button" className={i === msz ? 'on' : ''} onClick={() => pickBodySize(i)}>{z}</button>)}</div>
+                <BodyFit h={bd.h} w={bd.w} zones={zones} fit={fitPref} rec={rec} custom={!!bodyC} canApply={wornP.length > 0 && parseSize(rec?.size) >= 0}
+                  onH={(v) => touch({ h: v })} onW={(v) => touch({ w: v })} onZone={toggleZone} onFit={setFitPref} onApply={applyRec} onReset={resetBody} />
                 <div className="fr-tones" role="group" aria-label="لون البشرة">{TONES.map(([c, t]) => <button key={c} type="button" className={c === tone ? 'on' : ''} style={{ background: c }} title={t} aria-label={t} onClick={() => setTone(c)} />)}</div>
               </div>
             </>
