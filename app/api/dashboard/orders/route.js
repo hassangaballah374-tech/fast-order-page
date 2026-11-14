@@ -50,7 +50,8 @@ export async function POST(req) {
         if (!t.ok) { results.push({ id: o.id, ok: false, error: `المخزون غير كافٍ لـ «${t.failed}»` }); continue; }
       }
       const { error } = await sb.from('orders').update({ status, updated_at: new Date().toISOString() }).eq('id', o.id);
-      results.push({ id: o.id, ok: !error, error: error?.message });
+      if (error) console.error('ORDER_STATUS_ERROR', error.message);
+      results.push({ id: o.id, ok: !error, error: error ? 'تعذر تحديث الحالة' : undefined });
     }
     return NextResponse.json({ ok: results.some((r) => r.ok), results });
   }
