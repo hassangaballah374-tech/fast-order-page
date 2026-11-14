@@ -59,7 +59,7 @@ export function FittingScreen() {
     setUp('');
   };
   const save = async () => {
-    if (d.enabled && !d.models.length) { say('ارفع صورة موديل واحدة على الأقل'); return; }
+    if (d.enabled && !d.builtin && !d.models.length) { say('فعّل الموديل المدمج أو ارفع صورة موديل واحدة على الأقل'); return; }
     setBusy(true);
     const ok = await saveCfg('fitting', cleanFitting(d));
     setBusy(false);
@@ -81,6 +81,11 @@ export function FittingScreen() {
         <b>تفعيل غرفة القياس في المتجر</b>
         <input className="in" style={{ maxWidth: 260 }} value={d.title} onChange={(e) => patch({ title: e.target.value })} placeholder="العنوان" aria-label="العنوان" />
         <span className="mut" style={{ fontSize: 12 }}>تظهر في صفحة «غرفة القياس» وكقسم في الصفحة الرئيسية. {used} قطعة جاهزة.</span>
+      
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexBasis: '100%' }}>
+          <Tog on={d.builtin !== false} set={(v) => patch({ builtin: v })} />
+          <span><b>الموديل المدمج (مانيكان)</b> <span className="mut" style={{ fontSize: 12 }}>جسم بيكبر ويطول حسب المقاس اللي العميل يختاره (XS → 4XL)، والقطع بتتلبّس عليه تلقائياً. مش لازم ترفع موديل.</span></span>
+        </div>
       </div>
       <div className="card" style={{ marginBottom: 14 }}>
         <b>1) صور الموديلز ({d.models.length}/8)</b>

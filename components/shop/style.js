@@ -507,6 +507,17 @@ export const SHOP_CSS = `
 .spk .fr-layer.on{outline:2px dashed color-mix(in srgb,var(--ink) 55%,transparent);outline-offset:3px;border-radius:6px}
 .spk .fr-layer:active{cursor:grabbing}
 .spk .fr-hint{position:absolute;inset-inline:12px;bottom:12px;background:color-mix(in srgb,var(--bg) 88%,transparent);color:var(--ink);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:700;text-align:center}
+.spk .fr-built{background:linear-gradient(180deg,var(--card),color-mix(in srgb,var(--card) 82%,var(--ink)))}
+.spk .fr-man{position:absolute;inset:0;width:100%;height:100%;display:block}
+.spk .fr-mtab{display:grid;place-items:center;font-size:22px;line-height:1;gap:2px}
+.spk .fr-mtab small{font-size:10px;font-weight:700}
+.spk .fr-body{display:grid;gap:8px}
+.spk .fr-sizes{display:flex;flex-wrap:wrap;gap:6px}
+.spk .fr-sizes button{min-width:44px;padding:8px 10px;border-radius:10px;border:1.5px solid var(--ln);background:var(--card);color:var(--ink);font:inherit;font-weight:800;font-size:13px;cursor:pointer}
+.spk .fr-sizes button.on{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.spk .fr-tones{display:flex;gap:8px}
+.spk .fr-tones button{width:26px;height:26px;border-radius:50%;border:2px solid transparent;box-shadow:0 0 0 1px var(--ln);cursor:pointer;padding:0}
+.spk .fr-tones button.on{border-color:var(--ink)}
 .spk .fr-size{display:grid;gap:4px;font-size:12.5px;font-weight:700;color:var(--mut)}
 .spk .fr-size input{width:100%;accent-color:var(--ink)}
 .spk .fr-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:10px 0}

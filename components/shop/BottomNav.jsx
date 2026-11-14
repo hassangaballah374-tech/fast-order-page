@@ -51,7 +51,7 @@ export default function BottomNav() {
   const onCartPage = /\/(cart|checkout)/.test(path);
   const cats = (categories || []).filter((x) => x && x.enabled !== false && x.name);
   const showLooks = cfg.looks?.enabled !== false && (cfg.looks?.items || []).length;
-  const showFit = cfg.fitting?.enabled && (cfg.fitting?.models || []).length && Object.keys(cfg.fitting?.items || {}).length;
+  const showFit = cfg.fitting?.enabled && ((cfg.fitting?.models || []).length || cfg.fitting?.builtin !== false) && Object.keys(cfg.fitting?.items || {}).length;
 
   const openSearch = () => {
     tap();
