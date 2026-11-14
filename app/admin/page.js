@@ -24,6 +24,7 @@ import SpikeLogo from '../../components/SpikeLogo';
 import AdminFeatureLocks from '../../components/admin/AdminFeatureLocks';
 import AdminServiceRequests from '../../components/admin/AdminServiceRequests';
 import AdminDomains from '../../components/admin/AdminDomains';
+import ProfileModal from '../../components/ProfileModal';
 import AdminLinkedDomains from '../../components/admin/AdminLinkedDomains';
 import { api as dashApi } from '../../components/dash/hooks';
 const BRAND_BASE = 'https://kunmfgpqyyhmpcpvwuuk.supabase.co/storage/v1/object/public/branding';
@@ -51,6 +52,7 @@ export default function SpikeSuperAdminDashboard() {
   const [products, setProducts] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [domains, setDomains] = useState([]);
+  const [profileFor, setProfileFor] = useState('');
   const [adminUsers, setAdminUsers] = useState([]);
 
   const [exchangeRate, setExchangeRate] = useState(50.0);
@@ -874,6 +876,7 @@ export default function SpikeSuperAdminDashboard() {
           </div>
 
           <div className="flex items-center gap-2">
+            {profileFor && <ProfileModal uid={profileFor} mode="admin" dark={isDark} onClose={() => setProfileFor('')} onSaved={fetchAllData} />}
             <AdminCommandBar stores={stores} orders={orders} domains={domains} tabs={navItems} isDark={isDark} onGo={(id) => setActiveTab(id)} />
             <button
               onClick={() => setNewStoreModal(true)}
@@ -1242,8 +1245,13 @@ export default function SpikeSuperAdminDashboard() {
                     {stores.map((s, idx) => (
                       <tr key={idx} className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/40">
                         <td className="p-3">
-                          <span className="font-bold block">{s.store_name}</span>
-                          <span className="text-[10px] text-slate-400 font-mono" dir="ltr">{s.store_slug}.spike.shop</span>
+                          <button type="button" onClick={() => setProfileFor(String(s.user_id))} title="بيانات التاجر" className="flex items-center gap-2 text-right cursor-pointer">
+                            <span className="w-9 h-9 rounded-full bg-[#014D6F] text-white grid place-items-center font-black text-sm flex-none">{String(s.store_name || s.owner_name || 'S').trim().charAt(0).toUpperCase()}</span>
+                            <span>
+                              <span className="font-bold block hover:underline">{s.store_name}</span>
+                              <span className="text-[10px] text-slate-400 font-mono" dir="ltr">{s.store_slug}.spike.shop</span>
+                            </span>
+                          </button>
                         </td>
                         <td className="p-3">{s.owner_name || '—'}</td>
                         <td className="p-3 font-mono" dir="ltr">{s.phone || '—'}</td>
@@ -1577,8 +1585,13 @@ export default function SpikeSuperAdminDashboard() {
                         {cfg.rows.map((s, idx) => (
                           <tr key={idx}>
                             <td className="p-3">
-                              <span className="font-bold block">{s.store_name}</span>
+                              <button type="button" onClick={() => setProfileFor(String(s.user_id))} title="بيانات التاجر" className="flex items-center gap-2 text-right cursor-pointer">
+                            <span className="w-9 h-9 rounded-full bg-[#014D6F] text-white grid place-items-center font-black text-sm flex-none">{String(s.store_name || s.owner_name || 'S').trim().charAt(0).toUpperCase()}</span>
+                            <span>
+                              <span className="font-bold block hover:underline">{s.store_name}</span>
                               <span className="text-[10px] text-slate-400 font-mono" dir="ltr">{s.store_slug}.spike.shop</span>
+                            </span>
+                              </button>
                             </td>
                             <td className="p-3">{s.owner_name || '—'}</td>
                             <td className="p-3 font-mono" dir="ltr">{s.phone || '—'}</td>
