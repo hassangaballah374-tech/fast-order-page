@@ -79,7 +79,7 @@ export default function MerchantDashboard() {
   const [side, setSide] = useState(false);
   const [dark, setDark] = useState(false);
   useEffect(() => { try { setDark(localStorage.getItem('spike_dash_dark') === '1'); } catch { /* تجاهل */ } }, []);
-  const openProfile = () => router.push(uid && authId && uid !== authId ? `/admin/merchant/${uid}` : '/dashboard/profile');
+  const openProfile = () => router.push(uid && authId && uid !== authId ? `/admin/merchant/${uid}?from=dashboard` : '/dashboard/profile');
   const toggleDark = () => setDark((d) => { const v = !d; try { localStorage.setItem('spike_dash_dark', v ? '1' : '0'); } catch { /* تجاهل */ } return v; });
   const [cmd, setCmd] = useState(false);
   const [bypass, setBypass] = useState(''); /* شاشة مقفولة الأدمن اختار يتخطاها */
