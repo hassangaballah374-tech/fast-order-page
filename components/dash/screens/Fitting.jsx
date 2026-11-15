@@ -1,11 +1,11 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { useDash, PageHead, Tog } from '../ui';
-import { useProducts, uploadAsset } from '../hooks';
+import { useProducts, uploadAsset, api } from '../hooks';
 import { cleanFitting, newFitId, FITTING_DEFAULT, SLOTS } from '../../../lib/fitting';
 import { cutoutImage } from '../../../lib/cutout';
 import { supabase } from '../../../lib/supabase';
-import { TRYON_MODELS, TRYON_MODEL_DEFAULT } from '../../../lib/tryonModels';
+import { TRYON_MODELS, TRYON_MODEL_DEFAULT, fixModel } from '../../../lib/tryonModels';
 
 /* غرفة القياس: التاجر يرفع صور موديلز، وصورة PNG شفافة (بدون خلفية) لكل قطعة يحب العميل يجربها عليهم. */
 
@@ -28,7 +28,7 @@ export function FittingScreen() {
     let ok = true;
     (async () => {
       const { data } = await supabase.from('store_integrations').select('enabled, config').eq('store_id', uid).eq('provider', 'gemini_tryon').maybeSingle();
-      if (ok && data) setAi((a) => ({ ...a, has: !!(data.config && data.config.api_key), model: (data.config && data.config.model) || TRYON_MODEL_DEFAULT, cap: (data.config && data.config.daily_cap) || 120 }));
+      if (ok && data) setAi((a) => ({ ...a, has: !!(data.config && data.config.api_key), model: fixModel((data.config && data.config.model) || TRYON_MODEL_DEFAULT), cap: (data.config && data.config.daily_cap) || 120 }));
     })();
     return () => { ok = false; };
   }, [uid]);
@@ -41,6 +41,19 @@ export function FittingScreen() {
     setAi((a) => ({ ...a, busy: false, key: '', has: !!config.api_key, msg: error ? `تعذر الحفظ: ${error.message}` : '✅ تم حفظ إعدادات الذكاء الاصطناعي' }));
   };
 
+  const callAi = async (action) => {
+    setAi((a) => ({ ...a, busy: true, msg: action === 'genmodel' ? '⏳ بنولّد الموديل... (ممكن ياخد لحد دقيقة)' : '⏳ بنختبر المفتاح...' }));
+    try {
+      const r = await api('/api/dashboard/tryon', { action });
+      if (action === 'test') {
+        const t = r.ok ? `✅ المفتاح سليم. موديلات الصور المتاحة عليه: ${(r.imageModels || []).join('، ') || 'مفيش'}. ${r.note || ''}` : `❌ ${r.error || 'فشل الاختبار'}${r.detail ? ` — ${r.detail}` : ''}`;
+        setAi((a) => ({ ...a, busy: false, msg: t }));
+      } else if (r.ok) {
+        patch({ models: [{ id: newFitId(), name: 'موديل المتجر', image: r.url }, ...d.models].slice(0, 8), builtin: false });
+        setAi((a) => ({ ...a, busy: false, msg: '✅ اتولّد موديل المتجر واتضاف في "صور الموديلز". اضغط حفظ التغييرات.' }));
+      } else setAi((a) => ({ ...a, busy: false, msg: `❌ ${r.error || 'تعذر توليد الموديل'}${r.detail ? ` — ${r.detail}` : ''}` }));
+    } catch (e) { setAi((a) => ({ ...a, busy: false, msg: '❌ تعذر الاتصال بالسيرفر' })); }
+  };
   const patch = (p) => { setD((c) => ({ ...c, ...p })); setDirty(true); };
   const setItem = (pid, p) => patch({ items: { ...d.items, [pid]: { slot: 'top', image: '', ...(d.items[pid] || {}), ...p } } });
   const rmItem = (pid) => { const it = { ...d.items }; delete it[pid]; patch({ items: it }); };
@@ -126,7 +139,9 @@ export function FittingScreen() {
         <div className="mut" style={{ fontSize: 12, lineHeight: 1.8 }}>المفتاح من <b dir="ltr">aistudio.google.com/apikey</b>. كل تلبيسة بتتحسب عليك عند Google حسب خطتك عندهم، والحد اليومي بيحمي من الاستهلاك الزايد. المفتاح بيتخزن عندك بس ومابيظهرش للزوار.</div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <button className="btn" type="button" disabled={ai.busy} onClick={saveAi}>{ai.busy ? 'جاري الحفظ...' : 'حفظ إعدادات المفتاح'}</button>
-          {ai.msg ? <span style={{ fontSize: 12.5 }}>{ai.msg}</span> : null}
+          <button className="btn" type="button" disabled={ai.busy || !ai.has} onClick={() => callAi('test')}>اختبر المفتاح</button>
+          <button className="btn" type="button" disabled={ai.busy || !ai.has} onClick={() => callAi('genmodel')}>✨ ولّد موديل المتجر</button>
+          {ai.msg ? <span style={{ fontSize: 12.5, lineHeight: 1.7 }}>{ai.msg}</span> : null}
         </div>
       </div>
       <div className="card" style={{ marginBottom: 14 }}>
