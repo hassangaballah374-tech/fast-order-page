@@ -27,18 +27,19 @@ export function FittingScreen() {
   useEffect(() => {
     let ok = true;
     (async () => {
-      const { data } = await supabase.from('store_integrations').select('enabled, config').eq('store_id', uid).eq('provider', 'gemini_tryon').maybeSingle();
-      if (ok && data) setAi((a) => ({ ...a, has: !!(data.config && data.config.api_key), model: fixModel((data.config && data.config.model) || TRYON_MODEL_DEFAULT), cap: (data.config && data.config.daily_cap) || 120 }));
+      try {
+        const r = await api('/api/dashboard/tryon', { action: 'status' });
+        if (ok && r && r.ok) setAi((a) => ({ ...a, has: !!r.has, model: fixModel(r.model || TRYON_MODEL_DEFAULT), cap: r.cap || 120 }));
+      } catch { /* تجاهل */ }
     })();
     return () => { ok = false; };
   }, [uid]);
   const saveAi = async () => {
     setAi((a) => ({ ...a, busy: true, msg: '' }));
-    const { data: row } = await supabase.from('store_integrations').select('config').eq('store_id', uid).eq('provider', 'gemini_tryon').maybeSingle();
-    const config = { ...(row?.config || {}), model: ai.model, daily_cap: Math.min(1000, Math.max(5, Number(ai.cap) || 120)) };
-    if (ai.key.trim()) config.api_key = ai.key.trim();
-    const { error } = await supabase.from('store_integrations').upsert({ store_id: uid, provider: 'gemini_tryon', enabled: true, config, updated_at: new Date().toISOString() }, { onConflict: 'store_id,provider' });
-    setAi((a) => ({ ...a, busy: false, key: '', has: !!config.api_key, msg: error ? `تعذر الحفظ: ${error.message}` : '✅ تم حفظ إعدادات الذكاء الاصطناعي' }));
+    try {
+      const r = await api('/api/dashboard/tryon', { action: 'save', key: ai.key, model: ai.model, cap: ai.cap });
+      setAi((a) => ({ ...a, busy: false, key: r.ok ? '' : a.key, has: !!r.has, msg: r.ok ? '✅ المفتاح اتحفظ (تأكدنا من قاعدة البيانات). دلوقتي اضغط "اختبر المفتاح"' : `❌ ${r.error || 'تعذر الحفظ'}` }));
+    } catch { setAi((a) => ({ ...a, busy: false, msg: '❌ تعذر الاتصال بالسيرفر' })); }
   };
 
   const callAi = async (action) => {
