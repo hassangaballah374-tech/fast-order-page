@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useShop } from './StoreContext';
 import { track } from './tracker';
 import { useFavs } from './favs';
+import { toggleTry, useTryIds } from './tryonBus';
 import { money, effectivePrice, priceRange, overridePrice, saleActive, safeUrl, youtubeId, swatchGroup, isHttpUrl } from '../../lib/storeKit';
 
 const HEX = /^#[0-9a-fA-F]{3,8}$/;
@@ -19,6 +20,9 @@ export const soldOut = (p) => p.track_stock && p.stock_quantity <= 0;
 export function ProductCard({ p }) {
   const { base, cur, slug, cfg } = useShop();
   const fav = useFavs(slug);
+  const tryOn = !!(cfg?.fitting?.enabled && cfg?.fitting?.ai?.enabled);
+  const tryIds = useTryIds(slug);
+  const worn = tryIds.includes(String(p.id));
   const [flipped, setFlipped] = useState(false);
   const canFlip = cfg?.browse?.flip !== false && (p.images || []).length >= 2;
   const sg = swatchGroup(p);
@@ -53,6 +57,12 @@ export function ProductCard({ p }) {
         </div>
       ) : null}
       <button type="button" className={'pc-fav' + (fav.has(p.id) ? ' on' : '')} aria-label="المفضلة" onClick={() => fav.toggle(p.id)}>{fav.has(p.id) ? '♥' : '♡'}</button>
+      {tryOn && (p.images || [])[0] ? (
+        <button type="button" className={'pc-hg' + (worn ? ' on' : '')} aria-pressed={worn} aria-label={worn ? 'شيل من غرفة القياس' : 'جرّبه على الموديل'} title={worn ? 'شيل من الموديل' : 'جرّبه على الموديل'}
+          onClick={(e) => { const card = e.currentTarget.closest('.pc'); const im = card && card.querySelector('.pc-img img'); toggleTry({ id: p.id, title: p.title, img: p.images[0], rect: im ? im.getBoundingClientRect().toJSON() : null }); }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 8a2.5 2.5 0 1 0-2.5-2.5" /><path d="M12 8v2l9 6.2a1.3 1.3 0 0 1-.7 2.3H3.7a1.3 1.3 0 0 1-.7-2.3L12 10" /></svg>
+        </button>
+      ) : null}
       {out ? <span className="bdg so">نفدت الكمية</span> : off > 0 ? <span className="bdg">خصم {off}%</span> : null}
       <div className="pc-b">
         <Link href={`${base}/p/${p.id}`} className="pc-t">{p.title}</Link>
