@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminClient, userFromRequest } from '../../../../lib/supabaseAdmin';
 import { rateLimit } from '../../../../lib/storeServer';
 import { callGemini, safeModel } from '../../../../lib/tryon';
+import { TRYON_MODEL_DEFAULT } from '../../../../lib/tryonModels';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -27,10 +28,30 @@ export async function POST(req) {
   let body;
   try { body = await req.json(); } catch { return bad('بيانات غير صالحة'); }
 
-  const { data: integ } = await sb.from('store_integrations').select('config').eq('store_id', user.id).eq('provider', 'gemini_tryon').maybeSingle();
+  const { data: integ, error: readErr } = await sb.from('store_integrations').select('config').eq('store_id', user.id).eq('provider', 'gemini_tryon').maybeSingle();
+  if (readErr) return bad('تعذر قراءة الإعدادات: ' + readErr.message, 500);
   const c = (integ && integ.config) || {};
+
+  /* status: حالة المفتاح المحفوظ (بدون ما نرجّع المفتاح نفسه) */
+  if (body.action === 'status') return NextResponse.json({ ok: true, has: !!String(c.api_key || '').trim(), model: safeModel(c.model || TRYON_MODEL_DEFAULT), cap: parseInt(c.daily_cap, 10) || 120 });
+
+  /* save: حفظ المفتاح والإعدادات من السيرفر (بصلاحية السيرفر)، وبعدين نقرأه تاني للتأكد إنه اتحفظ فعلاً */
+  if (body.action === 'save') {
+    const next = { ...c, model: safeModel(body.model), daily_cap: Math.min(1000, Math.max(5, parseInt(body.cap, 10) || 120)) };
+    const raw = String(body.key || '').replace(/[\s"'`]/g, '');
+    if (raw) {
+      if (!/^AIza[0-9A-Za-z_\-]{30,60}$/.test(raw)) return bad('شكل المفتاح غير صحيح. مفتاح Gemini بيبدأ بـ AIza وطوله حوالي 39 حرف. انسخه كامل من aistudio.google.com/apikey من غير مسافات');
+      next.api_key = raw;
+    }
+    const { error } = await sb.from('store_integrations').upsert({ store_id: user.id, provider: 'gemini_tryon', enabled: true, config: next, updated_at: new Date().toISOString() }, { onConflict: 'store_id,provider' });
+    if (error) return bad('تعذر الحفظ في قاعدة البيانات: ' + error.message, 500);
+    const { data: chk } = await sb.from('store_integrations').select('config').eq('store_id', user.id).eq('provider', 'gemini_tryon').maybeSingle();
+    const ok = !!(chk && chk.config && String(chk.config.api_key || '').trim());
+    return NextResponse.json({ ok, has: ok, error: ok ? '' : 'الحفظ لم يكتمل (المفتاح لسه فاضي). ' + (raw ? '' : 'اكتب المفتاح في الخانة قبل الحفظ.') });
+  }
+
   const key = String(c.api_key || '').trim();
-  if (!key) return bad('مفيش مفتاح Gemini محفوظ. حط المفتاح واضغط "حفظ إعدادات المفتاح" الأول');
+  if (!key) return bad('مفيش مفتاح محفوظ لسه. اكتب المفتاح في الخانة واضغط "حفظ إعدادات المفتاح" الأول');
 
   if (body.action === 'test') {
     try {
