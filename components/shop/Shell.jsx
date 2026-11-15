@@ -6,6 +6,7 @@ import { useShop, captureUtm, hit } from './StoreContext';
 import { track } from './tracker';
 import SearchBox from './SearchBox';
 import BottomNav from './BottomNav';
+import TryOnDock from './TryOnDock';
 import MiniCart from './MiniCart';
 import WaIcon from './WaIcon';
 import SpikeLogo from '../SpikeLogo';
@@ -214,6 +215,7 @@ export default function Shell({ children, footerExtra }) {
       </footer>
 
       <BottomNav />
+      {cfg.fitting?.enabled && cfg.fitting?.ai?.enabled ? <TryOnDock /> : null}
       {waOk ? <a className="waf" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer" aria-label="واتساب" onClick={() => track('Contact', {})}><WaIcon size={32} /></a> : null}
       <SalesPopup />
       <Downsell />
