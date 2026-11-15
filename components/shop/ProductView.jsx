@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { toggleTry } from './tryonBus';
 import { useRouter } from 'next/navigation';
 import { useShop, hit } from './StoreContext';
 import { fireInitiateCheckout } from './icGuard';
@@ -178,6 +179,9 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
             </div>
           ))}
 
+          {(cfg.fitting?.enabled && cfg.fitting?.ai?.enabled && (p.images || [])[0]) ? (
+            <button type="button" className="b" style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '4px 0 12px', gap: 8 }} onClick={() => toggleTry({ id: p.id, title: p.title, img: p.images[0], rect: null })}>👗 جرّبه بالذكاء الاصطناعي</button>
+          ) : null}
           {(cfg.fitting?.enabled && ((cfg.fitting?.models || []).length || cfg.fitting?.builtin !== false) && cfg.fitting?.items?.[String(p.id)]?.image) ? (
             <Link href={`${base}/fitting?p=${encodeURIComponent(String(p.id))}`} className="b" style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 12px', gap: 8 }}>🪞 جرّبه على الموديل</Link>
           ) : null}
