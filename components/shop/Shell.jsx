@@ -215,7 +215,7 @@ export default function Shell({ children, footerExtra }) {
       </footer>
 
       <BottomNav />
-      {cfg.fitting?.enabled && cfg.fitting?.ai?.enabled ? <TryOnDock /> : null}
+      {cfg.fitting?.enabled && cfg.fitting?.ai?.enabled && (cfg.fitting?.models || []).length ? <TryOnDock /> : null}
       {waOk ? <a className="waf" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer" aria-label="واتساب" onClick={() => track('Contact', {})}><WaIcon size={32} /></a> : null}
       <SalesPopup />
       <Downsell />

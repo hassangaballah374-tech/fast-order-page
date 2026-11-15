@@ -179,7 +179,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
             </div>
           ))}
 
-          {(cfg.fitting?.enabled && cfg.fitting?.ai?.enabled && (p.images || [])[0]) ? (
+          {(cfg.fitting?.enabled && cfg.fitting?.ai?.enabled && (cfg.fitting?.models || []).length && (p.images || [])[0]) ? (
             <button type="button" className="b" style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '4px 0 12px', gap: 8 }} onClick={() => toggleTry({ id: p.id, title: p.title, img: p.images[0], rect: null })}>👗 جرّبه بالذكاء الاصطناعي</button>
           ) : null}
           {(cfg.fitting?.enabled && ((cfg.fitting?.models || []).length || cfg.fitting?.builtin !== false) && cfg.fitting?.items?.[String(p.id)]?.image) ? (

@@ -20,7 +20,7 @@ export const soldOut = (p) => p.track_stock && p.stock_quantity <= 0;
 export function ProductCard({ p }) {
   const { base, cur, slug, cfg } = useShop();
   const fav = useFavs(slug);
-  const tryOn = !!(cfg?.fitting?.enabled && cfg?.fitting?.ai?.enabled);
+  const tryOn = !!(cfg?.fitting?.enabled && cfg?.fitting?.ai?.enabled && (cfg?.fitting?.models || []).length);
   const tryIds = useTryIds(slug);
   const worn = tryIds.includes(String(p.id));
   const [flipped, setFlipped] = useState(false);

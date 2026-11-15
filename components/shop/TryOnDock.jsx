@@ -85,7 +85,8 @@ export default function TryOnDock() {
     setBusy(true); setErr('');
     try {
       let baseData;
-      if (m < 0) baseData = await rasterMannequin();
+      if (m < 0 && !models.length) { setErr('لسه مفيش صورة موديل جاهزة في المتجر'); setBusy(false); return; }
+      if (m < 0) m = 0;
       const r = await fetch('/api/store/tryon', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: c.signal, body: JSON.stringify({ slug, products: list.map((p) => p.id), model: m, baseData }) });
       const j = await r.json().catch(() => null);
       if (c.signal.aborted) return;
@@ -94,7 +95,7 @@ export default function TryOnDock() {
     } catch (e) {
       if (!c.signal.aborted) setErr('مفيش اتصال، جرّب تاني');
     } finally { if (!c.signal.aborted) setBusy(false); }
-  }, [slug]);
+  }, [slug, models.length]);
 
   /* أي تغيير في الاختيارات يعيد التلبيس (بعد ثانية قصيرة عشان لو العميل ضغط كذا قطعة ورا بعض) */
   useEffect(() => {
