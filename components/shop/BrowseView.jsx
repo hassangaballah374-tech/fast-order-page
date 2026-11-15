@@ -4,10 +4,12 @@ import OrbitView from './OrbitView';
 import RailView from './RailView';
 import ShuffleView from './ShuffleView';
 import ArcView from './ArcView';
+import RunwayView from './RunwayView';
 import { ProductCard } from './ui';
 
 /* يختار التخطيط حسب الاسم؛ أي اسم غير معروف يرجع للمدار */
 export default function BrowseView({ style = 'orbit', list = [] }) {
+  if (style === 'runway') return <RunwayView list={list} />;
   if (style === 'arc') return <ArcView list={list} />;
   if (style === 'rail') return <div className="wrap"><RailView list={list} /></div>;
   if (style === 'shuffle') return <div className="wrap"><ShuffleView list={list} /></div>;
