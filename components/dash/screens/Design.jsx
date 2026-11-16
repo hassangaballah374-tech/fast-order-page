@@ -268,6 +268,7 @@ export function CheckoutScreen() {
     <ConfigForm
       section="checkout" title="نموذج الشراء" desc="اختر الحقول التي تظهر للعميل في صفحة الطلب. كلما قلّت الحقول زادت نسبة التحويل."
       fields={[
+        { k: 'areas', l: 'المركز والقرية', type: 'toggle', text: 'بعد المحافظة: اختيار المركز ثم القرية/العزبة (مع خيار «أخرى»)' },
         { k: 'phone2', l: 'رقم هاتف إضافي', type: 'toggle', text: 'إظهار حقل رقم بديل' },
         { k: 'email', l: 'البريد الإلكتروني', type: 'toggle', text: 'إظهار حقل البريد' },
         { k: 'address2', l: 'عنوان إضافي', type: 'toggle', text: 'إظهار حقل علامة مميزة/عنوان ثانٍ' },
@@ -286,6 +287,8 @@ export function CheckoutScreen() {
           {d.phone2 && <input className="in" disabled placeholder="رقم إضافي" />}
           {d.email && <input className="in" disabled placeholder="البريد الإلكتروني" />}
           <input className="in" disabled placeholder="المحافظة" />
+          {d.areas !== false && <input className="in" disabled placeholder="المركز / القسم" />}
+          {d.areas !== false && <input className="in" disabled placeholder="القرية / العزبة" />}
           <input className="in" disabled placeholder="العنوان بالتفصيل" />
           {d.address2 && <input className="in" disabled placeholder="علامة مميزة" />}
           {d.note && <input className="in" disabled placeholder="ملاحظات (اختياري)" />}
