@@ -13,6 +13,7 @@ import { useFavs, pushViewed, readViewed } from './favs';
 import Checkout from './Checkout';
 import { Stars, ProductCard, Blocks, soldOut } from './ui';
 import FlipPic from './FlipPic';
+import SpinViewer from './SpinViewer';
 import { money, effectivePrice, unitPrice, overridePrice, valueSoldOut, optionAvail, saleActive, applyOffer, optionImage, isHttpUrl, splitImages, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 function ReviewForm({ productId }) {
@@ -53,6 +54,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const { slug, cfg, cur, base, add, setBump: saveBump } = useShop();
   const router = useRouter();
   const [img, setImg] = useState(0);
+  const [spinOn, setSpinOn] = useState(false);
   const [pinned, setPinned] = useState(true);
   const [qty, setQty] = useState(1);
   const [bumpOn, setBumpOn] = useState(false);
@@ -68,6 +70,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const sizeChart = chartFor(cfg.sizing, p);
   const optsOk = groups.every((g) => opts[g.name]);
   const colorImg = optionImage(p, opts);
+  const spinVideo = cfg?.spin?.enabled !== false && isHttpUrl(cfg?.spin?.items?.[p.id]?.video) ? cfg.spin.items[p.id].video : '';
   const gi = splitImages(p, cfg?.browse?.flip !== false);
   const mainImg = (pinned && colorImg) || gi.list[img] || '';
   const onFront = (pinned && colorImg) || img === 0;
@@ -141,6 +144,13 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
       <Blocks list={blocks.filter((b) => b.placement === 'product_top')} />
       <div className="pv">
         <div className="gal">
+        {spinVideo ? (
+          <div className="sp-tg" role="tablist">
+            <button type="button" role="tab" aria-selected={!spinOn} className={!spinOn ? 'on' : ''} onClick={() => setSpinOn(false)}>صور</button>
+            <button type="button" role="tab" aria-selected={spinOn} className={spinOn ? 'on' : ''} onClick={() => setSpinOn(true)}>360°</button>
+          </div>
+        ) : null}
+        {spinVideo && spinOn ? <SpinViewer key={spinVideo} src={spinVideo} title={p.title} /> : <>
         <FlipPic key={mainImg} className="gal-main gal-sw" front={mainImg} back={onFront ? gi.back : ''} alt={p.title} fetchPriority="high" />
           {gi.list.length > 1 && (
             <div className="gal-nav">
@@ -149,7 +159,8 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
               <button type="button" className="dk" onClick={() => { setPinned(false); setImg((img + 1) % gi.list.length); }} aria-label="التالي">←</button>
             </div>
           )}
-          {gi.list.length > 1 && (
+        </>}
+          {gi.list.length > 1 && !(spinVideo && spinOn) && (
             <div className="gal-th">{gi.list.map((s, i) => <button key={i} type="button" className={i === img && !(pinned && colorImg) ? 'act' : ''} onClick={() => { setPinned(false); setImg(i); }} aria-label={`صورة ${i + 1}`}><img src={s} alt="" loading="lazy" /></button>)}</div>
           )}
         </div>
