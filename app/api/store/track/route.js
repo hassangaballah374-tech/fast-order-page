@@ -43,12 +43,18 @@ export async function POST(req) {
   }
   const { data } = await q.maybeSingle();
   if (!data) return NextResponse.json({ ok: false, error: 'لم نجد طلباً بهذه البيانات' });
+  /* سجل الحالات بأوقاتها (لو جدول order_status_log متشغّل؛ لو لأ بنكمّل من غيره) */
+  let history = [];
+  try {
+    const { data: lg } = await sb.from('order_status_log').select('status, at').eq('store_id', String(storeKey(store))).eq('order_no', data.order_no).order('at', { ascending: true }).limit(30);
+    if (Array.isArray(lg)) history = lg.map((x) => ({ status: x.status, at: x.at }));
+  } catch { /* تجاهل */ }
 
   return NextResponse.json({
     ok: true,
     order: {
       order_no: data.order_no, status: data.status, total: data.total_price, courier: data.courier, tracking_number: data.tracking_number,
-      created_at: data.created_at, updated_at: data.updated_at, governorate: data.governorate,
+      created_at: data.created_at, updated_at: data.updated_at, governorate: data.governorate, history,
       first_name: String(data.customer_name || '').split(' ')[0],
       items: (Array.isArray(data.items) ? data.items : []).map((i) => ({ title: i.title, qty: i.qty, options: i.options })),
     },

@@ -75,7 +75,7 @@ export default function TrackView() {
           <p className="mut">أهلاً {res.first_name} · {res.governorate}</p>
           {idx >= 0 ? (
             <div className="tl">
-          {FLOW.map(([k, l], i) => <div key={k} className={(i <= idx ? 'done' : '') + (i === idx && idx < FLOW.length - 1 ? ' cur' : '')}><i>{i <= idx ? '✓' : ''}</i>{l}</div>)}
+          {FLOW.map(([k, l], i) => { const h = (res.history || []).filter((x) => x.status === k).pop(); return <div key={k} className={(i <= idx ? 'done' : '') + (i === idx && idx < FLOW.length - 1 ? ' cur' : '')}><i>{i <= idx ? '✓' : ''}</i>{l}{h ? <small className="mut" style={{ marginInlineStart: 'auto', fontSize: 12 }}>{new Date(h.at).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</small> : null}</div>; })}
             </div>
           ) : <p className="err" style={{ margin: '12px 0' }}>حالة الطلب: {st.ar}</p>}
           {res.tracking_number ? (
