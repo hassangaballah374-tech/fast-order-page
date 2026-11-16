@@ -887,6 +887,28 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .sp-lk button.on{border-color:#111;background:#111;color:#fff}
 .spk .sp-lk img{width:34px;height:34px;border-radius:50%;object-fit:cover}
 @media(prefers-reduced-motion:reduce){.spk .sp-ld i{animation:none}}
+.spk .fb-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.spk .fb-btn{display:inline-flex;gap:8px;align-items:center;font-weight:800}
+.spk .fb-n{background:var(--c);color:var(--onc);border-radius:99px;min-width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;padding:0 5px}
+.spk .fb-c{font-size:13px;margin-inline-start:auto}
+.spk .fb-empty{text-align:center;display:grid;gap:12px;justify-items:center;padding:30px}
+.spk .fb-ov{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center}
+.spk .fb-sh{background:var(--card);color:var(--ink);width:min(520px,100%);max-height:88vh;display:flex;flex-direction:column;border-radius:20px 20px 0 0;animation:fbUp .25s ease}
+@media(min-width:700px){.spk .fb-ov{align-items:center}.spk .fb-sh{border-radius:20px}}
+@keyframes fbUp{from{transform:translateY(30px);opacity:0}}
+.spk .fb-hd{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;border-bottom:1px solid var(--ln)}
+.spk .fb-cl{border:0;background:none;font-size:18px;cursor:pointer;color:inherit}
+.spk .fb-bd{overflow:auto;padding:6px 18px 12px}
+.spk .fb-g{border:0;border-bottom:1px solid var(--ln);padding:14px 0;margin:0}
+.spk .fb-g legend{font-weight:800;padding:0 0 8px;float:inline-start;width:100%}
+.spk .fb-g .chips,.spk .fb-pr,.spk .fb-ck{clear:both}
+.spk .fb-pr{display:flex;gap:10px;align-items:center}
+.spk .fb-pr .in{min-width:0;flex:1}
+.spk .fb-ck{display:flex;gap:10px;align-items:center;padding:6px 0;font-weight:700}
+.spk .fb-g .chip:disabled{opacity:.35;cursor:not-allowed;text-decoration:line-through}
+.spk .fb-ft{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--ln)}
+.spk .fb-ft .b{flex:1}
+@media(prefers-reduced-motion:reduce){.spk .fb-sh{animation:none}}
 .spk .gal-sw{animation:swIn .35s ease}
 @keyframes swIn{from{opacity:.2;transform:scale(.97)}to{opacity:1;transform:none}}
 .spk .pc-sws{display:flex;gap:6px;padding:8px 12px 0;flex-wrap:wrap}

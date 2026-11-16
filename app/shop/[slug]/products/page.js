@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { loadStore, getProducts, getCategories } from '../../../../lib/storeData';
 import { ProductCard } from '../../../../components/shop/ui';
-import BrowseView from '../../../../components/shop/BrowseView';
+import FilterBar from '../../../../components/shop/FilterBar';
 import { BROWSE_STYLES, pickStyle } from '../../../../lib/browse';
 
 export const dynamic = 'force-dynamic';
@@ -53,7 +53,7 @@ export default async function ProductsPage({ params, searchParams }) {
         {Object.entries(BROWSE_STYLES).map(([k, t]) => <Link key={k} className={'chip' + (view === k ? ' act' : '')} href={qs({ view: k })}>{t}</Link>)}
       </div>
     </section>
-    <BrowseView key={`${view}|${cat}|${sort}|${q}`} style={view} list={list} />
+    <FilterBar key={`${view}|${cat}|${sort}|${q}`} style={view} list={list} />
     </>
   );
 }
