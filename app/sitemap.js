@@ -19,7 +19,7 @@ export default async function sitemap() {
 
   const onPlatform = host === PLATFORM || host.endsWith('.vercel.app') || host.startsWith('localhost');
   if (onPlatform) {
-    const out = [{ url: origin, lastModified: now }, { url: `${origin}/terms`, lastModified: now }];
+    const out = [{ url: origin, lastModified: now }, { url: `${origin}/terms`, lastModified: now }, { url: `${origin}/about`, lastModified: now }, { url: `${origin}/privacy`, lastModified: now }, { url: `${origin}/contact`, lastModified: now }];
     if (!sb) return out;
     const { data } = await sb.from('store_profiles').select('store_slug').eq('is_active', true).limit(MAX_STORES);
     for (const s of data || []) if (s.store_slug) out.push({ url: `${origin}/shop/${encodeURIComponent(s.store_slug)}`, lastModified: now });

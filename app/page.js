@@ -351,8 +351,9 @@ export default function SpikeLandingPage() {
 
             <div className="flex flex-wrap gap-6 text-xs font-bold">
               <Link href="/terms" className="hover:text-[#0E8FC0] transition">{t.terms}</Link>
-              <Link href="/terms" className="hover:text-[#0E8FC0] transition">{t.legal}</Link>
-              <Link href="/terms" className="hover:text-[#0E8FC0] transition">{t.privacy}</Link>
+              <Link href="/about" className="hover:text-[#0E8FC0] transition">{lang === 'ar' ? 'من نحن' : 'About'}</Link>
+              <Link href="/privacy" className="hover:text-[#0E8FC0] transition">{t.privacy}</Link>
+              <Link href="/contact" className="hover:text-[#0E8FC0] transition">{lang === 'ar' ? 'تواصل معنا' : 'Contact'}</Link>
             </div>
           </div>
 
