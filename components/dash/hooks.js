@@ -111,3 +111,16 @@ export function useProducts() {
   t.rows.forEach((p) => { byId[String(p.id)] = p; });
   return { ...t, byId };
 }
+
+/* رفع فيديو الـ 360° (بدون ضغط). الحد 25MB، وكمان لازم يكون أقل من حد التخزين في Supabase على خطتك (الافتراضي 50MB). */
+export async function uploadVideo(uid, file, folder = 'spin') {
+  if (!file) throw new Error('لم يتم اختيار ملف');
+  if (!/^video\/(mp4|webm|quicktime)$/.test(file.type)) throw new Error('الفيديو لازم يكون MP4 أو WebM');
+  if (file.size > 25 * 1024 * 1024) throw new Error('الحد الأقصى لحجم الفيديو 25MB. قلّل المدة (3-6 ثواني) أو الدقة (720px).');
+  const ext = file.type === 'video/webm' ? 'webm' : file.type === 'video/quicktime' ? 'mov' : 'mp4';
+  const path = `${uid}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from('store-assets').upload(path, file, { cacheControl: '31536000', upsert: false, contentType: file.type });
+  if (error) throw new Error(/size|exceed|large/i.test(error.message) ? 'الفيديو أكبر من حد التخزين المسموح في Supabase. صغّره وجرب تاني.' : error.message);
+  const { data } = supabase.storage.from('store-assets').getPublicUrl(path);
+  return { url: data.publicUrl, path, size: file.size };
+}
