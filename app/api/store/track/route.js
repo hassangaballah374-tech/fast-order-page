@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreFast, storeKey, rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
+import { getStoreFast, storeKey, rateLimit, rateLimitDb, clientIp, readJson } from '../../../../lib/storeServer';
 import { normalizePhone } from '../../../../lib/storeKit';
 
 export const runtime = 'nodejs';
@@ -14,6 +14,7 @@ export async function POST(req) {
 
   let sb;
   try { sb = adminClient(); } catch { return NextResponse.json({ ok: false, error: 'غير متاح' }, { status: 500 }); }
+  if (!(await rateLimitDb(sb, `track-db:${clientIp(req)}`, 20, 60_000))) return NextResponse.json({ ok: false, error: 'محاولات كثيرة' }, { status: 429 });
   const store = await getStoreFast(sb, body.slug);
   if (!store) return NextResponse.json({ ok: false, error: 'المتجر غير متاح' }, { status: 404 });
 
