@@ -36,7 +36,11 @@ export async function POST(req) {
   const name = String(c.name || '').trim().slice(0, 120);
   const phone = normalizePhone(c.phone);
   const governorate = String(c.governorate || '').trim();
-  const address = [String(c.address || '').trim(), cfg.checkout.address2 ? String(c.address2 || '').trim() : ''].filter(Boolean).join(' - ').slice(0, 400);
+  const areaOn = cfg.checkout.areas !== false;
+  const centerN = areaOn ? String(c.center || '').trim().slice(0, 80) : '';
+  const villageN = areaOn ? (c.village === '__other' ? String(c.villageOther || '').trim().slice(0, 80) : String(c.village || '').trim().slice(0, 80)) : '';
+  const address = [centerN, villageN, String(c.address || '').trim(), cfg.checkout.address2 ? String(c.address2 || '').trim() : ''].filter(Boolean).join(' - ').slice(0, 400);
+  const detailLen = String(c.address || '').trim().length;
   const notes = String(c.notes || '').trim().slice(0, 500);
   const phone2 = cfg.checkout.phone2 && c.phone2 ? normalizePhone(c.phone2) : '';
   const email = cfg.checkout.email ? String(c.email || '').trim().slice(0, 120) : '';
@@ -46,7 +50,7 @@ export async function POST(req) {
   if (name.length < 2) return fail('اكتب اسمك بالكامل');
   if (prot.validate_phone && !isValidEgPhone(phone)) return fail('رقم الموبايل غير صحيح (مثال: 01012345678)');
   if (!governorate) return fail('اختر المحافظة');
-  if (address.length < 6) return fail('اكتب العنوان بالتفصيل');
+  if (detailLen < 6) return fail('اكتب العنوان بالتفصيل');
 
   const since = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString();
   const [blockedRes, priced, recentRes, historyRes, otpRes, netRes] = await Promise.all([
@@ -88,7 +92,7 @@ export async function POST(req) {
   if (fillMs > 0 && fillMs < (Number(prot.min_fill_seconds) || 0) * 1000) { risk += 30; flags.push('fast_submit'); }
   if (Number(prot.flag_high_value) > 0 && priced.total >= Number(prot.flag_high_value)) { risk += 20; flags.push('high_value'); }
   if (name.length < 4 || /\d/.test(name)) { risk += 15; flags.push('weird_name'); }
-  if (address.length < 12) { risk += 15; flags.push('short_address'); }
+  if (detailLen < 12) { risk += 15; flags.push('short_address'); }
   if (todayCount >= 1) { risk += 15; flags.push('repeat_today'); }
   if ((history || []).length >= 2) { risk += 40; flags.push('returns_history'); }
   if (otpHit) { risk += 40; flags.push('otp_blocked'); }

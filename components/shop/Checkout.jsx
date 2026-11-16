@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useShop, getUtm, hit } from './StoreContext';
 import { track } from './tracker';
 import { fireInitiateCheckout } from './icGuard';
+import { loadEgAreas, OTHER_VILLAGE } from '../../lib/egAreas';
 import { GOVERNORATES, money, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 const ss = (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch { /* تجاهل */ } };
@@ -19,7 +20,7 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
   const { slug, cfg, cur, zones, base, live } = useShop();
   const router = useRouter();
   const co = cfg.checkout || {};
-  const [f, setF] = useState({ name: '', phone: '', phone2: '', email: '', governorate: '', address: '', address2: '', notes: '' });
+  const [f, setF] = useState({ name: '', phone: '', phone2: '', email: '', governorate: '', center: '', village: '', villageOther: '', address: '', address2: '', notes: '' });
   const [coupon, setCoupon] = useState('');
   const [appliedCode, setAppliedCode] = useState('');
   const [q, setQ] = useState(null);
@@ -32,6 +33,13 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
   const lastCart = useRef('');
   const govs = useMemo(() => (zones && zones.length ? zones.map((z) => z.governorate) : GOVERNORATES.map((g) => g[0])), [zones]);
   const set = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const useAreas = co.areas !== false;
+  const [areas, setAreas] = useState(null);
+  useEffect(() => { if (useAreas && f.governorate && !areas) { let ok = true; loadEgAreas().then((a) => { if (ok) setAreas(a); }); return () => { ok = false; }; } return undefined; }, [useAreas, f.governorate, areas]);
+  const centers = useMemo(() => (areas && areas[f.governorate]) || [], [areas, f.governorate]);
+  const villages = useMemo(() => { const c = centers.find((x) => x[0] === f.center); return c ? c[1] : []; }, [centers, f.center]);
+  const setGov = (e) => setF((s) => ({ ...s, governorate: e.target.value, center: '', village: '', villageOther: '' }));
+  const setCenter = (e) => setF((s) => ({ ...s, center: e.target.value, village: '', villageOther: '' }));
 
   useEffect(() => {
     const load = () => { try { const c = localStorage.getItem(`spike_coupon_${slug}`); if (c) { setCoupon(c); setAppliedCode(c); } } catch { /* تجاهل */ } };
@@ -81,6 +89,11 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
     if (f.name.trim().length < 2) { setErr('اكتب اسمك بالكامل'); return; }
     if (!isValidEgPhone(normalizePhone(f.phone))) { setErr('رقم الموبايل غير صحيح (مثال: 01012345678)'); return; }
     if (!f.governorate) { setErr('اختر المحافظة'); return; }
+    if (useAreas && centers.length) {
+      if (!f.center) { setErr('اختر المركز / القسم'); return; }
+      if (villages.length && !f.village) { setErr('اختر القرية / العزبة (أو «أخرى» لو مش موجودة)'); return; }
+      if (villages.length && f.village === OTHER_VILLAGE && f.villageOther.trim().length < 2) { setErr('اكتب اسم قريتك / عزبتك'); return; }
+    }
     if (f.address.trim().length < 6) { setErr('اكتب العنوان بالتفصيل'); return; }
     setBusy(true);
     try {
@@ -120,7 +133,7 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
       </div>
       {co.email ? <div className="fld"><label>البريد الإلكتروني (اختياري)</label><input className="in" dir="ltr" type="email" value={f.email} onChange={set('email')} /></div> : null}
       <div className="fld"><label>المحافظة</label>
-        <select className="in" value={f.governorate} onChange={set('governorate')}>
+        <select className="in" value={f.governorate} onChange={setGov}>
           <option value="">اختر المحافظة</option>
         {govs.map((g) => <option key={g} value={g}>{g}</option>)}
         </select>
@@ -129,7 +142,27 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
           return z && z.eta ? <p className="mut" style={{ fontSize: 13, marginTop: 6 }}>🚚 مدة التوصيل المتوقعة: <b>{z.eta}</b></p> : null;
         })()}
       </div>
-      <div className="fld"><label>العنوان بالتفصيل</label><input className="in" autoComplete="street-address" value={f.address} onChange={set('address')} /></div>
+      {useAreas && f.governorate && centers.length ? (
+        <>
+          <div className="fld"><label>المركز / القسم</label>
+            <select className="in" value={f.center} onChange={setCenter}>
+              <option value="">اختر المركز / القسم</option>
+              {centers.map((c) => <option key={c[0]} value={c[0]}>{c[0]}</option>)}
+            </select>
+          </div>
+          {f.center && villages.length ? (
+            <div className="fld"><label>القرية / العزبة / الحي</label>
+              <select className="in" value={f.village} onChange={(e) => setF((s) => ({ ...s, village: e.target.value, villageOther: '' }))}>
+                <option value="">اختر القرية / العزبة</option>
+                {villages.map((v, i) => <option key={v + i} value={v}>{v}</option>)}
+                <option value={OTHER_VILLAGE}>أخرى (مش لاقي قريتي / عزبتي)</option>
+              </select>
+              {f.village === OTHER_VILLAGE ? <input className="in" style={{ marginTop: 8 }} placeholder="اكتب اسم القرية / العزبة" value={f.villageOther} onChange={set('villageOther')} /> : null}
+            </div>
+          ) : null}
+        </>
+      ) : null}
+      <div className="fld"><label>العنوان بالتفصيل</label><input className="in" autoComplete="street-address" placeholder={useAreas && f.governorate ? 'الشارع، رقم المبنى/المنزل، أقرب علامة مميزة' : ''} value={f.address} onChange={set('address')} /></div>
       {co.address2 ? <div className="fld"><label>علامة مميزة / عنوان إضافي</label><input className="in" value={f.address2} onChange={set('address2')} /></div> : null}
       {co.note !== false ? <div className="fld"><label>ملاحظات (اختياري)</label><input className="in" value={f.notes} onChange={set('notes')} /></div> : null}
       <input className="hp" tabIndex={-1} autoComplete="off" aria-hidden="true" value={hp} onChange={(e) => setHp(e.target.value)} />
