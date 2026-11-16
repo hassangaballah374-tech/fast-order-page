@@ -573,6 +573,29 @@ export const SHOP_CSS = `
 .spk .rw-ok{font-size:12.5px;color:var(--ink);display:flex;justify-content:space-between;gap:8px}.spk .rw-ok button{border:0;background:none;font:inherit;font-weight:700;text-decoration:underline;cursor:pointer;color:inherit}
 @media(max-width:1099px){.spk .rw{grid-template-columns:1fr;margin:0}.spk .rw-stage{min-height:420px}.spk .rw-head{padding:24px 18px 0}.spk .rw-head h2{font-size:30px}.spk .rw-it{width:46%;margin-left:-23%}.spk .rw-ctl{padding:6px 10px 18px}.spk .rw-tk.on{flex-basis:110px}.spk .rw-tk:not(.on) .rw-tl{display:none}.spk .rw-p{border-inline-start:0;border-top:1px solid var(--ln)}.spk .rw-ph{padding:20px 18px 10px}.spk .rw-li{padding:0 18px}.spk .rw-bd{padding:14px 18px 20px}}
 @media(prefers-reduced-motion:reduce){.spk .rw-it,.spk .rw-row{transition:none;animation:none}.spk .rw-bar i.go{animation:none;transform:scaleX(1)}}
+.spk .rl2{position:relative;margin:0 8px;border-radius:22px;background:#FAF7F2;color:#1A1716;overflow:hidden;padding-bottom:18px;border:1px solid #DDD5C9}
+.spk .rl2-zone{position:relative;height:clamp(300px,36vw,400px);overflow:hidden;outline:none;touch-action:pan-y;cursor:grab;user-select:none}
+.spk .rl2-zone.drg{cursor:grabbing}
+.spk .rl2-zone:focus-visible{box-shadow:inset 0 0 0 2px #1A1716}
+.spk .rl2-svg{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.spk .rl2-g{position:absolute;left:0;top:0;width:var(--rl-bw,120px);will-change:transform}
+.spk .rl2-sw{transform-origin:50% 0;width:100%}
+.spk .rl2-lift{position:relative;width:100%;height:var(--rl-bh,160px);transform-origin:50% 0;transition:transform .42s cubic-bezier(.22,1,.36,1);perspective:700px;margin-top:2px}
+.spk .rl2-hk{position:absolute;left:50%;top:-4px;width:34%;transform:translateX(-50%);z-index:3;pointer-events:none}
+.spk .rl2-in{position:absolute;inset:14% 6% 0;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.22,1,.36,1);transform-origin:50% 0}
+.spk .rl2-f,.spk .rl2-b{position:absolute;inset:0;display:grid;place-items:start center;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.spk .rl2-b{transform:rotateY(180deg)}
+.spk .rl2-f img,.spk .rl2-b img{width:100%;height:100%;object-fit:contain;object-position:50% 0;filter:drop-shadow(0 10px 12px rgba(60,40,25,.18));pointer-events:none}
+.spk .rl2-tg{position:absolute;left:-6%;top:62%;z-index:4;min-width:30px;height:18px;padding:0 5px;border-radius:2px;background:#F6F1E7;box-shadow:0 1px 3px rgba(60,45,30,.18);font-size:9.6px;font-weight:600;display:grid;place-items:center;color:#2A2420;pointer-events:none}
+.spk .rl2-hit{position:absolute;left:-10%;right:-10%;top:0;height:var(--rl-bh,160px);border:0;background:none;padding:0;cursor:inherit;z-index:6}
+.spk .rl2-hit:focus-visible{outline:2px solid #1A1716;outline-offset:-2px}
+.spk .rl2-bar{display:flex;justify-content:center;padding:4px 0 8px}
+.spk .rl2-pt{position:relative;width:140px;height:2px;background:#DCD4C8}.spk .rl2-pt i{position:absolute;top:0;height:100%;width:58%;background:#1A1716}
+.spk .rl2-info{display:grid;gap:8px;max-width:560px;margin:0 auto;padding:6px 18px 0;text-align:center;justify-items:center}
+.spk .rl2-info h3{margin:0;font-size:19px;font-weight:600;color:#1A1716}
+.spk .rl2-info .ob-cnt{color:#8A7F72;font-size:12px;letter-spacing:.12em}
+.spk .rl2-info .rl-act{justify-content:center}
+@media(prefers-reduced-motion:reduce){.spk .rl2-lift,.spk .rl2-in{transition:none}}
 .spk .arc{position:relative;height:clamp(720px,94vh,880px);overflow:hidden;outline:none;touch-action:pan-y;user-select:none;background:radial-gradient(70% 60% at 50% 45%,color-mix(in srgb,var(--card) 70%,var(--bg)),var(--bg));border-radius:22px;margin:0 8px}
 .spk .arc-ghost{position:absolute;inset-inline:0;top:6%;text-align:center;font-weight:900;font-size:min(34vw,300px);line-height:.8;letter-spacing:-.04em;color:color-mix(in srgb,var(--ink) 9%,transparent);pointer-events:none;z-index:2;font-family:inherit}
 .spk .arc-model{position:absolute;bottom:236px;left:50%;transform:translateX(-50%);height:calc(100% - 290px);aspect-ratio:2/3;z-index:50;pointer-events:none}
