@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreBySlug, storeKey, getConfig, priceCart, takeStockForLines, restoreStockForLines, orderRowItems, rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
+import { getStoreBySlug, storeKey, getConfig, rateLimitDb, priceCart, takeStockForLines, restoreStockForLines, orderRowItems, rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
 import { normalizePhone, isValidEgPhone } from '../../../../lib/storeKit';
 import { runAfter } from '../../../../lib/after';
 import { sendCapiPurchase } from '../../../../lib/capi';
@@ -25,6 +25,7 @@ export async function POST(req) {
   let sb;
   try { sb = adminClient(); } catch { return fail('المتجر غير مهيأ بعد', 500); }
 
+  if (!(await rateLimitDb(sb, `order-db:${ip}`, 10, 60_000))) return fail('محاولات كثيرة، حاول بعد دقيقة', 429);
   const store = await getStoreBySlug(sb, body.slug);
   if (!store) return fail('المتجر غير متاح', 404);
   if (!store.live) return fail(store.reason === 'inactive' ? 'المتجر لم يتم تفعيله بعد، الطلبات متوقفة مؤقتاً.' : 'المتجر متوقف مؤقتاً عن استقبال الطلبات. تواصل مع صاحب المتجر.', 403);
