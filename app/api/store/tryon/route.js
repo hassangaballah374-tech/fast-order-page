@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { loadStore, getProducts } from '../../../../lib/storeData';
-import { rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
+import { rateLimit, rateLimitDb, clientIp, readJson } from '../../../../lib/storeServer';
 import { buildPrompt, callGemini, fetchImage, parseDataUrl, safeModel } from '../../../../lib/tryon';
 
 export const runtime = 'nodejs';
@@ -30,7 +30,7 @@ export async function POST(req) {
   const key = String(c.api_key || '').trim() || (c.use_platform ? String(process.env.GEMINI_API_KEY || '').trim() : '');
   if (!key) return out({ ok: false, error: 'التلبيس غير مجهّز في المتجر (المفتاح ناقص)' }, 503);
   const cap = Math.min(1000, Math.max(5, parseInt(c.daily_cap, 10) || 120));
-  if (!rateLimit(`tryon-s:${sid}`, cap, 24 * 3600_000)) return out({ ok: false, error: 'تم الوصول للحد اليومي للتلبيس في المتجر، جرّب بكرة' }, 429);
+  if (!(await rateLimitDb(sb, `tryon-s:${sid}`, cap, 24 * 3600_000))) return out({ ok: false, error: 'تم الوصول للحد اليومي للتلبيس في المتجر، جرّب بكرة' }, 429);
 
   const ids = [...new Set((Array.isArray(body.products) ? body.products : []).map(String))].slice(0, 5);
   if (!ids.length) return out({ ok: false, error: 'اختار قطعة الأول' });
