@@ -70,7 +70,10 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const sizeChart = chartFor(cfg.sizing, p);
   const optsOk = groups.every((g) => opts[g.name]);
   const colorImg = optionImage(p, opts);
-  const spinVideo = cfg?.spin?.enabled !== false && isHttpUrl(cfg?.spin?.items?.[p.id]?.video) ? cfg.spin.items[p.id].video : '';
+  const spinIt = cfg?.spin?.enabled !== false ? cfg?.spin?.items?.[p.id] : null;
+  const spinVideo = spinIt && isHttpUrl(spinIt.video) ? spinIt.video : '';
+  const spinTop = spinVideo && isHttpUrl(spinIt.top) ? spinIt.top : '';
+  const spinBot = spinVideo && isHttpUrl(spinIt.bottom) ? spinIt.bottom : '';
   const gi = splitImages(p, cfg?.browse?.flip !== false);
   const mainImg = (pinned && colorImg) || gi.list[img] || '';
   const onFront = (pinned && colorImg) || img === 0;
@@ -150,7 +153,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
             <button type="button" role="tab" aria-selected={spinOn} className={spinOn ? 'on' : ''} onClick={() => setSpinOn(true)}>360°</button>
           </div>
         ) : null}
-        {spinVideo && spinOn ? <SpinViewer key={spinVideo} src={spinVideo} title={p.title} /> : <>
+        {spinVideo && spinOn ? <SpinViewer key={`${spinVideo}|${spinTop}|${spinBot}`} src={spinVideo} top={spinTop} bottom={spinBot} title={p.title} /> : <>
         <FlipPic key={mainImg} className="gal-main gal-sw" front={mainImg} back={onFront ? gi.back : ''} alt={p.title} fetchPriority="high" />
           {gi.list.length > 1 && (
             <div className="gal-nav">
