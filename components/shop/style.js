@@ -320,7 +320,7 @@ export const SHOP_CSS = `
 .spk .ob-bar{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:12px 0}
 .spk .ob-bar .tabs{margin:0}
 
-.spk .ob-stage{position:relative;overflow:hidden;isolation:isolate;background:var(--stage);touch-action:pan-y;user-select:none;-webkit-user-select:none;outline:none;color:var(--obk)}
+.spk .ob-stage{position:relative;overflow:hidden;isolation:isolate;background:var(--stage);touch-action:none;user-select:none;-webkit-user-select:none;outline:none;color:var(--obk)}
 .spk .ob-txt{position:absolute;inset-inline-start:max(16px,4vw);top:clamp(18px,4vh,40px);z-index:200;max-width:min(560px,62%);pointer-events:none;animation:obIn .45s ease both}
 .spk .ob-txt>*{pointer-events:auto}
 .spk .ob-cnt{font-size:11px;letter-spacing:.14em;color:color-mix(in srgb,var(--ink) 55%,transparent);margin-bottom:8px}
@@ -875,6 +875,7 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .sp-tg button.on{background:#111;color:#fff;opacity:1}
 .spk .sp-st{position:relative;width:100%;max-height:78vh;border-radius:14px;overflow:hidden;background:#f1f1f1;cursor:grab;touch-action:pan-y;user-select:none;outline-offset:3px}
 .spk .sp-st:active{cursor:grabbing}
+.spk .sp-t{position:absolute;inset:0;transform-origin:50% 55%;will-change:transform}
 .spk .sp-v,.spk .sp-c{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
 .spk .sp-ld{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:13px;font-weight:700;background:rgba(255,255,255,.7)}
 .spk .sp-ld i{width:26px;height:26px;border-radius:50%;border:3px solid rgba(0,0,0,.15);border-top-color:#111;animation:spr .8s linear infinite}
