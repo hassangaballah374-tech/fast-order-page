@@ -50,6 +50,7 @@ const base = {
   browse: L(() => import('./screens/Browse'), 'BrowseScreen'),
   looks: L(() => import('./screens/Looks'), 'LooksScreen'),
   fitting: L(() => import('./screens/Fitting'), 'FittingScreen'),
+  spin360: L(() => import('./screens/Spin360'), 'Spin360Screen'),
   showcases: L(() => import('./screens/Showcases'), 'ShowcasesScreen'),
   sizing: L(() => import('./screens/Sizing'), 'SizingScreen'),
   home: L(D, 'HomeScreen'),
