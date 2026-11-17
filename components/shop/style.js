@@ -870,6 +870,23 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 /* ===== ألوان المنتج بصورها ===== */
 .spk .chip.sw{display:inline-flex;align-items:center;gap:8px;padding:5px 12px 5px 5px}
 .spk .chip.sw img{width:34px;height:34px;border-radius:8px;object-fit:cover;flex:none;border:1px solid var(--ln)}
+.spk .sp-tg{display:inline-flex;gap:2px;padding:3px;border-radius:99px;background:rgba(0,0,0,.06);margin-bottom:10px}
+.spk .sp-tg button{border:0;background:none;padding:6px 16px;border-radius:99px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:inherit;opacity:.7}
+.spk .sp-tg button.on{background:#111;color:#fff;opacity:1}
+.spk .sp-st{position:relative;width:100%;max-height:78vh;border-radius:14px;overflow:hidden;background:#f1f1f1;cursor:grab;touch-action:pan-y;user-select:none;outline-offset:3px}
+.spk .sp-st:active{cursor:grabbing}
+.spk .sp-v,.spk .sp-c{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.spk .sp-ld{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-size:13px;font-weight:700;background:rgba(255,255,255,.7)}
+.spk .sp-ld i{width:26px;height:26px;border-radius:50%;border:3px solid rgba(0,0,0,.15);border-top-color:#111;animation:spr .8s linear infinite}
+@keyframes spr{to{transform:rotate(360deg)}}
+.spk .sp-rd{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:12px;opacity:.8}
+.spk .sp-bar{flex:1;height:2px;background:rgba(0,0,0,.15);position:relative;direction:ltr}
+.spk .sp-bar b{position:absolute;top:-4px;width:10px;height:10px;border-radius:50%;background:#111;margin-left:-5px}
+.spk .sp-lk{display:flex;gap:8px;margin-top:10px}
+.spk .sp-lk button{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid rgba(0,0,0,.15);border-radius:99px;background:none;cursor:pointer;font:inherit;font-size:12px;font-weight:700;color:inherit}
+.spk .sp-lk button.on{border-color:#111;background:#111;color:#fff}
+.spk .sp-lk img{width:34px;height:34px;border-radius:50%;object-fit:cover}
+@media(prefers-reduced-motion:reduce){.spk .sp-ld i{animation:none}}
 .spk .gal-sw{animation:swIn .35s ease}
 @keyframes swIn{from{opacity:.2;transform:scale(.97)}to{opacity:1;transform:none}}
 .spk .pc-sws{display:flex;gap:6px;padding:8px 12px 0;flex-wrap:wrap}
