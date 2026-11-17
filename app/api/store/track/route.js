@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '../../../../lib/supabaseAdmin';
-import { getStoreFast, storeKey, rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
+import { getStoreFast, storeKey, rateLimit, rateLimitDb, clientIp, readJson } from '../../../../lib/storeServer';
 import { normalizePhone } from '../../../../lib/storeKit';
 
 export const runtime = 'nodejs';
@@ -14,6 +14,7 @@ export async function POST(req) {
 
   let sb;
   try { sb = adminClient(); } catch { return NextResponse.json({ ok: false, error: 'غير متاح' }, { status: 500 }); }
+  if (!(await rateLimitDb(sb, `track-db:${clientIp(req)}`, 20, 60_000))) return NextResponse.json({ ok: false, error: 'محاولات كثيرة' }, { status: 429 });
   const store = await getStoreFast(sb, body.slug);
   if (!store) return NextResponse.json({ ok: false, error: 'المتجر غير متاح' }, { status: 404 });
 
@@ -43,12 +44,18 @@ export async function POST(req) {
   }
   const { data } = await q.maybeSingle();
   if (!data) return NextResponse.json({ ok: false, error: 'لم نجد طلباً بهذه البيانات' });
+  /* سجل الحالات بأوقاتها (لو جدول order_status_log متشغّل؛ لو لأ بنكمّل من غيره) */
+  let history = [];
+  try {
+    const { data: lg } = await sb.from('order_status_log').select('status, at').eq('store_id', String(storeKey(store))).eq('order_no', data.order_no).order('at', { ascending: true }).limit(30);
+    if (Array.isArray(lg)) history = lg.map((x) => ({ status: x.status, at: x.at }));
+  } catch { /* تجاهل */ }
 
   return NextResponse.json({
     ok: true,
     order: {
       order_no: data.order_no, status: data.status, total: data.total_price, courier: data.courier, tracking_number: data.tracking_number,
-      created_at: data.created_at, updated_at: data.updated_at, governorate: data.governorate,
+      created_at: data.created_at, updated_at: data.updated_at, governorate: data.governorate, history,
       first_name: String(data.customer_name || '').split(' ')[0],
       items: (Array.isArray(data.items) ? data.items : []).map((i) => ({ title: i.title, qty: i.qty, options: i.options })),
     },
