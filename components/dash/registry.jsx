@@ -96,6 +96,7 @@ const base = {
   services: L(A, 'ServicesScreen'),
   mservices: L(A, 'MServicesScreen'),
   affiliate: L(A, 'AffiliateScreen'),
+  backup: L(() => import('./screens/Backup'), 'BackupScreen'),
   settings: L(A, 'SettingsScreen'),
   domains: L(() => import('./screens/Domains'), 'DomainsScreen'),
 };
