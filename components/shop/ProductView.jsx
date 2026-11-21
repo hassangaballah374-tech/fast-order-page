@@ -14,6 +14,7 @@ import Checkout from './Checkout';
 import { Stars, ProductCard, Blocks, soldOut } from './ui';
 import FlipPic from './FlipPic';
 import SpinViewer from './SpinViewer';
+import StockAlert from './StockAlert';
 import { money, effectivePrice, unitPrice, overridePrice, valueSoldOut, optionAvail, saleActive, applyOffer, optionImage, isHttpUrl, splitImages, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 function ReviewForm({ productId }) {
@@ -175,7 +176,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
             <b className="num">{money(price, cur)}</b>
             {onSale && <><span className="old num">{money(p.compare_price, cur)}</span><span className="save">وفّر {Math.round((1 - price / p.compare_price) * 100)}%</span></>}
           </div>
-          {sold ? <div className="err">نفدت الكمية حالياً</div> : scarce ? <div className="scar">{String(cfg.scarcity.text || 'باقي {n} قطع فقط!').replace('{n}', p.stock_quantity)}</div> : null}
+          {sold ? <><div className="err">نفدت الكمية حالياً</div><StockAlert slug={slug} pid={p.id} /></> : scarce ? <div className="scar">{String(cfg.scarcity.text || 'باقي {n} قطع فقط!').replace('{n}', p.stock_quantity)}</div> : null}
 
           {groups.map((g) => (
             <div className="opt" key={g.name}>

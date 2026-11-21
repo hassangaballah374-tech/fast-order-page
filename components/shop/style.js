@@ -913,6 +913,9 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .fb-ft{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--ln)}
 .spk .fb-ft .b{flex:1}
 @media(prefers-reduced-motion:reduce){.spk .fb-sh{animation:none}}
+.spk .sa{display:grid;gap:8px;margin:12px 0;padding:14px;border:1px dashed var(--ln);border-radius:14px}
+.spk .sa.ok{color:#15803d;font-weight:700;border-style:solid}
+.spk .sa-r{display:flex;gap:8px}.spk .sa-r .in{flex:1;min-width:0}
 .spk .gal-sw{animation:swIn .35s ease}
 @keyframes swIn{from{opacity:.2;transform:scale(.97)}to{opacity:1;transform:none}}
 .spk .pc-sws{display:flex;gap:6px;padding:8px 12px 0;flex-wrap:wrap}
