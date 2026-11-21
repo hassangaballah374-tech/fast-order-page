@@ -14,24 +14,27 @@ export function Spin360Screen() {
   const [up, setUp] = useState('');
   const [q, setQ] = useState('');
   const fRef = useRef(null);
-  const target = useRef('');
+  const target = useRef({ pid: '', slot: 'video' });
   useEffect(() => { setD({ enabled: true, items: {}, ...(cfg.spin || {}) }); setDirty(false); }, [cfg.spin]);
   const patch = (p) => { setD((c) => ({ ...c, ...p })); setDirty(true); };
-  const setVid = (pid, url) => {
+  /* slot: video (الأساسي) | top | bottom. حذف الأساسي بيحذف الاتنين التانيين معاه */
+  const setVid = (pid, url, slot = 'video') => {
     const items = { ...d.items };
-    if (url) items[pid] = { video: url }; else delete items[pid];
+    const cur = { ...(items[pid] || {}) };
+    if (url) cur[slot] = url; else if (slot === 'video') { delete items[pid]; patch({ items }); return; } else delete cur[slot];
+    items[pid] = cur;
     patch({ items });
   };
   const pick = async (e) => {
     const f = (e.target.files || [])[0]; e.target.value = '';
-    const pid = target.current; if (!f || !pid) return;
-    setUp(pid);
-    try { const r = await uploadVideo(uid, f, 'spin'); setVid(pid, r.url); say('تم رفع الفيديو ✓ اضغط حفظ'); } catch (err) { say(err.message || 'تعذر الرفع'); }
+    const { pid, slot } = target.current; if (!f || !pid) return;
+    setUp(pid + ':' + slot);
+    try { const r = await uploadVideo(uid, f, 'spin'); setVid(pid, r.url, slot); say('تم رفع الفيديو ✓ اضغط حفظ'); } catch (err) { say(err.message || 'تعذر الرفع'); }
     setUp('');
   };
   const save = async () => {
     setBusy(true);
-    const clean = { enabled: !!d.enabled, items: Object.fromEntries(Object.entries(d.items).filter(([, v]) => v && /^https?:\/\//.test(v.video || '')).map(([k, v]) => [k, { video: v.video }])) };
+    const clean = { enabled: !!d.enabled, items: Object.fromEntries(Object.entries(d.items).filter(([, v]) => v && /^https?:\/\//.test(v.video || '')).map(([k, v]) => [k, { video: v.video, ...(/^https?:\/\//.test(v.top || '') ? { top: v.top } : {}), ...(/^https?:\/\//.test(v.bottom || '') ? { bottom: v.bottom } : {}) }])) };
     const ok = await saveCfg('spin', clean);
     setBusy(false);
     if (ok !== false) { setDirty(false); say('تم حفظ عرض 360° ✓'); }
@@ -55,20 +58,36 @@ export function Spin360Screen() {
         <ul style={{ margin: '6px 0 0', paddingInlineStart: 18 }}>
           <li>المنتج على قاعدة دوّارة (أو شماعة بتلف)، لفة كاملة واحدة بسرعة ثابتة، والكاميرا ثابتة.</li>
           <li>المدة 3-6 ثواني، العرض حوالي 720px، والحجم أقل من 25MB (صيغة MP4 أو WebM).</li>
+          <li>للدوران لفوق وتحت حقيقي: صوّر نفس اللفة من زاوية أعلى (حوالي 30-45°) ومرة من زاوية أدنى. لازم نفس المدة، وتبدأ من نفس الوش، وبنفس اتجاه ودوران اللفة. الاتنين اختياريين.</li>
           <li>خلفية بسيطة وإضاءة ثابتة، وآخر الفيديو يرجع لنفس وضع أوله عشان اللفة تبقى متصلة.</li>
         </ul>
       </div>
       <input className="in" style={{ maxWidth: 320, marginBottom: 12 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث عن منتج" aria-label="بحث" />
       <div style={{ display: 'grid', gap: 10 }}>
         {list.map((p) => {
-          const v = d.items[p.id] && d.items[p.id].video;
+          const it = d.items[p.id] || {};
+          const slots = [['video', 'مستوى النظر (أساسي)', true], ['top', 'من فوق (اختياري)', !!it.video], ['bottom', 'من تحت (اختياري)', !!it.video]];
           return (
-            <div key={p.id} className="card" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              {p.images && p.images[0] ? <img src={p.images[0]} alt="" style={{ width: 54, height: 54, objectFit: 'cover', borderRadius: 8 }} /> : null}
-              <b style={{ flex: 1, minWidth: 140 }}>{p.title}</b>
-              {v ? <video src={v} muted playsInline controls preload="metadata" style={{ width: 90, height: 60, borderRadius: 8, background: '#000' }} /> : <span className="mut" style={{ fontSize: 12 }}>مفيش فيديو</span>}
-              <button className="btn" type="button" disabled={up === p.id} onClick={() => { target.current = p.id; fRef.current && fRef.current.click(); }}>{up === p.id ? 'جاري الرفع...' : v ? 'استبدال' : 'رفع فيديو'}</button>
-              {v ? <button className="btn" type="button" onClick={() => setVid(p.id, '')}>حذف</button> : null}
+            <div key={p.id} className="card" style={{ display: 'grid', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                {p.images && p.images[0] ? <img src={p.images[0]} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8 }} /> : null}
+                <b style={{ flex: 1 }}>{p.title}</b>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 10 }}>
+                {slots.map(([slot, label, enabled]) => {
+                  const v = it[slot]; const busyHere = up === p.id + ':' + slot;
+                  return (
+                    <div key={slot} style={{ border: '1px solid var(--ln, #e2e8f0)', borderRadius: 10, padding: 10, display: 'grid', gap: 8, opacity: enabled ? 1 : 0.5 }}>
+                      <b style={{ fontSize: 13 }}>{label}</b>
+                      {v ? <video src={v} muted playsInline controls preload="metadata" style={{ width: '100%', maxHeight: 120, borderRadius: 8, background: '#000' }} /> : <span className="mut" style={{ fontSize: 12 }}>{enabled ? 'مفيش فيديو' : 'ارفع الأساسي الأول'}</span>}
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button className="btn" type="button" disabled={!enabled || busyHere} onClick={() => { target.current = { pid: p.id, slot }; fRef.current && fRef.current.click(); }}>{busyHere ? 'جاري الرفع...' : v ? 'استبدال' : 'رفع'}</button>
+                        {v ? <button className="btn" type="button" onClick={() => setVid(p.id, '', slot)}>حذف</button> : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
