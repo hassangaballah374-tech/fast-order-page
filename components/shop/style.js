@@ -886,6 +886,9 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .sp-lk{display:flex;gap:8px;margin-top:10px}
 .spk .sp-lk button{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid rgba(0,0,0,.15);border-radius:99px;background:none;cursor:pointer;font:inherit;font-size:12px;font-weight:700;color:inherit}
 .spk .sp-lk button.on{border-color:#111;background:#111;color:#fff}
+.spk .sp-sep{width:1px;background:var(--ln);margin:2px 2px}
+.spk .sp-lk{flex-wrap:wrap}
+.spk .sp-lk .sp-el{padding:8px 14px}
 .spk .sp-lk img{width:34px;height:34px;border-radius:50%;object-fit:cover}
 @media(prefers-reduced-motion:reduce){.spk .sp-ld i{animation:none}}
 .spk .fb-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
