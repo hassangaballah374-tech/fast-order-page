@@ -89,6 +89,7 @@ export const MENU = [
       { id: 'services', t: 'معرض الخدمات', i: '🧰', badge: 'جديد' },
       { id: 'mservices', t: 'خدمات التسويق', i: '🏷️', badge: 'جديد' },
       { id: 'affiliate', t: 'نظام التسويق بالعمولة', i: '🤝' },
+      { id: 'team', t: 'فريق العمل', i: '👥', badge: 'جديد' },
       { id: 'backup', t: 'نسخة احتياطية وتصدير', i: '💾' },
       { id: 'settings', t: 'الإعدادات', i: '⚙️' },
     ],

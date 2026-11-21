@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { adminClient, userFromRequest, isAdminUser } from '../../../../lib/supabaseAdmin';
+import { adminClient, userFromRequest, isAdminUser, staffAllows } from '../../../../lib/supabaseAdmin';
 import { getConfig, priceCart, takeStockForLines, restoreStockForLines, orderRowItems } from '../../../../lib/storeServer';
 import { STATUS, normalizePhone, isValidEgPhone } from '../../../../lib/storeKit';
 
@@ -36,8 +36,15 @@ export async function POST(req) {
     }
 
     const results = [];
+    const staffOk = new Map();
     for (const o of orders || []) {
-      if (!(admin || String(o.store_id) === user.id)) { results.push({ id: o.id, ok: false, error: 'غير مصرح' }); continue; }
+      let allowed = admin || String(o.store_id) === user.id;
+      if (!allowed) {
+        const k = String(o.store_id);
+        if (!staffOk.has(k)) staffOk.set(k, await staffAllows(sb, user, k, 'orders'));
+        allowed = staffOk.get(k);
+      }
+      if (!allowed) { results.push({ id: o.id, ok: false, error: 'غير مصرح' }); continue; }
       const prev = o.status || 'pending';
       if (prev === status) { results.push({ id: o.id, ok: true }); continue; }
       const lines = (Array.isArray(o.items) ? o.items : []).map((i) => ({

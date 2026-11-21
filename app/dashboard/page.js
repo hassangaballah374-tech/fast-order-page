@@ -73,6 +73,8 @@ export default function MerchantDashboard() {
   const [store, setStore] = useState(null);
   const [rawCfg, setRawCfg] = useState({});
   const [locks, setLocks] = useState(EMPTY_LOCKS);
+  const [staff, setStaff] = useState(null); /* { perms: [...] } لو داخل كموظف */
+  const [mine, setMine] = useState([]); /* متاجر أنا موظف فيها */
   const [tab, setTab] = useState('stats');
   const [open, setOpen] = useState({});
   const [toast, setToast] = useState('');
@@ -88,7 +90,7 @@ export default function MerchantDashboard() {
   const [setup, setSetup] = useState({ name: '', slug: '', busy: false });
   const rawRef = useRef({});
   const toastT = useRef(null);
-  const isAdmin = email.toLowerCase() === ADMIN_EMAIL;
+  const isAdmin = !staff && email.toLowerCase() === ADMIN_EMAIL;
 
   const say = useCallback((m) => {
     setToast(m);
@@ -116,7 +118,21 @@ export default function MerchantDashboard() {
       setEmail(em);
       setAuthId(user.id);
       let key = user.id;
-      if (em.toLowerCase() === ADMIN_EMAIL) {
+      /* دخول كموظف: ?staff=<رقم المتجر> (بيتحفظ في الجلسة). لازم يكون فيه دعوة مفعّلة بإيميلي. */
+      let staffMode = null;
+      try {
+        const qs = new URLSearchParams(window.location.search).get('staff');
+        if (qs) sessionStorage.setItem('spike_staff_of', qs);
+        if (qs === 'off') sessionStorage.removeItem('spike_staff_of');
+        const want = sessionStorage.getItem('spike_staff_of');
+        const { data: inv } = await supabase.from('store_staff').select('owner_id, perms, active').eq('active', true);
+        if (!off) setMine((inv || []).map((x) => x.owner_id));
+        const row = want && want !== 'off' ? (inv || []).find((x) => x.owner_id === want) : null;
+        if (row && row.owner_id !== user.id) { staffMode = { owner: row.owner_id, perms: row.perms || [] }; key = row.owner_id; }
+        else if (want) sessionStorage.removeItem('spike_staff_of');
+      } catch { /* تجاهل */ }
+      if (staffMode) setStaff(staffMode);
+      else if (em.toLowerCase() === ADMIN_EMAIL) {
         try {
           const saved = localStorage.getItem('merchant_user_id');
           if (saved && saved !== 'main_flagship_owner') key = saved;
@@ -209,11 +225,20 @@ export default function MerchantDashboard() {
   };
 
   /* الأدمن في متجره هو: مفيش أقفال. لما يفتح متجر تاجر (من لوحة الأدمن) بيشوف الأقفال زي التاجر. الشاشة المقفولة بتختفي من كل القوائم. */
-  const lockedId = (id) => !(isAdmin && uid === authId) && bypass !== id && isLocked(locks, id, uid, store?.plan_type || 'starter');
+  const STAFF_SCREENS = { orders: ['orders', 'confirm'], products: ['products', 'inventory'] };
+  const staffAllowed = staff ? new Set((staff.perms || []).flatMap((p) => STAFF_SCREENS[p] || [])) : null;
+  const lockedId = (id) => (staffAllowed ? !staffAllowed.has(id) : false) || (!(isAdmin && uid === authId) && !staff && bypass !== id && isLocked(locks, id, uid, store?.plan_type || 'starter'));
   const cmdList = useMemo(() => {
     const q = cq.trim();
     return FLAT.filter((x) => !lockedId(x.id)).filter((x) => !q || x.t.includes(q) || x.group.includes(q) || x.id.includes(q.toLowerCase())).slice(0, 12);
   }, [cq, locks, uid, authId, isAdmin, store?.plan_type, bypass]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!ready || !staffAllowed) return;
+    if (staffAllowed.has(tab)) return;
+    const first = [...staffAllowed][0];
+    if (first) go(first);
+  }, [ready, tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!ready) {
     return (
@@ -304,6 +329,17 @@ export default function MerchantDashboard() {
           </div>
 
           <section className="pg">
+            {staff ? (
+              <div className="card" role="status" style={{ marginBottom: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span>👥 أنت داخل كموظف في متجر <b>{store?.store_name || ''}</b> بصلاحيات محدودة.</span>
+                <a className="btn sm" href="/dashboard?staff=off">الخروج من وضع الموظف</a>
+              </div>
+            ) : mine.length > 0 ? (
+              <div className="card" role="status" style={{ marginBottom: 12, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span>👥 معاك صلاحية موظف في {mine.length > 1 ? `${mine.length} متاجر` : 'متجر'}.</span>
+                {mine.map((m) => <a key={m} className="btn sm p" href={`/dashboard?staff=${m}`}>الدخول كموظف</a>)}
+              </div>
+            ) : null}
           <UsageBanner />
             {isAdmin && uid !== authId && (
               <div className="card" style={{ marginBottom: 14, background: '#fff8e8', borderColor: '#f0d9a8', color: '#5b3e00', fontWeight: 700 }}>
