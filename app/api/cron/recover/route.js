@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { adminClient } from '../../../../lib/supabaseAdmin';
+import { logEvent } from '../../../../lib/events';
 import { sendTemplate } from '../../../../lib/waCloud';
 
 export const runtime = 'nodejs';
@@ -54,7 +55,7 @@ export async function GET(req) {
         await sb.from('store_wa_log').insert([{ store_id: it.store_id, phone: a.phone, template: 'abandoned' }]);
       } else {
         failed++;
-        console.error('WA_RECOVER_FAIL', r.error);
+        console.error('WA_RECOVER_FAIL', r.error); await logEvent(sb, { level: 'warn', source: 'cron-recover', message: `فشل إرسال واتساب لاسترجاع سلة: ${r.error}`, store_id: String(it.store_id) });
         if (/token|expired|permission|OAuth/i.test(String(r.error))) break; // مفتاح التاجر مش شغال، نوقف باقي سلاته
         await sb.from('abandoned_carts').update({ wa_sent_at: new Date().toISOString() }).eq('id', a.id); // منكررش المحاولة على رقم فاشل
       }

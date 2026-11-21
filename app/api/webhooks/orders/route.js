@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import { logEvent } from '../../../../lib/events';
 import { rateLimit, clientIp } from '../../../../lib/storeServer';
 
 export const runtime = 'nodejs';
@@ -103,6 +104,6 @@ export async function POST(req) {
   }
 
   const { error } = await sb.from('orders').insert([{ ...o, store_id: storeId, status: 'pending' }]);
-  if (error) { console.error('WEBHOOK_ORDER_ERROR', error.message); return NextResponse.json({ error: 'could not save order' }, { status: 500 }); }
+  if (error) { console.error('WEBHOOK_ORDER_ERROR', error.message); await logEvent(sb, { source: 'order-webhook', message: `فشل حفظ طلب من webhook: ${error.message}` }); return NextResponse.json({ error: 'could not save order' }, { status: 500 }); }
   return NextResponse.json({ ok: true });
 }

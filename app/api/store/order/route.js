@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { logEvent } from '../../../../lib/events';
 import { adminClient } from '../../../../lib/supabaseAdmin';
 import { getStoreBySlug, storeKey, getConfig, rateLimitDb, priceCart, takeStockForLines, restoreStockForLines, orderRowItems, rateLimit, clientIp, readJson } from '../../../../lib/storeServer';
 import { normalizePhone, isValidEgPhone } from '../../../../lib/storeKit';
@@ -123,6 +124,7 @@ export async function POST(req) {
   if (error) {
     await restoreStockForLines(sb, stock.taken);
     console.error('ORDER_INSERT_ERROR', error.message, error.details, error.hint);
+    await logEvent(sb, { source: 'order', message: `فشل تسجيل طلب: ${error.message}`, store_id: sid, meta: { code: error.code, details: error.details, hint: error.hint } });
     return fail('تعذر تسجيل الطلب، حاول مرة أخرى', 500);
   }
 

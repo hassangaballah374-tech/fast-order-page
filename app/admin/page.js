@@ -12,6 +12,7 @@ import AdminAnalytics from '../../components/admin/AdminAnalytics';
 import AdminMerchantReport from '../../components/admin/AdminMerchantReport';
 import AdminAlerts from '../../components/admin/AdminAlerts';
 import AdminAuditLog from '../../components/admin/AdminAuditLog';
+import AdminHealth from '../../components/admin/AdminHealth';
 import AdminCommandBar from '../../components/admin/AdminCommandBar';
 import { spikeLogout } from '../../components/SpikeSessionBar';
 import AdminBilling from '../../components/admin/AdminBilling';
@@ -125,6 +126,7 @@ export default function SpikeSuperAdminDashboard() {
     features: 'manage_stores',
     admins: 'manage_admins',
     audit: 'manage_admins',
+    health: 'manage_admins',
     broadcast: 'manage_admins',
   };
   const tabAllowed = (id) => !TAB_PERM[id] || can(TAB_PERM[id]);
@@ -604,6 +606,7 @@ export default function SpikeSuperAdminDashboard() {
     { id: 'plans', title: t.navPlans, icon: '💎', count: null },
     { id: 'analytics', title: isAr ? 'إحصائيات المنصة' : 'Platform analytics', icon: '📈', count: null },
     { id: 'audit', title: t.navLogs, icon: '📑', count: auditLogs.length },
+    { id: 'health', title: isAr ? 'صحة المنصة' : 'Platform health', icon: '🩺', count: null },
     { id: 'broadcast', title: t.navBroadcast, icon: '📢', count: null },
   ];
 
@@ -1474,6 +1477,7 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* تبويب سجل الحركات */}
           {shown('audit') && <AdminAuditLog isDark={isDark} />}
+          {shown('health') && <AdminHealth isDark={isDark} />}
           {false && (
             <div className={`p-6 rounded-2xl border ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`}>
               <h3 className="text-lg font-black mb-4">سجل الحركات الإدارية (Audit Logs)</h3>
