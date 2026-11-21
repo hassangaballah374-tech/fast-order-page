@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { adminClient } from '../../../../lib/supabaseAdmin';
+import { logEvent } from '../../../../lib/events';
 import { restoreStockForLines, takeStockForLines, rateLimit } from '../../../../lib/storeServer';
 
 export const runtime = 'nodejs';
@@ -75,6 +76,6 @@ export async function POST(req) {
   if (DEAD.includes(prev) && !DEAD.includes(target)) { const t = await takeStockForLines(sb, lines); if (!t.ok) return ok({ ignored: 'stock' }); }
 
   const { error } = await sb.from('orders').update({ status: target, updated_at: new Date().toISOString() }).eq('id', o.id);
-  if (error) return NextResponse.json({ ok: false, error: 'db' }, { status: 500 });
+  if (error) { await logEvent(sb, { source: 'bosta-webhook', message: `فشل تحديث حالة طلب من بوسطة: ${error.message}`, store_id: String(o.store_id || ''), meta: { order: o.id, target } }); return NextResponse.json({ ok: false, error: 'db' }, { status: 500 }); }
   return ok({ id: o.id, status: target });
 }
