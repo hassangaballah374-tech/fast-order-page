@@ -20,6 +20,7 @@ export const MENU = [
       { id: 'products', t: 'كل المنتجات' },
       { id: 'product_stats', t: 'إحصائيات المنتج', badge: 'جديد' },
       { id: 'inventory', t: 'المخزون', spike: true },
+      { id: 'stockalerts', t: 'طلبات التنبيه بالمخزون', badge: 'جديد' },
       { id: 'flash', t: 'عروض الفلاش', spike: true, badge: 'سبايك' },
       { id: 'categories', t: 'الأقسام' },
       { id: 'reviews', t: 'التقييمات' },

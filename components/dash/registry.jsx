@@ -40,6 +40,7 @@ const base = {
   products: L(P, 'ProductsScreen'),
   product_stats: L(() => import('./screens/ProductStats'), 'ProductStatsScreen'),
   inventory: L(P, 'InventoryScreen'),
+  stockalerts: L(() => import('./screens/StockAlerts'), 'StockAlertsScreen'),
   flash: L(P, 'FlashScreen'),
   categories: L(P, 'CategoriesScreen'),
   reviews: L(P, 'ReviewsScreen'),
