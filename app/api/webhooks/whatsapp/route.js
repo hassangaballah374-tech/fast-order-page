@@ -4,6 +4,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { adminClient } from '../../../../lib/supabaseAdmin';
+import { logEvent } from '../../../../lib/events';
 import { restoreStockForLines, rateLimit } from '../../../../lib/storeServer';
 import { sendText, toIntl } from '../../../../lib/waCloud';
 import { autoShipBosta } from '../../../../lib/bostaShip';
