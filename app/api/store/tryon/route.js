@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { loadStore, getProducts } from '../../../../lib/storeData';
 import { rateLimit, rateLimitDb, clientIp, readJson } from '../../../../lib/storeServer';
+import { logEvent } from '../../../../lib/events';
 import { buildPrompt, callGemini, fetchImage, parseDataUrl, safeModel } from '../../../../lib/tryon';
 
 export const runtime = 'nodejs';
@@ -65,7 +66,7 @@ export async function POST(req) {
 
   const prompt = buildPrompt({ count: garments.length, body: bodyInfo, fit: f });
   const r = await callGemini({ key, model, prompt, images: [base, ...garments] });
-  if (!r.ok) return out({ ok: false, error: r.error });
+  if (!r.ok) { await logEvent(sb, { level: 'warn', source: 'tryon', message: `فشل توليد صورة التلبيس: ${r.error}`, store_id: String(sid), meta: { model } }); return out({ ok: false, error: r.error }); }
   const image = `data:${r.image.mime};base64,${r.image.data}`;
   cache.set(ck, { t: Date.now(), image });
   if (cache.size > 40) for (const k of cache.keys()) { cache.delete(k); if (cache.size <= 30) break; }
