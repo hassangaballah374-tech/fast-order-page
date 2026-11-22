@@ -167,6 +167,20 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
     if (error) { flash('خطأ: ' + error.message); return; }
     await after('تمت إضافة الباقة');
   };
+  /* تحريك الباقة لفوق/تحت: بنعيد ترقيم كل الباقات 1..n عشان الترتيب يبقى مضبوط */
+  const movePlan = async (p, dir) => {
+    const list = [...plans].sort((a, b) => n(a.sort_order) - n(b.sort_order) || String(a.id).localeCompare(String(b.id)));
+    const i = list.findIndex((x) => x.id === p.id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    setBusy(true);
+    const res = await Promise.all(list.map((x, k) => supabase.from('platform_plans').update({ sort_order: k + 1 }).eq('id', x.id)));
+    setBusy(false);
+    const bad = res.find((r) => r.error);
+    if (bad) { flash('خطأ: ' + bad.error.message); return; }
+    await after('تم تغيير الترتيب');
+  };
   const delPlan = async (p) => {
     if (!confirm(`حذف باقة «${p.name}»؟`)) return;
     const { error } = await supabase.from('platform_plans').delete().eq('id', p.id);
@@ -309,9 +323,9 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
             <button className={btn} onClick={addPlan}>+ باقة جديدة</button>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            {plans.map((p) => (
+            {plans.map((p, idx) => (
               <div key={p.id} className={`p-4 rounded-xl border space-y-2 text-xs ${p.highlight ? 'border-[#014D6F]' : 'border-slate-200 dark:border-slate-800'}`}>
-                <div className="flex justify-between items-center"><span className="font-mono text-slate-400" dir="ltr">{p.code}</span><button className="text-rose-500 font-bold cursor-pointer" onClick={() => delPlan(p)}>حذف</button></div>
+                <div className="flex justify-between items-center"><span className="font-mono text-slate-400" dir="ltr">{p.code}</span><span className="flex gap-1"><button disabled={busy || idx === 0} className="px-2 py-0.5 border rounded cursor-pointer disabled:opacity-30" title="قبل" onClick={() => movePlan(p, -1)}>→</button><button disabled={busy || idx === plans.length - 1} className="px-2 py-0.5 border rounded cursor-pointer disabled:opacity-30" title="بعد" onClick={() => movePlan(p, 1)}>←</button></span><button className="text-rose-500 font-bold cursor-pointer" onClick={() => delPlan(p)}>حذف</button></div>
                 <label className="block">الاسم<input className={inp} value={dv(p, 'name')} onChange={(e) => setD(p, 'name', e.target.value)} /></label>
                 <div className="grid grid-cols-2 gap-2">
                   <label>السعر ($)<input className={inp} type="number" min="0" value={dv(p, 'price')} onChange={(e) => setD(p, 'price', e.target.value)} /></label>
