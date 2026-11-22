@@ -2,7 +2,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useDash, PageHead, Modal, Field, Empty, Spin, Tabs, Pager, useDebounced, Badge, Stat, Tog } from '../ui';
 import { useTable, useProducts, uploadAsset } from '../hooks';
-import { Crud, ConfigForm, FieldsGrid } from '../forms';
+import { Crud, ConfigForm, FieldsGrid, CompressToggle } from '../forms';
 import { fromLocalInput, toLocalInput } from '../forms';
 import { LinkBox, MultiProductPick, asNumber } from '../bits';
 import { downloadCsvFile, fday, fdate } from '../shared';
@@ -65,6 +65,7 @@ function Gallery({ value, onChange }) {
         {list.length >= 2 && list.length < 10 && <button type="button" className="add" disabled={busy} onClick={() => ref.current?.click()}>{busy ? '...' : '+'}</button>}
       </div>
       <input ref={ref} type="file" accept="image/*" multiple hidden onChange={pick} />
+      <CompressToggle />
       <div className="row" style={{ marginTop: 10, marginBottom: 0 }}>
         <input className="in num" dir="ltr" placeholder="أو الصق رابط صورة https://..." value={url} onChange={(e) => setUrl(e.target.value)} />
         <button type="button" className="btn sm" onClick={addUrl}>إضافة الرابط</button>

@@ -80,11 +80,19 @@ async function compressImage(file) {
   } catch { return file; }
 }
 
+/* اختيار التاجر: ضغط الصور قبل الرفع (افتراضي: مفعّل). محفوظ في المتصفح */
+export function getCompress() {
+  try { return localStorage.getItem('spike_compress') !== '0'; } catch { return true; }
+}
+export function setCompress(on) {
+  try { localStorage.setItem('spike_compress', on ? '1' : '0'); } catch { /* تجاهل */ }
+}
+
 /* رفع ملف إلى bucket اسمه store-assets داخل مجلد المتجر */
 export async function uploadAsset(uid, original, folder = 'misc') {
   if (!original) throw new Error('لم يتم اختيار ملف');
   if (original.size > 12 * 1024 * 1024) throw new Error('الحد الأقصى لحجم الملف 12MB');
-  const file = await compressImage(original);
+  const file = getCompress() ? await compressImage(original) : original;
   const ext = ((file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5)) || 'png';
   const path = `${uid}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await supabase.storage.from('store-assets').upload(path, file, { cacheControl: '31536000', upsert: false, contentType: file.type || undefined });
