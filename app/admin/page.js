@@ -7,7 +7,7 @@ import { useApp } from '../../context/AppContext';
 import {
   ChartCard, Segmented, Sparkline, AreaChart, BarChart, HBarList, Donut, ProgressBar, fmt, fmtK,
 } from '../../components/SpikeCharts';
-import SpikeIntegrations from '../../components/SpikeIntegrations';
+import SpikeIntegrations from '../../components/SpikeIntegrations'; 
 import AdminAnalytics from '../../components/admin/AdminAnalytics';
 import AdminMerchantReport from '../../components/admin/AdminMerchantReport';
 import AdminAlerts from '../../components/admin/AdminAlerts';
