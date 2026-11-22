@@ -20,11 +20,14 @@ export function usePending(uid) {
   useEffect(() => {
     load();
     const t = setInterval(load, 30000);
-    const ch = supabase.channel(`pend-${uid}`)
+    let ch = null;
+    try {
+      ch = supabase.channel(`pend-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'platform_notifications', filter: `audience=eq.${uid}` }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `store_id=eq.${uid}` }, load)
       .subscribe();
-    return () => { clearInterval(t); supabase.removeChannel(ch); };
+    } catch { /* التحديث اللحظي اختياري؛ الـ polling كفاية */ }
+    return () => { clearInterval(t); try { if (ch) supabase.removeChannel(ch); } catch { /* تجاهل */ } };
   }, [load, uid]);
   return c;
 }
