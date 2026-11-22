@@ -2,10 +2,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Ph, PriceEl, QuickPick, FocusSheet, useBrowseCart, pad2 } from './browseKit';
-import Mannequin from './Mannequin';
 
 /* عرض «القوس»: كروت زجاجية بتلف في قوس ثلاثي الأبعاد حوالين الموديل. اسحب/مرّر/اضغط سهم/اضغط كارت.
-   لما القوس يهدّى على قطعة، خط مسح مضيء ينزل على الموديل ويلبّسه القطعة (لو التاجر جهّز صورتها في غرفة القياس). */
+   في النص بتظهر صورة القطعة المختارة (من غير موديل أو تلبيس). */
 
 const XS = [0, 0.215, 0.345, 0.432, 0.49, 0.52];
 const XS_M = [0, 0.36, 0.5, 0.56, 0.6, 0.62];
@@ -22,16 +21,7 @@ export default function ArcView({ list = [] }) {
   const st = useRef({ pos: 0, target: 0, drag: null, intro: 0, wheel: 0, lastStep: 0, last: 0, moved: false, sx: 0, sy: 0, px: 0, py: 0 });
   const [idx, setIdx] = useState(0);
   const [focus, setFocus] = useState(false);
-  const [shown, setShown] = useState(-1); /* القطعة اللي لابسها الموديل */
-  const [scan, setScan] = useState(0);
-  const timer = useRef(0);
 
-  const fitOf = (p) => {
-    const f = cfg.fitting && cfg.fitting.items && cfg.fitting.items[String(p.id)];
-    return f && f.image ? { id: p.id, slot: f.slot || 'top', image: f.image } : null;
-  };
-  const models = (cfg.fitting && cfg.fitting.models) || [];
-  const modelImg = models[0] && models[0].image;
 
   const go = useCallback((d) => { st.current.target = Math.round(st.current.target) + d; }, []);
   const toIndex = useCallback((i) => {
@@ -101,28 +91,15 @@ export default function ArcView({ list = [] }) {
     return () => { alive = false; cancelAnimationFrame(raf); root.removeEventListener('pointermove', pm); root.removeEventListener('pointerdown', pd); window.removeEventListener('pointermove', pmv); window.removeEventListener('pointerup', pu); root.removeEventListener('wheel', wh); root.removeEventListener('keydown', kd); };
   }, [n]);
 
-  /* لما القوس يهدّى: مسح + تلبيس */
-  useEffect(() => {
-    if (!n || shown === idx) return undefined;
-    clearTimeout(timer.current);
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) { setShown(idx); return undefined; }
-    setScan((k) => k + 1);
-    timer.current = setTimeout(() => setShown(idx), 480);
-    return () => clearTimeout(timer.current);
-  }, [idx, n]); // eslint-disable-line react-hooks/exhaustive-deps
-
   if (!n) return <div className="empty">لا توجد منتجات مطابقة</div>;
   const p = items[Math.min(idx, n - 1)];
-  const wornP = shown >= 0 && items[shown] ? fitOf(items[shown]) : null;
   const sel = '.arc-card.cur .arc-g img';
 
   return (
     <div className="arc" ref={rootRef} tabIndex={0} aria-label="قوس المنتجات" role="group">
       <div className="arc-ghost" aria-hidden="true">{(cfg.store_name || 'FIT').toString().slice(0, 4).toUpperCase()}</div>
       <div className="arc-model" aria-hidden="true">
-        {modelImg ? <img src={modelImg} alt="" /> : <Mannequin size={2} worn={wornP ? [wornP] : []} />}
-        <span className="arc-scan" key={scan} />
+        {p.images[0] ? <img key={p.id} src={p.images[0]} alt="" draggable="false" /> : null}
       </div>
       <div className="arc-stage">
         {items.map((it, i) => (
