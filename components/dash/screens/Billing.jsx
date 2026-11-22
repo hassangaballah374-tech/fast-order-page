@@ -168,6 +168,9 @@ function PromoBox() {
   );
 }
 
+/* باقة «مبلغ مفتوح»: شحن رصيد وسعرها 0 → التاجر هو اللي يكتب المبلغ */
+const isOpen = (p) => p && p.kind !== 'monthly' && n(p.price) <= 0;
+
 /* ====================== الباقات والاشتراك ====================== */
 export function PlansScreen() {
   const { store, uid, say } = useDash();
@@ -182,6 +185,7 @@ export function PlansScreen() {
   const [txt, setTxt] = useState('');
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(null);
+  const [custom, setCustom] = useState('');
   const selRef = useRef(null);
   useEffect(() => { if (sel && selRef.current) selRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, [sel]);
 
@@ -193,16 +197,18 @@ export function PlansScreen() {
 
   const send = async () => {
     if (!sel) return;
+    const amt = isOpen(sel) ? Math.round(n(custom) * 100) / 100 : n(sel.price);
+    if (isOpen(sel) && !(amt >= 1 && amt <= 10000)) { say('اكتب المبلغ بالدولار من 1 إلى 10000'); return; }
     setBusy(true);
-    const egp = rate ? toEgp(sel.price, rate) : 0;
+    const egp = rate ? toEgp(amt, rate) : 0;
     const auto = egp ? `المبلغ المحوَّل بالجنيه: ${egp} (سعر الدولار ${rate})` : '';
     const noteAll = [auto, txt.trim()].filter(Boolean).join(' | ').slice(0, 300);
-    const { error } = await supabase.from('plan_requests').insert([{ store_id: String(uid), plan_id: sel.id, amount: n(sel.price), proof_url: null, note: noteAll || null, status: 'pending' }]);
+    const { error } = await supabase.from('plan_requests').insert([{ store_id: String(uid), plan_id: sel.id, amount: amt, proof_url: null, note: noteAll || null, status: 'pending' }]);
     if (!error) await supabase.from('platform_notifications').insert([{ audience: 'admin', kind: 'plan', title: 'طلب شحن/اشتراك جديد', body: `${store?.store_name || uid} · ${sel.name}${egp ? ` · ${egp} ج.م` : ''}` }]).then(() => {});
     setBusy(false);
     if (error) { say(error.message); return; }
-    setSent({ text: `أهلاً، أنا ${store?.store_name || ''}. حوّلت ${usd(sel.price)}${egp ? ` (${egp} ج.م)` : ''} لباقة «${sel.name}». دي صورة التحويل:` });
-    setSel(null); setProof(''); setTxt('');
+    setSent({ text: `أهلاً، أنا ${store?.store_name || ''}. حوّلت ${usd(amt)}${egp ? ` (${egp} ج.م)` : ''} لباقة «${sel.name}». دي صورة التحويل:` });
+    setSel(null); setProof(''); setTxt(''); setCustom('');
     reqs.reload();
   };
 
@@ -223,11 +229,11 @@ export function PlansScreen() {
             return (
               <div key={p.id} className="card" style={{ borderColor: p.highlight ? 'var(--b)' : undefined, borderWidth: p.highlight ? 2 : 1 }}>
                 <b style={{ fontSize: 17 }}>{p.name}</b>
-                <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--b)', margin: '6px 0 0' }}>{usd(p.price)}</div>
-                {rate ? <div className="mut dsc" style={{ margin: '0 0 6px' }}>≈ {egpFmt(toEgp(p.price, rate))}</div> : null}
-                <p className="mut dsc">{monthly ? 'طلبات غير محدودة · 30 يوم' : `≈ ${Math.floor(n(p.price) / c)} طلب (عمولة ${usd(c)} للطلب المُسلَّم)`}</p>
+                <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--b)', margin: '6px 0 0' }}>{isOpen(p) ? 'مبلغ مفتوح' : usd(p.price)}</div>
+                {rate && !isOpen(p) ? <div className="mut dsc" style={{ margin: '0 0 6px' }}>≈ {egpFmt(toEgp(p.price, rate))}</div> : null}
+                <p className="mut dsc">{isOpen(p) ? 'اكتب المبلغ اللي هتشحنه بنفسك (بالدولار)' : monthly ? 'طلبات غير محدودة · 30 يوم' : `≈ ${Math.floor(n(p.price) / c)} طلب (عمولة ${usd(c)} للطلب المُسلَّم)`}</p>
                 <ul style={{ margin: '8px 0 12px', paddingInlineStart: 18, fontSize: 13 }}>{(p.features || []).map((f, i) => <li key={i}>{String(f).replace(/\{commission\}/g, `${Math.round(c * 1000) / 10} سنت`)}</li>)}</ul>
-                <button type="button" className={'btn ' + (p.highlight ? 'p' : '')} style={{ width: '100%' }} disabled={hasPending} onClick={() => { setSel(p); setProof(''); }}>{hasPending ? 'لديك طلب قيد المراجعة' : (monthly ? 'اشترك شهرياً' : 'اشحن الآن')}</button>
+                <button type="button" className={'btn ' + (p.highlight ? 'p' : '')} style={{ width: '100%' }} disabled={hasPending} onClick={() => { setSel(p); setProof(''); setCustom(''); }}>{hasPending ? 'لديك طلب قيد المراجعة' : (monthly ? 'اشترك شهرياً' : 'اشحن الآن')}</button>
               </div>
             );
           })}
@@ -237,7 +243,10 @@ export function PlansScreen() {
       {sent && <WaSend wa={payNums.wa} text={sent.text} onDone={() => setSent(null)} />}
       {sel && (
         <div ref={selRef} className="card" style={{ marginBottom: 16, borderColor: 'var(--b)' }}>
-          <h3>{sel.name} — {usd(sel.price)}{rate ? ` ≈ ${egpFmt(toEgp(sel.price, rate))}` : ''}</h3>
+          <h3>{sel.name}{isOpen(sel) ? '' : ` — ${usd(sel.price)}`}{rate && !isOpen(sel) ? ` ≈ ${egpFmt(toEgp(sel.price, rate))}` : ''}</h3>
+          {isOpen(sel) && (
+            <Field l="المبلغ اللي هتشحنه (دولار)" hint={n(custom) > 0 && rate ? `≈ ${egpFmt(toEgp(custom, rate))} · يغطي ${Math.floor(n(custom) / c)} طلب` : 'مثال: 25'}><input className="in num" type="number" min="1" max="10000" value={custom} onChange={(e) => setCustom(e.target.value)} /></Field>
+          )}
           <p className="mut dsc">حوّل المبلغ بالجنيه المصري بحسب سعر الدولار الحالي ثم ارفع صورة التحويل.</p>
           <PayNumbers rows={payNums} />
           {note ? <p className="mut dsc" style={{ whiteSpace: 'pre-line' }}>{note}</p> : null}
