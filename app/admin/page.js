@@ -17,7 +17,6 @@ import AdminCommandBar from '../../components/admin/AdminCommandBar';
 import { spikeLogout } from '../../components/SpikeSessionBar';
 import AdminBilling from '../../components/admin/AdminBilling';
 import AdminBell from '../../components/admin/AdminBell';
-import { useAdminPending } from '../../components/admin/useAdminPending';
 import PaymentNote from '../../components/admin/PaymentNote';
 import ThemeColors from '../../components/admin/ThemeColors'; 
 import AdminPromos from '../../components/admin/AdminPromos';
@@ -611,8 +610,6 @@ export default function SpikeSuperAdminDashboard() {
     { id: 'broadcast', title: t.navBroadcast, icon: '📢', count: null },
   ];
 
-  const pendA = useAdminPending();
-  const redOf = (id) => (id === 'billing' ? pendA.billing : id === 'services' ? pendA.services : id === 'orders' ? orders.filter((o) => !o.status || o.status === 'pending').length : 0) || 0;
   const navItems = navItemsAll.filter((i) => tabAllowed(i.id));
 
   const upCls = 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
@@ -738,7 +735,6 @@ export default function SpikeSuperAdminDashboard() {
                 <div className="flex items-center gap-2.5">
                   <span className="text-base">{item.icon}</span>
                   <span>{item.title}</span>
-                  {redOf(item.id) > 0 && <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-black flex items-center justify-center">{redOf(item.id) > 99 ? '99+' : redOf(item.id)}</span>}
                 </div>
 
                 {item.count !== null && (
