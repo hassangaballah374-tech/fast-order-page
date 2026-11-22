@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useShop } from './StoreContext';
 import { Ph, PriceEl, FocusSheet, useBrowseCart } from './browseKit';
 import { useFavs } from './favs';
-import Mannequin from './Mannequin';
 import { soldOut } from './ui';
 import { track } from './tracker';
 import { money, unitPrice } from '../../lib/storeKit';
@@ -50,9 +49,6 @@ export default function StudioView({ list = [] }) {
 
   const say = (m) => { setToast(m); clearTimeout(tRef.current); tRef.current = setTimeout(() => setToast(''), 1800); };
   const reduce = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const models = (cfg.fitting && cfg.fitting.models) || [];
-  const modelImg = models[0] && models[0].image;
-  const fitOf = (p) => { const f = cfg.fitting && cfg.fitting.items && cfg.fitting.items[String(p.id)]; return f && f.image ? { id: p.id, slot: f.slot || 'top', image: f.image } : null; };
 
   /* تبديل اللبس: شكل جديد يتكشف من فوق لتحت فوق القديم */
   const showLook = useCallback((i) => {
@@ -117,20 +113,19 @@ export default function StudioView({ list = [] }) {
   const savedItems = useMemo(() => items.filter((x) => saved.includes(String(x.id))), [items, saved]);
 
   if (!n) return <div className="empty">لا توجد منتجات مطابقة</div>;
-  const renderFig = (it) => { const w = fitOf(it); return w ? <Mannequin size={2} worn={[w]} /> : (it.images[0] ? <img src={it.images[0]} alt="" draggable="false" /> : <Ph p={it} />); };
+  const renderFig = (it) => (it.images[0] ? <img src={it.images[0]} alt="" draggable="false" /> : <Ph p={it} />);
 
   return (
     <div className="st" style={vars} data-frame={S.frame}>
       <div className="st-scene" aria-hidden="true"><div className="st-grade" style={{ filter: gr.f }}><div className="st-bg" /><div className="st-tint" style={{ background: gr.t }} /></div><div className="st-vig" /></div>
 
       <div className="st-tabs glass-d" role="tablist">
-        {[['style', 'المنتجات'], ['body', 'الجسم']].map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+        {[['style', 'المنتجات'], ['body', 'المشهد']].map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
       </div>
 
       <div className="st-model">
         <div className="st-shadow" />
         <div className="st-inner"><div className="st-breath">
-          {modelImg && !fitOf(p) ? <img className="st-base" src={modelImg} alt="" draggable="false" /> : null}
           <div className="st-figs">
             {figs.map((f) => { const it = items[Math.min(f.look, n - 1)]; return <div key={f.k} className={'st-fig' + (f.entering ? ' in' : '')}>{renderFig(it)}</div>; })}
           </div>
@@ -167,9 +162,7 @@ export default function StudioView({ list = [] }) {
           </>
         ) : (
           <>
-            <div className="st-ph"><h3>الجسم</h3><span>التغييرات بتتطبّق على الموديل</span></div>
-            <label className="st-sl"><span>الطول (سم)</span><b className="num">{S.height}</b><input type="range" min="150" max="185" value={S.height} {...slide('height')} /></label>
-            <label className="st-sl"><span>البنية</span><b className="num">{S.build}</b><input type="range" min="0" max="100" value={S.build} {...slide('build')} /></label>
+            <div className="st-ph"><h3>المشهد</h3><span>التأطير والفلتر</span></div>
             <div className="st-lb">التأطير</div>
             <div className="st-chips">{FRAMES.map((f) => <button key={f.id} type="button" className={S.frame === f.id ? 'on' : ''} onClick={() => commit({ frame: f.id })}>{f.n}</button>)}</div>
             <label className="st-sl"><span>الواقعية</span><b className="num">{S.real}%</b><input type="range" min="0" max="100" value={S.real} {...slide('real')} /></label>
