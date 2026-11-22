@@ -53,7 +53,7 @@ export default function ArcView({ list = [] }) {
         const u = mod(i - s.pos + half, N) - half; const a = Math.abs(u); const sg = Math.sign(u) || 1;
         const x = sg * xAt(tbl, Math.min(5, a)) * W * ie;
         let sc; let z; let op; let ry; let blur = 0;
-        if (a < 1) { const k = Math.pow(1 - a, 1.3); sc = 1 + (phone ? 0.95 : 0.75) * k; z = 90 * k; op = 1; ry = -sg * 16 * a; }
+        if (a < 1) { const k = Math.pow(1 - a, 1.3); sc = 1 + (phone ? 0.6 : 0.38) * k; z = 90 * k; op = 1; ry = -sg * 16 * a; }
         else { sc = 1 / (1 + 0.3 * Math.pow(a - 1, 1.15)); z = -110 * (a - 1); ry = -sg * (16 + 9 * Math.min(2, a - 1)); blur = Math.max(0, a - 1.6) * 2.4; op = 1; }
         if (a > 3.4) op = Math.max(0, 1 - (a - 3.4) / 0.8);
         const bob = reduce ? 0 : Math.sin(t / 1000 * 1.1 + i * 1.7) * H * 0.006 * Math.min(1, a);
