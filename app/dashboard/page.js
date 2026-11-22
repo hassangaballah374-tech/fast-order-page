@@ -6,7 +6,7 @@ import { DashCtx, Spin, Field } from '../../components/dash/ui';
 import { MENU, flatMenu, groupOf } from '../../components/dash/menu';
 import { SCREENS } from '../../components/dash/registry';
 import SpikeLogo from '../../components/SpikeLogo';
-import Locked from '../../components/dash/Locked';
+import Locked from '../../components/dash/Locked'; 
 import { LOCKS_KEY, EMPTY_LOCKS, parseLocks, isLocked } from '../../lib/featureLocks';
 import { DASH_CSS } from '../../components/dash/style';
 import { DARK_CSS } from '../../components/dash/dark';
