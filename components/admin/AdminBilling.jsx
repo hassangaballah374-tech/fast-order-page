@@ -132,7 +132,7 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
     setBusy(true);
     const pl = plans.find((x) => x.id === r.plan_id);
     /* باقة «مبلغ مفتوح» (شحن وسعرها 0): الرصيد يتضاف بالمبلغ اللي كتبه التاجر في الطلب */
-    if (pl && pl.kind !== 'monthly' && n(pl.price) <= 0) {
+    if (pl && pl.kind !== 'monthly' && (n(pl.price) <= 0 || (n(r.amount) > 0 && money(r.amount) !== money(pl.price)))) {
       const add = money(n(r.amount));
       const s = stores.find((x) => String(x.user_id) === String(r.store_id));
       if (!(add > 0) || !s) { setBusy(false); flash('خطأ: المبلغ أو المتجر غير صالح'); return; }
