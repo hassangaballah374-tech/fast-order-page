@@ -130,6 +130,21 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
 
   const approve = async (r) => {
     setBusy(true);
+    const pl = plans.find((x) => x.id === r.plan_id);
+    /* باقة «مبلغ مفتوح» (شحن وسعرها 0): الرصيد يتضاف بالمبلغ اللي كتبه التاجر في الطلب */
+    if (pl && pl.kind !== 'monthly' && n(pl.price) <= 0) {
+      const add = money(n(r.amount));
+      const s = stores.find((x) => String(x.user_id) === String(r.store_id));
+      if (!(add > 0) || !s) { setBusy(false); flash('خطأ: المبلغ أو المتجر غير صالح'); return; }
+      const up = await supabase.from('store_profiles').update({ wallet_balance_usd: money(n(s.wallet_balance_usd) + add), wallet_topped_usd: money(n(s.wallet_topped_usd) + add), amount_paid: money(n(s.amount_paid) + add), is_active: true, activated_at: s.activated_at || new Date().toISOString() }).eq('id', s.id);
+      if (up.error) { setBusy(false); flash('خطأ: ' + up.error.message); return; }
+      const rq = await supabase.from('plan_requests').update({ status: 'approved', decided_at: new Date().toISOString() }).eq('id', r.id);
+      await supabase.from('platform_notifications').insert([{ audience: String(r.store_id), kind: 'plan', title: 'تم قبول طلب الشحن', body: `أُضيف ${usdFmt(add)} لرصيدك` }]);
+      setBusy(false);
+      if (rq.error) { flash('تم الشحن لكن تعذر تحديث الطلب: ' + rq.error.message); return; }
+      await after(`تمت الموافقة: أُضيف ${usdFmt(add)} للرصيد`);
+      return;
+    }
     const { error } = await supabase.rpc('approve_plan_request', { p_id: r.id });
     setBusy(false);
     if (error) { flash('خطأ: ' + error.message); return; }
@@ -282,6 +297,19 @@ export default function AdminBilling({ isDark, initial = 'stores', onChanged }) 
       {tab === 'reqs' && (
         <div className={`${box} p-4`}>
           <h3 className="font-black mb-3">طلبات الاشتراك والشحن</h3>
+          {(() => {
+            const ok = reqs.filter((r) => r.status === 'approved');
+            const sum = ok.reduce((a, r) => a + n(r.amount), 0);
+            const pend = reqs.filter((r) => r.status === 'pending').reduce((a, r) => a + n(r.amount), 0);
+            return (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3 text-xs">
+                <div className="p-2 rounded-lg bg-slate-500/10">إجمالي المشحون (مقبول)<b className="block text-base">{usdFmt(sum)}</b></div>
+                <div className="p-2 rounded-lg bg-slate-500/10">عدد الطلبات المقبولة<b className="block text-base">{ok.length}</b></div>
+                <div className="p-2 rounded-lg bg-slate-500/10">متوسط الشحنة<b className="block text-base">{usdFmt(ok.length ? sum / ok.length : 0)}</b></div>
+                <div className="p-2 rounded-lg bg-slate-500/10">قيد المراجعة<b className="block text-base">{usdFmt(pend)}</b></div>
+              </div>
+            );
+          })()}
           {!reqs.length ? <div className="text-center text-slate-400 py-10 text-xs">لا توجد طلبات</div> : (
             <div className="space-y-2">
               {reqs.map((r) => (
