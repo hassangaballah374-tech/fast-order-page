@@ -1,11 +1,12 @@
 'use client';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDash, PageHead, Field, Empty, Spin, Badge, Stat } from '../ui';
 import { useTable, uploadAsset } from '../hooks';
 import { fdate } from '../shared';
 import { storeStateOf, commissionOf, ordersLeft, freeLeft, ordersCovered, monthlyActive, toEgp, egpFmt, setPlatformCommission } from '../../../lib/billing';
 import { useUsdRate } from '../../useUsdRate';
-import { supabase } from '../../../lib/supabase'; 
+import { supabase } from '../../../lib/supabase';
+import { waLink } from '../../../lib/storeKit'; 
 
 const n = (v) => Number(v) || 0;
 const usd = (v) => `$${n(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -66,12 +67,30 @@ function usePaymentNote() {
 const PAY_LABEL = { vodafone: 'فودافون كاش', instapay: 'إنستا باي' };
 function usePaymentNumbers() {
   const [rows, setRows] = useState([]);
+  const [wa, setWa] = useState('');
   useEffect(() => {
+    supabase.from('platform_kv').select('value').eq('key', 'payment_whatsapp').maybeSingle().then(({ data }) => setWa(data?.value || ''));
     supabase.from('platform_kv').select('value').eq('key', 'payment_numbers').maybeSingle().then(({ data }) => {
       try { const j = JSON.parse(data?.value || '[]'); setRows(Array.isArray(j) ? j.filter((r) => r && r.number) : []); } catch { setRows([]); }
     });
   }, []);
+  rows.wa = wa;
   return rows;
+}
+
+/* بعد إنشاء الطلب: زرار يفتح واتساب الإدارة برسالة جاهزة، والتاجر يبعت صورة التحويل هناك */
+function WaSend({ wa, text, onDone }) {
+  if (!wa) return <div className="card" style={{ marginBottom: 16, borderColor: '#38a169' }}>✅ تم إرسال طلبك. ابعت صورة التحويل للإدارة على واتساب.<div style={{ marginTop: 8 }}><button type="button" className="btn" onClick={onDone}>تمام</button></div></div>;
+  return (
+    <div className="card" style={{ marginBottom: 16, borderColor: '#38a169' }}>
+      <b>✅ تم تسجيل طلبك. الخطوة الأخيرة:</b>
+      <p className="mut dsc">ابعت صورة التحويل على واتساب الإدارة عشان نفعّل طلبك.</p>
+      <div className="row" style={{ marginBottom: 0 }}>
+        <a className="btn p" href={waLink(wa, text)} target="_blank" rel="noopener noreferrer">📲 ابعت صورة التحويل على واتساب</a>
+        <button type="button" className="btn" onClick={onDone}>تم</button>
+      </div>
+    </div>
+  );
 }
 function PayNumbers({ rows }) {
   const [done, setDone] = useState('');
@@ -162,6 +181,9 @@ export function PlansScreen() {
   const [proof, setProof] = useState('');
   const [txt, setTxt] = useState('');
   const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(null);
+  const selRef = useRef(null);
+  useEffect(() => { if (sel && selRef.current) selRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, [sel]);
 
   useEffect(() => { supabase.from('platform_plans').select('*').eq('enabled', true).order('sort_order').then(({ data }) => setPlans(data || [])); }, []);
 
@@ -171,18 +193,17 @@ export function PlansScreen() {
 
   const send = async () => {
     if (!sel) return;
-    if (n(sel.price) > 0 && !proof) { say('ارفع صورة إثبات التحويل أولاً'); return; }
     setBusy(true);
     const egp = rate ? toEgp(sel.price, rate) : 0;
     const auto = egp ? `المبلغ المحوَّل بالجنيه: ${egp} (سعر الدولار ${rate})` : '';
     const noteAll = [auto, txt.trim()].filter(Boolean).join(' | ').slice(0, 300);
-    const { error } = await supabase.from('plan_requests').insert([{ store_id: String(uid), plan_id: sel.id, amount: n(sel.price), proof_url: proof || null, note: noteAll || null, status: 'pending' }]);
+    const { error } = await supabase.from('plan_requests').insert([{ store_id: String(uid), plan_id: sel.id, amount: n(sel.price), proof_url: null, note: noteAll || null, status: 'pending' }]);
     if (!error) await supabase.from('platform_notifications').insert([{ audience: 'admin', kind: 'plan', title: 'طلب شحن/اشتراك جديد', body: `${store?.store_name || uid} · ${sel.name}${egp ? ` · ${egp} ج.م` : ''}` }]).then(() => {});
     setBusy(false);
     if (error) { say(error.message); return; }
+    setSent({ text: `أهلاً، أنا ${store?.store_name || ''}. حوّلت ${usd(sel.price)}${egp ? ` (${egp} ج.م)` : ''} لباقة «${sel.name}». دي صورة التحويل:` });
     setSel(null); setProof(''); setTxt('');
     reqs.reload();
-    say('✅ تم إرسال طلبك وسيُراجع من الإدارة');
   };
 
   return (
@@ -213,13 +234,14 @@ export function PlansScreen() {
         </div>
       )}
 
+      {sent && <WaSend wa={payNums.wa} text={sent.text} onDone={() => setSent(null)} />}
       {sel && (
-        <div className="card" style={{ marginBottom: 16, borderColor: 'var(--b)' }}>
+        <div ref={selRef} className="card" style={{ marginBottom: 16, borderColor: 'var(--b)' }}>
           <h3>{sel.name} — {usd(sel.price)}{rate ? ` ≈ ${egpFmt(toEgp(sel.price, rate))}` : ''}</h3>
           <p className="mut dsc">حوّل المبلغ بالجنيه المصري بحسب سعر الدولار الحالي ثم ارفع صورة التحويل.</p>
           <PayNumbers rows={payNums} />
           {note ? <p className="mut dsc" style={{ whiteSpace: 'pre-line' }}>{note}</p> : null}
-          <Field l="صورة إثبات التحويل"><ImagePick value={proof} onChange={setProof} uid={uid} folder="proofs" /></Field>
+          <p className="mut dsc">بعد ما تدوس «إرسال الطلب» هيظهرلك زرار تبعت منه صورة التحويل على واتساب الإدارة.</p>
           <Field l="ملاحظات (اختياري)"><input className="in" maxLength={200} value={txt} onChange={(e) => setTxt(e.target.value)} /></Field>
           <div className="row" style={{ marginBottom: 0 }}>
             <button type="button" className="btn p" disabled={busy} onClick={send}>{busy ? '...' : 'إرسال الطلب'}</button>
@@ -259,16 +281,17 @@ export function BalanceScreen() {
   const [proof, setProof] = useState('');
   const [busy, setBusy] = useState(false);
   const pending = t.rows.filter((x) => x.status === 'pending');
+  const [sent, setSent] = useState(null);
 
   const request = async () => {
     const a = Number(amount);
     if (!(a >= 1 && a <= 10000)) { say('المبلغ بالدولار من 1 إلى 10000'); return; }
-    if (!proof) { say('ارفع صورة إثبات التحويل'); return; }
     setBusy(true);
-    const res = await t.insert({ kind: 'topup', amount_usd: a, status: 'pending', note: String(txt).trim().slice(0, 300), proof_url: proof });
+    const res = await t.insert({ kind: 'topup', amount_usd: a, status: 'pending', note: String(txt).trim().slice(0, 300), proof_url: null });
     if (res) {
       await supabase.from('platform_notifications').insert([{ audience: 'admin', kind: 'plan', title: 'طلب شحن رصيد', body: `${store?.store_name || uid} · ${usd(a)}` }]);
-      setAmount(''); setTxt(''); setProof(''); say('✅ تم إرسال طلب الشحن وسيُراجع من الإدارة');
+      setSent({ text: `أهلاً، أنا ${store?.store_name || ''}. حوّلت لشحن رصيد ${usd(a)}${rate ? ` (${egpFmt(toEgp(a, rate))})` : ''}. دي صورة التحويل:` });
+      setAmount(''); setTxt(''); setProof('');
     }
     setBusy(false);
   };
@@ -278,6 +301,7 @@ export function BalanceScreen() {
       <PageHead title="رصيدك" sub="محفظة سبايك" />
       <WalletStats store={store} rate={rate} pc={pc} />
       {pending.length > 0 && <div className="card" style={{ marginBottom: 16 }}>طلبات شحن قيد المراجعة: <b>{pending.length}</b> ({usd(pending.reduce((a, x) => a + n(x.amount_usd), 0))})</div>}
+      {sent && <WaSend wa={payNums.wa} text={sent.text} onDone={() => setSent(null)} />}
       <div className="card">
         <h3>طلب شحن رصيد</h3>
         <PayNumbers rows={payNums} />
@@ -286,7 +310,7 @@ export function BalanceScreen() {
           <Field l="المبلغ (دولار)" hint={n(amount) > 0 && rate ? `≈ ${egpFmt(toEgp(amount, rate))} · يغطي ${Math.floor(n(amount) / commissionOf(store, pc))} طلب` : 'مثال: 10'}><input className="in num" type="number" min="1" max="10000" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
           <Field l="ملاحظات (اختياري)" hint="مثال: رقم العملية"><input className="in" value={txt} maxLength={300} onChange={(e) => setTxt(e.target.value)} /></Field>
         </div>
-        <Field l="صورة إثبات التحويل"><ImagePick value={proof} onChange={setProof} uid={uid} folder="proofs" /></Field>
+        <p className="mut dsc">بعد إرسال الطلب هيظهرلك زرار تبعت منه صورة التحويل على واتساب الإدارة.</p>
         <div className="row" style={{ marginBottom: 0 }}>
           <button type="button" className="btn p" disabled={busy} onClick={request}>{busy ? '...' : 'إرسال الطلب'}</button>
           <button type="button" className="btn" onClick={() => go('tx')}>سجل المعاملات</button>
