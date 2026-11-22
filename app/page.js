@@ -38,7 +38,6 @@ export default function SpikeLandingPage() {
       whySpike: 'لماذا سبايك؟',
       features: 'المميزات',
       pricing: 'الباقات والأسعار',
-      enterprise: 'كبار التجار',
       login: 'تسجيل الدخول',
       startFree: 'ابدأ مجاناً الآن',
       heroSubtitle: 'المنظومة الأقوى لإدارة المتاجر الإلكترونية، الشحن، وتحصيل الدفع عند الاستلام في مصر بأعلى معدلات تأكيد وتسليم.',
@@ -66,7 +65,6 @@ export default function SpikeLandingPage() {
       whySpike: 'Why SPIKE?',
       features: 'Features',
       pricing: 'Pricing',
-      enterprise: 'Enterprise',
       login: 'Log in',
       startFree: 'Start Free Now',
       heroSubtitle: 'The ultimate eCommerce platform built for Cash on Delivery, inventory scaling, and highest delivery rates.',
@@ -109,7 +107,6 @@ export default function SpikeLandingPage() {
             <button className="hover:text-[#0E8FC0] transition cursor-pointer">{t.whySpike}</button>
             <button className="hover:text-[#0E8FC0] transition cursor-pointer">{t.features}</button>
             <Link href="#pricing" className="hover:text-[#0E8FC0] transition">{t.pricing}</Link>
-            <Link href="#enterprise" className="hover:text-[#0E8FC0] transition">{t.enterprise}</Link>
           </div>
         </div>
 
