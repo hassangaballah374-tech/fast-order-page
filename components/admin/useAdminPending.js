@@ -18,12 +18,15 @@ export function useAdminPending() {
   useEffect(() => {
     load();
     const t = setInterval(load, 30000);
-    const ch = supabase.channel('admin-pending')
+    let ch = null;
+    try {
+      ch = supabase.channel(`admin-pending-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'plan_requests' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'store_service_requests' }, load)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'platform_notifications' }, load)
       .subscribe();
-    return () => { clearInterval(t); supabase.removeChannel(ch); };
+    } catch { /* التحديث اللحظي اختياري؛ الـ polling كفاية */ }
+    return () => { clearInterval(t); try { if (ch) supabase.removeChannel(ch); } catch { /* تجاهل */ } };
   }, [load]);
   return c;
 }
