@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-
+ 
 /* أعداد الأدمن اللي محتاجة تدخل: طلبات الاشتراك/الشحن، طلبات الخدمات، الإشعارات غير المقروءة. */
 const cnt = async (q) => { try { const { count } = await q; return count || 0; } catch { return 0; } };
 
