@@ -15,6 +15,7 @@ import { spikeLogout } from '../../components/SpikeSessionBar';
 import { MerchantBell, UsageBanner } from '../../components/dash/MerchantBell';
 import NewOrderAlert from '../../components/dash/NewOrderAlert';
 import DashTabs from '../../components/dash/DashTabs';
+import { usePending } from '../../components/dash/usePending';
 import { api } from '../../components/dash/hooks';
 
 const ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
@@ -256,12 +257,13 @@ export default function MerchantDashboard() {
   const isOpen = (g) => (open[g] ?? curGroup === g);
   const initial = (store?.store_name || 'S').trim().charAt(0).toUpperCase();
 
+  const pend = usePending(uid);
   const NavItem = ({ it, sub }) => (lockedId(it.id) ? null : (
     <button type="button" className={'nv' + (tab === it.id ? ' act' : '') + (lockedId(it.id) ? ' lk' : '')} onClick={() => go(it.id)}>
       {it.i && !sub && <span className="ic">{it.i}</span>}
       <span className="tx">{it.t}</span>
       {it.spike && <span className="spk" title="إضافة حصرية من سبايك">✦</span>}
-      {it.badge && <em className={'bn' + (it.badge === 'سبايك' ? ' sp' : '')}>{it.badge}</em>}
+      {pend[it.id] > 0 ? <b className="rb">{pend[it.id] > 99 ? '99+' : pend[it.id]}</b> : (it.badge && <em className={'bn' + (it.badge === 'سبايك' ? ' sp' : '')}>{it.badge}</em>)}
     </button>
   ));
 
@@ -290,7 +292,7 @@ export default function MerchantDashboard() {
                 return (
                   <div key={m.g}>
                     <button type="button" className={'nv' + (o ? ' open' : '') + (curGroup === m.g && !o ? ' act' : '')} aria-expanded={o} onClick={() => toggleGroup(m.g)}>
-                      <span className="ic">{m.i}</span><span className="tx">{m.t}</span><span className="chev">▾</span>
+                      <span className="ic">{m.i}</span><span className="tx">{m.t}</span>{!o && m.items.reduce((a, it) => a + (pend[it.id] || 0), 0) > 0 ? <b className="rb">{m.items.reduce((a, it) => a + (pend[it.id] || 0), 0)}</b> : null}<span className="chev">▾</span>
                     </button>
                     {o && <div className="nvsub">{vis.map((it) => <NavItem key={it.id} it={it} sub />)}</div>}
                   </div>
@@ -362,7 +364,7 @@ export default function MerchantDashboard() {
           </section>
         </main>
 
-        <DashTabs onProfile={() => openProfile()} tab={tab} go={go} uid={uid} lockedId={lockedId} storeName={store?.store_name} logo={cfg.contact?.owner_photo || cfg.brand.logo} storeUrl={storeUrl} dark={dark} toggleDark={toggleDark} onSearch={() => setCmd(true)} onLogout={() => spikeLogout(router)} isAdmin={isAdmin} onAdmin={() => router.push('/admin')} />
+        <DashTabs pend={pend} onProfile={() => openProfile()} tab={tab} go={go} uid={uid} lockedId={lockedId} storeName={store?.store_name} logo={cfg.contact?.owner_photo || cfg.brand.logo} storeUrl={storeUrl} dark={dark} toggleDark={toggleDark} onSearch={() => setCmd(true)} onLogout={() => spikeLogout(router)} isAdmin={isAdmin} onAdmin={() => router.push('/admin')} />
 
         {cmd && (
           <div className="ov topv" onClick={() => { setCmd(false); setCq(''); }}>

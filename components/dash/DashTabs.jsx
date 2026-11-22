@@ -19,7 +19,7 @@ const sections = () => MENU.map((m) => {
   return { key: m.g || m.h, title: `${m.i ? m.i + ' ' : ''}${m.t || m.h}`, items: (m.items || []).map((x) => ({ id: x.id, t: x.t, i: x.i, badge: x.badge, spike: x.spike })) };
 });
 
-export default function DashTabs({ tab, go, uid, lockedId, storeName, logo, storeUrl, dark, toggleDark, onSearch, onLogout, isAdmin, onAdmin, onProfile }) {
+export default function DashTabs({ tab, go, uid, lockedId, storeName, logo, storeUrl, dark, toggleDark, onSearch, onLogout, isAdmin, onAdmin, onProfile, pend = {} }) {
   const [more, setMore] = useState(false);
   const [q, setQ] = useState('');
   const [pending, setPending] = useState(0);
@@ -69,7 +69,7 @@ export default function DashTabs({ tab, go, uid, lockedId, storeName, logo, stor
     <button type="button" className={'dsh-t' + (tab === it.id ? ' act' : '') + ''} onClick={() => pick(it.id)}>
       {it.i ? <span className="dsh-i">{it.i}</span> : null}
       <span className="dsh-x">{it.t}</span>
-      {it.badge ? <em>{it.badge}</em> : null}
+      {pend[it.id] > 0 ? <b className="rb">{pend[it.id] > 99 ? '99+' : pend[it.id]}</b> : (it.badge ? <em>{it.badge}</em> : null)}
     </button>
   );
 
