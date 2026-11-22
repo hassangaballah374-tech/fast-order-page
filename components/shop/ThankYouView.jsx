@@ -66,9 +66,9 @@ export default function ThankYouView({ flow }) {
       <h1 style={{ margin: '10px 0' }}>{ty.title || 'تم استلام طلبك 🎉'}</h1>
       <p className="mut" style={{ maxWidth: 520, margin: '0 auto 18px' }}>{ty.message}</p>
       <div className="card ty-sum">
-        <div className="rw"><span className="mut">رقم الطلب</span><span className="ty-no"><b className="num">#{o.order_no}</b><button type="button" onClick={() => { try { navigator.clipboard.writeText(String(o.order_no)); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* تجاهل */ } }}>{copied ? 'تم النسخ ✓' : 'نسخ'}</button></span></div>
-        {[...(o.items || []), ...(o.upsells || [])].filter((i) => i && i.title).map((i, k) => <div className="rw" key={k}><span>{i.title} × <span className="num">{i.qty || 1}</span></span></div>)}
-        <div className="rw"><span className="mut">الإجمالي · الدفع عند الاستلام</span><b className="num">{money((Number(o.total) || 0) + (Number(o.extra) || 0), cur)}</b></div>
+        <div className="ty-rw"><span className="mut">رقم الطلب</span><span className="ty-no"><b className="num">#{o.order_no}</b><button type="button" onClick={() => { try { navigator.clipboard.writeText(String(o.order_no)); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* تجاهل */ } }}>{copied ? 'تم النسخ ✓' : 'نسخ'}</button></span></div>
+        {[...(o.items || []), ...(o.upsells || [])].filter((i) => i && i.title).map((i, k) => <div className="ty-rw" key={k}><span>{i.title} × <span className="num">{i.qty || 1}</span></span></div>)}
+        <div className="ty-rw"><span className="mut">الإجمالي · الدفع عند الاستلام</span><b className="num">{money((Number(o.total) || 0) + (Number(o.extra) || 0), cur)}</b></div>
       </div>
       <div className="nxt">
         <div><i>📞</i><span>هنتصل بيك لتأكيد الطلب<small>رد على المكالمة عشان الطلب يتجهّز بسرعة</small></span></div>
