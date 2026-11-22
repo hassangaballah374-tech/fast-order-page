@@ -15,7 +15,6 @@ import { Stars, ProductCard, Blocks, soldOut } from './ui';
 import FlipPic from './FlipPic';
 import SpinViewer from './SpinViewer';
 import StockAlert from './StockAlert';
-import Lightbox from './Lightbox';
 import { money, effectivePrice, unitPrice, overridePrice, valueSoldOut, optionAvail, saleActive, applyOffer, optionImage, isHttpUrl, splitImages, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 function ReviewForm({ productId }) {
@@ -57,7 +56,6 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const router = useRouter();
   const [img, setImg] = useState(0);
   const [spinOn, setSpinOn] = useState(false);
-  const [lb, setLb] = useState(-1);
   const swipe = useRef(null);
   const [pinned, setPinned] = useState(true);
   const [qty, setQty] = useState(1);
@@ -149,7 +147,6 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
 
   return (
     <div className="wrap">
-      {lb >= 0 ? <Lightbox list={[...gi.list, ...(gi.back ? [gi.back] : [])]} start={lb} alt={p.title} onClose={() => setLb(-1)} /> : null}
       <Blocks list={blocks.filter((b) => b.placement === 'product_top')} />
       <div className="pv">
         <div className="gal">
@@ -164,7 +161,6 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
           onTouchStart={(e) => { swipe.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
           onTouchEnd={(e) => { const s0 = swipe.current; swipe.current = null; if (!s0 || gi.list.length < 2) return; const dx = e.changedTouches[0].clientX - s0.x; const dy = e.changedTouches[0].clientY - s0.y; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { setPinned(false); setImg((img + (dx < 0 ? 1 : -1) + gi.list.length) % gi.list.length); } }}>
           <FlipPic key={mainImg} className="gal-main gal-sw" front={mainImg} back={onFront ? gi.back : ''} alt={p.title} fetchPriority="high" />
-          {mainImg ? <button type="button" className="gal-zm" aria-label="تكبير الصورة" onClick={() => setLb(Math.max(0, gi.list.indexOf(mainImg)))}>⤢</button> : null}
         </div>
           {gi.list.length > 1 && (
             <div className="gal-nav">
@@ -175,7 +171,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
           )}
         </>}
           {!(spinVideo && spinOn) && gi.list.length > 0 ? (
-            <div className="gal-stack">{[...gi.list, ...(gi.back ? [gi.back] : [])].map((src, i) => <button key={i} type="button" className="gs-i" aria-label={`تكبير صورة ${i + 1}`} onClick={() => setLb(i)}><img src={src} alt={i === 0 ? p.title : ''} loading={i < 2 ? 'eager' : 'lazy'} /></button>)}</div>
+            <div className="gal-stack">{gi.list.map((src, i) => i === 0 && gi.back ? <FlipPic key={i} className="gs-i" front={src} back={gi.back} alt={p.title} fetchPriority="high" /> : <div key={i} className="gs-i"><img src={src} alt={i === 0 ? p.title : ''} loading={i < 2 ? 'eager' : 'lazy'} /></div>)}</div>
           ) : null}
           {gi.list.length > 1 && !(spinVideo && spinOn) && (
             <div className="gal-th">{gi.list.map((s, i) => <button key={i} type="button" className={i === img && !(pinned && colorImg) ? 'act' : ''} onClick={() => { setPinned(false); setImg(i); }} aria-label={`صورة ${i + 1}`}><img src={s} alt="" loading="lazy" /></button>)}</div>
