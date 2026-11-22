@@ -85,10 +85,12 @@ function WaLogo({ size = 28 }) {
   );
 }
 function WaSend({ wa, text, onDone }) {
-  if (!wa) return <div className="card" style={{ marginBottom: 16, borderColor: '#38a169' }}>✅ تم تسجيل طلبك. ابعت صورة التحويل للإدارة على واتساب.<div style={{ marginTop: 8 }}><button type="button" className="btn" onClick={onDone}>تمام</button></div></div>;
+  const ref = useRef(null);
+  useEffect(() => { if (ref.current) ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, []);
+  if (!wa) return <div ref={ref} className="card" style={{ marginBottom: 16, borderColor: '#d97706' }}>✅ تم تسجيل طلبك. رقم واتساب الإدارة لسه مش مضبوط في النظام، فتواصل مع الإدارة وابعت لها صورة التحويل.<div style={{ marginTop: 8 }}><button type="button" className="btn" onClick={onDone}>تمام</button></div></div>;
   const href = waLink(wa, text);
   return (
-    <div className="card" style={{ marginBottom: 16, borderColor: '#25D366', borderWidth: 2, textAlign: 'center' }}>
+    <div ref={ref} className="card" style={{ marginBottom: 16, borderColor: '#25D366', borderWidth: 2, textAlign: 'center' }}>
       <b>✅ تم تسجيل طلبك. الخطوة الأخيرة:</b>
       <p className="mut dsc">دوس على علامة واتساب وابعت صورة التحويل للإدارة عشان نفعّل طلبك.</p>
       <a href={href} target="_blank" rel="noopener noreferrer" aria-label="ابعت صورة التحويل على واتساب" title="ابعت صورة التحويل على واتساب"
