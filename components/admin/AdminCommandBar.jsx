@@ -74,9 +74,9 @@ export default function AdminCommandBar({ stores = [], orders = [], domains = []
       </button>
 
       <div className="relative">
-        <button type="button" onClick={() => setBell((b) => !b)} className={`relative px-3 py-2 rounded-xl border text-xs font-bold transition cursor-pointer ${btn}`} title="تنبيهات الإدارة" aria-label="تنبيهات الإدارة">
+        <button type="button" onClick={() => setBell((b) => !b)} className={`relative px-3 py-2 rounded-xl border text-xs font-bold transition cursor-pointer ${alerts.length > 0 ? 'border-red-500 bg-red-500/10 text-red-600' : btn}`} title="تنبيهات الإدارة" aria-label="تنبيهات الإدارة">
           <span>🔔</span>
-          {alerts.length > 0 && <span className="absolute -top-1.5 -left-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center">{alerts.length}</span>}
+          {alerts.length > 0 && <span className="absolute -top-1.5 -left-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-black flex items-center justify-center">{alerts.length}</span>}
         </button>
         {bell && (
           <>
