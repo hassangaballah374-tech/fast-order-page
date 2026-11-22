@@ -281,8 +281,8 @@ export const SHOP_CSS = `
 .spk .confetti i{position:absolute;top:-16px;width:8px;height:14px;border-radius:2px;opacity:0;animation:spkfall 2.8s ease-in forwards}
 @keyframes spkfall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(440px) rotate(560deg)}}
 .spk .ty-sum{max-width:440px;margin:0 auto 16px;text-align:start}
-.spk .ty-sum .rw{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--ln);font-size:14px}
-.spk .ty-sum .rw:last-child{border:0}
+.spk .ty-sum .ty-rw{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--ln);font-size:14px}
+.spk .ty-sum .ty-rw:last-child{border:0}
 .spk .ty-no{display:inline-flex;align-items:center;gap:8px}
 .spk .ty-no button{border:1px solid var(--ln);background:var(--bg);color:var(--ink);border-radius:8px;padding:2px 9px;font:inherit;font-size:12px;cursor:pointer}
 .spk .nxt{max-width:440px;margin:0 auto 18px;display:grid;gap:8px;text-align:start}
