@@ -6,10 +6,12 @@ import ShuffleView from './ShuffleView';
 import ArcView from './ArcView';
 import RunwayView from './RunwayView';
 import StudioView from './StudioView';
+import StoreGridView from './StoreGridView';
 import { ProductCard } from './ui';
 
 /* يختار التخطيط حسب الاسم؛ أي اسم غير معروف يرجع للمدار */
 export default function BrowseView({ style = 'orbit', list = [] }) {
+  if (style === 'store') return <StoreGridView list={list} />;
   if (style === 'studio') return <StudioView list={list} />;
   if (style === 'runway') return <RunwayView list={list} />;
   if (style === 'arc') return <ArcView list={list} />;
