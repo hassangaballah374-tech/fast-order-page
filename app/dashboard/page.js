@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { DashCtx, Spin, Field } from '../../components/dash/ui';
-import { MENU, flatMenu, groupOf } from '../../components/dash/menu';
+import { MENU, flatMenu, groupOf } from '../../components/dash/menu'; 
 import { SCREENS } from '../../components/dash/registry';
 import SpikeLogo from '../../components/SpikeLogo';
 import Locked from '../../components/dash/Locked';
