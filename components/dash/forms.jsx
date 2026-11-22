@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDash, Tog, Field, Modal, PageHead, Empty, Spin } from './ui';
-import { useTable, uploadAsset } from './hooks';
+import { useTable, uploadAsset, getCompress, setCompress } from './hooks';
 import { GOVERNORATES } from '../../lib/storeKit';
 
 export const toLocalInput = (iso) => {
@@ -16,6 +16,19 @@ export const fromLocalInput = (s) => {
   const d = new Date(s);
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 };
+
+/* زرار ضغط الصور قبل الرفع: اختياري ومجاني، بيوفر مساحة التخزين */
+export function CompressToggle() {
+  const [on, setOn] = useState(true);
+  useEffect(() => { setOn(getCompress()); }, []);
+  const flip = () => { const v = !on; setOn(v); setCompress(v); };
+  return (
+    <div className="tgrow" style={{ margin: "6px 0", fontSize: 13, flexBasis: "100%" }} title="بيصغّر حجم الصورة (حتى 1600px وصيغة WebP) من غير ما الجودة تتأثر بشكل ملحوظ">
+      <Tog on={on} set={flip} />
+      <span>🗜️ ضغط الصورة قبل الرفع (يوفر مساحة){on ? '' : ' — متوقف: هترفع الصورة بحجمها الأصلي'}</span>
+    </div>
+  );
+}
 
 export function ImageInput({ value, onChange, folder = 'misc', ph = 'رابط الصورة أو ارفع ملفاً' }) {
   const { uid, say } = useDash();
@@ -37,6 +50,7 @@ export function ImageInput({ value, onChange, folder = 'misc', ph = 'رابط ا
       <button type="button" className="btn sm" disabled={busy} onClick={() => ref.current?.click()}>{busy ? '...' : 'رفع'}</button>
       {value ? <button type="button" className="btn sm" onClick={() => onChange('')}>✕</button> : null}
       <input ref={ref} type="file" accept="image/*" hidden onChange={pick} />
+      <CompressToggle />
     </div>
   );
 }

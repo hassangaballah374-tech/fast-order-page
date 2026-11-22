@@ -106,7 +106,7 @@ select.in{padding-inline-end:8px}
 .tb{border:1px solid var(--ln);background:var(--s);border-radius:99px;padding:7px 15px;font:700 13px 'Tajawal',sans-serif;cursor:pointer;color:var(--ink)}
 .tb.act{background:var(--b);border-color:var(--b);color:#fff}
 .tb em{font-style:normal;opacity:.7;margin-inline-start:6px;font-size:12px}
-.imgin{display:flex;gap:8px;align-items:center}
+.imgin{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .thumb{width:42px;height:42px;border-radius:10px;object-fit:cover;flex:none;border:1px solid var(--ln);background:var(--s2)}
 .thumb.ph{display:grid;place-items:center;font-size:18px}
 .gal{display:flex;gap:8px;flex-wrap:wrap}
