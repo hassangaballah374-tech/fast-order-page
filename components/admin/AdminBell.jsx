@@ -65,7 +65,7 @@ export default function AdminBell({ isDark, onNewOrder, onOpenTab }) {
 
   return (
     <div className="relative">
-      <button type="button" onClick={() => setOpen(!open)} className={`relative w-9 h-9 rounded-xl border flex items-center justify-center text-sm cursor-pointer ${isDark ? 'border-slate-700 bg-slate-800 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-700'}`} title="الإشعارات">
+      <button type="button" onClick={() => setOpen(!open)} className={`relative w-9 h-9 rounded-xl border flex items-center justify-center text-sm cursor-pointer ${unread > 0 ? 'border-red-500 bg-red-500/10 text-red-600' : isDark ? 'border-slate-700 bg-slate-800 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-700'}`} title="الإشعارات">
         🔔
         {unread > 0 && <span className="absolute -top-1.5 -left-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-black flex items-center justify-center">{unread > 99 ? '99+' : unread}</span>}
       </button>

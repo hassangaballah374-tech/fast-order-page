@@ -743,7 +743,9 @@ export default function SpikeSuperAdminDashboard() {
 
                 {item.count !== null && (
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold transition ${
-                    isActive
+                    item.count > 0
+                      ? 'bg-red-600 text-white'
+                      : isActive
                       ? 'bg-white/20 text-white'
                       : isDark
                       ? 'bg-slate-800 text-slate-400'
