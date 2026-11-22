@@ -49,9 +49,6 @@ export default async function ProductsPage({ params, searchParams }) {
       <div className="tabs">
         {Object.entries(SORTS).map(([k, v]) => <Link key={k} className={'chip' + (sort === k ? ' act' : '')} href={qs({ sort: k })}>{v[2]}</Link>)}
       </div>
-      <div className="tabs">
-        {Object.entries(BROWSE_STYLES).map(([k, t]) => <Link key={k} className={'chip' + (view === k ? ' act' : '')} href={qs({ view: k })}>{t}</Link>)}
-      </div>
     </section>
     <FilterBar key={`${view}|${cat}|${sort}|${q}`} style={view} list={list} />
     </>
