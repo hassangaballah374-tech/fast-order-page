@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { Ph, PriceEl, QuickPick, FocusSheet, useBrowseCart, pad2 } from './browseKit';
 
 /* عرض «القوس»: كروت زجاجية بتلف في قوس ثلاثي الأبعاد حوالين الموديل. اسحب/مرّر/اضغط سهم/اضغط كارت.
-   في النص بتظهر صورة القطعة المختارة (من غير موديل أو تلبيس). */
+   القطعة اللي عليها الدور بتتكبّر قدّام في النص والباقي بيلف حواليها (تشغيل تلقائي بيقف لما العميل يلمس أو يقف بالماوس).
+   السحب والعجلة الأفقية بيحرّكوا القوس، والتمرير الرأسي بيفضل للصفحة عشان العميل ينزل يشوف التفاصيل. */
 
 const XS = [0, 0.215, 0.345, 0.432, 0.49, 0.52];
 const XS_M = [0, 0.36, 0.5, 0.56, 0.6, 0.62];
@@ -21,7 +22,8 @@ export default function ArcView({ list = [] }) {
   const st = useRef({ pos: 0, target: 0, drag: null, intro: 0, wheel: 0, lastStep: 0, last: 0, moved: false, sx: 0, sy: 0, px: 0, py: 0 });
   const [idx, setIdx] = useState(0);
   const [focus, setFocus] = useState(false);
-
+  const focusRef = useRef(false);
+  focusRef.current = focus;
 
   const go = useCallback((d) => { st.current.target = Math.round(st.current.target) + d; }, []);
   const toIndex = useCallback((i) => {
@@ -51,16 +53,16 @@ export default function ArcView({ list = [] }) {
         const u = mod(i - s.pos + half, N) - half; const a = Math.abs(u); const sg = Math.sign(u) || 1;
         const x = sg * xAt(tbl, Math.min(5, a)) * W * ie;
         let sc; let z; let op; let ry; let blur = 0;
-        if (a < 1) { sc = 0.55 + 0.45 * a; z = -260 * (1 - a); op = a; ry = -sg * 16 * a; }
+        if (a < 1) { const k = Math.pow(1 - a, 1.3); sc = 1 + (phone ? 0.95 : 0.75) * k; z = 90 * k; op = 1; ry = -sg * 16 * a; }
         else { sc = 1 / (1 + 0.3 * Math.pow(a - 1, 1.15)); z = -110 * (a - 1); ry = -sg * (16 + 9 * Math.min(2, a - 1)); blur = Math.max(0, a - 1.6) * 2.4; op = 1; }
         if (a > 3.4) op = Math.max(0, 1 - (a - 3.4) / 0.8);
         const bob = reduce ? 0 : Math.sin(t / 1000 * 1.1 + i * 1.7) * H * 0.006 * Math.min(1, a);
-        const y = bob - (1 - sc) * H * 0.04;
+        const y = bob - (1 - Math.min(1, sc)) * H * 0.04;
         ry += s.sx * 10;
         op *= ie;
         el.style.transform = `translate(${x}px,${y}px) perspective(1300px) translateZ(${z}px) rotateY(${ry}deg) rotateX(${-s.sy * 6}deg) scale(${sc * (0.6 + 0.4 * ie)})`;
         el.style.opacity = String(op); el.style.filter = blur > 0.05 ? `blur(${blur}px)` : 'none';
-        el.style.zIndex = a < 1 ? '1' : String(Math.round(100 - 10 * a));
+        el.style.zIndex = String(Math.round(120 - 20 * Math.min(a, 5)));
         el.style.visibility = op < 0.01 ? 'hidden' : 'visible';
         el.style.pointerEvents = op < 0.3 ? 'none' : 'auto';
       }
@@ -71,7 +73,7 @@ export default function ArcView({ list = [] }) {
     raf = requestAnimationFrame(frame);
 
     const pm = (e) => { const r = root.getBoundingClientRect(); s.px = (e.clientX - r.left) / r.width - 0.5; s.py = (e.clientY - r.top) / r.height - 0.5; };
-    const pd = (e) => { if (e.target.closest('.arc-buy,.arc-nav,.rl-more')) return; s.drag = { x: e.clientX, p0: s.pos, t: performance.now(), lx: e.clientX, v: 0 }; s.moved = false; };
+    const pd = (e) => { if (e.target.closest('.arc-buy,.arc-nav,.rl-more')) return; s.pause = performance.now() + 6000; s.drag = { x: e.clientX, p0: s.pos, t: performance.now(), lx: e.clientX, v: 0 }; s.moved = false; };
     const pmv = (e) => {
       const d = s.drag; if (!d) return; const dx = e.clientX - d.x;
       if (Math.abs(dx) > 6) s.moved = true;
@@ -81,14 +83,18 @@ export default function ArcView({ list = [] }) {
     };
     const pu = () => { const d = s.drag; if (!d) return; const ds = getComputedStyle(root).direction === 'rtl' ? -1 : 1; const fl = Math.max(-3, Math.min(3, ds * d.v * 3.2)); s.target = Math.round(s.pos + fl); s.drag = null; };
     const wh = (e) => {
-      const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; /* تمرير رأسي = للصفحة */
+      const d = e.deltaX; s.pause = performance.now() + 6000;
       s.wheel += d; if (Math.abs(s.wheel) > 60) { const now = performance.now(); if (now - s.lastStep > 260) { s.target = Math.round(s.target) + Math.sign(s.wheel); s.lastStep = now; } s.wheel = 0; }
       e.preventDefault();
     };
     const kd = (e) => { if (e.key === 'ArrowLeft') { e.preventDefault(); s.target = Math.round(s.target) + (getComputedStyle(root).direction === 'rtl' ? 1 : -1); } else if (e.key === 'ArrowRight') { e.preventDefault(); s.target = Math.round(s.target) + (getComputedStyle(root).direction === 'rtl' ? -1 : 1); } else if (e.key === 'Enter') setFocus(true); };
-    root.addEventListener('pointermove', pm); root.addEventListener('pointerdown', pd); window.addEventListener('pointermove', pmv); window.addEventListener('pointerup', pu);
+    root.addEventListener('pointermove', pm); root.addEventListener('pointerdown', pd); window.addEventListener('pointermove', pmv); window.addEventListener('pointerup', pu); window.addEventListener('pointercancel', pu);
+    const enter = () => { s.hover = true; }; const leave = () => { s.hover = false; s.pause = performance.now() + 2500; };
+    root.addEventListener('pointerenter', enter); root.addEventListener('pointerleave', leave);
+    const auto = reduce ? 0 : setInterval(() => { if (document.hidden || s.drag || s.hover || focusRef.current || performance.now() < (s.pause || 0)) return; s.target = Math.round(s.target) + 1; }, 3200);
     root.addEventListener('wheel', wh, { passive: false }); root.addEventListener('keydown', kd);
-    return () => { alive = false; cancelAnimationFrame(raf); root.removeEventListener('pointermove', pm); root.removeEventListener('pointerdown', pd); window.removeEventListener('pointermove', pmv); window.removeEventListener('pointerup', pu); root.removeEventListener('wheel', wh); root.removeEventListener('keydown', kd); };
+    return () => { alive = false; cancelAnimationFrame(raf); clearInterval(auto); window.removeEventListener('pointercancel', pu); root.removeEventListener('pointerenter', enter); root.removeEventListener('pointerleave', leave); root.removeEventListener('pointermove', pm); root.removeEventListener('pointerdown', pd); window.removeEventListener('pointermove', pmv); window.removeEventListener('pointerup', pu); root.removeEventListener('wheel', wh); root.removeEventListener('keydown', kd); };
   }, [n]);
 
   if (!n) return <div className="empty">لا توجد منتجات مطابقة</div>;
@@ -98,9 +104,6 @@ export default function ArcView({ list = [] }) {
   return (
     <div className="arc" ref={rootRef} tabIndex={0} aria-label="قوس المنتجات" role="group">
       <div className="arc-ghost" aria-hidden="true">{(cfg.store_name || 'FIT').toString().slice(0, 4).toUpperCase()}</div>
-      <div className="arc-model" aria-hidden="true">
-        {p.images[0] ? <img key={p.id} src={p.images[0]} alt="" draggable="false" /> : null}
-      </div>
       <div className="arc-stage">
         {items.map((it, i) => (
           <button key={it.id} type="button" ref={(el) => { cardRefs.current[i] = el; }} className={'arc-card' + (i === idx ? ' cur' : '')} aria-label={it.title}
