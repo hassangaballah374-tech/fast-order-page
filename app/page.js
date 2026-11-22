@@ -38,7 +38,6 @@ export default function SpikeLandingPage() {
       whySpike: 'لماذا سبايك؟',
       features: 'المميزات',
       pricing: 'الباقات والأسعار',
-      enterprise: 'كبار التجار',
       login: 'تسجيل الدخول',
       startFree: 'ابدأ مجاناً الآن',
       heroSubtitle: 'المنظومة الأقوى لإدارة المتاجر الإلكترونية، الشحن، وتحصيل الدفع عند الاستلام في مصر بأعلى معدلات تأكيد وتسليم.',
@@ -66,7 +65,6 @@ export default function SpikeLandingPage() {
       whySpike: 'Why SPIKE?',
       features: 'Features',
       pricing: 'Pricing',
-      enterprise: 'Enterprise',
       login: 'Log in',
       startFree: 'Start Free Now',
       heroSubtitle: 'The ultimate eCommerce platform built for Cash on Delivery, inventory scaling, and highest delivery rates.',
@@ -109,7 +107,6 @@ export default function SpikeLandingPage() {
             <button className="hover:text-[#0E8FC0] transition cursor-pointer">{t.whySpike}</button>
             <button className="hover:text-[#0E8FC0] transition cursor-pointer">{t.features}</button>
             <Link href="#pricing" className="hover:text-[#0E8FC0] transition">{t.pricing}</Link>
-            <Link href="#enterprise" className="hover:text-[#0E8FC0] transition">{t.enterprise}</Link>
           </div>
         </div>
 
@@ -351,8 +348,9 @@ export default function SpikeLandingPage() {
 
             <div className="flex flex-wrap gap-6 text-xs font-bold">
               <Link href="/terms" className="hover:text-[#0E8FC0] transition">{t.terms}</Link>
-              <Link href="/terms" className="hover:text-[#0E8FC0] transition">{t.legal}</Link>
-              <Link href="/terms" className="hover:text-[#0E8FC0] transition">{t.privacy}</Link>
+              <Link href="/about" className="hover:text-[#0E8FC0] transition">{lang === 'ar' ? 'من نحن' : 'About'}</Link>
+              <Link href="/privacy" className="hover:text-[#0E8FC0] transition">{t.privacy}</Link>
+              <Link href="/contact" className="hover:text-[#0E8FC0] transition">{lang === 'ar' ? 'تواصل معنا' : 'Contact'}</Link>
             </div>
           </div>
 
