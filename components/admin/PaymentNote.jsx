@@ -8,8 +8,10 @@ export const PAY_METHODS = { vodafone: 'فودافون كاش', instapay: 'إن�
 /* أرقام التحويل اللي بتظهر للتاجر مع كل رقم والطريقة بتاعته */
 function PaymentNumbers({ isDark }) {
   const [rows, setRows] = useState([]);
+  const [wa, setWa] = useState('');
   const [msg, setMsg] = useState('');
   useEffect(() => {
+    supabase.from('platform_kv').select('value').eq('key', 'payment_whatsapp').maybeSingle().then(({ data }) => setWa(data?.value || ''));
     supabase.from('platform_kv').select('value').eq('key', 'payment_numbers').maybeSingle().then(({ data }) => {
       try { const j = JSON.parse(data?.value || '[]'); setRows(Array.isArray(j) ? j : []); } catch { setRows([]); }
     });
@@ -17,7 +19,9 @@ function PaymentNumbers({ isDark }) {
   const set = (i, k, v) => setRows((r) => r.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
   const save = async () => {
     const clean = rows.map((r) => ({ method: r.method === 'instapay' ? 'instapay' : 'vodafone', number: String(r.number || '').trim().slice(0, 60), name: String(r.name || '').trim().slice(0, 60) })).filter((r) => r.number);
-    const { error } = await supabase.from('platform_kv').upsert({ key: 'payment_numbers', value: JSON.stringify(clean), updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    const w = await supabase.from('platform_kv').upsert({ key: 'payment_whatsapp', value: String(wa || '').replace(/[^\d+]/g, '').slice(0, 20), updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    const { error: e2 } = await supabase.from('platform_kv').upsert({ key: 'payment_numbers', value: JSON.stringify(clean), updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    const error = e2 || w.error;
     if (!error) setRows(clean);
     setMsg(error ? 'خطأ: ' + error.message : 'تم الحفظ ✓ وظهرت عند التجار');
     setTimeout(() => setMsg(''), 3500);
@@ -27,6 +31,9 @@ function PaymentNumbers({ isDark }) {
     <div className={`p-4 rounded-2xl border mb-4 ${isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200'}`}>
       <h3 className="font-black text-sm mb-1">أرقام التحويل (فودافون كاش / إنستا باي)</h3>
       <p className="text-xs opacity-70 mb-3">الأرقام دي بتظهر للتاجر في «الباقات والشحن» و«رصيدك» فوراً بعد الحفظ، مع اسم طريقة التحويل.</p>
+      <label className="block mb-3 text-xs font-bold">رقم واتساب الإدارة (التاجر يبعتلك عليه صورة التحويل)
+        <input dir="ltr" value={wa} onChange={(e) => setWa(e.target.value)} placeholder="01XXXXXXXXX" className={inp + ' block w-full mt-1 font-normal'} />
+      </label>
       {rows.map((r, i) => (
         <div key={i} className="flex flex-wrap gap-2 mb-2 items-center">
           <select value={r.method === 'instapay' ? 'instapay' : 'vodafone'} onChange={(e) => set(i, 'method', e.target.value)} className={inp}>
