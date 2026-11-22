@@ -79,16 +79,23 @@ function usePaymentNumbers() {
 }
 
 /* بعد إنشاء الطلب: زرار يفتح واتساب الإدارة برسالة جاهزة، والتاجر يبعت صورة التحويل هناك */
-function WaSend({ wa, text, onDone }) {
-  if (!wa) return <div className="card" style={{ marginBottom: 16, borderColor: '#38a169' }}>✅ تم إرسال طلبك. ابعت صورة التحويل للإدارة على واتساب.<div style={{ marginTop: 8 }}><button type="button" className="btn" onClick={onDone}>تمام</button></div></div>;
+function WaLogo({ size = 28 }) {
   return (
-    <div className="card" style={{ marginBottom: 16, borderColor: '#38a169' }}>
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true"><path fill="#fff" d="M16.04 4C9.4 4 4 9.37 4 15.98c0 2.12.55 4.18 1.6 6L4 28l6.2-1.6a12.1 12.1 0 0 0 5.84 1.49h.01C22.68 27.9 28 22.53 28 15.92 28 9.33 22.68 4 16.04 4Zm0 21.8h-.01a10 10 0 0 1-5.1-1.4l-.37-.22-3.68.95.98-3.58-.24-.37a9.9 9.9 0 0 1-1.52-5.2c0-5.5 4.5-9.97 10.04-9.97 5.52 0 10.02 4.47 10.02 9.97 0 5.5-4.5 9.82-10.12 9.82Zm5.5-7.45c-.3-.15-1.78-.88-2.06-.98-.28-.1-.48-.15-.68.15-.2.3-.78.98-.95 1.18-.18.2-.35.22-.65.07-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.78-1.67-2.08-.18-.3-.02-.46.13-.6.14-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.68-1.64-.93-2.24-.25-.58-.5-.5-.68-.5h-.58c-.2 0-.53.08-.8.38-.28.3-1.05 1.02-1.05 2.5s1.08 2.9 1.23 3.1c.15.2 2.1 3.2 5.1 4.48.7.3 1.26.48 1.7.62.72.23 1.37.2 1.88.12.57-.08 1.78-.72 2.03-1.42.25-.7.25-1.3.18-1.42-.08-.13-.28-.2-.58-.35Z"/></svg>
+  );
+}
+function WaSend({ wa, text, onDone }) {
+  if (!wa) return <div className="card" style={{ marginBottom: 16, borderColor: '#38a169' }}>✅ تم تسجيل طلبك. ابعت صورة التحويل للإدارة على واتساب.<div style={{ marginTop: 8 }}><button type="button" className="btn" onClick={onDone}>تمام</button></div></div>;
+  const href = waLink(wa, text);
+  return (
+    <div className="card" style={{ marginBottom: 16, borderColor: '#25D366', borderWidth: 2, textAlign: 'center' }}>
       <b>✅ تم تسجيل طلبك. الخطوة الأخيرة:</b>
-      <p className="mut dsc">ابعت صورة التحويل على واتساب الإدارة عشان نفعّل طلبك.</p>
-      <div className="row" style={{ marginBottom: 0 }}>
-        <a className="btn p" href={waLink(wa, text)} target="_blank" rel="noopener noreferrer">📲 ابعت صورة التحويل على واتساب</a>
-        <button type="button" className="btn" onClick={onDone}>تم</button>
-      </div>
+      <p className="mut dsc">دوس على علامة واتساب وابعت صورة التحويل للإدارة عشان نفعّل طلبك.</p>
+      <a href={href} target="_blank" rel="noopener noreferrer" aria-label="ابعت صورة التحويل على واتساب" title="ابعت صورة التحويل على واتساب"
+        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 76, height: 76, borderRadius: '50%', background: '#25D366', boxShadow: '0 6px 18px rgba(37,211,102,.45)' }}>
+        <WaLogo size={44} />
+      </a>
+      <div style={{ marginTop: 10 }}><button type="button" className="btn sm" onClick={onDone}>تم</button></div>
     </div>
   );
 }
