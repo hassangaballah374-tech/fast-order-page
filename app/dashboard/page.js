@@ -241,6 +241,8 @@ export default function MerchantDashboard() {
     if (first) go(first);
   }, [ready, tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const pend = usePending(uid); /* قبل أي return مبكر (قواعد الـ hooks) */
+
   if (!ready) {
     return (
       <div className="app" dir="rtl" style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -257,7 +259,6 @@ export default function MerchantDashboard() {
   const isOpen = (g) => (open[g] ?? curGroup === g);
   const initial = (store?.store_name || 'S').trim().charAt(0).toUpperCase();
 
-  const pend = usePending(uid);
   const NavItem = ({ it, sub }) => (lockedId(it.id) ? null : (
     <button type="button" className={'nv' + (tab === it.id ? ' act' : '') + (lockedId(it.id) ? ' lk' : '')} onClick={() => go(it.id)}>
       {it.i && !sub && <span className="ic">{it.i}</span>}
