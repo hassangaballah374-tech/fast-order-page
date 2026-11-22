@@ -62,6 +62,36 @@ function usePaymentNote() {
   return t;
 }
 
+/* أرقام التحويل اللي حطّتها الإدارة (فودافون كاش / إنستا باي) */
+const PAY_LABEL = { vodafone: 'فودافون كاش', instapay: 'إنستا باي' };
+function usePaymentNumbers() {
+  const [rows, setRows] = useState([]);
+  useEffect(() => {
+    supabase.from('platform_kv').select('value').eq('key', 'payment_numbers').maybeSingle().then(({ data }) => {
+      try { const j = JSON.parse(data?.value || '[]'); setRows(Array.isArray(j) ? j.filter((r) => r && r.number) : []); } catch { setRows([]); }
+    });
+  }, []);
+  return rows;
+}
+function PayNumbers({ rows }) {
+  const [done, setDone] = useState('');
+  if (!rows.length) return null;
+  const copy = (num) => { try { navigator.clipboard.writeText(num); setDone(num); setTimeout(() => setDone(''), 1500); } catch { /* تجاهل */ } };
+  return (
+    <div style={{ margin: '8px 0 12px' }}>
+      <b style={{ fontSize: 13 }}>حوّل على أحد الأرقام دي:</b>
+      {rows.map((r, i) => (
+        <div key={i} className="row" style={{ margin: '6px 0 0', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <Badge c={r.method === 'instapay' ? '#6b46c1' : '#e53e3e'}>{PAY_LABEL[r.method] || 'تحويل'}</Badge>
+          <span className="num" dir="ltr" style={{ fontWeight: 800, fontSize: 16 }}>{r.number}</span>
+          {r.name ? <span className="mut dsc" style={{ margin: 0 }}>{r.name}</span> : null}
+          <button type="button" className="btn sm" onClick={() => copy(r.number)}>{done === r.number ? 'تم النسخ ✓' : 'نسخ'}</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* بطاقات الرصيد: بالدولار والجنيه + الطلبات الكلية والمتبقية */
 function WalletStats({ store, rate, pc }) {
   const c = commissionOf(store, pc);
@@ -125,6 +155,7 @@ export function PlansScreen() {
   const [plans, setPlans] = useState(null);
   const reqs = useTable('plan_requests', { order: 'created_at', limit: 50, filter: { store_id: uid } });
   const note = usePaymentNote();
+  const payNums = usePaymentNumbers();
   const pc = usePlatformCommission();
   const { rate } = useUsdRate();
   const [sel, setSel] = useState(null);
@@ -174,7 +205,7 @@ export function PlansScreen() {
                 <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--b)', margin: '6px 0 0' }}>{usd(p.price)}</div>
                 {rate ? <div className="mut dsc" style={{ margin: '0 0 6px' }}>≈ {egpFmt(toEgp(p.price, rate))}</div> : null}
                 <p className="mut dsc">{monthly ? 'طلبات غير محدودة · 30 يوم' : `≈ ${Math.floor(n(p.price) / c)} طلب (عمولة ${usd(c)} للطلب المُسلَّم)`}</p>
-                <ul style={{ margin: '8px 0 12px', paddingInlineStart: 18, fontSize: 13 }}>{(p.features || []).map((f, i) => <li key={i}>{f}</li>)}</ul>
+                <ul style={{ margin: '8px 0 12px', paddingInlineStart: 18, fontSize: 13 }}>{(p.features || []).map((f, i) => <li key={i}>{String(f).replace(/\{commission\}/g, `${Math.round(c * 1000) / 10} سنت`)}</li>)}</ul>
                 <button type="button" className={'btn ' + (p.highlight ? 'p' : '')} style={{ width: '100%' }} disabled={hasPending} onClick={() => { setSel(p); setProof(''); }}>{hasPending ? 'لديك طلب قيد المراجعة' : (monthly ? 'اشترك شهرياً' : 'اشحن الآن')}</button>
               </div>
             );
@@ -186,6 +217,7 @@ export function PlansScreen() {
         <div className="card" style={{ marginBottom: 16, borderColor: 'var(--b)' }}>
           <h3>{sel.name} — {usd(sel.price)}{rate ? ` ≈ ${egpFmt(toEgp(sel.price, rate))}` : ''}</h3>
           <p className="mut dsc">حوّل المبلغ بالجنيه المصري بحسب سعر الدولار الحالي ثم ارفع صورة التحويل.</p>
+          <PayNumbers rows={payNums} />
           {note ? <p className="mut dsc" style={{ whiteSpace: 'pre-line' }}>{note}</p> : null}
           <Field l="صورة إثبات التحويل"><ImagePick value={proof} onChange={setProof} uid={uid} folder="proofs" /></Field>
           <Field l="ملاحظات (اختياري)"><input className="in" maxLength={200} value={txt} onChange={(e) => setTxt(e.target.value)} /></Field>
@@ -219,6 +251,7 @@ export function BalanceScreen() {
   const { store, uid, say, go } = useDash();
   const t = useTable('store_wallet_tx', { order: 'created_at', limit: 50 });
   const note = usePaymentNote();
+  const payNums = usePaymentNumbers();
   const pc = usePlatformCommission();
   const { rate } = useUsdRate();
   const [amount, setAmount] = useState('');
@@ -247,6 +280,7 @@ export function BalanceScreen() {
       {pending.length > 0 && <div className="card" style={{ marginBottom: 16 }}>طلبات شحن قيد المراجعة: <b>{pending.length}</b> ({usd(pending.reduce((a, x) => a + n(x.amount_usd), 0))})</div>}
       <div className="card">
         <h3>طلب شحن رصيد</h3>
+        <PayNumbers rows={payNums} />
         {note ? <p className="mut dsc" style={{ whiteSpace: 'pre-line' }}>{note}</p> : <p className="mut dsc">حوّل المبلغ ثم ارفع صورة التحويل. يُضاف الرصيد بعد تأكيد الإدارة.</p>}
         <div className="fgrid">
           <Field l="المبلغ (دولار)" hint={n(amount) > 0 && rate ? `≈ ${egpFmt(toEgp(amount, rate))} · يغطي ${Math.floor(n(amount) / commissionOf(store, pc))} طلب` : 'مثال: 10'}><input className="in num" type="number" min="1" max="10000" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
