@@ -52,11 +52,10 @@ function ReviewForm({ productId }) {
 }
 
 export default function ProductView({ product: p, catalog = [], reviews = [], stats = { count: 0, avg: 0 }, blocks = [] }) {
-  const { slug, cfg, cur, base, add, setBump: saveBump, pages } = useShop();
+  const { slug, cfg, cur, base, add, setBump: saveBump } = useShop();
   const router = useRouter();
   const [img, setImg] = useState(0);
   const [spinOn, setSpinOn] = useState(false);
-  const swipe = useRef(null);
   const [pinned, setPinned] = useState(true);
   const [qty, setQty] = useState(1);
   const [bumpOn, setBumpOn] = useState(false);
@@ -131,7 +130,6 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   };
 
   const onePage = cfg.checkout?.one_page !== false;
-  const retPage = (pages || []).find((x) => /returns|refund|استرجاع|استبدال|ارجاع/i.test(`${x.slug} ${x.title}`)) || null;
 
   /* اطلب الآن: يسجّل «بدء إتمام الشراء» ثم يودّي العميل لنموذج الطلب */
   const buyNow = () => {
@@ -157,11 +155,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
           </div>
         ) : null}
         {spinVideo && spinOn ? <SpinViewer key={`${spinVideo}|${spinTop}|${spinBot}`} src={spinVideo} top={spinTop} bottom={spinBot} title={p.title} /> : <>
-        <div className="gal-mw"
-          onTouchStart={(e) => { swipe.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
-          onTouchEnd={(e) => { const s0 = swipe.current; swipe.current = null; if (!s0 || gi.list.length < 2) return; const dx = e.changedTouches[0].clientX - s0.x; const dy = e.changedTouches[0].clientY - s0.y; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { setPinned(false); setImg((img + (dx < 0 ? 1 : -1) + gi.list.length) % gi.list.length); } }}>
-          <FlipPic key={mainImg} className="gal-main gal-sw" front={mainImg} back={onFront ? gi.back : ''} alt={p.title} fetchPriority="high" />
-        </div>
+        <FlipPic key={mainImg} className="gal-main gal-sw" front={mainImg} back={onFront ? gi.back : ''} alt={p.title} fetchPriority="high" />
           {gi.list.length > 1 && (
             <div className="gal-nav">
               <button type="button" onClick={() => { setPinned(false); setImg((img - 1 + gi.list.length) % gi.list.length); }} aria-label="السابق">→</button>
@@ -170,9 +164,6 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
             </div>
           )}
         </>}
-          {!(spinVideo && spinOn) && gi.list.length > 0 ? (
-            <div className="gal-stack">{gi.list.map((src, i) => i === 0 && gi.back ? <FlipPic key={i} className="gs-i" front={src} back={gi.back} alt={p.title} fetchPriority="high" /> : <div key={i} className="gs-i"><img src={src} alt={i === 0 ? p.title : ''} loading={i < 2 ? 'eager' : 'lazy'} /></div>)}</div>
-          ) : null}
           {gi.list.length > 1 && !(spinVideo && spinOn) && (
             <div className="gal-th">{gi.list.map((s, i) => <button key={i} type="button" className={i === img && !(pinned && colorImg) ? 'act' : ''} onClick={() => { setPinned(false); setImg(i); }} aria-label={`صورة ${i + 1}`}><img src={s} alt="" loading="lazy" /></button>)}</div>
           )}
@@ -253,19 +244,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
             <div><i>🚚</i>توصيل لباب البيت</div>
             {waOk ? <div><i>💬</i>دعم على واتساب</div> : null}
           </div>
-          <div className="acc">
-            {p.description ? <details open><summary>الوصف</summary><p className="desc">{p.description}</p></details> : null}
-            <details><summary>الدفع والشحن</summary>
-              <ul>
-                <li>الدفع نقداً عند الاستلام{Number(cfg.payment?.cod_fee) > 0 ? ` (رسوم ${money(Number(cfg.payment.cod_fee), cur)})` : ''}، وتقدر تعاين الطلب قبل ما تدفع.</li>
-                {Number(cfg.shipping?.free_over) > 0 ? <li>شحن مجاني للطلبات فوق {money(Number(cfg.shipping.free_over), cur)}.</li> : null}
-                <li>مصاريف الشحن بتظهر لك قبل التأكيد حسب المحافظة.</li>
-                <li>بتقدر تتابع حالة طلبك من صفحة «تتبع الطلب».</li>
-              </ul>
-            </details>
-            {retPage ? <details><summary>الاستبدال والاسترجاع</summary><p className="desc">اقرأ سياسة المتجر كاملة: <Link href={`${base}/page/${retPage.slug}`} style={{ textDecoration: 'underline', fontWeight: 700 }}>{retPage.title}</Link></p></details> : null}
-            {sizeChart && groups.some((g) => isSizeGroup(g.name)) ? <details><summary>دليل المقاسات</summary><p className="desc">اختر المقاس من الأعلى وهتلاقي زرار «مقاسي إيه؟» يساعدك تحدد المقاس المناسب من طولك ووزنك.</p></details> : null}
-          </div>
+          {p.description ? <div style={{ marginTop: 20 }}><h3 style={{ marginBottom: 6 }}>الوصف</h3><p className="desc">{p.description}</p></div> : null}
         </div>
       </div>
 
