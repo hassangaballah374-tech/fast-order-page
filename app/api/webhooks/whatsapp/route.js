@@ -57,12 +57,27 @@ export async function POST(req) {
     for (const m of ch?.value?.messages || []) msgs.push(m);
   }
 
+  /* ردود نصية: 1 / تأكيد / تمام = تأكيد — 2 / إلغاء / لا = إلغاء */
+  const norm = (t) => String(t || '').trim().replace(/[\u064B-\u065F\u0640]/g, '').replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[^\p{L}\p{N} ]/gu, '').trim().toLowerCase();
+  const YES = new Set(['1', 'تأكيد', 'تاكيد', 'اكد', 'أكد', 'أأكد', 'اأكد', 'تمام', 'موافق', 'ايوه', 'ايوا', 'أيوه', 'نعم', 'اه', 'yes', 'ok', 'confirm']);
+  const NO = new Set(['2', 'إلغاء', 'الغاء', 'الغي', 'ألغي', 'الغيه', 'لا', 'لأ', 'مش عايز', 'no', 'cancel']);
+  const textAction = (t) => { const x = norm(t); return YES.has(x) ? 'confirm' : NO.has(x) ? 'cancel' : (/^1 /.test(x) ? 'confirm' : /^2 /.test(x) ? 'cancel' : ''); };
+
   for (const m of msgs.slice(0, 20)) {
-    const payload = String(m?.button?.payload || m?.interactive?.button_reply?.id || '');
-    const [action, id] = payload.split(':');
+    let payload = String(m?.button?.payload || m?.interactive?.button_reply?.id || '');
+    let [action, id] = payload.split(':');
+    let o = null;
+    if (!payload && m?.type === 'text') {
+      action = textAction(m?.text?.body);
+      if (!action) continue;
+      const { data: rows } = await sb.from('orders').select('*').eq('store_id', sid).eq('status', 'pending').order('created_at', { ascending: false }).limit(200);
+      o = (rows || []).find((r) => toIntl(r.customer_phone) === toIntl(m.from)) || null;
+      if (!o) continue;
+      id = o.id;
+    }
     if (!['confirm', 'cancel'].includes(action) || !id) continue;
 
-    const { data: o } = await sb.from('orders').select('*').eq('id', id).eq('store_id', sid).maybeSingle();
+    if (!o) { const { data } = await sb.from('orders').select('*').eq('id', id).eq('store_id', sid).maybeSingle(); o = data; }
     if (!o) continue;
     if (toIntl(o.customer_phone) !== toIntl(m.from)) continue; // لازم الرد يجي من نفس رقم العميل
     const prev = o.status || 'pending';
