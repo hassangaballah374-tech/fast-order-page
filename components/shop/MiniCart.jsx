@@ -2,13 +2,15 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useShop } from './StoreContext';
+import { useShop, hit } from './StoreContext';
+import { track } from './tracker';
 import { money } from '../../lib/storeKit';
 import { lockScroll, unlockIfIdle } from './scrollLock';
 
 /* سلة جانبية: تُفتح بحدث 'spike:cart-open' (بعد "أضف للسلة" أو الضغط على أيقونة السلة) */
 export default function MiniCart() {
-  const { cfg, cur, base, cart, setQty, remove } = useShop();
+  const { slug, cfg, cur, base, cart, setQty, remove, add } = useShop();
+  const [recs, setRecs] = useState([]);
   const [open, setOpen] = useState(false);
   const path = usePathname();
 
@@ -27,7 +29,22 @@ export default function MiniCart() {
   }, [open]);
   useEffect(() => { unlockIfIdle(); }, [path]);
 
+  /* «قد يعجبك»: بنجيبها مرة لما السلة تتفتح (ومش بتتغير وانت بتضيف عشان ما تتلخبطش) */
+  useEffect(() => {
+    if (!open || cfg.cart?.recs === false) return;
+    const ids = [...new Set(cart.map((i) => String(i.product_id)))];
+    fetch('/api/store/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, recs: ids }) })
+      .then((r) => r.json()).then((j) => setRecs(Array.isArray(j.items) ? j.items : [])).catch(() => setRecs([]));
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!open) return null;
+  const addRec = (p) => {
+    add({ product_id: p.id, title: p.title, image: p.image, price: p.price, qty: 1, options: {} });
+    track('AddToCart', { value: p.price, items: [{ id: p.id, title: p.title, price: p.price, qty: 1 }] });
+    hit(slug, 'cart', { product: String(p.id) });
+  };
+  const inCart = new Set(cart.map((i) => String(i.product_id)));
+  const sugg = recs.filter((p) => !inCart.has(String(p.id))).slice(0, 4);
   const sub = cart.reduce((a, i) => a + (Number(i.price) || 0) * (Number(i.qty) || 0), 0);
   const free = Number(cfg.shipping?.free_over) || 0;
   const showP = free > 0 && cfg.shipping?.show_progress !== false;
@@ -65,6 +82,23 @@ export default function MiniCart() {
             </div>
           ))}
         </div>
+        {cart.length > 0 && sugg.length > 0 && (
+          <div className="mc-rec">
+            <b className="mc-rh">قد يعجبك</b>
+            <div className="mc-rl">
+              {sugg.map((p) => (
+                <div className="mc-rc" key={p.id}>
+                  <Link href={`${base}/p/${p.id}`} className="mc-ri">{p.image ? <img src={p.image} alt="" loading="lazy" /> : null}</Link>
+                  <Link href={`${base}/p/${p.id}`} className="mc-rt">{p.title}</Link>
+                  <span className="num mc-rp">{money(p.price, cur)}</span>
+                  {p.needs
+                    ? <Link href={`${base}/p/${p.id}`} className="mc-ra">اختر المقاس</Link>
+                    : <button type="button" className="mc-ra" onClick={() => addRec(p)}>+ أضف</button>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {cart.length > 0 && (
           <div className="mc-ft">
             <div className="mc-sub"><span>الإجمالي الفرعي</span><b className="num">{money(sub, cur)}</b></div>

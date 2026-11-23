@@ -1076,4 +1076,17 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .so-all{display:block;width:100%;margin-top:18px;border:0;background:var(--c);color:#fff;font:inherit;font-weight:800;font-size:15px;padding:14px;border-radius:14px;cursor:pointer}
 @media(max-width:699px){.spk .so-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.spk .so-top{padding:10px 12px}.spk .so-body{padding:4px 12px 40px}}
 @media(prefers-reduced-motion:reduce){.spk .so{animation:none}.spk .so-img img{transition:none}}
+
+/* قد يعجبك في السلة */
+.spk .mc-rec{border-top:1px solid var(--ln);padding:12px 0 10px;background:var(--card)}
+.spk .mc-rh{display:block;padding:0 18px 8px;font-size:14px;font-weight:900}
+.spk .mc-rl{display:flex;gap:10px;overflow-x:auto;padding:0 0 4px;scroll-snap-type:x proximity;scroll-padding-inline:18px;-webkit-overflow-scrolling:touch}
+.spk .mc-rc:first-child{margin-inline-start:18px}.spk .mc-rc:last-child{margin-inline-end:18px}
+.spk .mc-rc{flex:0 0 112px;display:flex;flex-direction:column;gap:4px;scroll-snap-align:start;min-width:0}
+.spk .mc-ri{display:block;aspect-ratio:1/1;border-radius:12px;background:var(--ln);overflow:hidden}
+.spk .mc-ri img{width:100%;height:100%;object-fit:cover;display:block}
+.spk .mc-rt{font-size:12px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spk .mc-rp{font-size:12px}
+.spk .mc-ra{border:1.5px solid var(--c);background:transparent;color:var(--c);font:inherit;font-size:12px;font-weight:800;border-radius:999px;padding:6px 8px;cursor:pointer;text-align:center;display:block}
+.spk .mc-ra:hover{background:var(--c);color:#fff}
 `;
