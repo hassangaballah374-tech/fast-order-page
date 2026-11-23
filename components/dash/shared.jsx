@@ -129,7 +129,12 @@ export function useWa() {
     order_no: o.order_no ?? '', total: o.total !== undefined ? money(o.total, cfg.currency) : '', tracking: o.tracking || '',
     coupon_line: cfg.retarget.coupon_code ? ` واستخدم كود ${cfg.retarget.coupon_code} لخصم إضافي` : '',
   });
-  const message = (tplKey, o) => fillTemplate(tplKey === 'verify' ? cfg.verify.message : (cfg.wa_templates[tplKey] ?? tplKey), vars(o));
+  /* رسائل التأكيد/التوثيق بنضيفلها اختيارات ثابتة يرد بيها العميل (رقم واحد = تأكيد، رقم اتنين = إلغاء) */
+  const CHOICES = '\n\n' + '\u{1F447}' + ' اختار رد واحد:\n1 \u{2705} تمام، أأكد الطلب\n2 \u{274C} لا، ألغي الطلب';
+  const message = (tplKey, o) => {
+    const t = fillTemplate(tplKey === 'verify' ? cfg.verify.message : (cfg.wa_templates[tplKey] ?? tplKey), vars(o));
+    return (tplKey === 'confirm' || tplKey === 'verify') && !/اختار رد/.test(t) ? t + CHOICES : t;
+  };
   const url = (phone, text) => waLink(phone, text);
   const log = async (phone, template) => {
     try { await supabase.from('store_wa_log').insert([{ store_id: uid, phone, template }]); } catch { /* تجاهل */ }
