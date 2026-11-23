@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useShop } from './StoreContext';
+import WaContact from './WaContact';
 import { STATUS, trackUrl, normalizePhone } from '../../lib/storeKit';
 
 const FLOW = [['pending', 'تم استلام الطلب'], ['confirmed', 'تم تأكيد الطلب'], ['shipped', 'خرج للشحن'], ['delivered', 'تم التسليم']];
@@ -86,6 +87,7 @@ export default function TrackView() {
             <p key={k}>{i.title} × <span className="num">{i.qty}</span>{i.options && Object.keys(i.options).length ? <span className="mut"> ({Object.values(i.options).join(' / ')})</span> : null}</p>
           ))}
           <p style={{ marginTop: 10 }}>الإجمالي: <b className="num">{Math.round(res.total)} {cur}</b> · الدفع عند الاستلام</p>
+          <WaContact label="كلّم صاحب المتجر عن طلبك" text={`مرحباً، عايز أستفسر عن طلبي رقم #${res.order_no}`} style={{ marginTop: 12 }} />
         </div>
       )}
     </section>
