@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useShop, captureUtm, hit } from './StoreContext';
 import { track } from './tracker';
 import SearchBox from './SearchBox';
+import MegaMenu from './MegaMenu';
 import BottomNav from './BottomNav';
 import TryOnDock from './TryOnDock';
 import MiniCart from './MiniCart';
@@ -170,6 +171,7 @@ export default function Shell({ children, footerExtra }) {
           <nav className="nav" aria-label="القائمة">
             <Link href={base}>الرئيسية</Link>
             <Link href={`${base}/products`}>كل المنتجات</Link>
+            <MegaMenu />
             {(cfg.looks?.enabled !== false && (cfg.looks?.items || []).length) ? <Link href={`${base}/looks`}>الإطلالات</Link> : null}
             {(cfg.fitting?.enabled && ((cfg.fitting?.models || []).length || cfg.fitting?.builtin !== false) && Object.keys(cfg.fitting?.items || {}).length) ? <Link href={`${base}/fitting`}>غرفة القياس</Link> : null}
             <Link href={`${base}/favorites`}>♥ المفضلة</Link>

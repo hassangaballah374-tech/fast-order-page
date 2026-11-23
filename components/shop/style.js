@@ -1089,4 +1089,22 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .mc-rp{font-size:12px}
 .spk .mc-ra{border:1.5px solid var(--c);background:transparent;color:var(--c);font:inherit;font-size:12px;font-weight:800;border-radius:999px;padding:6px 8px;cursor:pointer;text-align:center;display:block}
 .spk .mc-ra:hover{background:var(--c);color:#fff}
+
+/* قائمة الأقسام الكبيرة */
+.spk .nav{position:static}
+.spk .mg{display:inline-flex;align-items:center}
+.spk .mg-b{border:0;background:none;color:var(--mut);font:inherit;font-weight:700;font-size:14px;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:4px}
+.spk .mg-b:hover,.spk .mg-b.on{color:var(--ink)}
+.spk .mg-b i{font-style:normal;font-size:10px;transition:transform .2s}.spk .mg-b.on i{transform:rotate(180deg)}
+.spk .mega{position:absolute;top:calc(100% - 6px);inset-inline:0;margin-inline:auto;width:min(100%,980px);background:var(--card);border:1px solid var(--ln);border-radius:18px;box-shadow:0 22px 50px rgba(0,0,0,.16);padding:20px;z-index:60;animation:megain .16s ease-out}
+@keyframes megain{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.spk .mega-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:14px}
+.spk .nav .mega-c{color:var(--ink)}.spk .nav .mega-all{color:var(--c)}
+.spk .mega-c{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink);text-align:center;min-width:0}
+.spk .mega-i{width:100%;aspect-ratio:1/1;border-radius:16px;background:var(--ln);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--mut)}
+.spk .mega-i img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.spk .mega-c:hover .mega-i img{transform:scale(1.06)}
+.spk .mega-n{font-size:13px;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spk .mega-all{display:block;margin-top:16px;padding-top:12px;border-top:1px solid var(--ln);text-align:center;font-weight:800;font-size:14px;color:var(--c)}
+@media(prefers-reduced-motion:reduce){.spk .mega{animation:none}.spk .mega-i img{transition:none}}
 `;
