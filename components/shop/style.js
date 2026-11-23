@@ -304,7 +304,7 @@ export const SHOP_CSS = `
 .spk .mc-ship{padding:12px 18px;background:color-mix(in srgb,var(--c) 10%,transparent);font-size:13px;font-weight:700}
 .spk .mc-bar{height:7px;border-radius:99px;background:var(--ln);margin-top:8px;overflow:hidden}
 .spk .mc-bar i{display:block;height:100%;background:var(--c);border-radius:99px;transition:width .4s}
-.spk .mc-list{flex:1;overflow-y:auto;padding:6px 18px}
+.spk .mc-list{flex:1 1 auto;min-height:190px;overflow-y:auto;padding:6px 18px}
 .spk .mc-it{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--ln)}
 .spk .mc-it img,.spk .mc-ph{width:64px;height:64px;border-radius:12px;object-fit:cover;background:var(--ln);flex:none}
 .spk .mc-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;font-size:13.5px}
@@ -1078,16 +1078,18 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 @media(prefers-reduced-motion:reduce){.spk .so{animation:none}.spk .so-img img{transition:none}}
 
 /* قد يعجبك في السلة */
-.spk .mc-rec{border-top:1px solid var(--ln);padding:12px 0 10px;background:var(--card)}
-.spk .mc-rh{display:block;padding:0 18px 8px;font-size:14px;font-weight:900}
-.spk .mc-rl{display:flex;gap:10px;overflow-x:auto;padding:0 0 4px;scroll-snap-type:x proximity;scroll-padding-inline:18px;-webkit-overflow-scrolling:touch}
+.spk .mc-rec{flex:none;border-top:1px solid var(--ln);padding:10px 0 8px;background:var(--card)}
+.spk .mc-rh{display:block;padding:0 18px 6px;font-size:13px;font-weight:900}
+.spk .mc-rl{display:flex;gap:10px;overflow-x:auto;padding:0 0 2px;scrollbar-width:none;scroll-snap-type:x proximity;scroll-padding-inline:18px;-webkit-overflow-scrolling:touch}
 .spk .mc-rc:first-child{margin-inline-start:18px}.spk .mc-rc:last-child{margin-inline-end:18px}
-.spk .mc-rc{flex:0 0 112px;display:flex;flex-direction:column;gap:4px;scroll-snap-align:start;min-width:0}
-.spk .mc-ri{display:block;aspect-ratio:1/1;border-radius:12px;background:var(--ln);overflow:hidden}
+.spk .mc-rl::-webkit-scrollbar{display:none}
+.spk .mc-rc{flex:0 0 86px;display:flex;flex-direction:column;gap:4px;scroll-snap-align:start;min-width:0}
+.spk .mc-ri{display:block;aspect-ratio:1/1;border-radius:10px;background:var(--ln);overflow:hidden}
 .spk .mc-ri img{width:100%;height:100%;object-fit:cover;display:block}
-.spk .mc-rt{font-size:12px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.spk .mc-rp{font-size:12px}
-.spk .mc-ra{border:1.5px solid var(--c);background:transparent;color:var(--c);font:inherit;font-size:12px;font-weight:800;border-radius:999px;padding:6px 8px;cursor:pointer;text-align:center;display:block}
+.spk .mc-rt{font-size:11.5px;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spk .mc-rp{font-size:11.5px}
+.spk .mc-ra{border:1.5px solid var(--c);background:transparent;color:var(--c);font:inherit;font-size:11px;font-weight:800;border-radius:999px;padding:5px 6px;cursor:pointer;text-align:center;display:block}
+@media(max-height:700px){.spk .mc-rec{display:none}}
 .spk .mc-ra:hover{background:var(--c);color:#fff}
 
 /* قائمة الأقسام الكبيرة */
