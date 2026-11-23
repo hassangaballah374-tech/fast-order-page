@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useShop, getUtm, hit } from './StoreContext';
 import { track } from './tracker';
+import WaContact from './WaContact';
 import { fireInitiateCheckout } from './icGuard';
 import { loadEgAreas, OTHER_VILLAGE } from '../../lib/egAreas';
 import { GOVERNORATES, money, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
@@ -194,7 +195,9 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
       ) : null}
 
       {err ? <div className="err">{err}</div> : null}
+      {err ? <WaContact label="تواصل معنا على واتساب" text={`مرحباً، حصلت لي مشكلة وأنا بعمل طلب: ${err}`} style={{ marginBottom: 10 }} /> : null}
       <button className="b p blk" type="submit" disabled={busy || !items.length || !live}>{busy ? 'جاري إرسال الطلب...' : (buttonText || co.button_text || 'اطلب الآن')}</button>
+      <WaContact label="عندك سؤال؟ كلّم صاحب المتجر على واتساب" text={`مرحباً، عندي سؤال قبل ما أكمل طلبي${items.length ? ` (${items.slice(0, 3).map((i) => i.title).join('، ')})` : ''}`} style={{ marginTop: 6 }} />
       {co.trust_text ? <p className="mut center" style={{ fontSize: 13 }}>🔒 {co.trust_text}</p> : null}
       {co.terms_text ? <p className="mut center" style={{ fontSize: 12 }}>{co.terms_text}</p> : null}
     </form>

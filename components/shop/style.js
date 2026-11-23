@@ -1109,4 +1109,6 @@ html[dir="ltr"] .spk .mm-pn,[dir="ltr"] .spk .mm-pn{animation-name:mms-l}
 .spk .mega-n{font-size:13px;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .spk .mega-all{display:block;margin-top:16px;padding-top:12px;border-top:1px solid var(--ln);text-align:center;font-weight:800;font-size:14px;color:var(--c)}
 @media(prefers-reduced-motion:reduce){.spk .mega{animation:none}.spk .mega-i img{transition:none}}
+
+.spk .wac{display:grid;gap:6px}.spk .wac-n{font-size:13px;text-align:center}
 `;

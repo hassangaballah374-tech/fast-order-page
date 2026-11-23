@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useShop } from './StoreContext';
+import WaContact from './WaContact';
 import { STATUS, trackUrl, normalizePhone } from '../../lib/storeKit';
 
 const FLOW = [['pending', 'تم استلام الطلب'], ['confirmed', 'تم تأكيد الطلب'], ['shipped', 'خرج للشحن'], ['delivered', 'تم التسليم']];
@@ -75,7 +76,7 @@ export default function TrackView() {
           <p className="mut">أهلاً {res.first_name} · {res.governorate}</p>
           {idx >= 0 ? (
             <div className="tl">
-          {FLOW.map(([k, l], i) => <div key={k} className={(i <= idx ? 'done' : '') + (i === idx && idx < FLOW.length - 1 ? ' cur' : '')}><i>{i <= idx ? '✓' : ''}</i>{l}</div>)}
+          {FLOW.map(([k, l], i) => { const h = (res.history || []).filter((x) => x.status === k).pop(); return <div key={k} className={(i <= idx ? 'done' : '') + (i === idx && idx < FLOW.length - 1 ? ' cur' : '')}><i>{i <= idx ? '✓' : ''}</i>{l}{h ? <small className="mut" style={{ marginInlineStart: 'auto', fontSize: 12 }}>{new Date(h.at).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</small> : null}</div>; })}
             </div>
           ) : <p className="err" style={{ margin: '12px 0' }}>حالة الطلب: {st.ar}</p>}
           {res.tracking_number ? (
@@ -86,6 +87,7 @@ export default function TrackView() {
             <p key={k}>{i.title} × <span className="num">{i.qty}</span>{i.options && Object.keys(i.options).length ? <span className="mut"> ({Object.values(i.options).join(' / ')})</span> : null}</p>
           ))}
           <p style={{ marginTop: 10 }}>الإجمالي: <b className="num">{Math.round(res.total)} {cur}</b> · الدفع عند الاستلام</p>
+          <WaContact label="كلّم صاحب المتجر عن طلبك" text={`مرحباً، عايز أستفسر عن طلبي رقم #${res.order_no}`} style={{ marginTop: 12 }} />
         </div>
       )}
     </section>
