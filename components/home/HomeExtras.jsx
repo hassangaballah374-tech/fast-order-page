@@ -1,6 +1,8 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useBrand } from '../BrandContext';
+import { brandDeep } from '../../lib/brand';
 
 const AR = {
   kicker: 'ليه سبايك؟',
@@ -67,7 +69,8 @@ function Reveal({ children, delay = 0 }) {
 }
 
 export default function HomeExtras({ lang = 'ar', isDark = false }) {
-  const t = lang === 'en' ? EN : AR;
+  const { brand } = useBrand();
+  const t = brandDeep(lang === 'en' ? EN : AR, brand);
   const card = isDark ? 'bg-[#0A2A3E] border-slate-800' : 'bg-white border-slate-200';
   const mut = isDark ? 'text-slate-400' : 'text-slate-500';
   return (
