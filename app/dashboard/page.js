@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { DashCtx, Spin, Field } from '../../components/dash/ui';
 import { MENU, flatMenu, groupOf } from '../../components/dash/menu';
 import { SCREENS } from '../../components/dash/registry';
+import { useBrand } from '../../components/BrandContext';
 import SpikeLogo from '../../components/SpikeLogo';
 import Locked from '../../components/dash/Locked';
 import { LOCKS_KEY, EMPTY_LOCKS, parseLocks, isLocked } from '../../lib/featureLocks';
@@ -90,6 +91,9 @@ export default function MerchantDashboard() {
   const [origin, setOrigin] = useState('');
   const [setup, setSetup] = useState({ name: '', slug: '', busy: false });
   const rawRef = useRef({});
+  const { brand } = useBrand();
+  const brandRef = useRef(brand);
+  brandRef.current = brand;
   const toastT = useRef(null);
   const isAdmin = !staff && email.toLowerCase() === ADMIN_EMAIL;
 
@@ -108,7 +112,7 @@ export default function MerchantDashboard() {
 
   useEffect(() => {
     let off = false;
-    document.title = 'لوحة التاجر | سبايك';
+    document.title = `لوحة التاجر | ${brandRef.current.name}`;
     setOrigin(window.location.origin);
     (async () => {
       const { data } = await supabase.auth.getSession();
@@ -275,12 +279,12 @@ export default function MerchantDashboard() {
         <div className={'scrim' + (side ? ' on' : '')} onClick={() => setSide(false)} />
 
         <aside className={'side' + (side ? ' open' : '')} aria-label="القائمة الرئيسية">
-          <a href="/" className="spkbrand" title="سبايك"><SpikeLogo /></a>
+          <a href="/" className="spkbrand" title={brand.name}><SpikeLogo /></a>
           <div className="sidehd">
             <button type="button" className="lg" style={{ border: 0, cursor: 'pointer', padding: 0 }} title="صفحتي الشخصية" aria-label="صفحتي الشخصية" onClick={() => openProfile()}>{cfg.contact?.owner_photo || cfg.brand.logo ? <img src={cfg.contact?.owner_photo || cfg.brand.logo} alt="" /> : initial}</button>
             <div style={{ minWidth: 0 }}>
               <b style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{store?.store_name || 'متجري'}</b>
-              <small>لوحة تحكم سبايك</small>
+              <small>لوحة تحكم {brand.name}</small>
             </div>
           </div>
           <nav className="nvs">
@@ -313,7 +317,7 @@ export default function MerchantDashboard() {
             {storeUrl
               ? <a className="btn p" href={storeUrl} target="_blank" rel="noreferrer">🛍️ فتح متجري</a>
               : <span className="mut" style={{ fontSize: 12 }}>أنشئ متجرك لتظهر روابطه هنا</span>}
-            <small className="mut" style={{ textAlign: 'center' }}>✦ = إضافة حصرية من سبايك</small>
+            <small className="mut" style={{ textAlign: 'center' }}>✦ = إضافة حصرية من {brand.name}</small>
           </div>
         </aside>
 
