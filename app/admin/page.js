@@ -18,6 +18,7 @@ import { spikeLogout } from '../../components/SpikeSessionBar';
 import AdminBilling from '../../components/admin/AdminBilling';
 import AdminBell from '../../components/admin/AdminBell';
 import { useAdminPending } from '../../components/admin/useAdminPending';
+import AdminSettings from '../../components/admin/AdminSettings';
 import AdminProfile from '../../components/admin/AdminProfile';
 import PaymentNote from '../../components/admin/PaymentNote';
 import ThemeColors from '../../components/admin/ThemeColors'; 
@@ -114,6 +115,7 @@ export default function SpikeSuperAdminDashboard() {
   const TAB_PERM = {
     overview: null,
     profile: null,
+    settings: 'manage_admins',
     merchants: 'manage_stores',
     inventory: 'manage_stores',
     integrations: 'manage_stores',
@@ -605,6 +607,7 @@ export default function SpikeSuperAdminDashboard() {
     { id: 'inventory', title: t.navInventory, icon: '🏷️', count: products.length },
     { id: 'integrations', title: t.navIntegrations, icon: '🔌', count: null },
     { id: 'admins', title: t.navAdmins, icon: '🛡️', count: adminUsers.length + 1 },
+    { id: 'settings', title: isAr ? 'إعدادات المنصة' : 'Platform settings', icon: '⚙️', count: null },
     { id: 'rates', title: t.navRates, icon: '💱', count: null },
     { id: 'domains', title: t.navDomains, icon: '🌐', count: domains.length },
     { id: 'plans', title: t.navPlans, icon: '💎', count: null },
@@ -1479,6 +1482,7 @@ export default function SpikeSuperAdminDashboard() {
           {/* تبويب الباقات */}
          {shown('plans') && <><PaymentNote isDark={isDark} /><ThemeColors isDark={isDark} /><AdminBilling isDark={isDark} initial="plans" onChanged={fetchAllData} /></>}
           {shown('profile') && <AdminProfile isDark={isDark} role={isSuper ? (isAr ? 'سوبر أدمن' : 'Super admin') : (currentAdminRole || '')} />}
+          {shown('settings') && <AdminSettings isDark={isDark} />}
           {shown('promos') && <AdminPromos isDark={isDark} />}
           {shown('services') && <AdminServiceRequests isDark={isDark} />}
           {shown('apps') && <AdminApps isDark={isDark} />}
