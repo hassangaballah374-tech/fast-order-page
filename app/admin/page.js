@@ -18,6 +18,8 @@ import { spikeLogout } from '../../components/SpikeSessionBar';
 import AdminBilling from '../../components/admin/AdminBilling';
 import AdminBell from '../../components/admin/AdminBell';
 import { useAdminPending } from '../../components/admin/useAdminPending';
+import { useBrand } from '../../components/BrandContext';
+import { brandDeep } from '../../lib/brand';
 import AdminSettings from '../../components/admin/AdminSettings';
 import AdminProfile from '../../components/admin/AdminProfile';
 import PaymentNote from '../../components/admin/PaymentNote';
@@ -39,6 +41,7 @@ export default function SpikeSuperAdminDashboard() {
   const router = useRouter();
   const { lang, theme, toggleLanguage, toggleTheme, isDark, isMobileView, toggleMobileView } = useApp();
   const isAr = lang === 'ar';
+  const { brand } = useBrand();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
@@ -148,7 +151,7 @@ export default function SpikeSuperAdminDashboard() {
     } catch (err) { /* السجل لا يوقف العملية */ }
   };
 
-  const t = {
+  const tRaw = {
     ar: {
       dashboard: 'داشبورد',
       overviewTitle: 'نظرة عامة على أداء منصة سبايك',
@@ -218,6 +221,7 @@ export default function SpikeSuperAdminDashboard() {
       cancel: 'Cancel'
     }
   }[lang || 'ar'];
+  const t = brandDeep(tRaw, brand);
 
   // 🚪 دالة موحدة لجميع المستخدمين لتسجيل الخروج الآمن
   const handleLogout = () => spikeLogout(router);
