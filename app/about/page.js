@@ -1,7 +1,7 @@
 import InfoPage, { Sec, kv } from '../../components/InfoPage';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'من نحن | سبايك', description: 'سبايك منصة مصرية تساعد التاجر على بناء متجر إلكتروني بنظام الدفع عند الاستلام وإدارته من مكان واحد.' };
+export const metadata = { title: 'من نحن', description: 'سبايك منصة مصرية تساعد التاجر على بناء متجر إلكتروني بنظام الدفع عند الاستلام وإدارته من مكان واحد.' };
 
 export default async function AboutPage() {
   const o = await kv(['about_text']);
