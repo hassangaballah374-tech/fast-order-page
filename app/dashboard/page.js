@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { DashCtx, Spin, Field } from '../../components/dash/ui';
 import { MENU, flatMenu, groupOf } from '../../components/dash/menu';
-import { SCREENS } from '../../components/dash/registry';
+import { SCREENS } from '../../components/dash/registry'; 
 import { useBrand } from '../../components/BrandContext';
 import SpikeLogo from '../../components/SpikeLogo';
 import Locked from '../../components/dash/Locked';
