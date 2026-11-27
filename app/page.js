@@ -4,11 +4,14 @@ import Link from 'next/link';
 import { useApp } from '../context/AppContext';
 import SpikeBrandHeader, { SPIKE_LOGO_URL } from '../components/SpikeBrandHeader';
 import SpikeLogo from '../components/SpikeLogo';
+import { useBrand } from '../components/BrandContext';
+import { brandDeep } from '../lib/brand';
 import HomeExtras from '../components/home/HomeExtras';
 import PricingSection from '../components/home/PricingSection';
 
 export default function SpikeLandingPage() {
   const { lang, theme, toggleLanguage, toggleTheme } = useApp();
+  const { brand } = useBrand();
   const isDark = theme === 'dark';
 
   // أنيميشن كتابة كلمة SPIKE حرفاً بحرف
@@ -33,7 +36,7 @@ export default function SpikeLandingPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const t = {
+  const tRaw = {
     ar: {
       brandName: 'سبايك | SPIKE',
       whySpike: 'لماذا سبايك؟',
@@ -89,6 +92,7 @@ export default function SpikeLandingPage() {
       themeBtnLight: '☀️ Light',
     }
   }[lang];
+  const t = brandDeep(tRaw, brand);
 
   return (
     <div className={`min-h-screen font-sans transition-colors duration-300 ${
@@ -213,11 +217,11 @@ export default function SpikeLandingPage() {
 
            {/* اللوجو الكامل بالاسم: هالة متوهجة + طفو + تكبير عند التحويم */}
           <style>{`@keyframes spikeFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}`}</style>
-          <h1 className="sr-only">SPIKE | سبايك</h1>
+          <h1 className="sr-only">{brand.name_en} | {brand.name}</h1>
           <div className="flex justify-center">
             <div className="relative inline-flex items-center justify-center" style={{ animation: 'spikeFloat 6s ease-in-out infinite' }}>
               <div className="absolute -inset-6 bg-gradient-to-r from-[#0E8FC0] via-amber-400 to-[#0E8FC0] rounded-full blur-3xl opacity-35 animate-pulse" />
-              <SpikeLogo dark={isDark} alt="SPIKE | سبايك - Shop Smarter" className="relative h-56 sm:h-80 lg:h-96 w-auto object-contain transition-transform duration-500 hover:scale-110 cursor-pointer drop-shadow-2xl" />
+              <SpikeLogo dark={isDark} alt={`${brand.name_en} | ${brand.name}`} className="relative h-56 sm:h-80 lg:h-96 w-auto object-contain transition-transform duration-500 hover:scale-110 cursor-pointer drop-shadow-2xl" />
             </div>
           </div>
 

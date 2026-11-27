@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { useApp } from '../../context/AppContext';
+import { useBrand } from '../../components/BrandContext';
+import { brandDeep } from '../../lib/brand';
 import SpikeLogo from '../../components/SpikeLogo';
 
 const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
@@ -139,6 +141,7 @@ function OtpInput({ value, onChange, disabled, isDark }) {
 export default function SpikeRegisterAndAuthPage() {
   const router = useRouter();
   const { lang, toggleLanguage, toggleTheme, isDark } = useApp();
+  const { brand } = useBrand();
   const isAr = lang === 'ar';
 
   const [mode, setMode] = useState('register'); // register | login | forgot | verify | reset
@@ -151,7 +154,7 @@ export default function SpikeRegisterAndAuthPage() {
   const [theme, setTheme] = useState(DEFAULT_THEME);
   const isLoginMode = mode === 'login';
 
-  const t = {
+  const tRaw = {
     ar: {
       brand: 'سبايك', home: 'الرئيسية', pricing: 'الأسعار', subscribeBtn: 'اشترك الآن',
       loginTitle: 'تسجيل الدخول إلى حسابك', registerTitle: 'انشئ حساب مجاني', forgotTitle: 'استعادة كلمة المرور',
@@ -177,6 +180,7 @@ export default function SpikeRegisterAndAuthPage() {
       aboutTitle: 'About SPIKE', academyTitle: 'Academy', devsTitle: 'Developers', appTitle: 'Download App', rights: 'Copyright © SPIKE | 2026',
     },
   }[lang || 'ar'];
+  const t = brandDeep(tRaw, brand);
 
   const [msg, setMsg] = useState(null);
   const say = (text, kind = 'err', forMode) => setMsg({ text, kind, mode: forMode || mode });
@@ -430,9 +434,9 @@ export default function SpikeRegisterAndAuthPage() {
       <header className={`rg-head sticky top-0 z-40 border-b backdrop-blur-xl transition-colors ${isDark ? 'bg-[#04141F]/75 border-white/10' : 'bg-white/80 border-slate-200/80'}`}>
         <div className="max-w-7xl mx-auto h-[72px] px-4 sm:px-8 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3 shrink-0 group">
-            <SpikeLogo dark={isDark} alt="SPIKE" className="h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
+            <SpikeLogo dark={isDark} alt={brand.name_en} className="h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
             <span className="hidden sm:flex flex-col leading-none">
-              <span className={`text-xl font-black tracking-[0.2em] ${isDark ? 'text-white' : 'text-[#0A2A3E]'}`}>SPIKE</span>
+              <span className={`text-xl font-black tracking-[0.2em] ${isDark ? 'text-white' : 'text-[#0A2A3E]'}`}>{brand.name_en}</span>
               <span className="text-[10px] font-bold tracking-[0.14em] text-[var(--ac)] mt-1.5">{isAr ? 'منصة التجارة بالدفع عند الاستلام' : 'COD COMMERCE PLATFORM'}</span>
             </span>
           </Link>
@@ -462,12 +466,12 @@ export default function SpikeRegisterAndAuthPage() {
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-6 sm:py-10 w-full max-w-lg mx-auto">
         <div className="text-center space-y-2 mb-5">
-          <div className="flex justify-center rg-drop"><SpikeLogo dark={isDark} alt="SPIKE" className="rg-logo h-40 w-auto object-contain" /></div>
+          <div className="flex justify-center rg-drop"><SpikeLogo dark={isDark} alt={brand.name_en} className="rg-logo h-40 w-auto object-contain" /></div>
           <div key={`h-${mode}`} className="space-y-2">
             <div className="rg-in flex items-center justify-center gap-1.5 font-black text-xl" style={{ '--i': 0 }}>
-              <span className={isDark ? 'text-white' : 'text-[#0A2A3E]'}>سبايك</span>
+              <span className={isDark ? 'text-white' : 'text-[#0A2A3E]'}>{brand.name}</span>
               <span className="text-slate-400 font-light">|</span>
-              <span className="text-[var(--ac)] font-mono tracking-wider">SPIKE</span>
+              <span className="text-[var(--ac)] font-mono tracking-wider">{brand.name_en}</span>
             </div>
             <h2 className={`rg-in text-xl sm:text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`} style={{ '--i': 1 }}>{theme.headline && mode === 'register' ? theme.headline : title}</h2>
             {theme.subline && mode === 'register' ? <p className="rg-in text-xs text-slate-500" style={{ '--i': 2 }}>{theme.subline}</p> : null}

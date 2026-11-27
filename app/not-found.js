@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import SpikeLogo from '../components/SpikeLogo';
 
-export const metadata = { title: 'الصفحة غير موجودة | سبايك' };
+export const metadata = { title: 'الصفحة غير موجودة' };
 
 export default function NotFound() {
   return (

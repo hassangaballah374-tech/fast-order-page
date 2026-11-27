@@ -11,6 +11,7 @@ import TryOnDock from './TryOnDock';
 import MiniCart from './MiniCart';
 import WaIcon from './WaIcon';
 import SpikeLogo from '../SpikeLogo';
+import { useBrand } from '../BrandContext';
 import MobileMenu, { useNightMode } from './MobileMenu';
 import { fillTemplate, ago, safeUrl, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
@@ -151,6 +152,7 @@ function ModeToggle() {
 
 export default function Shell({ children, footerExtra }) {
   const { name, cfg, base, count, pages, live, reason } = useShop();
+  const { brand } = useBrand();
   const path = usePathname();
   const b = cfg.brand || {};
   const c = cfg.contact || {};
@@ -212,8 +214,8 @@ export default function Shell({ children, footerExtra }) {
             {waOk ? <p style={{ marginTop: 10 }}><a className="b wa sm" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer"><WaIcon size={16} /> تواصل معنا على واتساب</a></p> : null}
           </div>
         </div>
-        <a className="pwl" href="/" target="_blank" rel="noopener noreferrer" title="سبايك"><SpikeLogo loading="lazy" /></a>
-        <p className="pw">متجر مبني على منصة سبايك · الدفع عند الاستلام</p>
+        <a className="pwl" href="/" target="_blank" rel="noopener noreferrer" title={brand.name}><SpikeLogo loading="lazy" /></a>
+        <p className="pw">متجر مبني على منصة {brand.name} · الدفع عند الاستلام</p>
       </footer>
 
       <BottomNav />
