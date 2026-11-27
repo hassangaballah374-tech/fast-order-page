@@ -1,7 +1,7 @@
 import InfoPage, { Sec, kv } from '../../components/InfoPage';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: 'تواصل معنا | سبايك' };
+export const metadata = { title: 'تواصل معنا' };
 
 const mail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v || '');
 const wa = (v) => String(v || '').replace(/\D/g, '');
