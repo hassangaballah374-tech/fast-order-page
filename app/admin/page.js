@@ -18,6 +18,7 @@ import { spikeLogout } from '../../components/SpikeSessionBar';
 import AdminBilling from '../../components/admin/AdminBilling';
 import AdminBell from '../../components/admin/AdminBell';
 import { useAdminPending } from '../../components/admin/useAdminPending';
+import AdminProfile from '../../components/admin/AdminProfile';
 import PaymentNote from '../../components/admin/PaymentNote';
 import ThemeColors from '../../components/admin/ThemeColors'; 
 import AdminPromos from '../../components/admin/AdminPromos';
@@ -112,6 +113,7 @@ export default function SpikeSuperAdminDashboard() {
   const can = (perm) => isSuper || currentPermissions?.[perm] === true;
   const TAB_PERM = {
     overview: null,
+    profile: null,
     merchants: 'manage_stores',
     inventory: 'manage_stores',
     integrations: 'manage_stores',
@@ -592,6 +594,7 @@ export default function SpikeSuperAdminDashboard() {
 
   const navItemsAll = [
     { id: 'overview', title: t.navOverview, icon: '📊', count: null },
+    { id: 'profile', title: isAr ? 'بروفايلي' : 'My profile', icon: '👤', count: null },
     { id: 'merchants', title: t.navStores, icon: '🏬', count: totalStoresCount },
     { id: 'billing', title: 'الحصص والاشتراكات', icon: '💳', count: null },
     { id: 'services', title: 'طلبات الخدمات', icon: '🧰', count: null },
@@ -1475,6 +1478,7 @@ export default function SpikeSuperAdminDashboard() {
 
           {/* تبويب الباقات */}
          {shown('plans') && <><PaymentNote isDark={isDark} /><ThemeColors isDark={isDark} /><AdminBilling isDark={isDark} initial="plans" onChanged={fetchAllData} /></>}
+          {shown('profile') && <AdminProfile isDark={isDark} role={isSuper ? (isAr ? 'سوبر أدمن' : 'Super admin') : (currentAdminRole || '')} />}
           {shown('promos') && <AdminPromos isDark={isDark} />}
           {shown('services') && <AdminServiceRequests isDark={isDark} />}
           {shown('apps') && <AdminApps isDark={isDark} />}
