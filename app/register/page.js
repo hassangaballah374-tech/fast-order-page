@@ -7,7 +7,7 @@ import { useApp } from '../../context/AppContext';
 import { useBrand } from '../../components/BrandContext';
 import { brandDeep } from '../../lib/brand';
 import SpikeLogo from '../../components/SpikeLogo';
-
+ 
 const SUPER_ADMIN_EMAIL = 'hassanhosny2007@gmail.com';
 
 const DEFAULT_THEME = {
