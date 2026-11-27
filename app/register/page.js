@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { useApp } from '../../context/AppContext';
+import { useApp } from '../../context/AppContext'; 
 import { useBrand } from '../../components/BrandContext';
 import { brandDeep } from '../../lib/brand';
 import SpikeLogo from '../../components/SpikeLogo';
