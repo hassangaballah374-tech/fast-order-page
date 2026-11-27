@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext';
 import SpikeBrandHeader, { SPIKE_LOGO_URL } from '../components/SpikeBrandHeader';
 import SpikeLogo from '../components/SpikeLogo';
 import HomeExtras from '../components/home/HomeExtras';
+import PricingSection from '../components/home/PricingSection';
 
 export default function SpikeLandingPage() {
   const { lang, theme, toggleLanguage, toggleTheme } = useApp();
@@ -338,6 +339,8 @@ export default function SpikeLandingPage() {
       </section>
 
       <HomeExtras lang={lang} isDark={isDark} />
+
+      <PricingSection lang={lang} isDark={isDark} />
       {/* 🖤 الفوتر */}
       <footer className={`pt-16 pb-12 px-6 lg:px-16 border-t text-xs transition-colors ${
         isDark ? 'bg-[#04141F] border-slate-800 text-slate-400' : 'bg-[#E4EDF3] border-slate-300 text-slate-600'
