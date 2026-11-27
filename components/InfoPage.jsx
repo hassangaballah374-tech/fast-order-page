@@ -34,3 +34,18 @@ export default function InfoPage({ title, children, current }) {
 export function Sec({ h, children }) {
   return <section className="mb-5"><h2 className="font-black text-slate-900 mb-1">{h}</h2><div className="whitespace-pre-line">{children}</div></section>;
 }
+
+/* عرض نص قانوني (شروط/خصوصية) كأقسام بعناوين ونقاط */
+export function LegalBody({ sections }) {
+  return (
+    <>
+      {sections.map((s, i) => {
+        const out = []; let list = [];
+        const flush = () => { if (list.length) { out.push(<ul key={'u' + out.length} className="list-disc pr-5 my-1 space-y-1">{list.map((x, j) => <li key={j}>{x}</li>)}</ul>); list = []; } };
+        s.lines.forEach((l) => { if (/^[-•]\s*/.test(l)) list.push(l.replace(/^[-•]\s*/, '')); else { flush(); out.push(<p key={'p' + out.length}>{l}</p>); } });
+        flush();
+        return <section key={i} className="mb-5"><h2 className="font-black text-slate-900 mb-1">{s.h}</h2><div className="space-y-1">{out}</div></section>;
+      })}
+    </>
+  );
+}
