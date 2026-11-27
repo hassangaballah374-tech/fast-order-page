@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import Link from 'next/link'; 
 import { useApp } from '../context/AppContext';
 import SpikeBrandHeader, { SPIKE_LOGO_URL } from '../components/SpikeBrandHeader';
 import SpikeLogo from '../components/SpikeLogo';
