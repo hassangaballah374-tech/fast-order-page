@@ -9,6 +9,7 @@ import { SYS_CSS } from '../../../components/shop/systemCss';
 import { SHOP_BASE } from '../../../lib/themeModern';
 import { StoreProvider } from '../../../components/shop/StoreContext';
 import Tracker from '../../../components/shop/tracker';
+import { getT } from '../../../lib/i18n/server';
 import Shell from '../../../components/shop/Shell';
 import { Blocks } from '../../../components/shop/ui'; 
  
@@ -16,9 +17,10 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   const ctx = await loadStore(params.slug);
-  if (!ctx) return { title: 'المتجر غير موجود' };
+  const { T } = getT();
+  if (!ctx) return { title: T('المتجر غير موجود') };
   const { store, cfg } = ctx;
-  const title = cfg.seo.title || store.store_name || 'متجر';
+  const title = cfg.seo.title || store.store_name || T('متجر');
   const description = cfg.seo.description || cfg.brand.tagline || '';
   const meta = {
     title: { default: title, template: `%s | ${store.store_name || title}` },
@@ -63,10 +65,11 @@ export default async function ShopLayout({ children, params }) {
   const gtm = store.live && !inFrame && GTM_RE.test(String(cfg.tracking.gtm_id || '').trim()) ? String(cfg.tracking.gtm_id).trim() : '';
   const pubCfg = publicCfg(cfg);
   if (store.whatsapp_button === false) pubCfg.whatsapp = { ...pubCfg.whatsapp, enabled: false };
+  const L = getT();
   const footerPages = pages.filter((p) => p.in_footer).map((p) => ({ title: p.title, slug: p.slug }));
 
   return (
-    <div className={cls} style={style} data-p={th.p || 'clean'} data-ob="1" data-dk={th.dark ? '1' : '0'} data-pal={th.pal ? '1' : '0'} data-dk0={th.dark ? '1' : '0'} dir="rtl" lang="ar" suppressHydrationWarning>
+    <div className={cls} style={style} data-p={th.p || 'clean'} data-ob="1" data-dk={th.dark ? '1' : '0'} data-pal={th.pal ? '1' : '0'} data-dk0={th.dark ? '1' : '0'} dir={L.dir} lang={L.lang} suppressHydrationWarning>
       {b.night_toggle !== false ? <script dangerouslySetInnerHTML={{ __html: `try{var r=document.currentScript.parentNode;if(localStorage.getItem('spike_mode_'+${JSON.stringify(String(store.store_slug)).replace(/</g, '\\u003c')})==='night'){r.setAttribute('data-mode','night');r.setAttribute('data-dk','1')}}catch(e){}` }} /> : null}
       <style dangerouslySetInnerHTML={{ __html: SHOP_CSS + SHOP_BASE + SYS_CSS }} />
        <link rel="preconnect" href="https://fonts.googleapis.com" />
