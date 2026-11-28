@@ -5,6 +5,7 @@ import { OFFER_TYPES } from '../../../../../../lib/flowKit';
 import LandingView from '../../../../../../components/shop/LandingView';
 import UpsellView from '../../../../../../components/shop/UpsellView';
 import ThankYouView from '../../../../../../components/shop/ThankYouView';
+import { getT } from '../../../../../../lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }) {
       robots: seo.noindex ? { index: false, follow: false } : undefined,
     };
   }
-  return { title: step.type === 'thanks' ? 'تم استلام طلبك' : (step.headline || 'عرض خاص'), robots: { index: false, follow: false } };
+  return { title: step.type === 'thanks' ? getT().T('تم استلام طلبك') : (step.headline || getT().T('عرض خاص')), robots: { index: false, follow: false } };
 }
 
 export default async function FlowStepPage({ params }) {
