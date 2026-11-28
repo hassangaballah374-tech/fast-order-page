@@ -1,4 +1,6 @@
 'use client';
+import { useT } from '../I18n';
+import LangToggle from './LangToggle';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
@@ -31,6 +33,7 @@ export function useNightMode(slug) {
 }
 
 export default function MobileMenu({ nightToggle = true }) {
+  const tx = useT();
   const { slug, name, cfg, base, count, pages, categories } = useShop();
   const path = usePathname();
   const favs = useFavs(slug);
@@ -59,16 +62,16 @@ export default function MobileMenu({ nightToggle = true }) {
   const showLooks = cfg.looks?.enabled !== false && (cfg.looks?.items || []).length;
   const showFit = cfg.fitting?.enabled && ((cfg.fitting?.models || []).length || cfg.fitting?.builtin !== false) && Object.keys(cfg.fitting?.items || {}).length;
   const links = [
-    [base, '🏠', 'الرئيسية'],
-    [`${base}/products`, '🛍️', 'كل المنتجات'],
-    [`${base}/favorites`, '♥', 'المفضلة', favs.ids.length],
-    [`${base}/cart`, '🛒', 'السلة', count],
-    ...(showLooks ? [[`${base}/looks`, '✨', 'الإطلالات']] : []),
-    ...(showFit ? [[`${base}/fitting`, '👕', 'غرفة القياس']] : []),
-    [`${base}/track`, '📦', 'تتبع طلبك'],
+    [base, '🏠', tx('الرئيسية')],
+    [`${base}/products`, '🛍️', tx('كل المنتجات')],
+    [`${base}/favorites`, '♥', tx('المفضلة'), favs.ids.length],
+    [`${base}/cart`, '🛒', tx('السلة'), count],
+    ...(showLooks ? [[`${base}/looks`, '✨', tx('الإطلالات')]] : []),
+    ...(showFit ? [[`${base}/fitting`, '👕', tx('غرفة القياس')]] : []),
+    [`${base}/track`, '📦', tx('تتبع طلبك')],
   ];
   const isOn = (h) => (h === base ? path === base : (path || '').startsWith(h));
-  const socials = [['instagram', 'إنستجرام'], ['facebook', 'فيسبوك'], ['tiktok', 'تيك توك'], ['youtube', 'يوتيوب']].filter(([k]) => safeUrl(social[k]));
+  const socials = [['instagram', tx('إنستجرام')], ['facebook', tx('فيسبوك')], ['tiktok', tx('تيك توك')], ['youtube', tx('يوتيوب')]].filter(([k]) => safeUrl(social[k]));
   const go = (e) => {
     e.preventDefault();
     const t = q.trim();
@@ -78,23 +81,23 @@ export default function MobileMenu({ nightToggle = true }) {
 
   return (
     <>
-      <button type="button" className="mm-btn" onClick={() => setOpen(true)} aria-label="القائمة" aria-expanded={open}>
+      <button type="button" className="mm-btn" onClick={() => setOpen(true)} aria-label={tx('القائمة')} aria-expanded={open}>
         <i /><i /><i />
       </button>
       {open && host ? createPortal(
         <div className="mm-root">
           <div className="mm-scrim" onClick={() => setOpen(false)} />
-          <aside className="mm-pn" role="dialog" aria-modal="true" aria-label="القائمة">
+          <aside className="mm-pn" role="dialog" aria-modal="true" aria-label={tx('القائمة')}>
             <div className="mm-top">
               <Link href={base} className="mm-logo">{(b.logo || cfg.contact?.owner_photo) ? <img src={b.logo || cfg.contact?.owner_photo} alt={name} /> : null}<span>{name}</span></Link>
-              <button type="button" className="mm-x" onClick={() => setOpen(false)} aria-label="إغلاق">✕</button>
+              <button type="button" className="mm-x" onClick={() => setOpen(false)} aria-label={tx('إغلاق')}>✕</button>
             </div>
             <div className="mm-body">
               <form className="mm-search" onSubmit={go} role="search">
-                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث عن منتج..." aria-label="بحث" enterKeyHint="search" />
-                <button type="submit" aria-label="بحث">🔍</button>
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tx('ابحث عن منتج...')} aria-label={tx('بحث')} enterKeyHint="search" />
+                <button type="submit" aria-label={tx('بحث')}>🔍</button>
               </form>
-              <nav className="mm-links" aria-label="التنقل">
+              <nav className="mm-links" aria-label={tx('التنقل')}>
                 {links.map(([h, ic, t, n]) => (
                   <Link key={h} href={h} className={isOn(h) ? 'on' : ''}>
                     <span className="mm-ic">{ic}</span><span className="mm-t">{t}</span>
@@ -104,7 +107,7 @@ export default function MobileMenu({ nightToggle = true }) {
               </nav>
               {cats.length ? (
                 <>
-                  <div className="mm-h">الأقسام</div>
+                  <div className="mm-h">{tx('الأقسام')}</div>
                   <div className="mm-cats">
                     {cats.map((x) => (
                       <Link key={x.id} href={`${base}/products?cat=${x.id}`}>
@@ -117,7 +120,7 @@ export default function MobileMenu({ nightToggle = true }) {
               ) : null}
               {(pages || []).length ? (
                 <>
-                  <div className="mm-h">معلومات</div>
+                  <div className="mm-h">{tx('معلومات')}</div>
                   <nav className="mm-links sm">
                     {pages.map((p) => <Link key={p.slug} href={`${base}/page/${p.slug}`}><span className="mm-t">{p.title}</span></Link>)}
                   </nav>
@@ -127,12 +130,13 @@ export default function MobileMenu({ nightToggle = true }) {
             <div className="mm-ft">
               <div className="mm-row">
                 {nightToggle && mode.show ? (
-                  <button type="button" className="mm-mode" onClick={mode.flip} aria-label={mode.night ? 'الوضع النهاري' : 'الوضع الليلي'} title={mode.night ? 'الوضع النهاري' : 'الوضع الليلي'}>
+                  <button type="button" className="mm-mode" onClick={mode.flip} aria-label={mode.night ? tx('الوضع النهاري') : tx('الوضع الليلي')} title={mode.night ? tx('الوضع النهاري') : tx('الوضع الليلي')}>
                     <span>{mode.night ? '☀️' : '🌙'}</span>
                   </button>
                 ) : null}
-                {waOk ? <a className="b wa blk mm-wa" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer"><WaIcon size={18} /> واتساب</a> : null}
-                {c.phone ? <a className="mm-call" dir="ltr" href={`tel:${String(c.phone).replace(/[^0-9+]/g, '')}`} aria-label="اتصل بنا" title={c.phone}>📞</a> : null}
+                <LangToggle className="mm-mode" />
+                {waOk ? <a className="b wa blk mm-wa" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer"><WaIcon size={18} /> {tx('واتساب')}</a> : null}
+                {c.phone ? <a className="mm-call" dir="ltr" href={`tel:${String(c.phone).replace(/[^0-9+]/g, '')}`} aria-label={tx('اتصل بنا')} title={c.phone}>📞</a> : null}
               </div>
               {socials.length ? <div className="mm-soc">{socials.map(([k, l]) => <a key={k} href={safeUrl(social[k])} target="_blank" rel="noopener noreferrer">{l}</a>)}</div> : null}
             </div>

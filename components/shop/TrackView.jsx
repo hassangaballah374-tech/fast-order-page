@@ -1,4 +1,5 @@
 'use client';
+import { useT, useLang } from '../I18n';
 import React, { useEffect, useState } from 'react';
 import { useShop } from './StoreContext';
 import WaContact from './WaContact';
@@ -7,6 +8,8 @@ import { STATUS, trackUrl, normalizePhone } from '../../lib/storeKit';
 const FLOW = [['pending', 'تم استلام الطلب'], ['confirmed', 'تم تأكيد الطلب'], ['shipped', 'خرج للشحن'], ['delivered', 'تم التسليم']];
 
 export default function TrackView() {
+  const tx = useT();
+  const { lang } = useLang();
   const { slug, cur } = useShop();
   const [f, setF] = useState({ order_no: '', phone: '' });
   const [res, setRes] = useState(null);
@@ -19,8 +22,8 @@ export default function TrackView() {
     try {
       const r = await fetch('/api/store/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, ...body }) });
       const j = await r.json();
-      if (j.ok && j.list) setList(j.list); else if (j.ok) setRes(j.order); else setErr(j.error || 'لم نجد الطلب');
-    } catch { setErr('تعذر الاتصال، حاول مرة أخرى'); }
+      if (j.ok && j.list) setList(j.list); else if (j.ok) setRes(j.order); else setErr(j.error || tx('لم نجد الطلب'));
+    } catch { setErr(tx('تعذر الاتصال، حاول مرة أخرى')); }
     setBusy(false);
   };
 
@@ -33,7 +36,7 @@ export default function TrackView() {
 
   const submit = (e) => {
     e.preventDefault();
-    if (!normalizePhone(f.phone)) { setErr('اكتب رقم الموبايل الذي طلبت به'); return; }
+    if (!normalizePhone(f.phone)) { setErr(tx('اكتب رقم الموبايل الذي طلبت به')); return; }
     query({ order_no: f.order_no, phone: f.phone });
   };
 
@@ -43,13 +46,13 @@ export default function TrackView() {
 
   return (
     <section className="wrap sec" style={{ maxWidth: 640 }}>
-      <div className="sh"><h2>تتبع طلبك</h2><p>اكتب رقم الموبايل الذي طلبت به (ورقم الطلب لو معاك)</p></div>
+      <div className="sh"><h2>{tx('تتبع طلبك')}</h2><p>{tx('اكتب رقم الموبايل الذي طلبت به (ورقم الطلب لو معاك)')}</p></div>
       <form className="frm" onSubmit={submit}>
         <div className="r2">
-          <div className="fld"><label>رقم الطلب (اختياري)</label><input className="in num" dir="ltr" inputMode="numeric" value={f.order_no} onChange={(e) => setF({ ...f, order_no: e.target.value })} /></div>
-          <div className="fld"><label>رقم الموبايل</label><input className="in num" dir="ltr" inputMode="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
+          <div className="fld"><label>{tx('رقم الطلب (اختياري)')}</label><input className="in num" dir="ltr" inputMode="numeric" value={f.order_no} onChange={(e) => setF({ ...f, order_no: e.target.value })} /></div>
+          <div className="fld"><label>{tx('رقم الموبايل')}</label><input className="in num" dir="ltr" inputMode="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
         </div>
-        <button className="b p blk" type="submit" disabled={busy}>{busy ? 'جاري البحث...' : 'تتبع'}</button>
+        <button className="b p blk" type="submit" disabled={busy}>{busy ? tx('جاري البحث...') : tx('تتبع')}</button>
         {err ? <div className="err">{err}</div> : null}
       </form>
 
@@ -60,10 +63,10 @@ export default function TrackView() {
             const lk = trackUrl(o.courier, o.tracking_number);
             return (
               <div className="card" key={o.order_no}>
-                <h3>طلب #{o.order_no} <span style={{ color: s2.color, fontSize: 14 }}>({s2.ar})</span></h3>
+                <h3>{tx('طلب #{1}', [o.order_no])} <span style={{ color: s2.color, fontSize: 14 }}>({tx(s2.ar)})</span></h3>
                 {(o.items || []).map((i, k) => <p key={k}>{i.title} × <span className="num">{i.qty}</span></p>)}
-                <p className="mut">الإجمالي: <b className="num">{Math.round(o.total)} {cur}</b></p>
-                {o.tracking_number ? <p>رقم الشحنة: <b className="num" dir="ltr">{o.tracking_number}</b>{lk ? <> · <a href={lk} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--c)', fontWeight: 800 }}>تتبع عند شركة الشحن</a></> : null}</p> : null}
+                <p className="mut">{tx('الإجمالي:')} <b className="num">{Math.round(o.total)} {cur}</b></p>
+                {o.tracking_number ? <p>{tx('رقم الشحنة:')} <b className="num" dir="ltr">{o.tracking_number}</b>{lk ? <> · <a href={lk} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--c)', fontWeight: 800 }}>{tx('تتبع عند شركة الشحن')}</a></> : null}</p> : null}
               </div>
             );
           })}
@@ -72,22 +75,22 @@ export default function TrackView() {
 
       {res && (
         <div className="card" style={{ marginTop: 16 }}>
-          <h3>طلب رقم #{res.order_no} <span style={{ color: st.color, fontSize: 14 }}>({st.ar})</span></h3>
-          <p className="mut">أهلاً {res.first_name} · {res.governorate}</p>
+          <h3>{tx('طلب رقم #{1}', [res.order_no])} <span style={{ color: st.color, fontSize: 14 }}>({tx(st.ar)})</span></h3>
+          <p className="mut">{tx('أهلاً {1} · {2}', [res.first_name, res.governorate])}</p>
           {idx >= 0 ? (
             <div className="tl">
-          {FLOW.map(([k, l], i) => { const h = (res.history || []).filter((x) => x.status === k).pop(); return <div key={k} className={(i <= idx ? 'done' : '') + (i === idx && idx < FLOW.length - 1 ? ' cur' : '')}><i>{i <= idx ? '✓' : ''}</i>{l}{h ? <small className="mut" style={{ marginInlineStart: 'auto', fontSize: 12 }}>{new Date(h.at).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</small> : null}</div>; })}
+          {FLOW.map(([k, l], i) => { const h = (res.history || []).filter((x) => x.status === k).pop(); return <div key={k} className={(i <= idx ? 'done' : '') + (i === idx && idx < FLOW.length - 1 ? ' cur' : '')}><i>{i <= idx ? '✓' : ''}</i>{tx(l)}{h ? <small className="mut" style={{ marginInlineStart: 'auto', fontSize: 12 }}>{new Date(h.at).toLocaleString(lang === 'en' ? 'en-GB' : 'ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</small> : null}</div>; })}
             </div>
-          ) : <p className="err" style={{ margin: '12px 0' }}>حالة الطلب: {st.ar}</p>}
+          ) : <p className="err" style={{ margin: '12px 0' }}>{tx('حالة الطلب: {1}', [tx(st.ar)])}</p>}
           {res.tracking_number ? (
-            <p>رقم الشحنة: <b className="num" dir="ltr">{res.tracking_number}</b>{link ? <> · <a href={link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--c)', fontWeight: 800 }}>تتبع عند شركة الشحن</a></> : null}</p>
+            <p>{tx('رقم الشحنة:')} <b className="num" dir="ltr">{res.tracking_number}</b>{link ? <> · <a href={link} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--c)', fontWeight: 800 }}>{tx('تتبع عند شركة الشحن')}</a></> : null}</p>
           ) : null}
           <hr style={{ border: 0, borderTop: '1px solid var(--ln)', margin: '14px 0' }} />
           {(res.items || []).map((i, k) => (
             <p key={k}>{i.title} × <span className="num">{i.qty}</span>{i.options && Object.keys(i.options).length ? <span className="mut"> ({Object.values(i.options).join(' / ')})</span> : null}</p>
           ))}
-          <p style={{ marginTop: 10 }}>الإجمالي: <b className="num">{Math.round(res.total)} {cur}</b> · الدفع عند الاستلام</p>
-          <WaContact label="كلّم صاحب المتجر عن طلبك" text={`مرحباً، عايز أستفسر عن طلبي رقم #${res.order_no}`} style={{ marginTop: 12 }} />
+          <p style={{ marginTop: 10 }}>{tx('الإجمالي:')} <b className="num">{Math.round(res.total)} {cur}</b> {tx('· الدفع عند الاستلام')}</p>
+          <WaContact label={tx('كلّم صاحب المتجر عن طلبك')} text={tx('مرحباً، عايز أستفسر عن طلبي رقم #{1}', [res.order_no])} style={{ marginTop: 12 }} />
         </div>
       )}
     </section>

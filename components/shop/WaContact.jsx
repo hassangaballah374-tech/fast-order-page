@@ -3,6 +3,7 @@ import React from 'react';
 import { useShop } from './StoreContext';
 import { normalizePhone, isValidEgPhone, waLink } from '../../lib/storeKit';
 import WaIcon from './WaIcon';
+import { useT } from '../I18n';
 
 /* زرار «كلّم صاحب المتجر على واتساب»: بيظهر لو رقم واتساب المتجر مضبوط ومفعّل. text = رسالة جاهزة بسياق الصفحة */
 export function useWa() {
@@ -12,12 +13,13 @@ export function useWa() {
 }
 
 export default function WaContact({ text, label = 'كلّم صاحب المتجر على واتساب', note = '', style }) {
+  const tx = useT();
   const { ok, wa, msg } = useWa();
   if (!ok) return null;
   return (
     <div className="wac" style={style}>
       {note ? <span className="mut wac-n">{note}</span> : null}
-      <a className="b wa blk" href={waLink(wa, text || msg)} target="_blank" rel="noopener noreferrer"><WaIcon size={18} /> {label}</a>
+      <a className="b wa blk" href={waLink(wa, text || msg)} target="_blank" rel="noopener noreferrer"><WaIcon size={18} /> {tx(label)}</a>
     </div>
   );
 }

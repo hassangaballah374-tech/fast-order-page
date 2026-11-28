@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { STYLE_DEFAULT, SECTION_DEFS } from '../../lib/lpSections';
 import { track } from './tracker';
@@ -12,6 +13,8 @@ const toOrder = () => {
 };
 const okLink = (u) => /^(https?:\/\/|\/|#|tel:|mailto:)/i.test(String(u || '').trim());
 const hex = (v) => /^#[0-9a-fA-F]{3,8}$/.test(String(v || ''));
+
+function Tx({ s }) { const tx = useT(); return tx(s); }
 
 function Rv({ children, delay = 0, className = '' }) {
   const ref = useRef(null);
@@ -69,8 +72,8 @@ export function renderBlock(s) {
         <section className="lp-sec lp-n lp-brow" style={{ textAlign: al }}>
           <Rv>
             {okLink(d.link)
-              ? <a className={cls} href={d.link} target={/^https?:/i.test(d.link) ? '_blank' : undefined} rel="noopener noreferrer">{d.text || 'اضغط هنا'} <span aria-hidden="true">←</span></a>
-              : <button type="button" className={cls} onClick={toOrder}>{d.text || 'اطلب الآن'} <span aria-hidden="true">←</span></button>}
+              ? <a className={cls} href={d.link} target={/^https?:/i.test(d.link) ? '_blank' : undefined} rel="noopener noreferrer">{d.text || <Tx s="اضغط هنا" />} <span aria-hidden="true">←</span></a>
+              : <button type="button" className={cls} onClick={toOrder}>{d.text || <Tx s="اطلب الآن" />} <span aria-hidden="true">←</span></button>}
           </Rv>
         </section>
       );
@@ -115,7 +118,7 @@ export function renderBlock(s) {
           {d.title ? <Rv><h2 className="lp-h2">{d.title}</h2></Rv> : null}
           <Rv>
             <div className="lp-cmp">
-              <div className="lp-cmp-r"><div /><div>{d.us || 'منتجنا'}</div><div>{d.them || 'غيرنا'}</div></div>
+              <div className="lp-cmp-r"><div /><div>{d.us || <Tx s="منتجنا" />}</div><div>{d.them || <Tx s="غيرنا" />}</div></div>
               {(d.rows || []).map((r, i) => (
                 <div className="lp-cmp-r" key={i}><div>{r.t}</div><div>{r.us ? <span className="lp-yes">✓</span> : <span className="lp-no">✕</span>}</div><div>{r.them ? <span className="lp-yes">✓</span> : <span className="lp-no">✕</span>}</div></div>
               ))}

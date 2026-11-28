@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useShop } from './StoreContext';
@@ -14,6 +15,7 @@ const AUTO_MS = 5000;
 const mod = (a, n) => ((a % n) + n) % n;
 
 export default function RunwayView({ list = [] }) {
+  const tx = useT();
   const cart = useBrowseCart();
   const { add } = useShop();
   const items = list.slice(0, 12);
@@ -51,9 +53,9 @@ export default function RunwayView({ list = [] }) {
   const total = buyable.reduce((a, p) => a + effectivePrice(p), 0);
   const need = buyable.find((p) => missing(p).length);
   const addAll = () => {
-    if (need) { setDone(`اختر ${missing(need)[0].name} لـ «${need.title}» الأول`); return; }
+    if (need) { setDone(tx('اختر {1} لـ «{2}» الأول', [missing(need)[0].name, need.title])); return; }
     buyable.forEach((p) => addOne(p));
-    setDone('تمت إضافة الإطلالة كاملة للسلة ✓');
+    setDone(tx('تمت إضافة الإطلالة كاملة للسلة ✓'));
   };
 
   const down = (e) => { dragRef.current = { x: e.clientX }; moved.current = false; };
@@ -77,13 +79,13 @@ export default function RunwayView({ list = [] }) {
     if (e.key === 'ArrowLeft') { e.preventDefault(); go(rtl ? 1 : -1); } else if (e.key === 'ArrowRight') { e.preventDefault(); go(rtl ? -1 : 1); } else if (e.key === 'Enter') setFocus(true);
   };
 
-  if (!n) return <div className="empty">لا توجد منتجات مطابقة</div>;
+  if (!n) return <div className="empty">{tx('لا توجد منتجات مطابقة')}</div>;
   const cur = items[idx];
   return (
     <div className="rw">
       <div className="rw-l">
-        <div className="rw-head"><h2>أطلّ بإطلالتك</h2><p>{n} قطع، اسحب أو اضغط الأسهم لتغيير الإطلالة، وضغطة على القطعة الأمامية تفتحها.</p></div>
-        <div className="rw-stage" ref={stageRef} tabIndex={0} role="region" aria-roledescription="carousel" aria-label="الإطلالات: استخدم الأسهم أو اسحب للتغيير"
+        <div className="rw-head"><h2>{tx('أطلّ بإطلالتك')}</h2><p>{tx('{1} قطع، اسحب أو اضغط الأسهم لتغيير الإطلالة، وضغطة على القطعة الأمامية تفتحها.', [n])}</p></div>
+        <div className="rw-stage" ref={stageRef} tabIndex={0} role="region" aria-roledescription="carousel" aria-label={tx('الإطلالات: استخدم الأسهم أو اسحب للتغيير')}
           onPointerDown={down} onPointerMove={(e) => { move(e); cursorMove(e); }} onPointerUp={up} onPointerLeave={(e) => { up(e); }} onKeyDown={key}>
           {items.map((it, i) => {
             let d = mod(i - idx + n / 2, n) - n / 2; if (n % 2 === 0 && d === -n / 2) d = n / 2;
@@ -97,10 +99,10 @@ export default function RunwayView({ list = [] }) {
               </button>
             );
           })}
-          <span className="rw-cursor" ref={curRef} data-over="drag" aria-hidden="true"><b className="rw-cd">اسحب</b><b className="rw-cv">عرض</b></span>
+          <span className="rw-cursor" ref={curRef} data-over="drag" aria-hidden="true"><b className="rw-cd">{tx('اسحب')}</b><b className="rw-cv">{tx('عرض')}</b></span>
         </div>
         <div className="rw-ctl">
-          <button type="button" className="rw-ic" aria-label="السابق" onClick={() => go(-1)}>←</button>
+          <button type="button" className="rw-ic" aria-label={tx('السابق')} onClick={() => go(-1)}>←</button>
           <div className="rw-ticks" role="tablist">
             {items.map((it, i) => (
               <button key={it.id} type="button" role="tab" aria-selected={i === idx} aria-label={`${pad2(i + 1)} ${it.title}`} className={'rw-tk' + (i === idx ? ' on' : i < idx ? ' past' : '')} onClick={() => to(i)}>
@@ -109,13 +111,13 @@ export default function RunwayView({ list = [] }) {
               </button>
             ))}
           </div>
-          <button type="button" className="rw-ic" aria-pressed={play} aria-label={play ? 'إيقاف التشغيل التلقائي' : 'تشغيل تلقائي'} onClick={() => setPlay((p) => !p)}>{play ? '❚❚' : '▶'}</button>
-          <button type="button" className="rw-ic" aria-label="التالي" onClick={() => go(1)}>→</button>
+          <button type="button" className="rw-ic" aria-pressed={play} aria-label={play ? tx('إيقاف التشغيل التلقائي') : tx('تشغيل تلقائي')} onClick={() => setPlay((p) => !p)}>{play ? '❚❚' : '▶'}</button>
+          <button type="button" className="rw-ic" aria-label={tx('التالي')} onClick={() => go(1)}>→</button>
         </div>
-        <span className="sr-only" aria-live="polite" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>{`إطلالة ${idx + 1}: ${cur.title}`}</span>
+        <span className="sr-only" aria-live="polite" style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0,0,0,0)' }}>{tx('إطلالة {1}: {2}', [idx + 1, cur.title])}</span>
       </div>
       <aside className="rw-p">
-        <div className="rw-ph"><h3>في الإطلالة دي</h3><span className="num">{pieces.length} {pieces.length === 1 ? 'قطعة' : 'قطع'}</span></div>
+        <div className="rw-ph"><h3>{tx('في الإطلالة دي')}</h3><span className="num">{pieces.length} {pieces.length === 1 ? tx('قطعة') : tx('قطع')}</span></div>
         <ul className="rw-li">
           {pieces.map((p, k) => {
             const groups = p.variants || []; const sold = soldOut(p); const ok = !sold && !missing(p).length;
@@ -125,21 +127,21 @@ export default function RunwayView({ list = [] }) {
                 <div className="rw-in">
                   <Link className="rw-nm" href={`${cart.base}/p/${p.id}`}>{p.title}</Link>
                   <PriceEl p={p} cur={cart.cur} />
-                  {sold ? <small className="rw-so">نفدت الكمية</small> : groups.map((g) => (
+                  {sold ? <small className="rw-so">{tx('نفدت الكمية')}</small> : groups.map((g) => (
                     <div key={g.name} className="rw-sz" role="group" aria-label={g.name}>
                       {g.values.map((v) => <button key={v} type="button" className={(opts[p.id] || {})[g.name] === v ? 'on' : ''} aria-pressed={(opts[p.id] || {})[g.name] === v} onClick={() => setOpt(p.id, g.name, v)}>{v}</button>)}
                     </div>
                   ))}
                 </div>
-                <button type="button" className={'rw-add' + (ok ? ' ok' : '')} disabled={sold} aria-label={`أضف ${p.title} للسلة`} onClick={() => { if (addOne(p)) setDone(`تمت إضافة «${p.title}» ✓`); else if (!sold) setDone(`اختر ${missing(p)[0].name} الأول`); }}>+</button>
+                <button type="button" className={'rw-add' + (ok ? ' ok' : '')} disabled={sold} aria-label={tx('أضف {1} للسلة', [p.title])} onClick={() => { if (addOne(p)) setDone(tx('تمت إضافة «{1}» ✓', [p.title])); else if (!sold) setDone(tx('اختر {1} الأول', [missing(p)[0].name])); }}>+</button>
               </li>
             );
           })}
         </ul>
         <div className="rw-bd">
-          <div className="rw-bt"><span>كمّل الإطلالة</span><b className="num">{money(total, cart.cur)}</b></div>
-          <button type="button" className="rw-all" disabled={!buyable.length} onClick={addAll}>أضف الإطلالة كاملة للسلة</button>
-          {done ? <div className="rw-ok" role="status">{done} {done.includes('✓') ? <button type="button" onClick={cart.openCart}>عرض السلة ←</button> : null}</div> : null}
+          <div className="rw-bt"><span>{tx('كمّل الإطلالة')}</span><b className="num">{money(total, cart.cur)}</b></div>
+          <button type="button" className="rw-all" disabled={!buyable.length} onClick={addAll}>{tx('أضف الإطلالة كاملة للسلة')}</button>
+          {done ? <div className="rw-ok" role="status">{done} {done.includes('✓') ? <button type="button" onClick={cart.openCart}>{tx('عرض السلة ←')}</button> : null}</div> : null}
         </div>
       </aside>
       {focus && <FocusSheet list={items} idx={idx} onGo={(i) => to(Math.max(0, Math.min(n - 1, i)))} onClose={() => setFocus(false)} cart={cart} />}

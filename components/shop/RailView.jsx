@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Ph, PriceEl, QuickPick, FocusSheet, useBrowseCart, pad2 } from './browseKit';
@@ -13,6 +14,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const NEIGH = [0, 50, 24, 9, 0];
 
 export default function RailView({ list = [] }) {
+  const tx = useT();
   const cart = useBrowseCart();
   const items = list.slice(0, 30);
   const n = items.length;
@@ -117,13 +119,13 @@ export default function RailView({ list = [] }) {
   const focusRef = useRef(false); focusRef.current = focus;
 
   const flip = (id) => setFlipped((f) => ({ ...f, [id]: !f[id] }));
-  if (!n) return <div className="empty">لا توجد منتجات مطابقة</div>;
+  if (!n) return <div className="empty">{tx('لا توجد منتجات مطابقة')}</div>;
   const hasBack = !!(p.images && p.images[1]);
   const isBack = !!flipped[p.id] && hasBack;
 
   return (
     <div className="rl2" ref={root}>
-      <div className="rl2-zone" ref={zone} tabIndex={0} role="listbox" aria-label="المنتجات على الشماعة، استخدم الأسهم أو اسحب">
+      <div className="rl2-zone" ref={zone} tabIndex={0} role="listbox" aria-label={tx('المنتجات على الشماعة، استخدم الأسهم أو اسحب')}>
         <svg className="rl2-svg" aria-hidden="true" width="100%" height="100%">
           <defs><linearGradient id="rl2g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#E9DCBC" /><stop offset=".45" stopColor="#C2A877" /><stop offset="1" stopColor="#7F6743" /></linearGradient></defs>
           <path ref={pathSh} fill="none" stroke="rgba(80,60,35,.12)" strokeWidth="3" transform="translate(0 4)" />
@@ -159,9 +161,9 @@ export default function RailView({ list = [] }) {
         <h3>{p.title}</h3>
         <PriceEl p={p} cur={cart.cur} />
         <div className="rl-act">
-          <button type="button" className="rl-more" onClick={() => setFocus(true)}>عرض سريع</button>
-          {hasBack ? <button type="button" className="rl2-bk rl-more" aria-pressed={isBack} onClick={() => flip(p.id)}>{isBack ? '↻ للأمام' : '↻ للخلف'}</button> : null}
-          <Link className="ob-lnk" href={`${cart.base}/p/${p.id}`}>كل التفاصيل ←</Link>
+          <button type="button" className="rl-more" onClick={() => setFocus(true)}>{tx('عرض سريع')}</button>
+          {hasBack ? <button type="button" className="rl2-bk rl-more" aria-pressed={isBack} onClick={() => flip(p.id)}>{isBack ? tx('↻ للأمام') : tx('↻ للخلف')}</button> : null}
+          <Link className="ob-lnk" href={`${cart.base}/p/${p.id}`}>{tx('كل التفاصيل ←')}</Link>
         </div>
         <QuickPick p={p} cart={cart} srcSel=".rl2-g.on .rl2-f img" onMore={() => setFocus(true)} />
       </div>

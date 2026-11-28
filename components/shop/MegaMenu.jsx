@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -6,6 +7,7 @@ import { useShop } from './StoreContext';
 
 /* قائمة «الأقسام» الكبيرة في الهيدر (ديسكتوب): بتفتح بالماوس أو الضغط أو الكيبورد، وفيها أقسام المتجر بصورها */
 export default function MegaMenu() {
+  const tx = useT();
   const { base, categories } = useShop();
   const path = usePathname();
   const [open, setOpen] = useState(false);
@@ -31,7 +33,7 @@ export default function MegaMenu() {
   return (
     <span className="mg" ref={root} onMouseEnter={enter} onMouseLeave={leave}>
       <button type="button" className={'mg-b' + (open ? ' on' : '')} aria-expanded={open} aria-haspopup="true" onClick={() => setOpen((v) => !v)}>
-        الأقسام <i aria-hidden="true">▾</i>
+        {tx('الأقسام')} <i aria-hidden="true">▾</i>
       </button>
       {open ? (
         <div className="mega" role="menu">
@@ -43,7 +45,7 @@ export default function MegaMenu() {
               </Link>
             ))}
           </div>
-          <Link href={`${base}/products`} className="mega-all" onClick={() => setOpen(false)}>عرض كل المنتجات ←</Link>
+          <Link href={`${base}/products`} className="mega-all" onClick={() => setOpen(false)}>{tx('عرض كل المنتجات ←')}</Link>
         </div>
       ) : null}
     </span>

@@ -10,13 +10,15 @@ import LooksView from './LooksView';
 import FittingRoom from './FittingRoom';
 import { liveShowcases } from '../../lib/showcases';
 import { fittingReady } from '../../lib/fitting';
+import { getT } from '../../lib/i18n/server';
 
 const DEFAULT_TRUST = ['🚚|شحن سريع|لكل محافظات مصر', '💵|الدفع عند الاستلام|ادفع بعد ما تعاين طلبك', '📞|دعم عبر واتساب|نرد عليك بسرعة'];
 const lines = (v) => (Array.isArray(v) ? v : String(v || '').split('\n')).map((x) => String(x).trim()).filter(Boolean);
 
 function Head({ s }) {
+  const { T } = getT();
   if (!s.title && !s.subtitle) return null;
-  return <div className="sh">{s.title ? <h2>{s.title}</h2> : null}{s.subtitle ? <p>{s.subtitle}</p> : null}</div>;
+  return <div className="sh">{s.title ? <h2>{T(s.title)}</h2> : null}{s.subtitle ? <p>{T(s.subtitle)}</p> : null}</div>;
 }
 
 function Grid({ list }) {
@@ -25,6 +27,7 @@ function Grid({ list }) {
 
 /* يعرض أقسام الصفحة الرئيسية بالترتيب الذي حدده التاجر */
 export default function HomeSections({ cfg, base, products, categories, reviews, blocks, bestIds }) {
+  const { T } = getT();
   const sections = (cfg.home.sections || []).filter((s) => s && s.enabled !== false && HOME_SECTION_TYPES[s.type]);
   const handled = new Set(sections.filter((s) => s.type === 'blocks').map((s) => s.placement || 'home_top'));
   const topBlocks = blocks.filter((b) => b.placement === 'home_top');
@@ -32,7 +35,7 @@ export default function HomeSections({ cfg, base, products, categories, reviews,
   let anchored = false;
 
   if (!products.length && !sections.some((s) => s.type === 'hero')) {
-    return <div className="wrap empty"><div style={{ fontSize: 48 }}>🛍️</div><h2>المنتجات قادمة قريباً</h2></div>;
+    return <div className="wrap empty"><div style={{ fontSize: 48 }}>🛍️</div><h2>{T('المنتجات قادمة قريباً')}</h2></div>;
   }
 
   const byNew = [...products].sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
@@ -50,9 +53,9 @@ export default function HomeSections({ cfg, base, products, categories, reviews,
             <div className="wrap" key={key}>
               <div className={'hero' + (img ? ' img' : '')} style={img ? { backgroundImage: `url(${img})` } : undefined}>
                 <div className="hero-in">
-                  <h1>{s.title}</h1>
-                  {s.subtitle ? <p>{s.subtitle}</p> : null}
-                  {s.button_text ? <a className="b" href={link}>{s.button_text}</a> : null}
+                  <h1>{T(s.title)}</h1>
+                  {s.subtitle ? <p>{T(s.subtitle)}</p> : null}
+                  {s.button_text ? <a className="b" href={link}>{T(s.button_text)}</a> : null}
                 </div>
               </div>
             </div>
@@ -65,7 +68,7 @@ export default function HomeSections({ cfg, base, products, categories, reviews,
             <React.Fragment key={key}>
               {scs.map((x) => (
                 <section className="sec" key={x.id}>
-                  <div className="wrap"><div className="sh"><h2>{x.name}</h2>{x.subtitle ? <p className="mut">{x.subtitle}</p> : null}<a className="ob-lnk" href={`${base}/s/${x.id}`}>عرض الكل ←</a></div></div>
+                  <div className="wrap"><div className="sh"><h2>{x.name}</h2>{x.subtitle ? <p className="mut">{T(x.subtitle)}</p> : null}<a className="ob-lnk" href={`${base}/s/${x.id}`}>{T('عرض الكل ←')}</a></div></div>
                   <BrowseView style={x.style} list={x.list} />
                 </section>
               ))}
@@ -88,7 +91,7 @@ export default function HomeSections({ cfg, base, products, categories, reviews,
             <section className="wrap sec" key={key}>
               <Head s={s} />
               <div className="trust">
-                {(items.length ? items : DEFAULT_TRUST).map((l, i) => { const [ic, t, d] = l.split('|'); return <div className="ti" key={i}><i>{ic}</i><span><b>{t}</b><small>{d}</small></span></div>; })}
+                {(items.length ? items : DEFAULT_TRUST).map((l, i) => { const [ic, t0, d0] = l.split('|'); const t = items.length ? t0 : T(t0); const d = items.length ? d0 : T(d0); return <div className="ti" key={i}><i>{ic}</i><span><b>{t}</b><small>{d}</small></span></div>; })}
               </div>
             </section>
           );
@@ -122,7 +125,7 @@ export default function HomeSections({ cfg, base, products, categories, reviews,
             <section className="sec" key={key} id={id}>
               <div className="wrap"><Head s={s} /></div>
               {id ? <BrowseView style={pickStyle(cfg, '', '')} list={list} /> : <div className="wrap"><Grid list={list} /></div>}
-              <div className="wrap center" style={{ marginTop: 18 }}><Link href={`${base}/products`} className="more">عرض كل المنتجات ←</Link></div>
+              <div className="wrap center" style={{ marginTop: 18 }}><Link href={`${base}/products`} className="more">{T('عرض كل المنتجات ←')}</Link></div>
             </section>
           );
         }
@@ -134,9 +137,9 @@ export default function HomeSections({ cfg, base, products, categories, reviews,
                 {s.image ? <img src={s.image} alt={s.title || ''} loading="lazy" /> : null}
                 {(s.title || s.subtitle || s.button_text) ? (
                   <div className="bt">
-                    {s.title ? <h3>{s.title}</h3> : null}
-                    {s.subtitle ? <p className="mut">{s.subtitle}</p> : null}
-                    {link && s.button_text ? <a className="b p" style={{ marginTop: 10 }} href={link}>{s.button_text}</a> : null}
+                    {s.title ? <h3>{T(s.title)}</h3> : null}
+                    {s.subtitle ? <p className="mut">{T(s.subtitle)}</p> : null}
+                    {link && s.button_text ? <a className="b p" style={{ marginTop: 10 }} href={link}>{T(s.button_text)}</a> : null}
                   </div>
                 ) : null}
               </div>
@@ -154,7 +157,7 @@ export default function HomeSections({ cfg, base, products, categories, reviews,
                   <div className="card" key={r.id}>
                     <Stars value={r.rating} />
                     <p style={{ margin: '8px 0' }}>{r.comment}</p>
-                    <b className="mut" style={{ fontSize: 13 }}>— {r.customer_name || 'عميل'}</b>
+                    <b className="mut" style={{ fontSize: 13 }}>— {r.customer_name || T('عميل')}</b>
                   </div>
                 ))}
               </div>
@@ -165,10 +168,10 @@ export default function HomeSections({ cfg, base, products, categories, reviews,
           const pl = s.placement === 'home_bottom' ? 'home_bottom' : 'home_top';
           const list = blocks.filter((b) => b.placement === pl);
           if (!list.length) return null;
-          return <section key={key}>{s.title ? <div className="wrap sh"><h2>{s.title}</h2></div> : null}<Blocks list={list} /></section>;
+          return <section key={key}>{s.title ? <div className="wrap sh"><h2>{T(s.title)}</h2></div> : null}<Blocks list={list} /></section>;
         }
         if (s.type === 'newsletter') {
-          return <section className="wrap sec" key={key}><NewsletterForm title={s.title} subtitle={s.subtitle} /></section>;
+          return <section className="wrap sec" key={key}><NewsletterForm title={T(s.title)} subtitle={T(s.subtitle)} /></section>;
         }
         return null;
       })}

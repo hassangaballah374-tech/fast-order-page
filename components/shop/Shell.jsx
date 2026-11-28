@@ -1,4 +1,6 @@
 'use client';
+import { useT } from '../I18n';
+import LangToggle from './LangToggle';
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -39,6 +41,7 @@ function HitAndUtm() {
 }
 
 function SalesPopup() {
+  const tx = useT();
   const { slug, cfg } = useShop();
   const path = usePathname();
   const pc = cfg.popup || {};
@@ -71,13 +74,14 @@ function SalesPopup() {
   if (!item) return null;
   return (
     <div className={`pop ${pc.position === 'bottom-end' ? 'bottom-end' : 'bottom-start'}`} role="status">
-      <button type="button" aria-label="إغلاق" onClick={() => setItem(null)}>✕</button>
-      🛍️ {fillTemplate(pc.text, { name: item.name, gov: item.gov, product: item.product, ago: ago(item.at) })}
+      <button type="button" aria-label={tx('إغلاق')} onClick={() => setItem(null)}>✕</button>
+      🛍️ {fillTemplate(tx(pc.text), { name: item.name, gov: item.gov, product: item.product, ago: ago(item.at, tx) })}
     </div>
   );
 }
 
 function Downsell() {
+  const tx = useT();
   const { slug, cfg } = useShop();
   const path = usePathname();
   const d = cfg.downsell || {};
@@ -106,17 +110,18 @@ function Downsell() {
   return (
     <div className="mdl" onClick={() => setOpen(false)}>
       <div className="mdl-b" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-        <h3>{d.title}</h3>
-        <p className="mut">{d.body}</p>
+        <h3>{tx(d.title)}</h3>
+        <p className="mut">{tx(d.body)}</p>
         <div className="code num" dir="ltr">{d.coupon_code}</div>
-        <button type="button" className="b p blk" onClick={use}>{copied ? 'تم النسخ ✓' : 'استخدم الكود وكمّل طلبك'}</button>
-        <button type="button" className="b blk" onClick={() => setOpen(false)}>لا، شكراً</button>
+        <button type="button" className="b p blk" onClick={use}>{copied ? tx('تم النسخ ✓') : tx('استخدم الكود وكمّل طلبك')}</button>
+        <button type="button" className="b blk" onClick={() => setOpen(false)}>{tx('لا، شكراً')}</button>
       </div>
     </div>
   );
 }
 
 function WelcomeBack() {
+  const tx = useT();
   const { slug, cfg, count, ready, base } = useShop();
   const r = cfg.retarget || {};
   const [msg, setMsg] = useState(null);
@@ -135,22 +140,24 @@ function WelcomeBack() {
   if (!msg) return null;
   return (
     <div className="welc" role="status">
-      <button type="button" aria-label="إغلاق" onClick={() => setMsg(null)}>✕</button>
-      {msg.text}
-      {msg.hasCart ? <> لديك طلب لم يكتمل، <Link href={`${base}/cart`}>أكمله الآن</Link>{msg.code ? <> واستخدم كود <b dir="ltr">{msg.code}</b></> : null}</> : null}
+      <button type="button" aria-label={tx('إغلاق')} onClick={() => setMsg(null)}>✕</button>
+      {tx(msg.text)}
+      {msg.hasCart ? <> {tx('لديك طلب لم يكتمل،')} <Link href={`${base}/cart`}>{tx('أكمله الآن')}</Link>{msg.code ? <> {tx('واستخدم كود')} <b dir="ltr">{msg.code}</b></> : null}</> : null}
     </div>
   );
 }
 
 /* زر نهاري/ليلي: بيبدّل ألوان المتجر كله ويفتكر اختيار العميل */
 function ModeToggle() {
+  const tx = useT();
   const { slug } = useShop();
   const { show, night, flip } = useNightMode(slug);
   if (!show) return null;
-  return <button type="button" className="mode" onClick={flip} aria-label={night ? 'الوضع النهاري' : 'الوضع الليلي'} title={night ? 'الوضع النهاري' : 'الوضع الليلي'}>{night ? '☀️' : '🌙'}</button>;
+  return <button type="button" className="mode" onClick={flip} aria-label={night ? tx('الوضع النهاري') : tx('الوضع الليلي')} title={night ? tx('الوضع النهاري') : tx('الوضع الليلي')}>{night ? '☀️' : '🌙'}</button>;
 }
 
 export default function Shell({ children, footerExtra }) {
+  const tx = useT();
   const { name, cfg, base, count, pages, live, reason } = useShop();
   const { brand } = useBrand();
   const path = usePathname();
@@ -164,25 +171,26 @@ export default function Shell({ children, footerExtra }) {
   return (
     <>
       <HitAndUtm />
-      {!live ? <div className="ann" style={{ background: '#b45309', color: '#fff' }}>{reason === 'inactive' ? 'المتجر في وضع الإعداد: لم يتم تفعيله بعد، الطلبات متوقفة مؤقتاً' : 'المتجر متوقف مؤقتاً عن استقبال الطلبات'}</div> : null}
+      {!live ? <div className="ann" style={{ background: '#b45309', color: '#fff' }}>{reason === 'inactive' ? tx('المتجر في وضع الإعداد: لم يتم تفعيله بعد، الطلبات متوقفة مؤقتاً') : tx('المتجر متوقف مؤقتاً عن استقبال الطلبات')}</div> : null}
       {b.announcement ? <div className="ann">{annLink ? <a href={annLink}>{b.announcement}</a> : b.announcement}</div> : null}
       <header className="hd">
         <div className="wrap hd-in">
           <MobileMenu nightToggle={b.night_toggle !== false} />
           <Link href={base} className="logo">{(b.logo || c.owner_photo) ? <img src={b.logo || c.owner_photo} alt={name} decoding="async" /> : null}<span>{name}</span></Link>
-          <nav className="nav" aria-label="القائمة">
-            <Link href={base}>الرئيسية</Link>
-            <Link href={`${base}/products`}>كل المنتجات</Link>
+          <nav className="nav" aria-label={tx('القائمة')}>
+            <Link href={base}>{tx('الرئيسية')}</Link>
+            <Link href={`${base}/products`}>{tx('كل المنتجات')}</Link>
             <MegaMenu />
-            {(cfg.looks?.enabled !== false && (cfg.looks?.items || []).length) ? <Link href={`${base}/looks`}>الإطلالات</Link> : null}
-            {(cfg.fitting?.enabled && ((cfg.fitting?.models || []).length || cfg.fitting?.builtin !== false) && Object.keys(cfg.fitting?.items || {}).length) ? <Link href={`${base}/fitting`}>غرفة القياس</Link> : null}
-            <Link href={`${base}/favorites`}>♥ المفضلة</Link>
-            <Link href={`${base}/track`}>تتبع طلبك</Link>
+            {(cfg.looks?.enabled !== false && (cfg.looks?.items || []).length) ? <Link href={`${base}/looks`}>{tx('الإطلالات')}</Link> : null}
+            {(cfg.fitting?.enabled && ((cfg.fitting?.models || []).length || cfg.fitting?.builtin !== false) && Object.keys(cfg.fitting?.items || {}).length) ? <Link href={`${base}/fitting`}>{tx('غرفة القياس')}</Link> : null}
+            <Link href={`${base}/favorites`}>{tx('♥ المفضلة')}</Link>
+            <Link href={`${base}/track`}>{tx('تتبع طلبك')}</Link>
           </nav>
           <span className="hd-sp" />
           <SearchBox />
           {b.night_toggle !== false ? <ModeToggle /> : null}
-          <Link href={`${base}/cart`} className="cartb" aria-label="السلة" onClick={(e) => { if (cfg.cart?.drawer === false || /\/(cart|checkout)/.test(path || '')) return; e.preventDefault(); window.dispatchEvent(new Event('spike:cart-open')); }}><span aria-hidden="true">🛒</span><span className="cb-t">السلة</span>{count > 0 ? <span className="cnt num">{count}</span> : null}</Link>
+          <LangToggle />
+          <Link href={`${base}/cart`} className="cartb" aria-label={tx('السلة')} onClick={(e) => { if (cfg.cart?.drawer === false || /\/(cart|checkout)/.test(path || '')) return; e.preventDefault(); window.dispatchEvent(new Event('spike:cart-open')); }}><span aria-hidden="true">🛒</span><span className="cb-t">{tx('السلة')}</span>{count > 0 ? <span className="cnt num">{count}</span> : null}</Link>
         </div>
       </header>
 
@@ -200,27 +208,27 @@ export default function Shell({ children, footerExtra }) {
             {c.email ? <p className="mut num" dir="ltr" style={{ textAlign: 'start' }}>✉️ {c.email}</p> : null}
           </div>
           <div>
-            <h4>روابط</h4>
-            <Link href={`${base}/products`}>كل المنتجات</Link>
-            <Link href={`${base}/track`}>تتبع طلبك</Link>
-            <Link href={`${base}/catalog`}>الكتالوج</Link>
+            <h4>{tx('روابط')}</h4>
+            <Link href={`${base}/products`}>{tx('كل المنتجات')}</Link>
+            <Link href={`${base}/track`}>{tx('تتبع طلبك')}</Link>
+            <Link href={`${base}/catalog`}>{tx('الكتالوج')}</Link>
             {(pages || []).map((p) => <Link key={p.slug} href={`${base}/page/${p.slug}`}>{p.title}</Link>)}
           </div>
           <div>
-            <h4>تابعنا</h4>
+            <h4>{tx('تابعنا')}</h4>
             <div className="soc">
-              {[['instagram', 'إنستجرام'], ['facebook', 'فيسبوك'], ['tiktok', 'تيك توك'], ['youtube', 'يوتيوب']].map(([k, l]) => (safeUrl(social[k]) ? <a key={k} href={safeUrl(social[k])} target="_blank" rel="noopener noreferrer">{l}</a> : null))}
+              {[['instagram', tx('إنستجرام')], ['facebook', tx('فيسبوك')], ['tiktok', tx('تيك توك')], ['youtube', tx('يوتيوب')]].map(([k, l]) => (safeUrl(social[k]) ? <a key={k} href={safeUrl(social[k])} target="_blank" rel="noopener noreferrer">{l}</a> : null))}
             </div>
-            {waOk ? <p style={{ marginTop: 10 }}><a className="b wa sm" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer"><WaIcon size={16} /> تواصل معنا على واتساب</a></p> : null}
+            {waOk ? <p style={{ marginTop: 10 }}><a className="b wa sm" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer"><WaIcon size={16} /> {tx('تواصل معنا على واتساب')}</a></p> : null}
           </div>
         </div>
         <a className="pwl" href="/" target="_blank" rel="noopener noreferrer" title={brand.name}><SpikeLogo loading="lazy" /></a>
-        <p className="pw">متجر مبني على منصة {brand.name} · الدفع عند الاستلام</p>
+        <p className="pw">{tx('متجر مبني على منصة {1} · الدفع عند الاستلام', [brand.name])}</p>
       </footer>
 
       <BottomNav />
       {cfg.fitting?.enabled && cfg.fitting?.ai?.enabled && (cfg.fitting?.models || []).length ? <TryOnDock /> : null}
-      {waOk ? <a className="waf" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer" aria-label="واتساب" onClick={() => track('Contact', {})}><WaIcon size={32} /></a> : null}
+      {waOk ? <a className="waf" href={waLink(wa, cfg.whatsapp.message)} target="_blank" rel="noopener noreferrer" aria-label={tx('واتساب')} onClick={() => track('Contact', {})}><WaIcon size={32} /></a> : null}
       <SalesPopup />
       <Downsell />
       <WelcomeBack />

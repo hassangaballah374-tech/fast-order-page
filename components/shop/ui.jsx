@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useShop } from './StoreContext';
@@ -11,13 +12,15 @@ const HEX = /^#[0-9a-fA-F]{3,8}$/;
 const lines = (v) => (Array.isArray(v) ? v : String(v || '').split('\n')).map((x) => String(x).trim()).filter(Boolean);
 
 export function Stars({ value = 5 }) {
+  const tx = useT();
   const n = Math.max(0, Math.min(5, Math.round(Number(value) || 0)));
-  return <span className="stars" aria-label={`${n} من 5`}>{'★'.repeat(n)}{'☆'.repeat(5 - n)}</span>;
+  return <span className="stars" aria-label={tx('{1} من 5', [n])}>{'★'.repeat(n)}{'☆'.repeat(5 - n)}</span>;
 }
 
 export const soldOut = (p) => p.track_stock && p.stock_quantity <= 0;
 
 export function ProductCard({ p }) {
+  const tx = useT();
   const { base, cur, slug, cfg } = useShop();
   const fav = useFavs(slug);
   const tryOn = !!(cfg?.fitting?.enabled && cfg?.fitting?.ai?.enabled && (cfg?.fitting?.models || []).length);
@@ -37,11 +40,11 @@ export function ProductCard({ p }) {
     <div className="pc">
       {canFlip ? (
         <div className={'pc-img pc-flip' + (flipped ? ' on' : '')} role="button" tabIndex={0} aria-pressed={flipped}
-          aria-label={flipped ? `${p.title} - اضغط لعرض الوجه` : `${p.title} - اضغط لعرض الظهر`}
+          aria-label={flipped ? tx('{1} - اضغط لعرض الوجه', [p.title]) : tx('{1} - اضغط لعرض الظهر', [p.title])}
           onClick={() => setFlipped((v) => !v)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFlipped((v) => !v); } }}>
           <span className="pc-face"><img src={front} alt={p.title} loading="lazy" /></span>
-          <span className="pc-face pc-back"><img src={p.images[1]} alt={`${p.title} - الظهر`} loading="lazy" /></span>
-          <i className="pc-hint" aria-hidden="true">{flipped ? 'الوجه ⟲' : 'الظهر ⟳'}</i>
+          <span className="pc-face pc-back"><img src={p.images[1]} alt={tx('{1} - الظهر', [p.title])} loading="lazy" /></span>
+          <i className="pc-hint" aria-hidden="true">{flipped ? tx('الوجه ⟲') : tx('الظهر ⟳')}</i>
         </div>
       ) : (
         <Link href={`${base}/p/${p.id}`} className="pc-img" aria-label={p.title}>
@@ -56,28 +59,29 @@ export function ProductCard({ p }) {
           ))}
         </div>
       ) : null}
-      <button type="button" className={'pc-fav' + (fav.has(p.id) ? ' on' : '')} aria-label="المفضلة" onClick={() => fav.toggle(p.id)}>{fav.has(p.id) ? '♥' : '♡'}</button>
+      <button type="button" className={'pc-fav' + (fav.has(p.id) ? ' on' : '')} aria-label={tx('المفضلة')} onClick={() => fav.toggle(p.id)}>{fav.has(p.id) ? '♥' : '♡'}</button>
       {tryOn && (p.images || [])[0] ? (
-        <button type="button" className={'pc-hg' + (worn ? ' on' : '')} aria-pressed={worn} aria-label={worn ? 'شيل من غرفة القياس' : 'جرّبه على الموديل'} title={worn ? 'شيل من الموديل' : 'جرّبه على الموديل'}
+        <button type="button" className={'pc-hg' + (worn ? ' on' : '')} aria-pressed={worn} aria-label={worn ? tx('شيل من غرفة القياس') : tx('جرّبه على الموديل')} title={worn ? tx('شيل من الموديل') : tx('جرّبه على الموديل')}
           onClick={(e) => { const card = e.currentTarget.closest('.pc'); const im = card && card.querySelector('.pc-img img'); toggleTry({ id: p.id, title: p.title, img: p.images[0], rect: im ? im.getBoundingClientRect().toJSON() : null }); }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 8a2.5 2.5 0 1 0-2.5-2.5" /><path d="M12 8v2l9 6.2a1.3 1.3 0 0 1-.7 2.3H3.7a1.3 1.3 0 0 1-.7-2.3L12 10" /></svg>
         </button>
       ) : null}
-      {out ? <span className="bdg so">نفدت الكمية</span> : off > 0 ? <span className="bdg">خصم {off}%</span> : null}
+      {out ? <span className="bdg so">{tx('نفدت الكمية')}</span> : off > 0 ? <span className="bdg">{tx('خصم {1}%', [off])}</span> : null}
       <div className="pc-b">
         <Link href={`${base}/p/${p.id}`} className="pc-t">{p.title}</Link>
         {p.rating_count > 0 ? <div className="pc-r"><Stars value={p.rating_avg} /> <span className="mut num">{p.rating_avg} ({p.rating_count})</span></div> : null}
         <div className="pc-p">
-          <b className="num">{rg.varies ? <small style={{ fontWeight: 600, marginInlineEnd: 4 }}>من</small> : null}{money(rg.min, cur)}</b>
+          <b className="num">{rg.varies ? <small style={{ fontWeight: 600, marginInlineEnd: 4 }}>{tx('من')}</small> : null}{money(rg.min, cur)}</b>
           {onSale && <span className="old num">{money(p.compare_price, cur)}</span>}
         </div>
-        <Link href={`${base}/p/${p.id}`} className="b p sm blk">{out ? 'التفاصيل' : 'عرض التفاصيل'}</Link>
+        <Link href={`${base}/p/${p.id}`} className="b p sm blk">{out ? tx('التفاصيل') : tx('عرض التفاصيل')}</Link>
       </div>
     </div>
   );
 }
 
 export function Countdown({ to, onEnd }) {
+  const tx = useT();
   const [left, setLeft] = useState(null);
   useEffect(() => {
     const end = new Date(to).getTime();
@@ -93,7 +97,7 @@ export function Countdown({ to, onEnd }) {
   }, [to]);
   if (left === null) return null;
   const s = Math.floor(left / 1000);
-  const parts = [[Math.floor(s / 86400), 'يوم'], [Math.floor((s % 86400) / 3600), 'ساعة'], [Math.floor((s % 3600) / 60), 'دقيقة'], [s % 60, 'ثانية']];
+  const parts = [[Math.floor(s / 86400), tx('يوم')], [Math.floor((s % 86400) / 3600), tx('ساعة')], [Math.floor((s % 3600) / 60), tx('دقيقة')], [s % 60, tx('ثانية')]];
   return (
     <div className="cd num" dir="ltr">
       {parts.map(([v, l]) => <div key={l}>{String(v).padStart(2, '0')}<small>{l}</small></div>)}
@@ -180,6 +184,7 @@ export function Blocks({ list }) {
 }
 
 export function NewsletterForm({ title, subtitle }) {
+  const tx = useT();
   const { slug } = useShop();
   const [v, setV] = useState('');
   const [hp, setHp] = useState('');
@@ -190,17 +195,17 @@ export function NewsletterForm({ title, subtitle }) {
     try {
       const r = await fetch('/api/store/newsletter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, contact: v, hp }) });
       const j = await r.json();
-      if (j.ok) { setSt({ busy: false, msg: 'تم الاشتراك بنجاح، شكراً لك 💚', ok: true }); setV(''); track('Lead', {}); } else setSt({ busy: false, msg: j.error || 'تعذر الاشتراك', ok: false });
-    } catch { setSt({ busy: false, msg: 'تعذر الاتصال، حاول مرة أخرى', ok: false }); }
+      if (j.ok) { setSt({ busy: false, msg: tx('تم الاشتراك بنجاح، شكراً لك 💚'), ok: true }); setV(''); track('Lead', {}); } else setSt({ busy: false, msg: j.error || tx('تعذر الاشتراك'), ok: false });
+    } catch { setSt({ busy: false, msg: tx('تعذر الاتصال، حاول مرة أخرى'), ok: false }); }
   };
   return (
     <div className="card center">
       <h3>{title}</h3>
       {subtitle ? <p className="mut" style={{ marginBottom: 12 }}>{subtitle}</p> : null}
       <form onSubmit={send} className="cpn" style={{ maxWidth: 440, margin: '12px auto 0' }}>
-        <input className="in" placeholder="بريدك الإلكتروني أو رقم موبايلك" value={v} onChange={(e) => setV(e.target.value)} />
+        <input className="in" placeholder={tx('بريدك الإلكتروني أو رقم موبايلك')} value={v} onChange={(e) => setV(e.target.value)} />
         <input className="hp" tabIndex={-1} autoComplete="off" aria-hidden="true" value={hp} onChange={(e) => setHp(e.target.value)} />
-        <button type="submit" className="b p" disabled={st.busy || !v.trim()}>{st.busy ? '...' : 'اشترك'}</button>
+        <button type="submit" className="b p" disabled={st.busy || !v.trim()}>{st.busy ? '...' : tx('اشترك')}</button>
       </form>
       {st.msg ? <p className={st.ok ? 'okm' : 'err'} style={{ marginTop: 10 }}>{st.msg}</p> : null}
     </div>

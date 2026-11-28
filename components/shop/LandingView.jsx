@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useShop } from './StoreContext';
 import { track } from './tracker';
@@ -35,6 +36,7 @@ function Reveal({ children, delay = 0, className = '' }) {
 }
 
 function Countdown({ id, minutes, label }) {
+  const tx = useT();
   const key = `spike_cd_${id}`;
   const [left, setLeft] = useState(null);
   useEffect(() => {
@@ -49,10 +51,10 @@ function Countdown({ id, minutes, label }) {
   if (left === null) return null;
   const s = Math.floor(left / 1000);
   const p = (n) => String(n).padStart(2, '0');
-  const seg = [[p(Math.floor(s / 3600)), 'ساعة'], [p(Math.floor((s % 3600) / 60)), 'دقيقة'], [p(s % 60), 'ثانية']];
+  const seg = [[p(Math.floor(s / 3600)), tx('ساعة')], [p(Math.floor((s % 3600) / 60)), tx('دقيقة')], [p(s % 60), tx('ثانية')]];
   return (
     <div className="lp-cd">
-      <div className="lp-cd-t">⏳ {left > 0 ? (label || 'ينتهي العرض خلال') : 'انتهى العرض'}</div>
+      <div className="lp-cd-t">⏳ {left > 0 ? (label || tx('ينتهي العرض خلال')) : tx('انتهى العرض')}</div>
       <div className="lp-cd-r" dir="ltr">
         {seg.map(([v, l], i) => (
           <React.Fragment key={l}>
@@ -81,31 +83,33 @@ function Faq({ items }) {
   );
 }
 
-function Stars({ n = 5 }) { return <span className="lp-stars" aria-label={`${n} من 5`}>{'★'.repeat(Math.max(1, Math.min(5, Number(n) || 5)))}</span>; }
+function Stars({ n = 5 }) {
+  const tx = useT(); return <span className="lp-stars" aria-label={tx('{1} من 5', [n])}>{'★'.repeat(Math.max(1, Math.min(5, Number(n) || 5)))}</span>; }
 
 function Section({ s, ctx }) {
+  const tx = useT();
   const { fn, p, price, onSale, cur, scarce, setLight } = ctx;
   const d = s.data || {};
   const off = onSale ? Math.round((1 - price / p.compare_price) * 100) : 0;
   switch (s.type) {
     case 'hero': {
       const img = d.image || p.images[0];
-      const trust = (Array.isArray(d.trust) && d.trust.length ? d.trust : ['💵|الدفع عند الاستلام', '🚚|توصيل لكل المحافظات', '📞|دعم سريع']).slice(0, 4);
+      const trust = (Array.isArray(d.trust) && d.trust.length ? d.trust : [tx('💵|الدفع عند الاستلام'), tx('🚚|توصيل لكل المحافظات'), tx('📞|دعم سريع')]).slice(0, 4);
       return (
         <section className="lp-hero" data-layout={d.layout || 'left'}>
           <Reveal className="lp-hero-t">
             {d.badge ? <span className="lp-badge">✦ {d.badge}</span> : null}
             <h1>{d.title || p.title}</h1>
             {d.subtitle ? <p className="lp-sub">{d.subtitle}</p> : null}
-            {p.rating_count > 0 ? <div className="lp-rate"><Stars n={Math.round(p.rating_avg)} /> <b className="num">{p.rating_avg}</b> <span>({p.rating_count} تقييم)</span></div> : null}
+            {p.rating_count > 0 ? <div className="lp-rate"><Stars n={Math.round(p.rating_avg)} /> <b className="num">{p.rating_avg}</b> <span>{tx('({1} تقييم)', [p.rating_count])}</span></div> : null}
             {d.show_price !== false ? (
               <div className="lp-price">
                 <b className="num">{money(price, cur)}</b>
-                {onSale ? <><span className="num old">{money(p.compare_price, cur)}</span><span className="lp-save">وفّر {off}%</span></> : null}
+                {onSale ? <><span className="num old">{money(p.compare_price, cur)}</span><span className="lp-save">{tx('وفّر {1}%', [off])}</span></> : null}
               </div>
             ) : null}
             {scarce ? <div className="lp-scar">🔥 {String(ctx.scarText).replace('{n}', p.stock_quantity)}</div> : null}
-            <button type="button" className="lp-btn" onClick={scrollToOrder}>{d.cta || fn.cta_text || 'اطلب الآن'} <span aria-hidden="true">←</span></button>
+            <button type="button" className="lp-btn" onClick={scrollToOrder}>{d.cta || fn.cta_text || tx('اطلب الآن')} <span aria-hidden="true">←</span></button>
             <div className="lp-trust">{trust.map((x, i) => { const [ic, t] = String(x).includes('|') ? String(x).split('|') : ['✔', x]; return <span key={i}><i>{ic}</i>{t}</span>; })}</div>
           </Reveal>
           {img ? (
@@ -123,7 +127,7 @@ function Section({ s, ctx }) {
         <section className="lp-sec lp-n">
           <Reveal>
             {d.title ? <h2 className="lp-h2">{d.title}</h2> : null}
-            <div className="lp-video"><iframe src={`https://www.youtube.com/embed/${v}`} title={d.title || 'فيديو'} loading="lazy" allowFullScreen /></div>
+            <div className="lp-video"><iframe src={`https://www.youtube.com/embed/${v}`} title={d.title || tx('فيديو')} loading="lazy" allowFullScreen /></div>
           </Reveal>
         </section>
       );
@@ -147,7 +151,7 @@ function Section({ s, ctx }) {
           {d.title ? <Reveal><h2 className="lp-h2">{d.title}</h2></Reveal> : null}
           <div className="lp-gal">
             {(d.images && d.images.length ? d.images : p.images).map((u, i) => (
-              <Reveal key={i} delay={i * 50}><button type="button" className="lp-gi" onClick={() => setLight(u)} aria-label="تكبير الصورة"><img src={u} alt="" loading="lazy" decoding="async" /></button></Reveal>
+              <Reveal key={i} delay={i * 50}><button type="button" className="lp-gi" onClick={() => setLight(u)} aria-label={tx('تكبير الصورة')}><img src={u} alt="" loading="lazy" decoding="async" /></button></Reveal>
             ))}
           </div>
         </section>
@@ -166,7 +170,7 @@ function Section({ s, ctx }) {
     case 'testimonials':
       return (
         <section className="lp-sec lp-n">
-          <Reveal><h2 className="lp-h2">{d.title || 'آراء عملائنا'}</h2></Reveal>
+          <Reveal><h2 className="lp-h2">{d.title || tx('آراء عملائنا')}</h2></Reveal>
           <div className="lp-tst">
             {(d.items || []).map((t, i) => (
               <Reveal key={i} delay={i * 70}>
@@ -175,7 +179,7 @@ function Section({ s, ctx }) {
                   <Stars n={t.stars} />
                   <blockquote>{t.text}</blockquote>
                   <figcaption>
-                    {t.image ? <img src={t.image} alt="" /> : <span className="lp-av">{String(t.name || '؟').trim().charAt(0)}</span>}
+                    {t.image ? <img src={t.image} alt="" /> : <span className="lp-av">{String(t.name || tx('؟')).trim().charAt(0)}</span>}
                     <b>{t.name}</b>
                   </figcaption>
                 </figure>
@@ -185,14 +189,14 @@ function Section({ s, ctx }) {
         </section>
       );
     case 'faq':
-      return <section className="lp-sec lp-n"><Reveal><h2 className="lp-h2">{d.title || 'الأسئلة الشائعة'}</h2><Faq items={d.items || []} /></Reveal></section>;
+      return <section className="lp-sec lp-n"><Reveal><h2 className="lp-h2">{d.title || tx('الأسئلة الشائعة')}</h2><Faq items={d.items || []} /></Reveal></section>;
     case 'guarantee':
       return (
         <section className="lp-sec lp-n">
           <Reveal>
             <div className="lp-guar">
               <div className="lp-shield">{d.icon || '🛡️'}</div>
-              <div><h3>{d.title || 'ضمان الاستبدال والاسترجاع'}</h3><p>{d.text}</p></div>
+              <div><h3>{d.title || tx('ضمان الاستبدال والاسترجاع')}</h3><p>{d.text}</p></div>
             </div>
           </Reveal>
         </section>
@@ -205,7 +209,7 @@ function Section({ s, ctx }) {
           <Reveal>
             <div className="lp-cta">
               {d.title ? <h2>{d.title}</h2> : null}
-              <button type="button" className="lp-btn lp-btn-w" onClick={scrollToOrder}>{d.cta || 'اطلب الآن'} <span aria-hidden="true">←</span></button>
+              <button type="button" className="lp-btn lp-btn-w" onClick={scrollToOrder}>{d.cta || tx('اطلب الآن')} <span aria-hidden="true">←</span></button>
             </div>
           </Reveal>
         </section>
@@ -218,6 +222,7 @@ function Section({ s, ctx }) {
 }
 
 function OrderBox({ s, ctx }) {
+  const tx = useT();
   const { fn, p, price: basePrice, onSale: baseSale, cur, scarce } = ctx;
   const d = s.data || {};
   const [opts, setOpts] = useState({});
@@ -233,33 +238,33 @@ function OrderBox({ s, ctx }) {
     <section className="lp-sec lp-n" id="checkout">
       <Reveal>
         <div className="lp-order">
-          <div className="lp-ribbon">💵 الدفع عند الاستلام · لا تدفع قبل ما تستلم</div>
-          <h2 className="lp-h2" style={{ marginTop: 6 }}>{d.title || 'اطلب الآن'}</h2>
+          <div className="lp-ribbon">{tx('💵 الدفع عند الاستلام · لا تدفع قبل ما تستلم')}</div>
+          <h2 className="lp-h2" style={{ marginTop: 6 }}>{d.title || tx('اطلب الآن')}</h2>
           <div className="lp-prod">
             {p.images[0] ? <img src={p.images[0]} alt="" /> : null}
             <div><b>{p.title}</b>
-              <div className="lp-price sm"><b className="num">{money(price, cur)}</b>{onSale ? <><span className="num old">{money(p.compare_price, cur)}</span><span className="lp-save">وفّر {Math.round((1 - price / p.compare_price) * 100)}%</span></> : null}</div>
+              <div className="lp-price sm"><b className="num">{money(price, cur)}</b>{onSale ? <><span className="num old">{money(p.compare_price, cur)}</span><span className="lp-save">{tx('وفّر {1}%', [Math.round((1 - price / p.compare_price) * 100)])}</span></> : null}</div>
               {scarce ? <div className="lp-scar sm">🔥 {String(ctx.scarText).replace('{n}', p.stock_quantity)}</div> : null}
             </div>
           </div>
-          {soldOut(p) ? <div className="err">نفدت الكمية حالياً</div> : (
+          {soldOut(p) ? <div className="err">{tx('نفدت الكمية حالياً')}</div> : (
             <>
               {groups.map((g) => (
                 <div className="opt" key={g.name}>
                   <b>{g.name}</b>
-                  <div className="chips">{g.values.map((v) => <button type="button" key={v} className={'chip' + (opts[g.name] === v ? ' act' : '') + (valueSoldOut(g, v) ? ' off' : '')} disabled={valueSoldOut(g, v)} onClick={() => setOpts({ ...opts, [g.name]: v })}>{v}{valueSoldOut(g, v) ? ' (نفد)' : ''}</button>)}</div>
+                  <div className="chips">{g.values.map((v) => <button type="button" key={v} className={'chip' + (opts[g.name] === v ? ' act' : '') + (valueSoldOut(g, v) ? ' off' : '')} disabled={valueSoldOut(g, v)} onClick={() => setOpts({ ...opts, [g.name]: v })}>{v}{valueSoldOut(g, v) ? tx(' (نفد)') : ''}</button>)}</div>
                 </div>
               ))}
-              <div className="lp-qrow"><span>الكمية</span>
+              <div className="lp-qrow"><span>{tx('الكمية')}</span>
                 <div className="qty">
-                  <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} aria-label="إنقاص">−</button>
+                  <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} aria-label={tx('إنقاص')}>−</button>
                   <span className="num">{qty}</span>
-                  <button type="button" onClick={() => setQty(Math.min(maxQty, qty + 1))} aria-label="زيادة">+</button>
+                  <button type="button" onClick={() => setQty(Math.min(maxQty, qty + 1))} aria-label={tx('زيادة')}>+</button>
                 </div>
               </div>
-              {!optsOk ? <div className="err" style={{ marginBottom: 10 }}>اختر {groups.filter((g) => !opts[g.name]).map((g) => g.name).join(' و ')} لإتمام الطلب</div> : null}
-              <Checkout items={optsOk ? [item] : []} bump={null} funnel={fn.slug} buttonText={d.cta || fn.cta_text || undefined} title="بيانات الشحن" next={ctx.flow?.next} flow={ctx.flow ? { slug: ctx.flow.slug, step: ctx.flow.step } : undefined} />
-              <div className="lp-safe"><span>🔒 بياناتك محمية</span><span>🚚 توصيل لباب البيت</span><span>↩️ تواصل معنا لأي استفسار</span></div>
+              {!optsOk ? <div className="err" style={{ marginBottom: 10 }}>{tx('اختر')} {groups.filter((g) => !opts[g.name]).map((g) => g.name).join(tx(' و '))} {tx('لإتمام الطلب')}</div> : null}
+              <Checkout items={optsOk ? [item] : []} bump={null} funnel={fn.slug} buttonText={d.cta || fn.cta_text || undefined} title={tx('بيانات الشحن')} next={ctx.flow?.next} flow={ctx.flow ? { slug: ctx.flow.slug, step: ctx.flow.step } : undefined} />
+              <div className="lp-safe"><span>{tx('🔒 بياناتك محمية')}</span><span>{tx('🚚 توصيل لباب البيت')}</span><span>{tx('↩️ تواصل معنا لأي استفسار')}</span></div>
             </>
           )}
         </div>
@@ -270,6 +275,7 @@ function OrderBox({ s, ctx }) {
 
 /* صفحة هبوط بالأقسام. لو مفيش أقسام يتم بناء أقسام افتراضية من بيانات الـ Funnel القديمة */
 export default function LandingView({ funnel: fnProp, product: p, flow }) {
+  const tx = useT();
   const { fn, sel, builder, pick } = useBuilderBridge(fnProp);
   const { slug, cur, cfg, base } = useShop();
   const th = fn.theme || {};
@@ -277,7 +283,7 @@ export default function LandingView({ funnel: fnProp, product: p, flow }) {
   const price = effectivePrice(p);
   const onSale = saleActive(p) && p.compare_price > price;
   const scarce = !!(cfg.scarcity?.enabled && p.track_stock && p.stock_quantity > 0 && p.stock_quantity <= (Number(cfg.scarcity.threshold) || 5));
-  const scarText = cfg.scarcity?.text || 'باقي {n} قطع فقط!';
+  const scarText = cfg.scarcity?.text || tx('باقي {n} قطع فقط!');
   const [light, setLight] = useState('');
   const sections = useMemo(() => {
     if (Array.isArray(fn.sections) && fn.sections.length) return fn.sections.filter((x) => x && x.on !== false);
@@ -451,10 +457,10 @@ export default function LandingView({ funnel: fnProp, product: p, flow }) {
         
       </div>
       {st.sticky_cta && showSticky ? (
-        <div className="lp-sticky"><button type="button" className="lp-btn" onClick={scrollToOrder}>{st.sticky_text || fn.cta_text || 'اطلب الآن'} · {money(price, cur)}</button></div>
+        <div className="lp-sticky"><button type="button" className="lp-btn" onClick={scrollToOrder}>{st.sticky_text || fn.cta_text || tx('اطلب الآن')} · {money(price, cur)}</button></div>
       ) : null}
-      {wa ? <a className="lp-wa" href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" aria-label="واتساب"><WaIcon size={32} /></a> : null}
-      {light ? <div className="lp-lb" onClick={() => setLight('')} role="dialog" aria-label="الصورة"><img src={light} alt="" /></div> : null}
+      {wa ? <a className="lp-wa" href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" aria-label={tx('واتساب')}><WaIcon size={32} /></a> : null}
+      {light ? <div className="lp-lb" onClick={() => setLight('')} role="dialog" aria-label={tx('الصورة')}><img src={light} alt="" /></div> : null}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { toggleTry } from './tryonBus';
@@ -18,44 +19,47 @@ import StockAlert from './StockAlert';
 import { money, effectivePrice, unitPrice, overridePrice, valueSoldOut, optionAvail, saleActive, applyOffer, optionImage, isHttpUrl, splitImages, waLink, normalizePhone, isValidEgPhone } from '../../lib/storeKit';
 
 function ReviewForm({ productId }) {
+  const tx = useT();
   const { slug } = useShop();
   const [f, setF] = useState({ name: '', rating: 5, comment: '' });
   const [hp, setHp] = useState('');
   const [st, setSt] = useState({ busy: false, msg: '', ok: false });
   const send = async (e) => {
     e.preventDefault();
-    if (f.name.trim().length < 2) { setSt({ busy: false, msg: 'اكتب اسمك', ok: false }); return; }
+    if (f.name.trim().length < 2) { setSt({ busy: false, msg: tx('اكتب اسمك'), ok: false }); return; }
     setSt({ busy: true, msg: '', ok: false });
     try {
       const r = await fetch('/api/store/review', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, product_id: productId, ...f, hp }) });
       const j = await r.json();
-      if (j.ok) { setSt({ busy: false, msg: 'شكراً! سيظهر تقييمك بعد المراجعة 💚', ok: true }); setF({ name: '', rating: 5, comment: '' }); } else setSt({ busy: false, msg: j.error || 'تعذر إرسال التقييم', ok: false });
-    } catch { setSt({ busy: false, msg: 'تعذر الاتصال', ok: false }); }
+      if (j.ok) { setSt({ busy: false, msg: tx('شكراً! سيظهر تقييمك بعد المراجعة 💚'), ok: true }); setF({ name: '', rating: 5, comment: '' }); } else setSt({ busy: false, msg: j.error || tx('تعذر إرسال التقييم'), ok: false });
+    } catch { setSt({ busy: false, msg: tx('تعذر الاتصال'), ok: false }); }
   };
   return (
     <form className="frm" onSubmit={send} style={{ marginTop: 14 }}>
-      <h3>أضف تقييمك</h3>
+      <h3>{tx('أضف تقييمك')}</h3>
       <div className="r2">
-        <div className="fld"><label>الاسم</label><input className="in" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
-        <div className="fld"><label>التقييم</label>
+        <div className="fld"><label>{tx('الاسم')}</label><input className="in" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></div>
+        <div className="fld"><label>{tx('التقييم')}</label>
           <select className="in" value={f.rating} onChange={(e) => setF({ ...f, rating: Number(e.target.value) })}>
             {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{'★'.repeat(n)}</option>)}
           </select>
         </div>
       </div>
-      <div className="fld"><label>رأيك</label><input className="in" value={f.comment} onChange={(e) => setF({ ...f, comment: e.target.value })} /></div>
+      <div className="fld"><label>{tx('رأيك')}</label><input className="in" value={f.comment} onChange={(e) => setF({ ...f, comment: e.target.value })} /></div>
       <input className="hp" tabIndex={-1} autoComplete="off" aria-hidden="true" value={hp} onChange={(e) => setHp(e.target.value)} />
       {st.msg ? <div className={st.ok ? 'okm' : 'err'}>{st.msg}</div> : null}
-      <button className="b p" type="submit" disabled={st.busy}>{st.busy ? '...' : 'إرسال التقييم'}</button>
+      <button className="b p" type="submit" disabled={st.busy}>{st.busy ? '...' : tx('إرسال التقييم')}</button>
     </form>
   );
 }
 
 export default function ProductView({ product: p, catalog = [], reviews = [], stats = { count: 0, avg: 0 }, blocks = [] }) {
-  const { slug, cfg, cur, base, add, setBump: saveBump } = useShop();
+  const tx = useT();
+  const { slug, cfg, cur, base, add, setBump: saveBump, pages } = useShop();
   const router = useRouter();
   const [img, setImg] = useState(0);
   const [spinOn, setSpinOn] = useState(false);
+  const swipe = useRef(null);
   const [pinned, setPinned] = useState(true);
   const [qty, setQty] = useState(1);
   const [bumpOn, setBumpOn] = useState(false);
@@ -116,7 +120,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   const addToCart = () => {
     setMsg('');
     if (sold) return; 
-    if (!optsOk) { setMsg(`اختر ${groups.filter((g) => !opts[g.name]).map((g) => g.name).join(' و ')} أولاً`); return; }
+    if (!optsOk) { setMsg(tx('اختر {1} أولاً', [groups.filter((g) => !opts[g.name]).map((g) => g.name).join(tx(' و '))])); return; }
     const flyMs = flyToCart(document.querySelector('.spk .gal-main img'), mainImg || p.images[0]);
     add({ product_id: p.id, title: p.title, image: colorImg || p.images[0] || '', price, qty, options: opts });
     saveBump(bumpOn && bumpProd ? { product_id: bumpProd.id } : null);
@@ -130,12 +134,13 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
   };
 
   const onePage = cfg.checkout?.one_page !== false;
+  const retPage = (pages || []).find((x) => /returns|refund|استرجاع|استبدال|ارجاع/i.test(`${x.slug} ${x.title}`)) || null;
 
   /* اطلب الآن: يسجّل «بدء إتمام الشراء» ثم يودّي العميل لنموذج الطلب */
   const buyNow = () => {
     setMsg('');
     if (sold) return;
-    if (!optsOk) { setMsg(`اختر ${groups.filter((g) => !opts[g.name]).map((g) => g.name).join(' و ')} أولاً`); return; }
+    if (!optsOk) { setMsg(tx('اختر {1} أولاً', [groups.filter((g) => !opts[g.name]).map((g) => g.name).join(tx(' و '))])); return; }
     fireInitiateCheckout(slug, offer.total, [{ id: p.id, title: p.title, price, qty }]);
     if (onePage) { toCheckout(); return; }
     add({ product_id: p.id, title: p.title, image: colorImg || p.images[0] || '', price, qty, options: opts });
@@ -150,33 +155,40 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
         <div className="gal">
         {spinVideo ? (
           <div className="sp-tg" role="tablist">
-            <button type="button" role="tab" aria-selected={!spinOn} className={!spinOn ? 'on' : ''} onClick={() => setSpinOn(false)}>صور</button>
+            <button type="button" role="tab" aria-selected={!spinOn} className={!spinOn ? 'on' : ''} onClick={() => setSpinOn(false)}>{tx('صور')}</button>
             <button type="button" role="tab" aria-selected={spinOn} className={spinOn ? 'on' : ''} onClick={() => setSpinOn(true)}>360°</button>
           </div>
         ) : null}
         {spinVideo && spinOn ? <SpinViewer key={`${spinVideo}|${spinTop}|${spinBot}`} src={spinVideo} top={spinTop} bottom={spinBot} title={p.title} /> : <>
-        <FlipPic key={mainImg} className="gal-main gal-sw" front={mainImg} back={onFront ? gi.back : ''} alt={p.title} fetchPriority="high" />
+        <div className="gal-mw"
+          onTouchStart={(e) => { swipe.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+          onTouchEnd={(e) => { const s0 = swipe.current; swipe.current = null; if (!s0 || gi.list.length < 2) return; const dx = e.changedTouches[0].clientX - s0.x; const dy = e.changedTouches[0].clientY - s0.y; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { setPinned(false); setImg((img + (dx < 0 ? 1 : -1) + gi.list.length) % gi.list.length); } }}>
+          <FlipPic key={mainImg} className="gal-main gal-sw" front={mainImg} back={onFront ? gi.back : ''} alt={p.title} fetchPriority="high" />
+        </div>
           {gi.list.length > 1 && (
             <div className="gal-nav">
-              <button type="button" onClick={() => { setPinned(false); setImg((img - 1 + gi.list.length) % gi.list.length); }} aria-label="السابق">→</button>
+              <button type="button" onClick={() => { setPinned(false); setImg((img - 1 + gi.list.length) % gi.list.length); }} aria-label={tx('السابق')}>→</button>
               <span className="num" dir="ltr">{String(img + 1).padStart(2, '0')} / {String(gi.list.length).padStart(2, '0')}</span>
-              <button type="button" className="dk" onClick={() => { setPinned(false); setImg((img + 1) % gi.list.length); }} aria-label="التالي">←</button>
+              <button type="button" className="dk" onClick={() => { setPinned(false); setImg((img + 1) % gi.list.length); }} aria-label={tx('التالي')}>←</button>
             </div>
           )}
         </>}
+          {!(spinVideo && spinOn) && gi.list.length > 0 ? (
+            <div className="gal-stack">{gi.list.map((src, i) => i === 0 && gi.back ? <FlipPic key={i} className="gs-i" front={src} back={gi.back} alt={p.title} fetchPriority="high" /> : <div key={i} className="gs-i"><img src={src} alt={i === 0 ? p.title : ''} loading={i < 2 ? 'eager' : 'lazy'} /></div>)}</div>
+          ) : null}
           {gi.list.length > 1 && !(spinVideo && spinOn) && (
-            <div className="gal-th">{gi.list.map((s, i) => <button key={i} type="button" className={i === img && !(pinned && colorImg) ? 'act' : ''} onClick={() => { setPinned(false); setImg(i); }} aria-label={`صورة ${i + 1}`}><img src={s} alt="" loading="lazy" /></button>)}</div>
+            <div className="gal-th">{gi.list.map((s, i) => <button key={i} type="button" className={i === img && !(pinned && colorImg) ? 'act' : ''} onClick={() => { setPinned(false); setImg(i); }} aria-label={tx('صورة {1}', [i + 1])}><img src={s} alt="" loading="lazy" /></button>)}</div>
           )}
         </div>
 
         <div className="info">
-          <h1>{p.title} <button type="button" className={'pc-fav big' + (fav.has(p.id) ? ' on' : '')} aria-label="المفضلة" onClick={() => fav.toggle(p.id)}>{fav.has(p.id) ? '♥' : '♡'}</button></h1>
-          {stats.count > 0 && <div><Stars value={stats.avg} /> <span className="mut" style={{ fontSize: 13 }}>({stats.count} تقييم)</span></div>}
+          <h1>{p.title} <button type="button" className={'pc-fav big' + (fav.has(p.id) ? ' on' : '')} aria-label={tx('المفضلة')} onClick={() => fav.toggle(p.id)}>{fav.has(p.id) ? '♥' : '♡'}</button></h1>
+          {stats.count > 0 && <div><Stars value={stats.avg} /> <span className="mut" style={{ fontSize: 13 }}>{tx('({1} تقييم)', [stats.count])}</span></div>}
           <div className="price">
             <b className="num">{money(price, cur)}</b>
-            {onSale && <><span className="old num">{money(p.compare_price, cur)}</span><span className="save">وفّر {Math.round((1 - price / p.compare_price) * 100)}%</span></>}
+            {onSale && <><span className="old num">{money(p.compare_price, cur)}</span><span className="save">{tx('وفّر {1}%', [Math.round((1 - price / p.compare_price) * 100)])}</span></>}
           </div>
-          {sold ? <><div className="err">نفدت الكمية حالياً</div><StockAlert slug={slug} pid={p.id} /></> : scarce ? <div className="scar">{String(cfg.scarcity.text || 'باقي {n} قطع فقط!').replace('{n}', p.stock_quantity)}</div> : null}
+          {sold ? <><div className="err">{tx('نفدت الكمية حالياً')}</div><StockAlert slug={slug} pid={p.id} /></> : scarce ? <div className="scar">{String(cfg.scarcity.text || tx('باقي {n} قطع فقط!')).replace('{n}', p.stock_quantity)}</div> : null}
 
           {groups.map((g) => (
             <div className="opt" key={g.name}>
@@ -184,9 +196,9 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
               <div className="chips">{g.values.map((v) => {
                 const sw = g.images && isHttpUrl(g.images[v]) ? g.images[v] : '';
                 return (
-                  <button type="button" key={v} className={'chip' + (sw ? ' sw' : '') + (opts[g.name] === v ? ' act' : '') + (valueSoldOut(g, v) ? ' off' : '')} aria-pressed={opts[g.name] === v} disabled={valueSoldOut(g, v)} title={valueSoldOut(g, v) ? 'نفد' : undefined}
+                  <button type="button" key={v} className={'chip' + (sw ? ' sw' : '') + (opts[g.name] === v ? ' act' : '') + (valueSoldOut(g, v) ? ' off' : '')} aria-pressed={opts[g.name] === v} disabled={valueSoldOut(g, v)} title={valueSoldOut(g, v) ? tx('نفد') : undefined}
                     onClick={() => { setOpts({ ...opts, [g.name]: v }); if (sw) setPinned(true); }}>
-                    {sw ? <img src={sw} alt="" loading="lazy" /> : null}<span>{v}</span>{valueSoldOut(g, v) ? <small style={{ marginInlineStart: 6, opacity: .8 }}>نفد</small> : null}
+                    {sw ? <img src={sw} alt="" loading="lazy" /> : null}<span>{v}</span>{valueSoldOut(g, v) ? <small style={{ marginInlineStart: 6, opacity: .8 }}>{tx('نفد')}</small> : null}
                   </button>
                 );
               })}</div>
@@ -195,10 +207,10 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
           ))}
 
           {(cfg.fitting?.enabled && cfg.fitting?.ai?.enabled && (cfg.fitting?.models || []).length && (p.images || [])[0]) ? (
-            <button type="button" className="b" style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '4px 0 12px', gap: 8 }} onClick={() => toggleTry({ id: p.id, title: p.title, img: p.images[0], rect: null })}>👗 جرّبه بالذكاء الاصطناعي</button>
+            <button type="button" className="b" style={{ display: 'flex', justifyContent: 'center', width: '100%', margin: '4px 0 12px', gap: 8 }} onClick={() => toggleTry({ id: p.id, title: p.title, img: p.images[0], rect: null })}>{tx('👗 جرّبه بالذكاء الاصطناعي')}</button>
           ) : null}
           {(cfg.fitting?.enabled && ((cfg.fitting?.models || []).length || cfg.fitting?.builtin !== false) && cfg.fitting?.items?.[String(p.id)]?.image) ? (
-            <Link href={`${base}/fitting?p=${encodeURIComponent(String(p.id))}`} className="b" style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 12px', gap: 8 }}>🪞 جرّبه على الموديل</Link>
+            <Link href={`${base}/fitting?p=${encodeURIComponent(String(p.id))}`} className="b" style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 12px', gap: 8 }}>{tx('🪞 جرّبه على الموديل')}</Link>
           ) : null}
 
           {(p.offers || []).length > 0 && (
@@ -207,7 +219,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
                 const r = applyOffer(price, Number(o.qty), [o]);
                 return (
                   <button type="button" key={i} className={'offer' + (qty === Number(o.qty) ? ' act' : '')} onClick={() => setQty(Math.min(maxQty, Number(o.qty)))} disabled={Number(o.qty) > maxQty}>
-                    <span><b>{o.label}</b><small>{o.qty} قطع</small></span>
+                    <span><b>{o.label}</b><small>{tx('{1} قطع', [o.qty])}</small></span>
                     <b className="num">{money(r.total, cur)}</b>
                   </button>
                 );
@@ -217,62 +229,74 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '12px 0', flexWrap: 'wrap' }}>
             <div className="qty">
-              <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} aria-label="إنقاص">−</button>
+              <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} aria-label={tx('إنقاص')}>−</button>
               <span className="num">{qty}</span>
-              <button type="button" onClick={() => setQty(Math.min(maxQty, qty + 1))} aria-label="زيادة">+</button>
+              <button type="button" onClick={() => setQty(Math.min(maxQty, qty + 1))} aria-label={tx('زيادة')}>+</button>
             </div>
-            <span className="mut">الإجمالي: <b className="num" style={{ color: 'var(--ink)' }}>{money(offer.total, cur)}</b>{offer.saved > 0 ? <span className="okm"> (وفّرت {money(offer.saved, cur)})</span> : null}</span>
+            <span className="mut">{tx('الإجمالي:')} <b className="num" style={{ color: 'var(--ink)' }}>{money(offer.total, cur)}</b>{offer.saved > 0 ? <span className="okm"> {tx('(وفّرت {1})', [money(offer.saved, cur)])}</span> : null}</span>
           </div>
 
           {bumpProd && !sold && (
             <label className="bump">
               <input type="checkbox" checked={bumpOn} onChange={(e) => setBumpOn(e.target.checked)} />
               {bumpProd.images[0] ? <img src={bumpProd.images[0]} alt="" /> : null}
-              <span><b>{p.upsell.text || `أضف ${bumpProd.title} بخصم ${bumpPct}%`}</b><small>{bumpProd.title} · <span className="num">{money(bumpPrice, cur)}</span></small></span>
+              <span><b>{p.upsell.text || tx('أضف {1} بخصم {2}%', [bumpProd.title, bumpPct])}</b><small>{bumpProd.title} · <span className="num">{money(bumpPrice, cur)}</span></small></span>
             </label>
           )}
 
           {msg ? <div className="err" style={{ marginBottom: 10 }}>{msg}</div> : null}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button type="button" className="b blk" onClick={addToCart} disabled={sold}>🛒 أضف للسلة</button>
-            <button type="button" className="b p blk" onClick={buyNow} disabled={sold}>⚡ اطلب الآن</button>
-            {waOk ? <a className="b wa blk" target="_blank" rel="noopener noreferrer" href={waLink(wa, `استفسار عن: ${p.title}`)} onClick={() => track('Contact', {})}>💬 اسأل على واتساب</a> : null}
+            <button type="button" className="b blk" onClick={addToCart} disabled={sold}>{tx('🛒 أضف للسلة')}</button>
+            <button type="button" className="b p blk" onClick={buyNow} disabled={sold}>{tx('⚡ اطلب الآن')}</button>
+            {waOk ? <a className="b wa blk" target="_blank" rel="noopener noreferrer" href={waLink(wa, tx('استفسار عن: {1}', [p.title]))} onClick={() => track('Contact', {})}>{tx('💬 اسأل على واتساب')}</a> : null}
           </div>
 
           <div className="assure">
-            <div><i>💵</i>الدفع عند الاستلام</div>
-            <div><i>🚚</i>توصيل لباب البيت</div>
-            {waOk ? <div><i>💬</i>دعم على واتساب</div> : null}
+            <div><i>💵</i>{tx('الدفع عند الاستلام')}</div>
+            <div><i>🚚</i>{tx('توصيل لباب البيت')}</div>
+            {waOk ? <div><i>💬</i>{tx('دعم على واتساب')}</div> : null}
           </div>
-          {p.description ? <div style={{ marginTop: 20 }}><h3 style={{ marginBottom: 6 }}>الوصف</h3><p className="desc">{p.description}</p></div> : null}
+          <div className="acc">
+            {p.description ? <details open><summary>{tx('الوصف')}</summary><p className="desc">{p.description}</p></details> : null}
+            <details><summary>{tx('الدفع والشحن')}</summary>
+              <ul>
+                <li>{tx('الدفع نقداً عند الاستلام')}{Number(cfg.payment?.cod_fee) > 0 ? tx(' (رسوم {1})', [money(Number(cfg.payment.cod_fee), cur)]) : ''}{tx('، وتقدر تعاين الطلب قبل ما تدفع.')}</li>
+                {Number(cfg.shipping?.free_over) > 0 ? <li>{tx('شحن مجاني للطلبات فوق {1}.', [money(Number(cfg.shipping.free_over), cur)])}</li> : null}
+                <li>{tx('مصاريف الشحن بتظهر لك قبل التأكيد حسب المحافظة.')}</li>
+                <li>{tx('بتقدر تتابع حالة طلبك من صفحة «تتبع الطلب».')}</li>
+              </ul>
+            </details>
+            {retPage ? <details><summary>{tx('الاستبدال والاسترجاع')}</summary><p className="desc">{tx('اقرأ سياسة المتجر كاملة:')} <Link href={`${base}/page/${retPage.slug}`} style={{ textDecoration: 'underline', fontWeight: 700 }}>{retPage.title}</Link></p></details> : null}
+            {sizeChart && groups.some((g) => isSizeGroup(g.name)) ? <details><summary>{tx('دليل المقاسات')}</summary><p className="desc">{tx('اختر المقاس من الأعلى وهتلاقي زرار «مقاسي إيه؟» يساعدك تحدد المقاس المناسب من طولك ووزنك.')}</p></details> : null}
+          </div>
         </div>
       </div>
 
       {onePage && !sold && (
         <div style={{ maxWidth: 560, margin: '0 auto 24px' }}>
-          {!optsOk ? <div className="err" style={{ marginBottom: 10 }}>اختر {groups.filter((g) => !opts[g.name]).map((g) => g.name).join(' و ')} من الأعلى لإتمام الطلب</div> : null}
-          <Checkout items={optsOk ? [item] : []} bump={bumpOn && bumpProd ? { product_id: bumpProd.id } : null} title="اطلب الآن · الدفع عند الاستلام" />
+          {!optsOk ? <div className="err" style={{ marginBottom: 10 }}>{tx('اختر')} {groups.filter((g) => !opts[g.name]).map((g) => g.name).join(tx(' و '))} {tx('من الأعلى لإتمام الطلب')}</div> : null}
+          <Checkout items={optsOk ? [item] : []} bump={bumpOn && bumpProd ? { product_id: bumpProd.id } : null} title={tx('اطلب الآن · الدفع عند الاستلام')} />
         </div>
       )}
     
       {viewedList.length > 0 && (
         <section className="sec">
-          <div className="sh"><h2>شاهدت مؤخراً</h2></div>
+          <div className="sh"><h2>{tx('شاهدت مؤخراً')}</h2></div>
           <div className="grid">{viewedList.map((x) => <ProductCard key={x.id} p={x} />)}</div>
         </section>
       )}
       {cross.length > 0 && (
         <section className="sec">
-          <div className="sh"><h2>{cfg.cross?.title || 'كمّل طلبك بـ'}</h2></div>
+          <div className="sh"><h2>{cfg.cross?.title || tx('كمّل طلبك بـ')}</h2></div>
           <div className="grid">{cross.map((x) => <div key={x.id} onClick={() => hit(slug, 'cross')}><ProductCard p={x} /></div>)}</div>
         </section>
       )}
 
       <section className="sec">
-        <div className="sh"><h2>تقييمات العملاء</h2></div>
+        <div className="sh"><h2>{tx('تقييمات العملاء')}</h2></div>
         {reviews.length ? reviews.map((r) => (
-          <div className="rev" key={r.id}><Stars value={r.rating} /> <b>{r.customer_name || 'عميل'}</b>{r.comment ? <p style={{ marginTop: 4 }}>{r.comment}</p> : null}</div>
-        )) : <p className="mut">لا توجد تقييمات بعد، كن أول من يقيّم.</p>}
+          <div className="rev" key={r.id}><Stars value={r.rating} /> <b>{r.customer_name || tx('عميل')}</b>{r.comment ? <p style={{ marginTop: 4 }}>{r.comment}</p> : null}</div>
+        )) : <p className="mut">{tx('لا توجد تقييمات بعد، كن أول من يقيّم.')}</p>}
         <ReviewForm productId={p.id} />
       </section>
 
@@ -281,7 +305,7 @@ export default function ProductView({ product: p, catalog = [], reviews = [], st
       {!sold && (
         <div className="stk">
           <b className="num">{money(offer.total, cur)}</b>
-          <button type="button" className="b p" onClick={buyNow}>اطلب الآن</button>
+          <button type="button" className="b p" onClick={buyNow}>{tx('اطلب الآن')}</button>
         </div>
       )}
       <div style={{ height: 70 }} className="stk-sp" />

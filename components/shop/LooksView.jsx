@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -15,6 +16,7 @@ import { money, effectivePrice, unitPrice } from '../../lib/storeKit';
 const Thumb = ({ p, cls }) => (p.images && p.images[0] ? <img className={cls} src={p.images[0]} alt="" loading="lazy" decoding="async" /> : <span className={cls + ' ph'}>{(p.title || '?').charAt(0)}</span>);
 
 export default function LooksView({ looks = [], title = '' }) {
+  const tx = useT();
   const { slug, cfg, cur, base, add, count } = useShop();
   const router = useRouter();
   const [sel, setSel] = useState(0);
@@ -60,7 +62,7 @@ export default function LooksView({ looks = [], title = '' }) {
     flyToCart(document.querySelector('.lk-main img'), (active[0].p.images || [])[0]);
     setTimeout(() => {
       active.forEach(pushLine);
-      setDone(`الإطلالة كاملة (${active.length} قطع)`);
+      setDone(tx('الإطلالة كاملة ({1} قطع)', [active.length]));
       setBusy(false);
     }, reduce() ? 0 : 380);
   };
@@ -70,10 +72,10 @@ export default function LooksView({ looks = [], title = '' }) {
     <div className="lk">
       <div className="lk-top">
         {title ? <h2>{title}</h2> : null}
-        <button type="button" className="lk-cart" data-fly-target="1" onClick={openCart} aria-label="السلة">🛒 <span className="num">{count}</span></button>
+        <button type="button" className="lk-cart" data-fly-target="1" onClick={openCart} aria-label={tx('السلة')}>🛒 <span className="num">{count}</span></button>
       </div>
       {looks.length > 1 && (
-        <div className="lk-line" role="tablist" aria-label="الإطلالات">
+        <div className="lk-line" role="tablist" aria-label={tx('الإطلالات')}>
           {looks.map((l, i) => (
             <button key={l.id} type="button" role="tab" aria-selected={i === sel} className={i === sel ? 'on' : ''} onClick={() => setSel(i)}>
               {l.image ? <img src={l.image} alt="" loading="lazy" decoding="async" /> : <Thumb p={l.products[0]} cls="" />}
@@ -87,7 +89,7 @@ export default function LooksView({ looks = [], title = '' }) {
           {look.image ? <img src={look.image} alt={look.name} decoding="async" /> : <div className="lk-collage">{look.products.slice(0, 4).map((p) => <Thumb key={p.id} p={p} cls="" />)}</div>}
         </div>
         <div className="lk-side">
-          <div className="lk-k">في هذه الإطلالة · {items.length} قطع</div>
+          <div className="lk-k">{tx('في هذه الإطلالة · {1} قطع', [items.length])}</div>
           <h3>{look.name}</h3>
           {look.note ? <p className="lk-note">{look.note}</p> : null}
           <div className="lk-list">
@@ -100,7 +102,7 @@ export default function LooksView({ looks = [], title = '' }) {
                   <div className="lk-bd">
                     <div className="lk-nm">{p.title}</div>
                     <div className="lk-pr num">{money(effectivePrice(p), cur)}</div>
-                    {s.sold ? <div className="lk-sold">نفدت الكمية</div> : (p.variants || []).map((g) => (
+                    {s.sold ? <div className="lk-sold">{tx('نفدت الكمية')}</div> : (p.variants || []).map((g) => (
                       <div key={g.name} className="lk-opt">
                         <div className="lk-chips">
                           {g.values.map((v) => <button key={v} type="button" className={(s.o[g.name] === v ? 'sel' : '')} onClick={() => setOpt(p, g, v)} aria-pressed={s.o[g.name] === v}>{v}</button>)}
@@ -111,8 +113,8 @@ export default function LooksView({ looks = [], title = '' }) {
                   </div>
                   {!s.sold && (
                     <div className="lk-ac">
-                      <button type="button" className="lk-add" disabled={!!s.missing.length} onClick={() => addOne(s)} aria-label={`أضف ${p.title} للسلة`} title={s.missing.length ? `اختر ${s.missing[0].name}` : 'أضف للسلة'}>+</button>
-                      <label className="lk-in"><input type="checkbox" checked={!s.off} onChange={() => setSkip((c) => ({ ...c, [p.id]: !c[p.id] }))} /><span>ضمن الإطلالة</span></label>
+                      <button type="button" className="lk-add" disabled={!!s.missing.length} onClick={() => addOne(s)} aria-label={tx('أضف {1} للسلة', [p.title])} title={s.missing.length ? tx('اختر {1}', [s.missing[0].name]) : tx('أضف للسلة')}>+</button>
+                      <label className="lk-in"><input type="checkbox" checked={!s.off} onChange={() => setSkip((c) => ({ ...c, [p.id]: !c[p.id] }))} /><span>{tx('ضمن الإطلالة')}</span></label>
                     </div>
                   )}
                 </div>
@@ -120,11 +122,11 @@ export default function LooksView({ looks = [], title = '' }) {
             })}
           </div>
           <div className="lk-ft">
-            <div className="lk-tot"><span>الإجمالي</span><b className="num">{money(total, cur)}</b></div>
+            <div className="lk-tot"><span>{tx('الإجمالي')}</span><b className="num">{money(total, cur)}</b></div>
             <button type="button" className={'lk-all' + (done.startsWith('الإطلالة') ? ' ok' : '')} disabled={!active.length || !!need || busy} onClick={addAll}>
-              {busy ? <span className="ob-spin" /> : need ? `اختر ${need.missing[0].name} لـ «${need.p.title}»` : !active.length ? 'لا توجد قطع متاحة' : '🛍️ أضف الإطلالة كاملة للسلة'}
+              {busy ? <span className="ob-spin" /> : need ? tx('اختر {1} لـ «{2}»', [need.missing[0].name, need.p.title]) : !active.length ? tx('لا توجد قطع متاحة') : tx('🛍️ أضف الإطلالة كاملة للسلة')}
             </button>
-            {done ? <div className="ob-added" role="status"><span>✓ تمت إضافة {done} للسلة</span><button type="button" onClick={openCart}>عرض السلة ←</button></div> : null}
+            {done ? <div className="ob-added" role="status"><span>{tx('✓ تمت إضافة {1} للسلة', [done])}</span><button type="button" onClick={openCart}>{tx('عرض السلة ←')}</button></div> : null}
           </div>
         </div>
       </div>

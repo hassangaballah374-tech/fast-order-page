@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useMemo, useState } from 'react';
 import { recommend, matchValue, quickSize } from '../../lib/sizeFinder';
 import { useShop } from './StoreContext';
@@ -26,14 +27,15 @@ const SHOE_FIT = [
 const WIDTH = [['ضيقة', -1], ['عادية', 0], ['عريضة', 1]];
 
 function Stepper({ label, unit, value, min, max, step = 1, onChange }) {
+  const tx = useT();
   const set = (v) => onChange(Math.min(max, Math.max(min, Math.round(v * 10) / 10)));
   return (
     <div className="sf-st">
       <div className="sf-stl"><span>{label}</span><small>{unit}</small></div>
       <div className="sf-str">
-        <button type="button" onClick={() => set(value - step)} aria-label="إنقاص">−</button>
+        <button type="button" onClick={() => set(value - step)} aria-label={tx('إنقاص')}>−</button>
         <b className="num" dir="ltr">{step < 1 ? value.toFixed(1) : value}</b>
-        <button type="button" onClick={() => set(value + step)} aria-label="زيادة">+</button>
+        <button type="button" onClick={() => set(value + step)} aria-label={tx('زيادة')}>+</button>
       </div>
       <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => set(Number(e.target.value))} aria-label={label} />
     </div>
@@ -41,6 +43,7 @@ function Stepper({ label, unit, value, min, max, step = 1, onChange }) {
 }
 
 export function SizeFinder({ chart, values = [], onPick, onClose }) {
+  const tx = useT();
   const shop = useShop();
   const slug = (shop && shop.slug) || 'store';
   const shoes = chart.kind === 'shoes';
@@ -72,42 +75,42 @@ export function SizeFinder({ chart, values = [], onPick, onClose }) {
   const choose = (val) => { onPick(val); onClose(); };
 
   return (
-    <div className="sf" role="dialog" aria-modal="true" aria-label="باحث المقاس">
-      <button type="button" className="sf-x" onClick={onClose}>إغلاق ✕</button>
+    <div className="sf" role="dialog" aria-modal="true" aria-label={tx('باحث المقاس')}>
+      <button type="button" className="sf-x" onClick={onClose}>{tx('إغلاق ✕')}</button>
       <div className="sf-box">
         <div className="sf-top">
-          <span className="sf-k">دليل المقاس</span>
+          <span className="sf-k">{tx('دليل المقاس')}</span>
           <span className="num sf-n" dir="ltr">{pad(step + 1)} / {pad(total)}</span>
         </div>
         <div className="sf-bar"><i style={{ width: `${((step + 1) / total) * 100}%` }} /></div>
 
         {step === 0 && !shoes && (
           <div className="sf-p" key="s0">
-            <h2>خلّينا نلاقي مقاسك</h2>
-            <p className="sf-d">قياسين بسيطين بس. اسحب أو اضغط +/− للتعديل.</p>
-            <Stepper label="الطول" unit="سم" value={inp.h} min={140} max={210} onChange={(v) => set({ h: v })} />
-            <Stepper label="الوزن" unit="كجم" value={inp.w} min={35} max={160} onChange={(v) => set({ w: v })} />
-            <div className="sf-live"><span>التقدير الحالي</span><b className="num">{live || '—'}</b></div>
+            <h2>{tx('خلّينا نلاقي مقاسك')}</h2>
+            <p className="sf-d">{tx('قياسين بسيطين بس. اسحب أو اضغط +/− للتعديل.')}</p>
+            <Stepper label={tx('الطول')} unit={tx('سم')} value={inp.h} min={140} max={210} onChange={(v) => set({ h: v })} />
+            <Stepper label={tx('الوزن')} unit={tx('كجم')} value={inp.w} min={35} max={160} onChange={(v) => set({ w: v })} />
+            <div className="sf-live"><span>{tx('التقدير الحالي')}</span><b className="num">{live || '—'}</b></div>
           </div>
         )}
         {step === 0 && shoes && (
           <div className="sf-p" key="s0s">
-            <h2>طول قدمك كام؟</h2>
-            <p className="sf-d">حط ورقة على الأرض، وقف عليها وعلّم من الكعب لأطول صباع، وقيس بالمسطرة.</p>
-            <Stepper label="طول القدم" unit="سم" value={inp.foot} min={20} max={32} step={0.1} onChange={(v) => set({ foot: v })} />
-            <div className="sf-live"><span>التقدير الحالي</span><b className="num">{live || '—'}</b></div>
+            <h2>{tx('طول قدمك كام؟')}</h2>
+            <p className="sf-d">{tx('حط ورقة على الأرض، وقف عليها وعلّم من الكعب لأطول صباع، وقيس بالمسطرة.')}</p>
+            <Stepper label={tx('طول القدم')} unit={tx('سم')} value={inp.foot} min={20} max={32} step={0.1} onChange={(v) => set({ foot: v })} />
+            <div className="sf-live"><span>{tx('التقدير الحالي')}</span><b className="num">{live || '—'}</b></div>
           </div>
         )}
 
         {step === 1 && !shoes && (
           <div className="sf-p" key="s1">
-            <h2>شكل جسمك</h2>
-            <p className="sf-d">مش أرقام، اختار الأقرب ليك. بيخلّي التوصية أدق.</p>
+            <h2>{tx('شكل جسمك')}</h2>
+            <p className="sf-d">{tx('مش أرقام، اختار الأقرب ليك. بيخلّي التوصية أدق.')}</p>
             {SHAPE.map((r) => (
               <div className="sf-row" key={r.k}>
-                <div className="sf-rt">{r.t}</div>
+                <div className="sf-rt">{tx(r.t)}</div>
                 <div className="sf-3">
-                  {r.o.map(([t, v]) => <button type="button" key={v} className={inp[r.k] === v ? 'on' : ''} onClick={() => set({ [r.k]: v })}>{t}</button>)}
+                  {r.o.map(([t, v]) => <button type="button" key={v} className={inp[r.k] === v ? 'on' : ''} onClick={() => set({ [r.k]: v })}>{tx(t)}</button>)}
                 </div>
               </div>
             ))}
@@ -115,20 +118,20 @@ export function SizeFinder({ chart, values = [], onPick, onClose }) {
         )}
         {step === 1 && shoes && (
           <div className="sf-p" key="s1s">
-            <h2>عرض قدمك</h2>
-            <p className="sf-d">لو الجزمة بتضايقك من الجنب اختار عريضة.</p>
+            <h2>{tx('عرض قدمك')}</h2>
+            <p className="sf-d">{tx('لو الجزمة بتضايقك من الجنب اختار عريضة.')}</p>
             <div className="sf-row"><div className="sf-3">{WIDTH.map(([t, v]) => <button type="button" key={v} className={inp.width === v ? 'on' : ''} onClick={() => set({ width: v })}>{t}</button>)}</div></div>
           </div>
         )}
 
         {step === 2 && (
           <div className="sf-p" key="s2">
-            <h2>{shoes ? 'تحبها إزاي؟' : 'تحب اللبس إزاي؟'}</h2>
-            <p className="sf-d">بنظبط المقاس على ذوقك.</p>
+            <h2>{shoes ? tx('تحبها إزاي؟') : tx('تحب اللبس إزاي؟')}</h2>
+            <p className="sf-d">{tx('بنظبط المقاس على ذوقك.')}</p>
             <div className="sf-opts">
               {(shoes ? SHOE_FIT : FIT).map((f) => (
                 <button type="button" key={f.v} className={inp.fit === f.v ? 'on' : ''} onClick={() => set({ fit: f.v })}>
-                  <b>{f.t}</b><small>{f.d}</small>
+                  <b>{tx(f.t)}</b><small>{tx(f.d)}</small>
                 </button>
               ))}
             </div>
@@ -137,26 +140,26 @@ export function SizeFinder({ chart, values = [], onPick, onClose }) {
 
         {step === 3 && res && (
           <div className="sf-p sf-res" key="s3">
-            <div className="sf-k2">أنسب مقاس ليك</div>
+            <div className="sf-k2">{tx('أنسب مقاس ليك')}</div>
             <div className="sf-ring"><b>{res.size}</b></div>
-            <div className="sf-conf"><span className="num">{res.confidence}%</span> ثقة · <b>{res.fitText}</b></div>
+            <div className="sf-conf"><span className="num">{res.confidence}%</span> {tx('ثقة ·')} <b>{res.fitText}</b></div>
             {res.scale.length > 1 && (
               <div className="sf-scale" dir="ltr">
                 <div className="sf-line"><i style={{ left: `${res.position * 100}%` }} /></div>
                 <div className="sf-lbls">{res.scale.map((s, i) => <span key={s} className={i === res.bestIndex ? 'on' : ''}>{s}</span>)}</div>
               </div>
             )}
-            {res.alt && <p className="sf-d">بين مقاسين: <b>{res.size}</b> و<b>{res.alt}</b>. {inp.fit > 0 ? 'وانت بتحب المريح، ممكن تاخد الأكبر.' : 'لو بتحب مريح أكتر خد الأكبر.'}</p>}
+            {res.alt && <p className="sf-d">{tx('بين مقاسين:')} <b>{res.size}</b> {tx('و')}<b>{res.alt}</b>. {inp.fit > 0 ? tx('وانت بتحب المريح، ممكن تاخد الأكبر.') : tx('لو بتحب مريح أكتر خد الأكبر.')}</p>}
             {res.notes.map((n) => <p className="sf-note" key={n}>• {n}</p>)}
             {matched ? (
-              <button type="button" className="sf-go" onClick={() => choose(matched)}>اختار المقاس {matched}</button>
-            ) : <p className="sf-note">المقاس {res.size} مش متاح في المنتج ده حاليًا.</p>}
-            {altMatched ? <button type="button" className="sf-alt" onClick={() => choose(altMatched)}>أو اختار {altMatched}</button> : null}
-            <button type="button" className="sf-tb" onClick={() => setTable((t) => !t)}>{table ? 'إخفاء' : 'عرض'} جدول المقاسات</button>
+              <button type="button" className="sf-go" onClick={() => choose(matched)}>{tx('اختار المقاس {1}', [matched])}</button>
+            ) : <p className="sf-note">{tx('المقاس {1} مش متاح في المنتج ده حاليًا.', [res.size])}</p>}
+            {altMatched ? <button type="button" className="sf-alt" onClick={() => choose(altMatched)}>{tx('أو اختار {1}', [altMatched])}</button> : null}
+            <button type="button" className="sf-tb" onClick={() => setTable((t) => !t)}>{table ? tx('إخفاء') : tx('عرض')} {tx('جدول المقاسات')}</button>
             {table && (
               <div className="sf-tbl">
                 <table>
-                  <thead><tr><th>المقاس</th>{shoes ? <th>طول القدم (سم)</th> : <><th>الطول (سم)</th><th>الوزن (كجم)</th></>}</tr></thead>
+                  <thead><tr><th>{tx('المقاس')}</th>{shoes ? <th>{tx('طول القدم (سم)')}</th> : <><th>{tx('الطول (سم)')}</th><th>{tx('الوزن (كجم)')}</th></>}</tr></thead>
                   <tbody>
                     {chart.rows.map((r) => (
                       <tr key={r.size} className={r.size === res.size ? 'on' : ''}>
@@ -172,8 +175,8 @@ export function SizeFinder({ chart, values = [], onPick, onClose }) {
         )}
 
         <div className="sf-ft">
-          {step > 0 && <button type="button" className="sf-bk" onClick={() => setStep(step === 3 ? 0 : step - 1)}>{step === 3 ? 'إعادة' : 'رجوع'}</button>}
-          {step < 3 && <button type="button" className="sf-nx" onClick={next}>{step === 2 ? 'اعرف مقاسي ←' : 'التالي ←'}</button>}
+          {step > 0 && <button type="button" className="sf-bk" onClick={() => setStep(step === 3 ? 0 : step - 1)}>{step === 3 ? tx('إعادة') : tx('رجوع')}</button>}
+          {step < 3 && <button type="button" className="sf-nx" onClick={next}>{step === 2 ? tx('اعرف مقاسي ←') : tx('التالي ←')}</button>}
         </div>
       </div>
     </div>
@@ -182,11 +185,12 @@ export function SizeFinder({ chart, values = [], onPick, onClose }) {
 
 /* زر «مش عارف مقاسك؟» + النافذة */
 export default function SizeHelp({ chart, values, onPick, className = '' }) {
+  const tx = useT();
   const [open, setOpen] = useState(false);
   if (!chart) return null;
   return (
     <>
-      <button type="button" className={'sf-link ' + className} onClick={() => setOpen(true)}>📏 مش عارف مقاسك؟ احسبه</button>
+      <button type="button" className={'sf-link ' + className} onClick={() => setOpen(true)}>{tx('📏 مش عارف مقاسك؟ احسبه')}</button>
       {open && <SizeFinder chart={chart} values={values} onPick={onPick} onClose={() => setOpen(false)} />}
     </>
   );

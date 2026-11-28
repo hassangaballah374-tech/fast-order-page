@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useShop } from './StoreContext';
@@ -23,6 +24,7 @@ const FRAMES = [{ id: 'full', n: 'كامل' }, { id: 'mid', n: 'متوسط' }, {
 const DEF = { look: 0, grade: 0, real: 75, height: 168, build: 50, frame: 'full' };
 
 export default function StudioView({ list = [] }) {
+  const tx = useT();
   const cart = useBrowseCart();
   const { cfg } = cart;
   const { add } = useShop();
@@ -67,7 +69,7 @@ export default function StudioView({ list = [] }) {
   const slide = (k) => ({ onChange: (e) => setLive((l) => ({ ...(l || {}), [k]: +e.target.value })), onPointerUp: rel, onKeyUp: rel, onBlur: rel });
   const undo = () => { if (hi > 0) setHi(hi - 1); };
   const redo = () => { if (hi < hist.length - 1) setHi(hi + 1); };
-  const reset = () => { commit({ ...DEF }); say('رجعنا للوضع الافتراضي'); };
+  const reset = () => { commit({ ...DEF }); say(tx('رجعنا للوضع الافتراضي')); };
   const pick = (i) => { if (i === S.look) return; commit({ look: i }); };
   useEffect(() => {
     const kd = (e) => {
@@ -94,14 +96,14 @@ export default function StudioView({ list = [] }) {
   const missing = groups.filter((g) => !o[g.name]);
   const addCart = () => {
     if (!p || soldOut(p)) return;
-    if (missing.length) { say(`اختر ${missing[0].name} الأول`); return; }
+    if (missing.length) { say(tx('اختر {1} الأول', [missing[0].name])); return; }
     const price = unitPrice(p, o);
     add({ product_id: p.id, title: p.title, image: p.images[0] || '', price, qty: 1, options: o });
     track('AddToCart', { value: price, items: [{ id: p.id, title: p.title, price, qty: 1 }] });
-    setInCart((c) => ({ ...c, [p.id]: true })); say('تمت الإضافة للسلة');
+    setInCart((c) => ({ ...c, [p.id]: true })); say(tx('تمت الإضافة للسلة'));
   };
   const saved = fav.ids;
-  const save = () => { if (!p) return; if (!fav.has(p.id)) fav.toggle(p.id); setOpen(true); say('اتحفظت في المكتبة'); };
+  const save = () => { if (!p) return; if (!fav.has(p.id)) fav.toggle(p.id); setOpen(true); say(tx('اتحفظت في المكتبة')); };
 
   const real = Math.max(0, (80 - S.real) / 80);
   const gr = FILTERS[S.grade] || FILTERS[0];
@@ -112,7 +114,7 @@ export default function StudioView({ list = [] }) {
   };
   const savedItems = useMemo(() => items.filter((x) => saved.includes(String(x.id))), [items, saved]);
 
-  if (!n) return <div className="empty">لا توجد منتجات مطابقة</div>;
+  if (!n) return <div className="empty">{tx('لا توجد منتجات مطابقة')}</div>;
   const renderFig = (it) => (it.images[0] ? <img src={it.images[0]} alt="" draggable="false" /> : <Ph p={it} />);
 
   return (
@@ -120,7 +122,7 @@ export default function StudioView({ list = [] }) {
       <div className="st-scene" aria-hidden="true"><div className="st-grade" style={{ filter: gr.f }}><div className="st-bg" /><div className="st-tint" style={{ background: gr.t }} /></div><div className="st-vig" /></div>
 
       <div className="st-tabs glass-d" role="tablist">
-        {[['style', 'المنتجات'], ['body', 'المشهد']].map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
+        {[['style', tx('المنتجات')], ['body', tx('المشهد')]].map(([k, l]) => <button key={k} type="button" role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}
       </div>
 
       <div className="st-model">
@@ -136,16 +138,16 @@ export default function StudioView({ list = [] }) {
       <div className="st-card glass-d">
         <b className="st-nm">{p.title}</b>
         <PriceEl p={p} cur={cart.cur} />
-        <div className="st-act"><button type="button" onClick={() => setFocus(true)}>عرض سريع</button><Link href={`${cart.base}/p/${p.id}`}>كل التفاصيل ←</Link></div>
+        <div className="st-act"><button type="button" onClick={() => setFocus(true)}>{tx('عرض سريع')}</button><Link href={`${cart.base}/p/${p.id}`}>{tx('كل التفاصيل ←')}</Link></div>
       </div>
 
       <div className="st-panel glass-d">
         {tab === 'style' ? (
           <>
-            <div className="st-ph"><h3>الإطلالات</h3><span className="num">{n} {n === 1 ? 'قطعة' : 'قطع'}</span></div>
-            <div className="st-grid" role="listbox" aria-label="المنتجات">
+            <div className="st-ph"><h3>{tx('الإطلالات')}</h3><span className="num">{n} {n === 1 ? tx('قطعة') : tx('قطع')}</span></div>
+            <div className="st-grid" role="listbox" aria-label={tx('المنتجات')}>
               {items.map((it, i) => (
-                <button key={it.id} type="button" role="option" aria-selected={i === S.look} className={'st-c' + (i === S.look ? ' on' : '') + (rand === i % n ? ' hl' : '')} onClick={() => pick(i)} onDoubleClick={() => { fav.toggle(it.id); say(fav.has(it.id) ? 'اتشالت من المكتبة' : 'اتحفظت في المكتبة'); }} aria-label={it.title}>
+                <button key={it.id} type="button" role="option" aria-selected={i === S.look} className={'st-c' + (i === S.look ? ' on' : '') + (rand === i % n ? ' hl' : '')} onClick={() => pick(i)} onDoubleClick={() => { fav.toggle(it.id); say(fav.has(it.id) ? tx('اتشالت من المكتبة') : tx('اتحفظت في المكتبة')); }} aria-label={it.title}>
                   <span className="st-im">{it.images[0] ? <img src={it.images[0]} alt="" loading="lazy" draggable="false" /> : <Ph p={it} />}</span>
                   <span className="st-tg">{it.title}</span>
                   {fav.has(it.id) ? <span className="st-hr" aria-hidden="true">♥</span> : null}
@@ -154,43 +156,43 @@ export default function StudioView({ list = [] }) {
             </div>
             <div className="st-det">
               <div className="st-dh"><b>{p.title}</b><PriceEl p={p} cur={cart.cur} /></div>
-              {soldOut(p) ? <small className="st-so">نفدت الكمية</small> : groups.map((g) => (
+              {soldOut(p) ? <small className="st-so">{tx('نفدت الكمية')}</small> : groups.map((g) => (
                 <div key={g.name} className="st-sz" role="group" aria-label={g.name}><span>{g.name}</span>{g.values.map((v) => <button key={v} type="button" className={o[g.name] === v ? 'on' : ''} aria-pressed={o[g.name] === v} onClick={() => setOpts((x) => ({ ...x, [p.id]: { ...(x[p.id] || {}), [g.name]: v } }))}>{v}</button>)}</div>
               ))}
-              <button type="button" className={'st-add' + (inCart[p.id] ? ' ok' : '')} disabled={soldOut(p)} onClick={addCart}>{inCart[p.id] ? '✓ في السلة' : '+ أضف للسلة'}</button>
+              <button type="button" className={'st-add' + (inCart[p.id] ? ' ok' : '')} disabled={soldOut(p)} onClick={addCart}>{inCart[p.id] ? tx('✓ في السلة') : tx('+ أضف للسلة')}</button>
             </div>
           </>
         ) : (
           <>
-            <div className="st-ph"><h3>المشهد</h3><span>التأطير والفلتر</span></div>
-            <div className="st-lb">التأطير</div>
-            <div className="st-chips">{FRAMES.map((f) => <button key={f.id} type="button" className={S.frame === f.id ? 'on' : ''} onClick={() => commit({ frame: f.id })}>{f.n}</button>)}</div>
-            <label className="st-sl"><span>الواقعية</span><b className="num">{S.real}%</b><input type="range" min="0" max="100" value={S.real} {...slide('real')} /></label>
-            <div className="st-lb">الفلتر</div>
+            <div className="st-ph"><h3>{tx('المشهد')}</h3><span>{tx('التأطير والفلتر')}</span></div>
+            <div className="st-lb">{tx('التأطير')}</div>
+            <div className="st-chips">{FRAMES.map((f) => <button key={f.id} type="button" className={S.frame === f.id ? 'on' : ''} onClick={() => commit({ frame: f.id })}>{tx(f.n)}</button>)}</div>
+            <label className="st-sl"><span>{tx('الواقعية')}</span><b className="num">{S.real}%</b><input type="range" min="0" max="100" value={S.real} {...slide('real')} /></label>
+            <div className="st-lb">{tx('الفلتر')}</div>
             <div className="st-flt">
-              <button type="button" className="st-fd" aria-expanded={fOpen} onClick={() => setFOpen((x) => !x)}>{gr.n} <i>▾</i></button>
-              {fOpen ? <div className="st-fl glass-d" role="listbox">{FILTERS.map((f, i) => <button key={f.id} type="button" role="option" aria-selected={i === S.grade} className={i === S.grade ? 'on' : ''} onClick={() => { commit({ grade: i }); setFOpen(false); }}>{f.n}</button>)}</div> : null}
+              <button type="button" className="st-fd" aria-expanded={fOpen} onClick={() => setFOpen((x) => !x)}>{tx(gr.n)} <i>▾</i></button>
+              {fOpen ? <div className="st-fl glass-d" role="listbox">{FILTERS.map((f, i) => <button key={f.id} type="button" role="option" aria-selected={i === S.grade} className={i === S.grade ? 'on' : ''} onClick={() => { commit({ grade: i }); setFOpen(false); }}>{tx(f.n)}</button>)}</div> : null}
             </div>
             <div className="st-th">{FILTERS.map((f, i) => (
-              <button key={f.id} type="button" className={i === S.grade ? 'on' : ''} aria-label={f.n} onClick={() => commit({ grade: i })}>
+              <button key={f.id} type="button" className={i === S.grade ? 'on' : ''} aria-label={tx(f.n)} onClick={() => commit({ grade: i })}>
                 <span style={{ filter: f.f }}>{p.images[0] ? <img src={p.images[0]} alt="" /> : null}</span><i style={{ background: f.t }} />
               </button>))}</div>
           </>
         )}
       </div>
 
-      <div className="st-bar glass-d" role="toolbar" aria-label="أدوات">
-        <button type="button" disabled={hi === 0} onClick={undo}>↶ تراجع</button>
-        <button type="button" disabled={hi >= hist.length - 1} onClick={redo}>↷ إعادة</button>
-        <button type="button" className="on" onClick={() => commit({ frame: FRAMES[(FRAMES.findIndex((f) => f.id === S.frame) + 1) % 3].id })}>{FRAMES.find((f) => f.id === S.frame).n}</button>
-        <button type="button" onClick={reset}>⟲ إعادة ضبط</button>
-        <button type="button" onClick={randomize}>🎲 عشوائي</button>
+      <div className="st-bar glass-d" role="toolbar" aria-label={tx('أدوات')}>
+        <button type="button" disabled={hi === 0} onClick={undo}>{tx('↶ تراجع')}</button>
+        <button type="button" disabled={hi >= hist.length - 1} onClick={redo}>{tx('↷ إعادة')}</button>
+        <button type="button" className="on" onClick={() => commit({ frame: FRAMES[(FRAMES.findIndex((f) => f.id === S.frame) + 1) % 3].id })}>{tx(FRAMES.find((f) => f.id === S.frame).n)}</button>
+        <button type="button" onClick={reset}>{tx('⟲ إعادة ضبط')}</button>
+        <button type="button" onClick={randomize}>{tx('🎲 عشوائي')}</button>
       </div>
-      <button type="button" className="st-save" onClick={save}>احفظ في المكتبة <span className="num">{savedItems.length || ''}</span></button>
+      <button type="button" className="st-save" onClick={save}>{tx('احفظ في المكتبة')} <span className="num">{savedItems.length || ''}</span></button>
       {open ? (
-        <div className="st-lib glass-d" role="dialog" aria-label="المكتبة">
-          <div className="st-ph"><h3>المكتبة</h3><button type="button" className="st-x" aria-label="إغلاق" onClick={() => setOpen(false)}>✕</button></div>
-          {savedItems.length ? <div className="st-lr">{savedItems.map((it) => <button key={it.id} type="button" onClick={() => { pick(items.indexOf(it)); setOpen(false); }} aria-label={it.title}>{it.images[0] ? <img src={it.images[0]} alt="" /> : null}</button>)}</div> : <p>احفظ إطلالة عشان تبدأ مكتبتك.</p>}
+        <div className="st-lib glass-d" role="dialog" aria-label={tx('المكتبة')}>
+          <div className="st-ph"><h3>{tx('المكتبة')}</h3><button type="button" className="st-x" aria-label={tx('إغلاق')} onClick={() => setOpen(false)}>✕</button></div>
+          {savedItems.length ? <div className="st-lr">{savedItems.map((it) => <button key={it.id} type="button" onClick={() => { pick(items.indexOf(it)); setOpen(false); }} aria-label={it.title}>{it.images[0] ? <img src={it.images[0]} alt="" /> : null}</button>)}</div> : <p>{tx('احفظ إطلالة عشان تبدأ مكتبتك.')}</p>}
         </div>
       ) : null}
       {toast ? <div className="st-toast" role="status">✓ {toast}</div> : null}
