@@ -3,11 +3,12 @@ import { notFound } from 'next/navigation';
 import { loadStore, getProducts } from '../../../../../lib/storeData';
 import { showcaseProducts } from '../../../../../lib/showcases';
 import BrowseView from '../../../../../components/shop/BrowseView';
+import { getT } from '../../../../../lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
-  return { title: 'تشكيلة' };
+  return { title: getT().T('تشكيلة') };
 }
 
 export default async function ShowcasePage({ params }) {
