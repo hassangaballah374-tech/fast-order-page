@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useMemo, useState } from 'react';
 import BrowseView from './BrowseView';
 import { useShop } from './StoreContext';
@@ -26,6 +27,7 @@ function facets(list) {
 }
 
 export default function FilterBar({ list = [], style = 'grid' }) {
+  const tx = useT();
   const { cur } = useShop();
   const fac = useMemo(() => facets(list), [list]);
   const prices = useMemo(() => list.map((p) => effectivePrice(p)).filter((n) => n > 0), [list]);
@@ -58,7 +60,7 @@ export default function FilterBar({ list = [], style = 'grid' }) {
   const reset = () => { const e = { min: '', max: '', avail: false, sale: false, opts: {} }; setDraft(e); setF(e); setOpen(false); };
   const chips = [
     ...(f.min !== '' || f.max !== '' ? [['price', `${f.min || lo} – ${f.max || hi} ${cur}`]] : []),
-    ...(f.avail ? [['avail', 'المتاح فقط']] : []), ...(f.sale ? [['sale', 'تخفيضات']] : []),
+    ...(f.avail ? [['avail', tx('المتاح فقط')]] : []), ...(f.sale ? [['sale', tx('تخفيضات')]] : []),
     ...Object.entries(f.opts).flatMap(([gn, vs]) => vs.map((v) => [`o:${gn}:${v}`, v])),
   ];
   const drop = (k) => setF((c) => {
@@ -73,24 +75,24 @@ export default function FilterBar({ list = [], style = 'grid' }) {
   return (
     <>
       <div className="wrap fb-bar">
-        <button type="button" className="chip fb-btn" onClick={() => { setDraft(f); setOpen(true); }} aria-haspopup="dialog">تصفية{count ? <b className="fb-n num">{count}</b> : null}</button>
-        {chips.map(([k, l]) => <button key={k} type="button" className="chip act fb-x" onClick={() => drop(k)} aria-label={`إزالة ${l}`}>{l} ✕</button>)}
-        {count ? <span className="mut fb-c">{shown.length} من {list.length} منتج</span> : null}
+        <button type="button" className="chip fb-btn" onClick={() => { setDraft(f); setOpen(true); }} aria-haspopup="dialog">{tx('تصفية')}{count ? <b className="fb-n num">{count}</b> : null}</button>
+        {chips.map(([k, l]) => <button key={k} type="button" className="chip act fb-x" onClick={() => drop(k)} aria-label={tx('إزالة {1}', [l])}>{l} ✕</button>)}
+        {count ? <span className="mut fb-c">{tx('{1} من {2} منتج', [shown.length, list.length])}</span> : null}
       </div>
       {shown.length ? <BrowseView key={`${style}|${count}|${JSON.stringify(f)}`} style={style} list={shown} /> : (
-        <div className="wrap"><div className="card fb-empty"><p>مفيش منتجات بالتصفية دي.</p><button type="button" className="b p" onClick={reset}>مسح التصفية</button></div></div>
+        <div className="wrap"><div className="card fb-empty"><p>{tx('مفيش منتجات بالتصفية دي.')}</p><button type="button" className="b p" onClick={reset}>{tx('مسح التصفية')}</button></div></div>
       )}
       {open ? (
-        <div className="fb-ov" role="dialog" aria-modal="true" aria-label="تصفية المنتجات" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
+        <div className="fb-ov" role="dialog" aria-modal="true" aria-label={tx('تصفية المنتجات')} onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
           <div className="fb-sh">
-            <div className="fb-hd"><b>تصفية المنتجات</b><button type="button" className="fb-cl" onClick={() => setOpen(false)} aria-label="إغلاق">✕</button></div>
+            <div className="fb-hd"><b>{tx('تصفية المنتجات')}</b><button type="button" className="fb-cl" onClick={() => setOpen(false)} aria-label={tx('إغلاق')}>✕</button></div>
             <div className="fb-bd">
               {hi > lo ? (
-                <fieldset className="fb-g"><legend>السعر ({cur})</legend>
+                <fieldset className="fb-g"><legend>{tx('السعر ({1})', [cur])}</legend>
                   <div className="fb-pr">
-                    <input className="in num" inputMode="numeric" dir="ltr" placeholder={String(lo)} value={draft.min} onChange={(e) => setDraft({ ...draft, min: e.target.value.replace(/\D/g, '') })} aria-label="أقل سعر" />
-                    <span>إلى</span>
-                    <input className="in num" inputMode="numeric" dir="ltr" placeholder={String(hi)} value={draft.max} onChange={(e) => setDraft({ ...draft, max: e.target.value.replace(/\D/g, '') })} aria-label="أعلى سعر" />
+                    <input className="in num" inputMode="numeric" dir="ltr" placeholder={String(lo)} value={draft.min} onChange={(e) => setDraft({ ...draft, min: e.target.value.replace(/\D/g, '') })} aria-label={tx('أقل سعر')} />
+                    <span>{tx('إلى')}</span>
+                    <input className="in num" inputMode="numeric" dir="ltr" placeholder={String(hi)} value={draft.max} onChange={(e) => setDraft({ ...draft, max: e.target.value.replace(/\D/g, '') })} aria-label={tx('أعلى سعر')} />
                   </div>
                 </fieldset>
               ) : null}
@@ -101,12 +103,12 @@ export default function FilterBar({ list = [], style = 'grid' }) {
                   </div>
                 </fieldset>
               ))}
-              <fieldset className="fb-g"><legend>أخرى</legend>
-                <label className="fb-ck"><input type="checkbox" checked={draft.avail} onChange={(e) => setDraft({ ...draft, avail: e.target.checked })} /> المتاح فقط</label>
-                {list.some(onSale) ? <label className="fb-ck"><input type="checkbox" checked={draft.sale} onChange={(e) => setDraft({ ...draft, sale: e.target.checked })} /> عليه تخفيض</label> : null}
+              <fieldset className="fb-g"><legend>{tx('أخرى')}</legend>
+                <label className="fb-ck"><input type="checkbox" checked={draft.avail} onChange={(e) => setDraft({ ...draft, avail: e.target.checked })} /> {tx('المتاح فقط')}</label>
+                {list.some(onSale) ? <label className="fb-ck"><input type="checkbox" checked={draft.sale} onChange={(e) => setDraft({ ...draft, sale: e.target.checked })} /> {tx('عليه تخفيض')}</label> : null}
               </fieldset>
             </div>
-            <div className="fb-ft"><button type="button" className="b" onClick={reset}>مسح الكل</button><button type="button" className="b p" onClick={apply}>عرض النتائج</button></div>
+            <div className="fb-ft"><button type="button" className="b" onClick={reset}>{tx('مسح الكل')}</button><button type="button" className="b p" onClick={apply}>{tx('عرض النتائج')}</button></div>
           </div>
         </div>
       ) : null}

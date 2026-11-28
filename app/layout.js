@@ -7,6 +7,7 @@ import PullRefresh from '../components/PullRefresh';
 import { BrandProvider } from '../components/BrandContext';
 import { getBrand } from '../lib/brandServer';
 import { withV } from '../lib/brand';
+import { getLang } from '../lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,11 +43,12 @@ export async function generateMetadata() {
 
 export default async function RootLayout({ children }) {
   const brand = await getBrand();
+  const lang = getLang();
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
+    <html lang={lang} dir={lang === 'en' ? 'ltr' : 'rtl'} suppressHydrationWarning>
       <body className="antialiased transition-colors duration-200 min-h-screen">
         <BrandProvider initial={brand}>
-        <AppProvider>
+        <AppProvider initialLang={lang}>
           <MobileViewportWrapper>
             <MotionFX />
             {children}

@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 /* مشغّل 360° متعدد الارتفاعات.
@@ -52,6 +53,7 @@ function extract(url, onPct, alive) {
 }
 
 export default function SpinViewer({ src, top = '', bottom = '', title = '' }) {
+  const tx = useT();
   const wrap = useRef(null); const vid = useRef(null); const cv = useRef(null); const tilt = useRef(null);
   const st = useRef({ ang: 0, vis: 0, vel: 0, dragging: false, idle: 0, tween: null, rings: {}, mode: 'loading', drawn: '', last: 0, drag: null, pitch: 0, pitchT: 0, lastUp: 0, bmps: new Map() });
   const [mode, setMode] = useState('loading'); // loading | cache | scrub | error
@@ -185,22 +187,22 @@ export default function SpinViewer({ src, top = '', bottom = '', title = '' }) {
   };
 
   const ready = mode === 'cache' || mode === 'scrub';
-  const elevs = [['top', 'من فوق', have.top], ['mid', 'مستوى النظر', true], ['bottom', 'من تحت', have.bottom]].filter((x) => x[2]);
+  const elevs = [['top', tx('من فوق'), have.top], ['mid', tx('مستوى النظر'), true], ['bottom', tx('من تحت'), have.bottom]].filter((x) => x[2]);
   return (
     <div className="sp">
-      <div className={'sp-st' + (ready ? ' rdy' : '')} ref={wrap} style={{ aspectRatio: String(ratio) }} tabIndex={0} role="img" aria-label={`عرض 360 درجة: ${title}. اسحب يمين وشمال وفوق وتحت أو استخدم الأسهم`}
+      <div className={'sp-st' + (ready ? ' rdy' : '')} ref={wrap} style={{ aspectRatio: String(ratio) }} tabIndex={0} role="img" aria-label={tx('عرض 360 درجة: {1}. اسحب يمين وشمال وفوق وتحت أو استخدم الأسهم', [title])}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onKeyDown={key}>
         <div className="sp-t" ref={tilt}>
           <video ref={vid} src={src} muted playsInline loop autoPlay preload="auto" crossOrigin="anonymous" className="sp-v" style={{ display: mode === 'cache' ? 'none' : 'block' }} />
           <canvas ref={cv} className="sp-c" width="540" height="960" style={{ display: mode === 'cache' ? 'block' : 'none' }} />
         </div>
-        {mode === 'loading' ? <div className="sp-ld" role="status"><i /><span>جاري تجهيز الـ 360°{pct ? ` ${pct}%` : ''}</span></div> : null}
-        {mode === 'error' ? <div className="sp-ld"><span>تعذر تشغيل فيديو الـ 360°</span></div> : null}
+        {mode === 'loading' ? <div className="sp-ld" role="status"><i /><span>{tx('جاري تجهيز الـ 360°')}{pct ? ` ${pct}%` : ''}</span></div> : null}
+        {mode === 'error' ? <div className="sp-ld"><span>{tx('تعذر تشغيل فيديو الـ 360°')}</span></div> : null}
       </div>
-      <div className="sp-rd" aria-hidden="true"><span>اسحب في كل الاتجاهات</span><i className="sp-bar"><b style={{ insetInlineStart: `${(deg / 360) * 100}%` }} /></i><em className="num">{String(deg % 360).padStart(3, '0')}°</em></div>
+      <div className="sp-rd" aria-hidden="true"><span>{tx('اسحب في كل الاتجاهات')}</span><i className="sp-bar"><b style={{ insetInlineStart: `${(deg / 360) * 100}%` }} /></i><em className="num">{String(deg % 360).padStart(3, '0')}°</em></div>
       {thumbs ? (
-        <div className="sp-lk" role="group" aria-label="زوايا">
-          {['وش', 'ضهر'].map((l, i) => <button key={l} type="button" className={look === i ? 'on' : ''} aria-label={l} aria-pressed={look === i} onClick={() => spinTo(i === 0 ? 0 : 0.5, i)}><img src={thumbs[i]} alt="" /><span>{l}</span></button>)}
+        <div className="sp-lk" role="group" aria-label={tx('زوايا')}>
+          {[tx('وش'), tx('ضهر')].map((l, i) => <button key={l} type="button" className={look === i ? 'on' : ''} aria-label={l} aria-pressed={look === i} onClick={() => spinTo(i === 0 ? 0 : 0.5, i)}><img src={thumbs[i]} alt="" /><span>{l}</span></button>)}
           {elevs.length > 1 ? <span className="sp-sep" aria-hidden="true" /> : null}
           {elevs.length > 1 ? elevs.map(([k, l]) => <button key={k} type="button" className={'sp-el' + (elev === k ? ' on' : '')} aria-pressed={elev === k} onClick={() => goElev(k)}>{l}</button>) : null}
         </div>

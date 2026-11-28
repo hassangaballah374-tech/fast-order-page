@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useShop, getUtm, hit } from './StoreContext';
@@ -18,6 +19,7 @@ function abTag() {
 }
 
 export default function Checkout({ items, bump, buttonText, onSuccess, funnel, title = 'بيانات الشحن', next, flow }) {
+  const tx = useT();
   const { slug, cfg, cur, zones, base, live } = useShop();
   const router = useRouter();
   const co = cfg.checkout || {};
@@ -85,17 +87,17 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
     e.preventDefault();
     if (busy) return;
     setErr('');
-    if (!live) { setErr('المتجر غير مفعّل حالياً، الطلبات متوقفة مؤقتاً'); return; }
-    if (!items.length) { setErr('السلة فارغة'); return; }
-    if (f.name.trim().length < 2) { setErr('اكتب اسمك بالكامل'); return; }
-    if (!isValidEgPhone(normalizePhone(f.phone))) { setErr('رقم الموبايل غير صحيح (مثال: 01012345678)'); return; }
-    if (!f.governorate) { setErr('اختر المحافظة'); return; }
+    if (!live) { setErr(tx('المتجر غير مفعّل حالياً، الطلبات متوقفة مؤقتاً')); return; }
+    if (!items.length) { setErr(tx('السلة فارغة')); return; }
+    if (f.name.trim().length < 2) { setErr(tx('اكتب اسمك بالكامل')); return; }
+    if (!isValidEgPhone(normalizePhone(f.phone))) { setErr(tx('رقم الموبايل غير صحيح (مثال: 01012345678)')); return; }
+    if (!f.governorate) { setErr(tx('اختر المحافظة')); return; }
     if (useAreas && centers.length) {
-      if (!f.center) { setErr('اختر المركز / القسم'); return; }
-      if (villages.length && !f.village) { setErr('اختر القرية / العزبة (أو «أخرى» لو مش موجودة)'); return; }
-      if (villages.length && f.village === OTHER_VILLAGE && f.villageOther.trim().length < 2) { setErr('اكتب اسم قريتك / عزبتك'); return; }
+      if (!f.center) { setErr(tx('اختر المركز / القسم')); return; }
+      if (villages.length && !f.village) { setErr(tx('اختر القرية / العزبة (أو «أخرى» لو مش موجودة)')); return; }
+      if (villages.length && f.village === OTHER_VILLAGE && f.villageOther.trim().length < 2) { setErr(tx('اكتب اسم قريتك / عزبتك')); return; }
     }
-    if (f.address.trim().length < 6) { setErr('اكتب العنوان بالتفصيل'); return; }
+    if (f.address.trim().length < 6) { setErr(tx('اكتب العنوان بالتفصيل')); return; }
     setBusy(true);
     try {
       const r = await fetch('/api/store/order', {
@@ -106,11 +108,11 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
         }),
       });
       const j = await r.json();
-      if (!j.ok) { setErr(j.error || 'تعذر إرسال الطلب، حاول مرة أخرى'); setBusy(false); return; }
+      if (!j.ok) { setErr(j.error || tx('تعذر إرسال الطلب، حاول مرة أخرى')); setBusy(false); return; }
       ss(`spike_last_${slug}`, { held: !!j.held, hold_until: j.hold_until || null, order_no: j.order_no, token: j.token, total: j.total, event_id: j.event_id, name: f.name, phone: f.phone, items: items.map((i) => ({ id: i.product_id, title: i.title, price: i.price, qty: i.qty })) });
       if (onSuccess) onSuccess(j);
       router.push(next || `${base}/thank-you`);
-    } catch { setErr('تعذر الاتصال، حاول مرة أخرى'); setBusy(false); }
+    } catch { setErr(tx('تعذر الاتصال، حاول مرة أخرى')); setBusy(false); }
   };
 
   const remain = q && q.free_over > 0 && q.remaining_free != null ? q.remaining_free : null;
@@ -118,7 +120,7 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
 
   return (
     <form className="frm" onSubmit={submit} onFocus={onFocus} id="checkout">
-      <h3>{title}</h3>
+      <h3>{tx(title)}</h3>
       {co.show_images !== false && items.length > 0 && (
         <div>{items.map((i) => (
           <div className="ci" key={i.key || i.product_id} style={{ marginBottom: 6 }}>
@@ -127,52 +129,52 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
           </div>
         ))}</div>
       )}
-      <div className="fld"><label>الاسم بالكامل</label><input className="in" autoComplete="name" value={f.name} onChange={set('name')} /></div>
+      <div className="fld"><label>{tx('الاسم بالكامل')}</label><input className="in" autoComplete="name" value={f.name} onChange={set('name')} /></div>
       <div className="r2">
-        <div className="fld"><label>رقم الموبايل</label><input className="in num" dir="ltr" inputMode="tel" autoComplete="tel" placeholder="01XXXXXXXXX" value={f.phone} onChange={set('phone')} onBlur={saveAbandoned} /></div>
-        {co.phone2 ? <div className="fld"><label>موبايل آخر (اختياري)</label><input className="in num" dir="ltr" inputMode="tel" value={f.phone2} onChange={set('phone2')} /></div> : null}
+        <div className="fld"><label>{tx('رقم الموبايل')}</label><input className="in num" dir="ltr" inputMode="tel" autoComplete="tel" placeholder="01XXXXXXXXX" value={f.phone} onChange={set('phone')} onBlur={saveAbandoned} /></div>
+        {co.phone2 ? <div className="fld"><label>{tx('موبايل آخر (اختياري)')}</label><input className="in num" dir="ltr" inputMode="tel" value={f.phone2} onChange={set('phone2')} /></div> : null}
       </div>
-      {co.email ? <div className="fld"><label>البريد الإلكتروني (اختياري)</label><input className="in" dir="ltr" type="email" value={f.email} onChange={set('email')} /></div> : null}
-      <div className="fld"><label>المحافظة</label>
+      {co.email ? <div className="fld"><label>{tx('البريد الإلكتروني (اختياري)')}</label><input className="in" dir="ltr" type="email" value={f.email} onChange={set('email')} /></div> : null}
+      <div className="fld"><label>{tx('المحافظة')}</label>
         <select className="in" value={f.governorate} onChange={setGov}>
-          <option value="">اختر المحافظة</option>
+          <option value="">{tx('اختر المحافظة')}</option>
         {govs.map((g) => <option key={g} value={g}>{g}</option>)}
         </select>
         {(() => {
           const z = (zones || []).find((x) => x.governorate === f.governorate);
-          return z && z.eta ? <p className="mut" style={{ fontSize: 13, marginTop: 6 }}>🚚 مدة التوصيل المتوقعة: <b>{z.eta}</b></p> : null;
+          return z && z.eta ? <p className="mut" style={{ fontSize: 13, marginTop: 6 }}>{tx('🚚 مدة التوصيل المتوقعة:')} <b>{z.eta}</b></p> : null;
         })()}
       </div>
       {useAreas && f.governorate && centers.length ? (
         <>
-          <div className="fld"><label>المركز / القسم</label>
+          <div className="fld"><label>{tx('المركز / القسم')}</label>
             <select className="in" value={f.center} onChange={setCenter}>
-              <option value="">اختر المركز / القسم</option>
+              <option value="">{tx('اختر المركز / القسم')}</option>
               {centers.map((c) => <option key={c[0]} value={c[0]}>{c[0]}</option>)}
             </select>
           </div>
           {f.center && villages.length ? (
-            <div className="fld"><label>القرية / العزبة / الحي</label>
+            <div className="fld"><label>{tx('القرية / العزبة / الحي')}</label>
               <select className="in" value={f.village} onChange={(e) => setF((s) => ({ ...s, village: e.target.value, villageOther: '' }))}>
-                <option value="">اختر القرية / العزبة</option>
+                <option value="">{tx('اختر القرية / العزبة')}</option>
                 {villages.map((v, i) => <option key={v + i} value={v}>{v}</option>)}
-                <option value={OTHER_VILLAGE}>أخرى (مش لاقي قريتي / عزبتي)</option>
+                <option value={OTHER_VILLAGE}>{tx('أخرى (مش لاقي قريتي / عزبتي)')}</option>
               </select>
-              {f.village === OTHER_VILLAGE ? <input className="in" style={{ marginTop: 8 }} placeholder="اكتب اسم القرية / العزبة" value={f.villageOther} onChange={set('villageOther')} /> : null}
+              {f.village === OTHER_VILLAGE ? <input className="in" style={{ marginTop: 8 }} placeholder={tx('اكتب اسم القرية / العزبة')} value={f.villageOther} onChange={set('villageOther')} /> : null}
             </div>
           ) : null}
         </>
       ) : null}
-      <div className="fld"><label>العنوان بالتفصيل</label><input className="in" autoComplete="street-address" placeholder={useAreas && f.governorate ? 'الشارع، رقم المبنى/المنزل، أقرب علامة مميزة' : ''} value={f.address} onChange={set('address')} /></div>
-      {co.address2 ? <div className="fld"><label>علامة مميزة / عنوان إضافي</label><input className="in" value={f.address2} onChange={set('address2')} /></div> : null}
-      {co.note !== false ? <div className="fld"><label>ملاحظات (اختياري)</label><input className="in" value={f.notes} onChange={set('notes')} /></div> : null}
+      <div className="fld"><label>{tx('العنوان بالتفصيل')}</label><input className="in" autoComplete="street-address" placeholder={useAreas && f.governorate ? tx('الشارع، رقم المبنى/المنزل، أقرب علامة مميزة') : ''} value={f.address} onChange={set('address')} /></div>
+      {co.address2 ? <div className="fld"><label>{tx('علامة مميزة / عنوان إضافي')}</label><input className="in" value={f.address2} onChange={set('address2')} /></div> : null}
+      {co.note !== false ? <div className="fld"><label>{tx('ملاحظات (اختياري)')}</label><input className="in" value={f.notes} onChange={set('notes')} /></div> : null}
       <input className="hp" tabIndex={-1} autoComplete="off" aria-hidden="true" value={hp} onChange={(e) => setHp(e.target.value)} />
 
       <div className="fld">
-        <label>كود الخصم</label>
+        <label>{tx('كود الخصم')}</label>
         <div className="cpn">
           <input className="in" dir="ltr" value={coupon} onChange={(e) => setCoupon(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); applyCoupon(); } }} />
-          <button type="button" className="b" onClick={applyCoupon}>تطبيق</button>
+          <button type="button" className="b" onClick={applyCoupon}>{tx('تطبيق')}</button>
         </div>
         {qMsg ? <div className={q?.coupon ? 'okm' : 'err'} style={{ marginTop: 6 }}>{qMsg}</div> : null}
       </div>
@@ -180,25 +182,25 @@ export default function Checkout({ items, bump, buttonText, onSuccess, funnel, t
       {cfg.shipping?.show_progress !== false && q && q.free_over > 0 ? (
         <div>
           <div className="prog"><i style={{ width: `${pct}%` }} /></div>
-          <p className="mut" style={{ fontSize: 13, marginTop: 4 }}>{remain > 0 ? `أضف ${money(remain, cur)} للحصول على شحن مجاني 🚚` : 'مبروك! الشحن مجاني 🎉'}</p>
+          <p className="mut" style={{ fontSize: 13, marginTop: 4 }}>{remain > 0 ? tx('أضف {1} للحصول على شحن مجاني 🚚', [money(remain, cur)]) : tx('مبروك! الشحن مجاني 🎉')}</p>
         </div>
       ) : null}
 
       {q ? (
         <div className="sum">
-          <div><span>المنتجات</span><b className="num">{money(q.subtotal, cur)}</b></div>
-          {q.discount > 0 ? <div><span>الخصم</span><b className="num">- {money(q.discount, cur)}</b></div> : null}
-          <div><span>الشحن</span><b className="num">{q.shipping > 0 ? money(q.shipping, cur) : (f.governorate ? 'مجاني' : 'يُحدد بالمحافظة')}</b></div>
-          {q.cod_fee > 0 ? <div><span>رسوم الدفع عند الاستلام</span><b className="num">{money(q.cod_fee, cur)}</b></div> : null}
-          <div className="tot"><span>الإجمالي</span><b className="num">{money(q.total, cur)}</b></div>
+          <div><span>{tx('المنتجات')}</span><b className="num">{money(q.subtotal, cur)}</b></div>
+          {q.discount > 0 ? <div><span>{tx('الخصم')}</span><b className="num">- {money(q.discount, cur)}</b></div> : null}
+          <div><span>{tx('الشحن')}</span><b className="num">{q.shipping > 0 ? money(q.shipping, cur) : (f.governorate ? tx('مجاني') : tx('يُحدد بالمحافظة'))}</b></div>
+          {q.cod_fee > 0 ? <div><span>{tx('رسوم الدفع عند الاستلام')}</span><b className="num">{money(q.cod_fee, cur)}</b></div> : null}
+          <div className="tot"><span>{tx('الإجمالي')}</span><b className="num">{money(q.total, cur)}</b></div>
         </div>
       ) : null}
 
       {err ? <div className="err">{err}</div> : null}
-      {err ? <WaContact label="تواصل معنا على واتساب" text={`مرحباً، حصلت لي مشكلة وأنا بعمل طلب: ${err}`} style={{ marginBottom: 10 }} /> : null}
-      <button className="b p blk" type="submit" disabled={busy || !items.length || !live}>{busy ? 'جاري إرسال الطلب...' : (buttonText || co.button_text || 'اطلب الآن')}</button>
-      <WaContact label="عندك سؤال؟ كلّم صاحب المتجر على واتساب" text={`مرحباً، عندي سؤال قبل ما أكمل طلبي${items.length ? ` (${items.slice(0, 3).map((i) => i.title).join('، ')})` : ''}`} style={{ marginTop: 6 }} />
-      {co.trust_text ? <p className="mut center" style={{ fontSize: 13 }}>🔒 {co.trust_text}</p> : null}
+      {err ? <WaContact label={tx('تواصل معنا على واتساب')} text={tx('مرحباً، حصلت لي مشكلة وأنا بعمل طلب: {1}', [err])} style={{ marginBottom: 10 }} /> : null}
+      <button className="b p blk" type="submit" disabled={busy || !items.length || !live}>{busy ? tx('جاري إرسال الطلب...') : tx(buttonText || co.button_text || 'اطلب الآن')}</button>
+      <WaContact label={tx('عندك سؤال؟ كلّم صاحب المتجر على واتساب')} text={tx('مرحباً، عندي سؤال قبل ما أكمل طلبي{1}', [items.length ? ` (${items.slice(0, 3).map((i) => i.title).join(tx('، '))})` : ''])} style={{ marginTop: 6 }} />
+      {co.trust_text ? <p className="mut center" style={{ fontSize: 13 }}>🔒 {tx(co.trust_text)}</p> : null}
       {co.terms_text ? <p className="mut center" style={{ fontSize: 12 }}>{co.terms_text}</p> : null}
     </form>
   );

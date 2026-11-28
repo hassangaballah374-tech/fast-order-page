@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useShop } from './StoreContext';
@@ -34,6 +35,7 @@ const CSS = `
 `;
 
 export default function UpsellView({ flow, step, product: p }) {
+  const tx = useT();
   const { slug, cur, base } = useShop();
   const [last, setLast] = useState(undefined);
   const [busy, setBusy] = useState(false);
@@ -78,14 +80,14 @@ export default function UpsellView({ flow, step, product: p }) {
     try {
       const r = await fetch('/api/store/upsell', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slug, token: last.token, flow: flow.slug, step: step.id }) });
       const j = await r.json();
-      if (!j.ok) { setErr(j.error || 'تعذر إضافة العرض'); setBusy(false); return; }
+      if (!j.ok) { setErr(j.error || tx('تعذر إضافة العرض')); setBusy(false); return; }
       if (!j.already && j.item) {
         const cur0 = readLast(slug) || last;
         writeLast(slug, { ...cur0, upsells: [...(cur0.upsells || []), { id: j.item.id, title: j.item.title, price: j.item.price, qty: j.item.qty }], extra: (Number(cur0.extra) || 0) + (Number(j.added) || 0) });
         track('Purchase', { value: j.added, items: [{ id: j.item.id, title: j.item.title, price: j.item.price, qty: j.item.qty }] }, j.event_id);
       }
       goTo(acceptUrl);
-    } catch { setErr('تعذر الاتصال، حاول مرة أخرى'); setBusy(false); }
+    } catch { setErr(tx('تعذر الاتصال، حاول مرة أخرى')); setBusy(false); }
   };
 
   if (last === undefined) return <div className="wrap empty">...</div>;
@@ -93,9 +95,9 @@ export default function UpsellView({ flow, step, product: p }) {
     return (
       <div className="wrap empty">
         <div style={{ fontSize: 56 }}>🎁</div>
-        <h2>العرض ده بيظهر بعد تأكيد الطلب</h2>
-        <p className="mut" style={{ margin: '8px 0 16px' }}>اطلب الأول وبعدين هتشوف عروضنا الخاصة.</p>
-        <Link className="b p" href={base}>الرئيسية</Link>
+        <h2>{tx('العرض ده بيظهر بعد تأكيد الطلب')}</h2>
+        <p className="mut" style={{ margin: '8px 0 16px' }}>{tx('اطلب الأول وبعدين هتشوف عروضنا الخاصة.')}</p>
+        <Link className="b p" href={base}>{tx('الرئيسية')}</Link>
       </div>
     );
   }
@@ -106,7 +108,7 @@ export default function UpsellView({ flow, step, product: p }) {
     <div className="upv">
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="upv-steps" aria-hidden="true">{flow.steps.map((x, i) => <i key={x.id} className={i <= idx ? 'on' : ''} />)}</div>
-      <span className="upv-ok">✅ تم تسجيل طلبك رقم <b className="num">#{last.order_no}</b></span>
+      <span className="upv-ok">{tx('✅ تم تسجيل طلبك رقم')} <b className="num">#{last.order_no}</b></span>
       <h1>{step.headline}</h1>
       {step.subheadline ? <p className="upv-sub">{step.subheadline}</p> : null}
       <div className="upv-card">
@@ -114,15 +116,15 @@ export default function UpsellView({ flow, step, product: p }) {
         <div className="upv-t">{p.title}{qty > 1 ? ` × ${qty}` : ''}</div>
         <div className="upv-price">
           <b className="num">{money(total, cur)}</b>
-          {step.percent > 0 ? <><s className="num">{money(was, cur)}</s><span className="upv-off">وفّر {step.percent}%</span></> : null}
+          {step.percent > 0 ? <><s className="num">{money(was, cur)}</s><span className="upv-off">{tx('وفّر {1}%', [step.percent])}</span></> : null}
         </div>
         {step.points?.length ? <ul className="upv-pts">{step.points.map((t, i) => <li key={i}>{t}</li>)}</ul> : null}
       </div>
-      {step.minutes > 0 && left != null ? <div className="upv-cd">⏳ العرض بينتهي خلال <b className="num" dir="ltr">{p2(Math.floor(s / 60))}:{p2(s % 60)}</b></div> : null}
-      {err ? <div className="upv-err">{err}{' '}<button type="button" className="upv-no" style={{ display: 'inline', margin: 0 }} onClick={() => goTo(acceptUrl)}>كمّل بدون العرض</button></div> : null}
-      <button type="button" className="upv-yes" onClick={accept} disabled={busy}>{busy ? 'جاري الإضافة...' : `${step.accept_text} · ${money(total, cur)}`}</button>
+      {step.minutes > 0 && left != null ? <div className="upv-cd">{tx('⏳ العرض بينتهي خلال')} <b className="num" dir="ltr">{p2(Math.floor(s / 60))}:{p2(s % 60)}</b></div> : null}
+      {err ? <div className="upv-err">{err}{' '}<button type="button" className="upv-no" style={{ display: 'inline', margin: 0 }} onClick={() => goTo(acceptUrl)}>{tx('كمّل بدون العرض')}</button></div> : null}
+      <button type="button" className="upv-yes" onClick={accept} disabled={busy}>{busy ? tx('جاري الإضافة...') : `${step.accept_text} · ${money(total, cur)}`}</button>
       <button type="button" className="upv-no" onClick={decline}>{step.decline_text}</button>
-      <p className="upv-note">بيتضاف لنفس الطلب بنفس بياناتك · الدفع عند الاستلام</p>
+      <p className="upv-note">{tx('بيتضاف لنفس الطلب بنفس بياناتك · الدفع عند الاستلام')}</p>
     </div>
   );
 }

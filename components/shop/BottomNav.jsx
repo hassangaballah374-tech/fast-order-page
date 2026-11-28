@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -18,6 +19,7 @@ const Ico = ({ n }) => <svg viewBox="0 0 24 24" aria-hidden="true">{IC[n]}</svg>
 const HIDE = /\/shop\/[^/]+\/(f|flow|ab|thank-you)(\/|$)/;
 
 export default function BottomNav() {
+  const tx = useT();
   const { slug, base, cfg, count, categories } = useShop();
   const path = usePathname() || '';
   const favs = useFavs(slug);
@@ -67,28 +69,28 @@ export default function BottomNav() {
 
   return (
     <>
-      <nav className="bn" aria-label="التنقل السريع">
-        <Link href={base} className={'bn-i' + (isHome ? ' on' : '')} onClick={tap} aria-current={isHome ? 'page' : undefined}><Ico n="home" /><span>الرئيسية</span></Link>
-        <button type="button" className={'bn-i' + (isProducts || sheet ? ' on' : '')} onClick={() => { tap(); setSheet(true); }} aria-haspopup="dialog"><Ico n="grid" /><span>الأقسام</span></button>
-        <button type="button" className="bn-i" onClick={openSearch}><Ico n="search" /><span>بحث</span></button>
-        <Link href={`${base}/favorites`} className={'bn-i' + (isFav ? ' on' : '')} onClick={tap}><Ico n="heart" /><span>المفضلة</span>{favs.ids.length > 0 ? <em className="bn-b num">{favs.ids.length > 99 ? '99+' : favs.ids.length}</em> : null}</Link>
-        <Link href={`${base}/cart`} className={'bn-i' + (onCartPage ? ' on' : '')} onClick={openCart} aria-label={`السلة${count ? ` (${count})` : ''}`}><Ico n="bag" /><span>السلة</span>{count > 0 ? <em className="bn-b num">{count > 99 ? '99+' : count}</em> : null}</Link>
+      <nav className="bn" aria-label={tx('التنقل السريع')}>
+        <Link href={base} className={'bn-i' + (isHome ? ' on' : '')} onClick={tap} aria-current={isHome ? 'page' : undefined}><Ico n="home" /><span>{tx('الرئيسية')}</span></Link>
+        <button type="button" className={'bn-i' + (isProducts || sheet ? ' on' : '')} onClick={() => { tap(); setSheet(true); }} aria-haspopup="dialog"><Ico n="grid" /><span>{tx('الأقسام')}</span></button>
+        <button type="button" className="bn-i" onClick={openSearch}><Ico n="search" /><span>{tx('بحث')}</span></button>
+        <Link href={`${base}/favorites`} className={'bn-i' + (isFav ? ' on' : '')} onClick={tap}><Ico n="heart" /><span>{tx('المفضلة')}</span>{favs.ids.length > 0 ? <em className="bn-b num">{favs.ids.length > 99 ? '99+' : favs.ids.length}</em> : null}</Link>
+        <Link href={`${base}/cart`} className={'bn-i' + (onCartPage ? ' on' : '')} onClick={openCart} aria-label={tx('السلة{1}', [count ? ` (${count})` : ''])}><Ico n="bag" /><span>{tx('السلة')}</span>{count > 0 ? <em className="bn-b num">{count > 99 ? '99+' : count}</em> : null}</Link>
       </nav>
 
       {sheet ? (
-        <div className="bn-sh" role="dialog" aria-modal="true" aria-label="الأقسام">
+        <div className="bn-sh" role="dialog" aria-modal="true" aria-label={tx('الأقسام')}>
           <div className="bn-sc" onClick={() => setSheet(false)} />
           <div className="bn-pn">
             <div className="bn-gr" aria-hidden="true" />
-            <div className="bn-hd"><b>تسوّق حسب القسم</b><button type="button" onClick={() => setSheet(false)} aria-label="إغلاق">✕</button></div>
+            <div className="bn-hd"><b>{tx('تسوّق حسب القسم')}</b><button type="button" onClick={() => setSheet(false)} aria-label={tx('إغلاق')}>✕</button></div>
             <div className="bn-cg">
-              <Link href={`${base}/products`} className="bn-ct all">كل المنتجات</Link>
+              <Link href={`${base}/products`} className="bn-ct all">{tx('كل المنتجات')}</Link>
               {cats.map((c) => <Link key={c.id} href={`${base}/products?cat=${c.id}`} className="bn-ct">{c.name}</Link>)}
             </div>
             <div className="bn-lk">
-              {showLooks ? <Link href={`${base}/looks`}>👗 الإطلالات</Link> : null}
-              {showFit ? <Link href={`${base}/fitting`}>🪞 غرفة القياس</Link> : null}
-              <Link href={`${base}/track`}>📦 تتبع طلبك</Link>
+              {showLooks ? <Link href={`${base}/looks`}>{tx('👗 الإطلالات')}</Link> : null}
+              {showFit ? <Link href={`${base}/fitting`}>{tx('🪞 غرفة القياس')}</Link> : null}
+              <Link href={`${base}/track`}>{tx('📦 تتبع طلبك')}</Link>
             </div>
           </div>
         </div>

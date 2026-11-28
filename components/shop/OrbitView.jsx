@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
@@ -24,6 +25,7 @@ function Ph({ p }) {
 }
 
 export default function OrbitView({ list = [] }) {
+  const tx = useT();
   const { slug, cfg, cur, base, add, count } = useShop();
   const router = useRouter();
   const n = list.length;
@@ -196,7 +198,7 @@ export default function OrbitView({ list = [] }) {
   };
   const openCart = () => { if (cfg.cart?.drawer === false) router.push(`${base}/cart`); else window.dispatchEvent(new Event('spike:cart-open')); };
 
-  if (!n) return <div className="empty">لا توجد منتجات مطابقة</div>;
+  if (!n) return <div className="empty">{tx('لا توجد منتجات مطابقة')}</div>;
 
   const p = cur0;
   const groups = p.variants || [];
@@ -219,12 +221,12 @@ export default function OrbitView({ list = [] }) {
   };
 
   const PriceEl = () => (
-    <div className="ob-price num">{rg.varies && !picked ? <small style={{ fontWeight: 600, marginInlineEnd: 4 }}>من</small> : null}{money(rg.varies && !picked ? rg.min : price, cur)}{onSale ? <s>{money(p.compare_price, cur)}</s> : null}</div>
+    <div className="ob-price num">{rg.varies && !picked ? <small style={{ fontWeight: 600, marginInlineEnd: 4 }}>{tx('من')}</small> : null}{money(rg.varies && !picked ? rg.min : price, cur)}{onSale ? <s>{money(p.compare_price, cur)}</s> : null}</div>
   );
   const AddedLine = () => (justAdded ? (
     <div className="ob-added" role="status">
-      <span>✓ تمت إضافة «{p.title}»{added.label ? ` · ${added.label}` : ''} للسلة</span>
-      <button type="button" onClick={openCart}>عرض السلة ←</button>
+      <span>{tx('✓ تمت إضافة «{1}»', [p.title])}{added.label ? ` · ${added.label}` : ''} {tx('للسلة')}</span>
+      <button type="button" onClick={openCart}>{tx('عرض السلة ←')}</button>
     </div>
   ) : null);
 
@@ -246,13 +248,13 @@ export default function OrbitView({ list = [] }) {
         onPointerUp={onUp}
         onPointerCancel={onUp}
         aria-roledescription="carousel"
-        aria-label="المنتجات"
+        aria-label={tx('المنتجات')}
       >
         <div className="ob-txt" key={p.id}>
           <div className="ob-cnt num" dir="ltr">{pad(idx + 1)} / {pad(n)}</div>
           <h2>{p.title}</h2>
           <PriceEl />
-          <Link className="ob-lnk" href={`${base}/p/${p.id}`}>عرض التفاصيل ←</Link>
+          <Link className="ob-lnk" href={`${base}/p/${p.id}`}>{tx('عرض التفاصيل ←')}</Link>
         </div>
 
         <svg className="ob-curve" width={w} height={H} viewBox={`0 0 ${w} ${H}`} aria-hidden="true">
@@ -299,10 +301,10 @@ export default function OrbitView({ list = [] }) {
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={(e) => { e.stopPropagation(); setFlipId(flipped ? '' : String(it.id)); }}
                   aria-pressed={flipped}
-                  aria-label={flipped ? 'عرض الصورة الأمامية' : 'عرض الصورة الخلفية'}
+                  aria-label={flipped ? tx('عرض الصورة الأمامية') : tx('عرض الصورة الخلفية')}
                 >
                   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16" /><path d="M3 21v-5h5" /></svg>
-                  <span>{flipped ? 'الأمام' : 'الخلف'}</span>
+                  <span>{flipped ? tx('الأمام') : tx('الخلف')}</span>
                 </button>
               ) : null}
             </React.Fragment>
@@ -311,7 +313,7 @@ export default function OrbitView({ list = [] }) {
 
         {n > 1 && (
           <div className="ob-whl">
-            <div className="ob-ends"><span className="num" dir="ltr">{pad(1)}</span><span>اسحب العجلة</span><span className="num" dir="ltr">{pad(n)}</span></div>
+            <div className="ob-ends"><span className="num" dir="ltr">{pad(1)}</span><span>{tx('اسحب العجلة')}</span><span className="num" dir="ltr">{pad(n)}</span></div>
             <div
               className="ob-trk"
               ref={trackRef}
@@ -324,7 +326,7 @@ export default function OrbitView({ list = [] }) {
               aria-valuemin={1}
               aria-valuemax={n}
               aria-valuenow={idx + 1}
-              aria-label="عجلة المنتجات"
+              aria-label={tx('عجلة المنتجات')}
             >
               <b className="ob-th" style={{ left: thumbLeft, width: TH }} />
             </div>
@@ -333,9 +335,9 @@ export default function OrbitView({ list = [] }) {
       </div>
 
       <div className="ob-pick">
-        {sold ? <div className="ob-sold">نفدت الكمية حالياً</div> : groups.length === 1 ? (
+        {sold ? <div className="ob-sold">{tx('نفدت الكمية حالياً')}</div> : groups.length === 1 ? (
           <>
-            <div className="ob-lbl">اختر {groups[0].name} · ضغطة واحدة تضيف للسلة</div>
+            <div className="ob-lbl">{tx('اختر {1} · ضغطة واحدة تضيف للسلة', [groups[0].name])}</div>
             <div className="ob-sz">
               {groups[0].values.map((v) => (
                 <button key={v} type="button" className={busy === `${p.id}|${v}` ? 'ld' : (justAdded && added.label === v ? 'ok' : '')} onClick={() => pick(p, groups[0], v)}>
@@ -347,18 +349,18 @@ export default function OrbitView({ list = [] }) {
           </>
         ) : groups.length === 0 ? (
           <button type="button" className={'ob-add' + (justAdded ? ' ok' : '')} onClick={() => quickAdd(p)}>
-            {busy === `${p.id}|*` ? <span className="ob-spin" /> : justAdded ? 'تمت الإضافة للسلة ✓' : '🛒 أضف للسلة'}
+            {busy === `${p.id}|*` ? <span className="ob-spin" /> : justAdded ? tx('تمت الإضافة للسلة ✓') : tx('🛒 أضف للسلة')}
           </button>
         ) : (
-          <button type="button" className="ob-add" onClick={() => setFocus(true)}>اختر الخيارات</button>
+          <button type="button" className="ob-add" onClick={() => setFocus(true)}>{tx('اختر الخيارات')}</button>
         )}
         <AddedLine />
       </div>
 
       {focus && inPortal(
         <div className="ob-focus" role="dialog" aria-modal="true" aria-label={p.title}>
-          <button type="button" className="ob-x" onClick={() => setFocus(false)}>إغلاق ✕</button>
-          <button type="button" className="ob-cartp" data-fly-target="1" onClick={openCart} aria-label="السلة">🛒 <span className="num">{count}</span></button>
+          <button type="button" className="ob-x" onClick={() => setFocus(false)}>{tx('إغلاق ✕')}</button>
+          <button type="button" className="ob-cartp" data-fly-target="1" onClick={openCart} aria-label={tx('السلة')}>🛒 <span className="num">{count}</span></button>
           <div className="ob-fgrid">
             <div className="ob-fimg">
               <FlipPic key={`${p.id}-${swap}`} className="ob-fpic" front={gi.list[imgI]} back={imgI === 0 ? gi.back : ''} alt={p.title}>
@@ -366,13 +368,13 @@ export default function OrbitView({ list = [] }) {
                 <i className="ob-sh big" />
               </FlipPic>
               {gi.list.length > 1 && (
-                <div className="ob-dots">{gi.list.map((_, k) => <button key={k} type="button" className={k === imgI ? 'on' : ''} aria-label={`صورة ${k + 1}`} onClick={() => setImgI(k)} />)}</div>
+                <div className="ob-dots">{gi.list.map((_, k) => <button key={k} type="button" className={k === imgI ? 'on' : ''} aria-label={tx('صورة {1}', [k + 1])} onClick={() => setImgI(k)} />)}</div>
               )}
             </div>
             <div className="ob-finfo" key={`i-${p.id}`}>
               <h2>{p.title}</h2>
               <PriceEl />
-              {sold ? <div className="ob-sold">نفدت الكمية حالياً</div> : null}
+              {sold ? <div className="ob-sold">{tx('نفدت الكمية حالياً')}</div> : null}
               {groups.map((g) => (
                 <div className="ob-grp" key={g.name}>
                   <div className="ob-gh"><span>{g.name}</span><b>{fopts[g.name] || ''}</b></div>
@@ -385,11 +387,11 @@ export default function OrbitView({ list = [] }) {
                 </div>
               ))}
               <button type="button" className={'ob-add' + (justAdded ? ' ok' : '') + (needed.length || sold ? ' dis' : '')} onClick={addFocus} disabled={sold}>
-                {fAddBusy ? <span className="ob-spin" /> : justAdded ? 'تمت الإضافة للسلة ✓' : needed.length ? `اختر ${needed[0].name}` : '🛒 أضف للسلة'}
+                {fAddBusy ? <span className="ob-spin" /> : justAdded ? tx('تمت الإضافة للسلة ✓') : needed.length ? tx('اختر {1}', [needed[0].name]) : tx('🛒 أضف للسلة')}
               </button>
               <div className="ob-fl2">
-                {justAdded ? <button type="button" onClick={openCart}>عرض السلة ←</button> : null}
-                <Link className="ob-lnk" href={`${base}/p/${p.id}`}>عرض كل التفاصيل ←</Link>
+                {justAdded ? <button type="button" onClick={openCart}>{tx('عرض السلة ←')}</button> : null}
+                <Link className="ob-lnk" href={`${base}/p/${p.id}`}>{tx('عرض كل التفاصيل ←')}</Link>
               </div>
             </div>
           </div>
@@ -402,9 +404,9 @@ export default function OrbitView({ list = [] }) {
               ))}
             </div>
             <div className="ob-nav">
-              <button type="button" onClick={() => go(-1)} disabled={idx <= 0} aria-label="السابق">→</button>
+              <button type="button" onClick={() => go(-1)} disabled={idx <= 0} aria-label={tx('السابق')}>→</button>
               <span className="num" dir="ltr">{pad(idx + 1)} / {pad(n)}</span>
-              <button type="button" className="dk" onClick={() => go(1)} disabled={idx >= n - 1} aria-label="التالي">←</button>
+              <button type="button" className="dk" onClick={() => go(1)} disabled={idx >= n - 1} aria-label={tx('التالي')}>←</button>
             </div>
           </div>
         </div>

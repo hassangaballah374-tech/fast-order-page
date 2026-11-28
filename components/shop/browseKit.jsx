@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -47,25 +48,28 @@ export function useBrowseCart() {
 }
 
 export function PriceEl({ p, cur }) {
+  const tx = useT();
   const rg = priceRange(p);
   const price = effectivePrice(p);
   const onSale = !rg.varies && saleActive(p) && p.compare_price > price;
-  return <div className="ob-price num">{rg.varies ? <small style={{ fontWeight: 600, marginInlineEnd: 4 }}>من</small> : null}{money(rg.min, cur)}{onSale ? <s>{money(p.compare_price, cur)}</s> : null}</div>;
+  return <div className="ob-price num">{rg.varies ? <small style={{ fontWeight: 600, marginInlineEnd: 4 }}>{tx('من')}</small> : null}{money(rg.min, cur)}{onSale ? <s>{money(p.compare_price, cur)}</s> : null}</div>;
 }
 
 export function AddedLine({ p, cart }) {
+  const tx = useT();
   const a = cart.added;
   if (!a || a.id !== p.id) return null;
   return (
     <div className="ob-added" role="status">
-      <span>✓ تمت إضافة «{p.title}»{a.label ? ` · ${a.label}` : ''} للسلة</span>
-      <button type="button" onClick={cart.openCart}>عرض السلة ←</button>
+      <span>{tx('✓ تمت إضافة «{1}»', [p.title])}{a.label ? ` · ${a.label}` : ''} {tx('للسلة')}</span>
+      <button type="button" onClick={cart.openCart}>{tx('عرض السلة ←')}</button>
     </div>
   );
 }
 
 /* لوحة تحت المنتج النشط: مقاسات بضغطة واحدة / زر إضافة / فتح العرض المركّز */
 export function QuickPick({ p, cart, srcSel, onMore }) {
+  const tx = useT();
   const { cfg, busy, added, pick, quickAdd } = { ...cart };
   const groups = p.variants || [];
   const chart = chartFor(cfg.sizing, p);
@@ -73,9 +77,9 @@ export function QuickPick({ p, cart, srcSel, onMore }) {
   const just = added && added.id === p.id;
   return (
     <div className="ob-pick">
-      {sold ? <div className="ob-sold">نفدت الكمية حالياً</div> : groups.length === 1 ? (
+      {sold ? <div className="ob-sold">{tx('نفدت الكمية حالياً')}</div> : groups.length === 1 ? (
         <>
-          <div className="ob-lbl">اختر {groups[0].name} · ضغطة واحدة تضيف للسلة</div>
+          <div className="ob-lbl">{tx('اختر {1} · ضغطة واحدة تضيف للسلة', [groups[0].name])}</div>
           <div className="ob-sz">
             {groups[0].values.map((v) => (
               <button key={v} type="button" className={busy === `${p.id}|${v}` ? 'ld' : (just && added.label === v ? 'ok' : '')} onClick={() => pick(p, groups[0], v, srcSel)}>
@@ -87,10 +91,10 @@ export function QuickPick({ p, cart, srcSel, onMore }) {
         </>
       ) : groups.length === 0 ? (
         <button type="button" className={'ob-add' + (just ? ' ok' : '')} onClick={() => quickAdd(p, srcSel)}>
-          {busy === `${p.id}|*` ? <span className="ob-spin" /> : just ? 'تمت الإضافة للسلة ✓' : '🛒 أضف للسلة'}
+          {busy === `${p.id}|*` ? <span className="ob-spin" /> : just ? tx('تمت الإضافة للسلة ✓') : tx('🛒 أضف للسلة')}
         </button>
       ) : (
-        <button type="button" className="ob-add" onClick={onMore}>اختر الخيارات</button>
+        <button type="button" className="ob-add" onClick={onMore}>{tx('اختر الخيارات')}</button>
       )}
       <AddedLine p={p} cart={cart} />
     </div>
@@ -99,6 +103,7 @@ export function QuickPick({ p, cart, srcSel, onMore }) {
 
 /* العرض المركّز: صورة كبيرة + تفاصيل + اختيارات + صور مصغّرة وأسهم */
 export function FocusSheet({ list, idx, onGo, onClose, cart }) {
+  const tx = useT();
   const { cfg, cur, base, count, busy, added, openCart, addMulti } = cart;
   const p = list[idx];
   const n = list.length;
@@ -124,20 +129,20 @@ export function FocusSheet({ list, idx, onGo, onClose, cart }) {
   const fBusy = busy === `${p.id}|F`;
   return (
     <div className="ob-focus" role="dialog" aria-modal="true" aria-label={p.title}>
-      <button type="button" className="ob-x" onClick={onClose}>إغلاق ✕</button>
-      <button type="button" className="ob-cartp" data-fly-target="1" onClick={openCart} aria-label="السلة">🛒 <span className="num">{count}</span></button>
+      <button type="button" className="ob-x" onClick={onClose}>{tx('إغلاق ✕')}</button>
+      <button type="button" className="ob-cartp" data-fly-target="1" onClick={openCart} aria-label={tx('السلة')}>🛒 <span className="num">{count}</span></button>
       <div className="ob-fgrid">
         <div className="ob-fimg">
           <FlipPic key={`${p.id}-${swap}`} className="ob-fpic" front={gi.list[imgI]} back={imgI === 0 ? gi.back : ''} alt={p.title}>
             {!gi.list[imgI] ? <Ph p={p} /> : null}
             <i className="ob-sh big" />
           </FlipPic>
-          {gi.list.length > 1 && <div className="ob-dots">{gi.list.map((_, k) => <button key={k} type="button" className={k === imgI ? 'on' : ''} aria-label={`صورة ${k + 1}`} onClick={() => setImgI(k)} />)}</div>}
+          {gi.list.length > 1 && <div className="ob-dots">{gi.list.map((_, k) => <button key={k} type="button" className={k === imgI ? 'on' : ''} aria-label={tx('صورة {1}', [k + 1])} onClick={() => setImgI(k)} />)}</div>}
         </div>
         <div className="ob-finfo" key={`i-${p.id}`}>
           <h2>{p.title}</h2>
           <PriceEl p={p} cur={cur} />
-          {sold ? <div className="ob-sold">نفدت الكمية حالياً</div> : null}
+          {sold ? <div className="ob-sold">{tx('نفدت الكمية حالياً')}</div> : null}
           {groups.map((g) => (
             <div className="ob-grp" key={g.name}>
               <div className="ob-gh"><span>{g.name}</span><b>{fopts[g.name] || ''}</b></div>
@@ -149,11 +154,11 @@ export function FocusSheet({ list, idx, onGo, onClose, cart }) {
           ))}
           <button type="button" className={'ob-add' + (just ? ' ok' : '') + (needed.length || sold ? ' dis' : '')} disabled={sold}
             onClick={() => { if (!needed.length) addMulti(p, { ...fopts }, '.ob-focus .ob-fpic img'); }}>
-            {fBusy ? <span className="ob-spin" /> : just ? 'تمت الإضافة للسلة ✓' : needed.length ? `اختر ${needed[0].name}` : '🛒 أضف للسلة'}
+            {fBusy ? <span className="ob-spin" /> : just ? tx('تمت الإضافة للسلة ✓') : needed.length ? tx('اختر {1}', [needed[0].name]) : tx('🛒 أضف للسلة')}
           </button>
           <div className="ob-fl2">
-            {just ? <button type="button" onClick={openCart}>عرض السلة ←</button> : null}
-            <Link className="ob-lnk" href={`${base}/p/${p.id}`}>عرض كل التفاصيل ←</Link>
+            {just ? <button type="button" onClick={openCart}>{tx('عرض السلة ←')}</button> : null}
+            <Link className="ob-lnk" href={`${base}/p/${p.id}`}>{tx('عرض كل التفاصيل ←')}</Link>
           </div>
         </div>
       </div>
@@ -166,9 +171,9 @@ export function FocusSheet({ list, idx, onGo, onClose, cart }) {
           ))}
         </div>
         <div className="ob-nav">
-          <button type="button" onClick={() => onGo(idx - 1)} disabled={idx <= 0} aria-label="السابق">→</button>
+          <button type="button" onClick={() => onGo(idx - 1)} disabled={idx <= 0} aria-label={tx('السابق')}>→</button>
           <span className="num" dir="ltr">{pad2(idx + 1)} / {pad2(n)}</span>
-          <button type="button" className="dk" onClick={() => onGo(idx + 1)} disabled={idx >= n - 1} aria-label="التالي">←</button>
+          <button type="button" className="dk" onClick={() => onGo(idx + 1)} disabled={idx >= n - 1} aria-label={tx('التالي')}>←</button>
         </div>
       </div>
     </div>

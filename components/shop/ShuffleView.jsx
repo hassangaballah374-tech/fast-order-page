@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Ph, PriceEl, FocusSheet, useBrowseCart } from './browseKit';
 
@@ -12,6 +13,7 @@ function shuffled(a) {
 }
 
 export default function ShuffleView({ list = [] }) {
+  const tx = useT();
   const cart = useBrowseCart();
   const [order, setOrder] = useState(() => list.map((p) => p.id));
   const [focusI, setFocusI] = useState(-1);
@@ -40,10 +42,10 @@ export default function ShuffleView({ list = [] }) {
     });
   }, [order]);
 
-  if (!list.length) return <div className="empty">لا توجد منتجات مطابقة</div>;
+  if (!list.length) return <div className="empty">{tx('لا توجد منتجات مطابقة')}</div>;
   return (
     <div className="sh2">
-      <div className="sh2-bar"><button type="button" className="sh2-btn" onClick={shuffle}>🔀 اخلط المنتجات</button><span className="num">{items.length}</span></div>
+      <div className="sh2-bar"><button type="button" className="sh2-btn" onClick={shuffle}>{tx('🔀 اخلط المنتجات')}</button><span className="num">{items.length}</span></div>
       <div className="sh2-grid" ref={wrap}>
         {items.map((p, i) => (
           <button key={p.id} type="button" data-id={p.id} className="sh2-it" style={{ '--dl': `${(i % 7) * -0.7}s`, '--du': `${4.6 + (i % 4) * 0.5}s` }} aria-label={p.title} onClick={() => setFocusI(i)}>

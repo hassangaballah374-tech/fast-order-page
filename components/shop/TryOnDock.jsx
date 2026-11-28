@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { createRoot } from 'react-dom/client';
@@ -29,6 +30,7 @@ async function rasterMannequin() {
 const Hanger = () => (<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 8a2.5 2.5 0 1 0-2.5-2.5" /><path d="M12 8v2l9 6.2a1.3 1.3 0 0 1-.7 2.3H3.7a1.3 1.3 0 0 1-.7-2.3L12 10" /></svg>);
 
 export default function TryOnDock() {
+  const tx = useT();
   const { slug, cfg, base } = useShop();
   const models = cfg.fitting?.models || [];
   const [picks, setPicks] = useState([]);
@@ -85,15 +87,15 @@ export default function TryOnDock() {
     setBusy(true); setErr('');
     try {
       let baseData;
-      if (m < 0 && !models.length) { setErr('لسه مفيش صورة موديل جاهزة في المتجر'); setBusy(false); return; }
+      if (m < 0 && !models.length) { setErr(tx('لسه مفيش صورة موديل جاهزة في المتجر')); setBusy(false); return; }
       if (m < 0) m = 0;
       const r = await fetch('/api/store/tryon', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: c.signal, body: JSON.stringify({ slug, products: list.map((p) => p.id), model: m, baseData }) });
       const j = await r.json().catch(() => null);
       if (c.signal.aborted) return;
       if (j && j.ok && j.image) { setImg(j.image); genKey.current = keyOf(list, m); writeTry(slug, { picks: list, img: j.image, key: genKey.current }); }
-      else setErr((j && j.error) || 'تعذر التلبيس حالياً');
+      else setErr((j && j.error) || tx('تعذر التلبيس حالياً'));
     } catch (e) {
-      if (!c.signal.aborted) setErr('مفيش اتصال، جرّب تاني');
+      if (!c.signal.aborted) setErr(tx('مفيش اتصال، جرّب تاني'));
     } finally { if (!c.signal.aborted) setBusy(false); }
   }, [slug, models.length]);
 
@@ -112,36 +114,36 @@ export default function TryOnDock() {
   const reset = () => { setPicks([]); setImg(''); setErr(''); };
 
   if (!open && !picks.length) return null;
-  if (!open) return <button type="button" className="td-pill" onClick={() => setOpen(true)}><Hanger /> غرفة القياس <b className="num">{picks.length}</b></button>;
+  if (!open) return <button type="button" className="td-pill" onClick={() => setOpen(true)}><Hanger /> {tx('غرفة القياس')} <b className="num">{picks.length}</b></button>;
   const last = picks[picks.length - 1];
   return (
     <>
-      <aside className="td" role="dialog" aria-label="غرفة القياس">
-        <div className="td-h"><b>غرفة القياس</b><button type="button" className="td-x" aria-label="تصغير" onClick={() => setOpen(false)}>✕</button></div>
-        <div className="td-s">دوس على الشماعة 🧥 في أي منتج عشان الموديل يلبسه</div>
+      <aside className="td" role="dialog" aria-label={tx('غرفة القياس')}>
+        <div className="td-h"><b>{tx('غرفة القياس')}</b><button type="button" className="td-x" aria-label={tx('تصغير')} onClick={() => setOpen(false)}>✕</button></div>
+        <div className="td-s">{tx('دوس على الشماعة 🧥 في أي منتج عشان الموديل يلبسه')}</div>
         {models.length > 1 ? (
-          <div className="td-ms" role="tablist" aria-label="الموديل">{models.map((m, i) => <button key={m.id || i} type="button" role="tab" aria-selected={i === mi} className={i === mi ? 'on' : ''} onClick={() => setMi(i)}><img src={m.image} alt={m.name || ''} /></button>)}</div>
+          <div className="td-ms" role="tablist" aria-label={tx('الموديل')}>{models.map((m, i) => <button key={m.id || i} type="button" role="tab" aria-selected={i === mi} className={i === mi ? 'on' : ''} onClick={() => setMi(i)}><img src={m.image} alt={m.name || ''} /></button>)}</div>
         ) : null}
         <div className="td-img" ref={imgBox}>
-          {img ? <img src={img} alt="الموديل بعد التلبيس" /> : (models[mi]?.image ? <img src={models[mi].image} alt="الموديل" className="td-base" /> : <Mannequin size={2} worn={[]} />)}
-          {busy ? <div className="td-load" role="status"><i /><b>بنلبّس الموديل...</b><small>الصورة بتتولّد بالذكاء الاصطناعي</small></div> : null}
-          {img && !busy ? <button type="button" className="td-zm" aria-label="تكبير الصورة" onClick={() => setZoom(true)}>⤢</button> : null}
+          {img ? <img src={img} alt={tx('الموديل بعد التلبيس')} /> : (models[mi]?.image ? <img src={models[mi].image} alt={tx('الموديل')} className="td-base" /> : <Mannequin size={2} worn={[]} />)}
+          {busy ? <div className="td-load" role="status"><i /><b>{tx('بنلبّس الموديل...')}</b><small>{tx('الصورة بتتولّد بالذكاء الاصطناعي')}</small></div> : null}
+          {img && !busy ? <button type="button" className="td-zm" aria-label={tx('تكبير الصورة')} onClick={() => setZoom(true)}>⤢</button> : null}
         </div>
-        {err ? <div className="td-er" role="alert">{err} <button type="button" onClick={() => run(picks, mi)}>حاول تاني</button></div> : null}
-        <div className="td-pk"><span>اختياراتك</span><span className="num">{picks.length} {picks.length === 1 ? 'قطعة' : 'قطع'}</span></div>
+        {err ? <div className="td-er" role="alert">{err} <button type="button" onClick={() => run(picks, mi)}>{tx('حاول تاني')}</button></div> : null}
+        <div className="td-pk"><span>{tx('اختياراتك')}</span><span className="num">{picks.length} {picks.length === 1 ? tx('قطعة') : tx('قطع')}</span></div>
         <div className="td-th">
           {picks.map((p) => (
-            <div key={p.id} className="td-t"><Link href={`${base}/p/${p.id}`} aria-label={p.title}><img src={p.img} alt={p.title} /></Link><button type="button" aria-label={`شيل ${p.title}`} onClick={() => setPicks((c) => c.filter((x) => x.id !== p.id))}>✕</button></div>
+            <div key={p.id} className="td-t"><Link href={`${base}/p/${p.id}`} aria-label={p.title}><img src={p.img} alt={p.title} /></Link><button type="button" aria-label={tx('شيل {1}', [p.title])} onClick={() => setPicks((c) => c.filter((x) => x.id !== p.id))}>✕</button></div>
           ))}
-          {!picks.length ? <div className="td-em">لسه ماخترتش حاجة</div> : null}
+          {!picks.length ? <div className="td-em">{tx('لسه ماخترتش حاجة')}</div> : null}
         </div>
-        <div className="td-n">ضيف قطعة تانية وهتتلبس فوق اللي قبلها (لحد {MAX} قطع).</div>
+        <div className="td-n">{tx('ضيف قطعة تانية وهتتلبس فوق اللي قبلها (لحد {1} قطع).', [MAX])}</div>
         <div className="td-f">
-          {last ? <Link href={`${base}/p/${last.id}`} className="b p sm">افتح آخر قطعة</Link> : <span />}
-          <button type="button" className="td-rs" onClick={reset}>↺ ابدأ من جديد</button>
+          {last ? <Link href={`${base}/p/${last.id}`} className="b p sm">{tx('افتح آخر قطعة')}</Link> : <span />}
+          <button type="button" className="td-rs" onClick={reset}>{tx('↺ ابدأ من جديد')}</button>
         </div>
       </aside>
-      {zoom && img ? <div className="td-lb" role="dialog" aria-label="الصورة" onClick={() => setZoom(false)}><img src={img} alt="الموديل بعد التلبيس" /><button type="button" aria-label="إغلاق" onClick={() => setZoom(false)}>✕</button></div> : null}
+      {zoom && img ? <div className="td-lb" role="dialog" aria-label={tx('الصورة')} onClick={() => setZoom(false)}><img src={img} alt={tx('الموديل بعد التلبيس')} /><button type="button" aria-label={tx('إغلاق')} onClick={() => setZoom(false)}>✕</button></div> : null}
     </>
   );
 }

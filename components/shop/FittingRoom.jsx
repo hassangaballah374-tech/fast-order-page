@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useShop, hit } from './StoreContext';
@@ -18,6 +19,7 @@ import { SIZES, TONES, parseSize, bodyFor } from '../../lib/mannequin';
 const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
 
 export default function FittingRoom({ data }) {
+  const tx = useT();
   const { slug, cfg, cur, base, add, count } = useShop();
   const router = useRouter();
   const { models, products, title, builtin } = data;
@@ -123,19 +125,19 @@ export default function FittingRoom({ data }) {
       track('AddToCart', { value: price, items: [{ id: p.id, title: p.title, price, qty: 1 }] });
       hit(slug, 'cart', { product: String(p.id) });
     });
-    setDone(`${buyable.length} قطع`);
+    setDone(tx('{1} قطع', [buyable.length]));
   };
 
   const model = mi >= 0 ? models[Math.min(mi, models.length - 1)] : null;
   const tabs = (builtin ? 1 : 0) + models.length;
   return (
     <div className="fr">
-      <div className="lk-top"><h2>{title}</h2><button type="button" className="lk-cart" data-fly-target="1" onClick={openCart} aria-label="السلة">🛒 <span className="num">{count}</span></button></div>
+      <div className="lk-top"><h2>{title}</h2><button type="button" className="lk-cart" data-fly-target="1" onClick={openCart} aria-label={tx('السلة')}>🛒 <span className="num">{count}</span></button></div>
       <div className="fr-grid">
         <div className="fr-stage">
           {tabs > 1 && (
-            <div className="fr-models" role="tablist" aria-label="الموديل">
-              {builtin && <button type="button" role="tab" aria-selected={mi < 0} className={'fr-mtab' + (mi < 0 ? ' on' : '')} onClick={() => setMi(-1)}>👤<small>مانيكان</small></button>}
+            <div className="fr-models" role="tablist" aria-label={tx('الموديل')}>
+              {builtin && <button type="button" role="tab" aria-selected={mi < 0} className={'fr-mtab' + (mi < 0 ? ' on' : '')} onClick={() => setMi(-1)}>👤<small>{tx('مانيكان')}</small></button>}
               {models.map((m, i) => <button key={m.id} type="button" role="tab" aria-selected={i === mi} className={i === mi ? 'on' : ''} onClick={() => setMi(i)}><img src={m.image} alt={m.name} /></button>)}
             </div>
           )}
@@ -143,31 +145,31 @@ export default function FittingRoom({ data }) {
             <>
               <div className="fr-canvas fr-built" ref={box}>
                 <Mannequin size={msz} body={bodyNow} garmentSize={msz} tone={tone} zones={zones} onZone={toggleZone} worn={wornP.map((p) => ({ id: p.id, slot: p.fit.slot, image: p.fit.image }))} />
-                {!wornP.length && <div className="fr-hint">اختار قطعة من تحت عشان تلبّسها للموديل</div>}
+                {!wornP.length && <div className="fr-hint">{tx('اختار قطعة من تحت عشان تلبّسها للموديل')}</div>}
               </div>
               <div className="fr-body">
-                <div className="lk-k">مقاس القطعة اللي لابسها: <b>{SIZES[msz]}</b></div>
-                <div className="fr-sizes" role="group" aria-label="مقاس الموديل">{SIZES.map((z, i) => <button key={z} type="button" className={i === msz ? 'on' : ''} onClick={() => pickBodySize(i)}>{z}</button>)}</div>
+                <div className="lk-k">{tx('مقاس القطعة اللي لابسها:')} <b>{SIZES[msz]}</b></div>
+                <div className="fr-sizes" role="group" aria-label={tx('مقاس الموديل')}>{SIZES.map((z, i) => <button key={z} type="button" className={i === msz ? 'on' : ''} onClick={() => pickBodySize(i)}>{z}</button>)}</div>
                 <BodyFit h={bd.h} w={bd.w} zones={zones} fit={fitPref} rec={rec} custom={!!bodyC} canApply={wornP.length > 0 && parseSize(rec?.size) >= 0}
                   onH={(v) => touch({ h: v })} onW={(v) => touch({ w: v })} onZone={toggleZone} onFit={setFitPref} onApply={applyRec} onReset={resetBody} />
-                <div className="fr-tones" role="group" aria-label="لون البشرة">{TONES.map(([c, t]) => <button key={c} type="button" className={c === tone ? 'on' : ''} style={{ background: c }} title={t} aria-label={t} onClick={() => setTone(c)} />)}</div>
+                <div className="fr-tones" role="group" aria-label={tx('لون البشرة')}>{TONES.map(([c, t]) => <button key={c} type="button" className={c === tone ? 'on' : ''} style={{ background: c }} title={t} aria-label={t} onClick={() => setTone(c)} />)}</div>
               </div>
             </>
           ) : (
           <div className="fr-canvas" ref={box}>
-            <img className="fr-model" src={model.image} alt={model.name || 'موديل'} draggable="false" decoding="async" />
+            <img className="fr-model" src={model.image} alt={model.name || tx('موديل')} draggable="false" decoding="async" />
             {wornP.map((p) => {
               const t = place(p); const z = (SLOTS[p.fit.slot] || SLOTS.top).z;
               return <img key={p.id} className={'fr-layer' + (sel && sel.id === p.id ? ' on' : '')} src={p.fit.image} alt={p.title} draggable="false" style={{ left: `${t.x}%`, top: `${t.y}%`, width: `${t.w}%`, zIndex: z }}
                 onPointerDown={(e) => down(e, p)} onPointerMove={(e) => move(e, p)} onPointerUp={up} onPointerCancel={up} />;
             })}
-            {!wornP.length && <div className="fr-hint">اختار قطعة من تحت عشان تلبّسها للموديل</div>}
+            {!wornP.length && <div className="fr-hint">{tx('اختار قطعة من تحت عشان تلبّسها للموديل')}</div>}
           </div>
           )}
-          {mi >= 0 && sel && <label className="fr-size">حجم «{sel.title}»<input type="range" min="15" max="100" value={Math.round(place(sel).w)} onChange={(e) => resize(sel, Number(e.target.value))} aria-label="حجم القطعة" /></label>}
+          {mi >= 0 && sel && <label className="fr-size">{tx('حجم «{1}»', [sel.title])}<input type="range" min="15" max="100" value={Math.round(place(sel).w)} onChange={(e) => resize(sel, Number(e.target.value))} aria-label={tx('حجم القطعة')} /></label>}
         </div>
         <div className="fr-side">
-          <div className="lk-k">اضغط على القطعة عشان تلبسها · اسحبها لتظبيط مكانها</div>
+          <div className="lk-k">{tx('اضغط على القطعة عشان تلبسها · اسحبها لتظبيط مكانها')}</div>
           <div className="fr-pick">
             {products.map((p) => { const on = worn.includes(String(p.id)); return (
               <button key={p.id} type="button" className={on ? 'on' : ''} onClick={() => toggle(p)} aria-pressed={on} aria-label={p.title}>
@@ -182,19 +184,19 @@ export default function FittingRoom({ data }) {
                   <div className="lk-bd">
                     <div className="lk-nm">{p.title}</div>
                     <div className="lk-pr num">{money(effectivePrice(p), cur)}</div>
-                    {soldOut(p) ? <div className="lk-sold">نفدت الكمية</div> : (p.variants || []).map((g) => (
+                    {soldOut(p) ? <div className="lk-sold">{tx('نفدت الكمية')}</div> : (p.variants || []).map((g) => (
                       <div key={g.name} className="lk-opt"><div className="lk-chips">{g.values.map((v) => <button key={v} type="button" className={(opts[p.id] || {})[g.name] === v ? 'sel' : ''} onClick={() => setOpt(p, g.name, v)}>{v}</button>)}</div>
                         {chart && isSizeGroup(g.name) ? <SizeHelp chart={chart} values={g.values} onPick={(v) => setOpt(p, g.name, v)} /> : null}</div>
                     ))}
                   </div>
-                  <button type="button" className="fr-rm" onClick={() => toggle(p)} aria-label="إزالة">✕</button>
+                  <button type="button" className="fr-rm" onClick={() => toggle(p)} aria-label={tx('إزالة')}>✕</button>
                 </div>); })}
               <div className="lk-ft">
-                <div className="lk-tot"><span>الإجمالي</span><b className="num">{money(total, cur)}</b></div>
+                <div className="lk-tot"><span>{tx('الإجمالي')}</span><b className="num">{money(total, cur)}</b></div>
                 <button type="button" className={'lk-all' + (done ? ' ok' : '')} disabled={!!missing || !buyable.length} onClick={addAll}>
-                  {missing ? `اختر ${missing.g.name} لـ «${missing.p.title}»` : done ? 'تمت الإضافة ✓' : '🛍️ أضف كل اللي لبسته للسلة'}
+                  {missing ? tx('اختر {1} لـ «{2}»', [missing.g.name, missing.p.title]) : done ? tx('تمت الإضافة ✓') : tx('🛍️ أضف كل اللي لبسته للسلة')}
                 </button>
-                {done ? <div className="ob-added" role="status"><span>✓ تمت إضافة {done} للسلة</span><button type="button" onClick={openCart}>عرض السلة ←</button></div> : null}
+                {done ? <div className="ob-added" role="status"><span>{tx('✓ تمت إضافة {1} للسلة', [done])}</span><button type="button" onClick={openCart}>{tx('عرض السلة ←')}</button></div> : null}
               </div>
             </div>
           )}

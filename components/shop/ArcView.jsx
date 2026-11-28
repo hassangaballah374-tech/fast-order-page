@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Ph, PriceEl, QuickPick, FocusSheet, useBrowseCart, pad2 } from './browseKit';
@@ -13,6 +14,7 @@ const mod = (a, n) => ((a % n) + n) % n;
 const xAt = (tbl, a) => { const i = Math.min(tbl.length - 2, Math.floor(a)); return tbl[i] + (tbl[i + 1] - tbl[i]) * Math.min(1, a - i); };
 
 export default function ArcView({ list = [] }) {
+  const tx = useT();
   const cart = useBrowseCart();
   const { cfg } = cart;
   const items = list.slice(0, 24);
@@ -97,12 +99,12 @@ export default function ArcView({ list = [] }) {
     return () => { alive = false; cancelAnimationFrame(raf); clearInterval(auto); window.removeEventListener('pointercancel', pu); root.removeEventListener('pointerenter', enter); root.removeEventListener('pointerleave', leave); root.removeEventListener('pointermove', pm); root.removeEventListener('pointerdown', pd); window.removeEventListener('pointermove', pmv); window.removeEventListener('pointerup', pu); root.removeEventListener('wheel', wh); root.removeEventListener('keydown', kd); };
   }, [n]);
 
-  if (!n) return <div className="empty">لا توجد منتجات مطابقة</div>;
+  if (!n) return <div className="empty">{tx('لا توجد منتجات مطابقة')}</div>;
   const p = items[Math.min(idx, n - 1)];
   const sel = '.arc-card.cur .arc-g img';
 
   return (
-    <div className="arc" ref={rootRef} tabIndex={0} aria-label="قوس المنتجات" role="group">
+    <div className="arc" ref={rootRef} tabIndex={0} aria-label={tx('قوس المنتجات')} role="group">
       <div className="arc-ghost" aria-hidden="true">{(cfg.store_name || 'FIT').toString().slice(0, 4).toUpperCase()}</div>
       <div className="arc-stage">
         {items.map((it, i) => (
@@ -113,14 +115,14 @@ export default function ArcView({ list = [] }) {
           </button>
         ))}
       </div>
-      <button type="button" className="arc-nav arc-pv" aria-label="السابق" onClick={() => go(-1)}>‹</button>
-      <button type="button" className="arc-nav arc-nx" aria-label="التالي" onClick={() => go(1)}>›</button>
+      <button type="button" className="arc-nav arc-pv" aria-label={tx('السابق')} onClick={() => go(-1)}>‹</button>
+      <button type="button" className="arc-nav arc-nx" aria-label={tx('التالي')} onClick={() => go(1)}>›</button>
       <div className="arc-buy" key={p.id}>
         <div className="arc-bi">
           <div className="ob-cnt num" dir="ltr">{pad2(idx + 1)} / {pad2(n)}</div>
           <h3>{p.title}</h3>
           <PriceEl p={p} cur={cart.cur} />
-          <div className="rl-act"><button type="button" className="rl-more" onClick={() => setFocus(true)}>عرض سريع</button><Link className="ob-lnk" href={`${cart.base}/p/${p.id}`}>كل التفاصيل ←</Link></div>
+          <div className="rl-act"><button type="button" className="rl-more" onClick={() => setFocus(true)}>{tx('عرض سريع')}</button><Link className="ob-lnk" href={`${cart.base}/p/${p.id}`}>{tx('كل التفاصيل ←')}</Link></div>
         </div>
         <QuickPick p={p} cart={cart} srcSel={sel} onMore={() => setFocus(true)} />
       </div>

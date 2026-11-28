@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 const Ctx = createContext(null);
@@ -30,6 +31,7 @@ export function getUtm(slug) {
 }
 
 export function StoreProvider({ slug, name, cfg, pages, categories, zones, live = true, reason = 'ok', children }) {
+  const tx = useT();
   const base = `/shop/${slug}`;
   const ckey = `spike_cart_${slug}`;
   const bkey = `spike_bump_${slug}`;
@@ -75,9 +77,9 @@ export function StoreProvider({ slug, name, cfg, pages, categories, zones, live 
 
   const count = cart.reduce((a, x) => a + (Number(x.qty) || 0), 0);
   const value = useMemo(() => ({
-    slug, name, cfg, base, cur: cfg.currency || 'ج.م', pages, categories, zones,
+    slug, name, cfg, base, cur: tx(cfg.currency || 'ج.م'), pages, categories, zones,
     cart, count, add, setQty, remove, clear, bump, setBump, ready, live, reason,
-  }), [slug, name, cfg, base, pages, categories, zones, live, reason, cart, count, add, setQty, remove, clear, bump, setBump, ready]);
+  }), [slug, name, cfg, base, pages, categories, zones, live, reason, cart, count, add, setQty, remove, clear, bump, setBump, ready, tx]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

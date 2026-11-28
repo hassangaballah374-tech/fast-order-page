@@ -5,14 +5,18 @@ import { loadStore, getProducts, getCategories } from '../../../../lib/storeData
 import { ProductCard } from '../../../../components/shop/ui';
 import FilterBar from '../../../../components/shop/FilterBar';
 import { BROWSE_STYLES, pickStyle } from '../../../../lib/browse';
+import { getT } from '../../../../lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = { title: 'كل المنتجات' };
+export function generateMetadata() {
+  return { title: getT().T('كل المنتجات')  };
+}
 
 const SORTS = { new: ['created_at', false, 'الأحدث'], price_asc: ['price', true, 'الأقل سعراً'], price_desc: ['price', false, 'الأعلى سعراً'] };
 
 export default async function ProductsPage({ params, searchParams }) {
+  const { T } = getT();
   const ctx = await loadStore(params.slug);
   if (!ctx) notFound();
   const { sb, sid, store, cfg } = ctx;
@@ -32,22 +36,22 @@ export default async function ProductsPage({ params, searchParams }) {
   return (
     <>
     <section className="wrap sec">
-      <div className="sh"><h2>{categories.find((c) => c.id === cat)?.name || 'كل المنتجات'}</h2><p>{list.length} منتج</p></div>
+      <div className="sh"><h2>{categories.find((c) => c.id === cat)?.name || T('كل المنتجات')}</h2><p>{T('{1} منتج', [list.length])}</p></div>
       <form action={`${base}/products`} method="get" className="cpn" style={{ marginBottom: 14 }}>
         {cat ? <input type="hidden" name="cat" value={cat} /> : null}
         {sort !== 'new' ? <input type="hidden" name="sort" value={sort} /> : null}
         {uview ? <input type="hidden" name="view" value={uview} /> : null}
-        <input className="in" name="q" defaultValue={q} placeholder="ابحث عن منتج..." />
-        <button className="b p" type="submit">بحث</button>
+        <input className="in" name="q" defaultValue={q} placeholder={T('ابحث عن منتج...')} />
+        <button className="b p" type="submit">{T('بحث')}</button>
       </form>
       {categories.length > 0 && (
         <div className="tabs">
-          <Link className={'chip' + (!cat ? ' act' : '')} href={qs({ cat: '', view: '' })}>الكل</Link>
+          <Link className={'chip' + (!cat ? ' act' : '')} href={qs({ cat: '', view: '' })}>{T('الكل')}</Link>
           {categories.map((c) => <Link key={c.id} className={'chip' + (cat === c.id ? ' act' : '')} href={qs({ cat: c.id, view: '' })}>{c.name}</Link>)}
         </div>
       )}
       <div className="tabs">
-        {Object.entries(SORTS).map(([k, v]) => <Link key={k} className={'chip' + (sort === k ? ' act' : '')} href={qs({ sort: k })}>{v[2]}</Link>)}
+        {Object.entries(SORTS).map(([k, v]) => <Link key={k} className={'chip' + (sort === k ? ' act' : '')} href={qs({ sort: k })}>{T(v[2])}</Link>)}
       </div>
     </section>
     <FilterBar key={`${view}|${cat}|${sort}|${q}`} style={view} list={list} />

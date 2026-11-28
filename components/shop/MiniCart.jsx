@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -9,6 +10,7 @@ import { lockScroll, unlockIfIdle } from './scrollLock';
 
 /* سلة جانبية: تُفتح بحدث 'spike:cart-open' (بعد "أضف للسلة" أو الضغط على أيقونة السلة) */
 export default function MiniCart() {
+  const tx = useT();
   const { slug, cfg, cur, base, cart, setQty, remove, add } = useShop();
   const [recs, setRecs] = useState([]);
   const [open, setOpen] = useState(false);
@@ -52,18 +54,18 @@ export default function MiniCart() {
   const pct = free ? Math.min(100, (sub / free) * 100) : 0;
 
   return (
-    <div className="mc-wrap" role="dialog" aria-modal="true" aria-label="السلة">
+    <div className="mc-wrap" role="dialog" aria-modal="true" aria-label={tx('السلة')}>
       <div className="mc-scrim" onClick={() => setOpen(false)} />
       <aside className="mc">
-        <div className="mc-hd"><b>🛒 سلتك</b><button type="button" onClick={() => setOpen(false)} aria-label="إغلاق">✕</button></div>
+        <div className="mc-hd"><b>{tx('🛒 سلتك')}</b><button type="button" onClick={() => setOpen(false)} aria-label={tx('إغلاق')}>✕</button></div>
         {showP && cart.length > 0 && (
           <div className="mc-ship">
-            <span>{left > 0 ? <>فاضل <b className="num">{money(left, cur)}</b> وشحنك يبقى مجاني 🚚</> : <>🎉 مبروك! شحنك مجاني</>}</span>
+            <span>{left > 0 ? <>{tx('فاضل')} <b className="num">{money(left, cur)}</b> {tx('وشحنك يبقى مجاني 🚚')}</> : <>{tx('🎉 مبروك! شحنك مجاني')}</>}</span>
             <div className="mc-bar"><i style={{ width: `${pct}%` }} /></div>
           </div>
         )}
         <div className="mc-list">
-          {cart.length === 0 ? <div className="empty" style={{ padding: '40px 10px' }}><div style={{ fontSize: 44 }}>🛒</div>سلتك فارغة</div> : cart.map((i) => (
+          {cart.length === 0 ? <div className="empty" style={{ padding: '40px 10px' }}><div style={{ fontSize: 44 }}>🛒</div>{tx('سلتك فارغة')}</div> : cart.map((i) => (
             <div className="mc-it" key={i.key}>
               {i.image ? <img src={i.image} alt="" /> : <div className="mc-ph" />}
               <div className="mc-b">
@@ -71,11 +73,11 @@ export default function MiniCart() {
                 {Object.keys(i.options || {}).length ? <small className="mut">{Object.values(i.options).join(' / ')}</small> : null}
                 <div className="mc-q">
                   <div className="qty">
-                    <button type="button" onClick={() => setQty(i.key, i.qty - 1)} disabled={i.qty <= 1} aria-label="إنقاص">−</button>
+                    <button type="button" onClick={() => setQty(i.key, i.qty - 1)} disabled={i.qty <= 1} aria-label={tx('إنقاص')}>−</button>
                     <span className="num">{i.qty}</span>
-                    <button type="button" onClick={() => setQty(i.key, i.qty + 1)} aria-label="زيادة">+</button>
+                    <button type="button" onClick={() => setQty(i.key, i.qty + 1)} aria-label={tx('زيادة')}>+</button>
                   </div>
-                  <button type="button" className="mc-rm" onClick={() => remove(i.key)}>حذف</button>
+                  <button type="button" className="mc-rm" onClick={() => remove(i.key)}>{tx('حذف')}</button>
                 </div>
               </div>
               <b className="num">{money(i.price * i.qty, cur)}</b>
@@ -84,7 +86,7 @@ export default function MiniCart() {
         </div>
         {cart.length > 0 && sugg.length > 0 && (
           <div className="mc-rec">
-            <b className="mc-rh">قد يعجبك</b>
+            <b className="mc-rh">{tx('قد يعجبك')}</b>
             <div className="mc-rl">
               {sugg.map((p) => (
                 <div className="mc-rc" key={p.id}>
@@ -92,8 +94,8 @@ export default function MiniCart() {
                   <Link href={`${base}/p/${p.id}`} className="mc-rt">{p.title}</Link>
                   <span className="num mc-rp">{money(p.price, cur)}</span>
                   {p.needs
-                    ? <Link href={`${base}/p/${p.id}`} className="mc-ra">اختر المقاس</Link>
-                    : <button type="button" className="mc-ra" onClick={() => addRec(p)}>+ أضف</button>}
+                    ? <Link href={`${base}/p/${p.id}`} className="mc-ra">{tx('اختر المقاس')}</Link>
+                    : <button type="button" className="mc-ra" onClick={() => addRec(p)}>{tx('+ أضف')}</button>}
                 </div>
               ))}
             </div>
@@ -101,9 +103,9 @@ export default function MiniCart() {
         )}
         {cart.length > 0 && (
           <div className="mc-ft">
-            <div className="mc-sub"><span>الإجمالي الفرعي</span><b className="num">{money(sub, cur)}</b></div>
-            <Link className="b p blk" href={`${base}/cart`}>إتمام الطلب · الدفع عند الاستلام</Link>
-            <button type="button" className="b blk" onClick={() => setOpen(false)}>متابعة التسوق</button>
+            <div className="mc-sub"><span>{tx('الإجمالي الفرعي')}</span><b className="num">{money(sub, cur)}</b></div>
+            <Link className="b p blk" href={`${base}/cart`}>{tx('إتمام الطلب · الدفع عند الاستلام')}</Link>
+            <button type="button" className="b blk" onClick={() => setOpen(false)}>{tx('متابعة التسوق')}</button>
           </div>
         )}
       </aside>

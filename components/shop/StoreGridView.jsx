@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '../I18n';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useBrowseCart } from './browseKit';
@@ -13,6 +14,7 @@ const ts = (p) => new Date(p.created_at).getTime() || 0;
 const STEP = 12;
 
 function Tile({ p, cart, idx, fresh }) {
+  const tx = useT();
   const { base, cur, slug } = cart;
   const fav = useFavs(slug);
   const [open, setOpen] = useState(false);
@@ -50,35 +52,36 @@ function Tile({ p, cart, idx, fresh }) {
           {p.images[1] ? <img className="sg-h" src={p.images[1]} alt="" loading="lazy" aria-hidden="true" /> : null}
         </Link>
         <div className="sg-bd">
-          {out ? <span className="so">نفدت الكمية</span> : off > 0 ? <span className="sale">خصم {off}%</span> : fresh ? <span>جديد</span> : null}
+          {out ? <span className="so">{tx('نفدت الكمية')}</span> : off > 0 ? <span className="sale">{tx('خصم {1}%', [off])}</span> : fresh ? <span>{tx('جديد')}</span> : null}
         </div>
-        <button type="button" className={'sg-fav' + (fav.has(p.id) ? ' on' : '')} aria-label="المفضلة" aria-pressed={fav.has(p.id)} onClick={() => fav.toggle(p.id)}>{fav.has(p.id) ? '♥' : '♡'}</button>
+        <button type="button" className={'sg-fav' + (fav.has(p.id) ? ' on' : '')} aria-label={tx('المفضلة')} aria-pressed={fav.has(p.id)} onClick={() => fav.toggle(p.id)}>{fav.has(p.id) ? '♥' : '♡'}</button>
         {!out ? (
-          <button type="button" className={'sg-plus' + (open ? ' on' : '') + (justAdded ? ' ok' : '')} aria-label={groups.length ? 'اختر المقاس' : 'أضف للسلة'} aria-expanded={open} onClick={plus}>
+          <button type="button" className={'sg-plus' + (open ? ' on' : '') + (justAdded ? ' ok' : '')} aria-label={groups.length ? tx('اختر المقاس') : tx('أضف للسلة')} aria-expanded={open} onClick={plus}>
             {cart.busy.startsWith(`${p.id}|`) ? <span className="ob-spin" /> : justAdded ? '✓' : open ? '✕' : '+'}
           </button>
         ) : null}
         {open && !out ? (
-          <div className="sg-q" role="group" aria-label="إضافة سريعة">
+          <div className="sg-q" role="group" aria-label={tx('إضافة سريعة')}>
             {single ? (
               <>
                 <b>{single.name}</b>
                 <div className="sg-sz">{single.values.map((v) => <button key={v} type="button" onClick={() => cart.pick(p, single, v, sel)}>{v}</button>)}</div>
               </>
-            ) : <Link href={href} className="sg-more">اختر الخيارات ←</Link>}
+            ) : <Link href={href} className="sg-more">{tx('اختر الخيارات ←')}</Link>}
           </div>
         ) : null}
       </div>
       <Link href={href} className="sg-b">
         <b className="sg-n">{p.title}</b>
-        {colors > 1 ? <span className="sg-c">{colors} ألوان</span> : null}
-        <span className="sg-p num">{rg.varies ? <small>من </small> : null}{money(rg.min, cur)}{onSale ? <s>{money(p.compare_price, cur)}</s> : null}</span>
+        {colors > 1 ? <span className="sg-c">{tx('{1} ألوان', [colors])}</span> : null}
+        <span className="sg-p num">{rg.varies ? <small>{tx('من')} </small> : null}{money(rg.min, cur)}{onSale ? <s>{money(p.compare_price, cur)}</s> : null}</span>
       </Link>
     </div>
   );
 }
 
 export default function StoreGridView({ list = [] }) {
+  const tx = useT();
   const cart = useBrowseCart();
   const [cols, setCols] = useState(0); /* 0 = تلقائي */
   const [n, setN] = useState(STEP);
@@ -88,17 +91,17 @@ export default function StoreGridView({ list = [] }) {
   /* «جديد» بس لأحدث 6 منتجات ومن آخر أسبوعين، عشان الشارة تفضل ليها معنى */
   const fresh = useMemo(() => new Set([...list].filter((p) => Date.now() - ts(p) < NEW_DAYS * 86400_000).sort((a, b) => ts(b) - ts(a)).slice(0, 6).map((p) => p.id)), [list]);
   const shown = useMemo(() => list.slice(0, n), [list, n]);
-  if (!list.length) return <div className="wrap"><div className="empty">مفيش منتجات هنا.</div></div>;
+  if (!list.length) return <div className="wrap"><div className="empty">{tx('مفيش منتجات هنا.')}</div></div>;
   return (
     <div className="sg">
       <div className="sg-bar wrap">
-        <span className="mut num">{list.length} منتج</span>
-        <span className="sg-den" role="group" aria-label="عدد الأعمدة">
-          {[2, 3, 4].map((c) => <button key={c} type="button" className={'sg-d' + (cols === c ? ' on' : '')} aria-pressed={cols === c} aria-label={`${c} أعمدة`} onClick={() => setC(cols === c ? 0 : c)}>{'▮'.repeat(c)}</button>)}
+        <span className="mut num">{tx('{1} منتج', [list.length])}</span>
+        <span className="sg-den" role="group" aria-label={tx('عدد الأعمدة')}>
+          {[2, 3, 4].map((c) => <button key={c} type="button" className={'sg-d' + (cols === c ? ' on' : '')} aria-pressed={cols === c} aria-label={tx('{1} أعمدة', [c])} onClick={() => setC(cols === c ? 0 : c)}>{'▮'.repeat(c)}</button>)}
         </span>
       </div>
       <div className={'sg-g' + (cols ? ` c${cols}` : '')}>{shown.map((p, i) => <Tile key={p.id} p={p} cart={cart} idx={i} fresh={fresh.has(p.id)} />)}</div>
-      {n < list.length ? <div className="sg-mr"><button type="button" className="b" onClick={() => setN((x) => x + STEP)}>عرض المزيد ({list.length - n})</button></div> : null}
+      {n < list.length ? <div className="sg-mr"><button type="button" className="b" onClick={() => setN((x) => x + STEP)}>{tx('عرض المزيد ({1})', [list.length - n])}</button></div> : null}
     </div>
   );
 }

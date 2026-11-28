@@ -1,6 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import { loadStore, getPages } from '../../../../../lib/storeData';
+import { getT } from '../../../../../lib/i18n/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function CustomPage({ params }) {
+  const { T } = getT();
   const ctx = await loadStore(params.slug);
   if (!ctx) notFound();
   const pages = await getPages(ctx.sb, ctx.sid);
@@ -25,7 +27,7 @@ export default async function CustomPage({ params }) {
     <section className="wrap sec" style={{ maxWidth: 780 }}>
       <div className="sh"><h2>{p.title}</h2></div>
       <div className="card">
-        {paras.length ? paras.map((t, i) => <p key={i} className="desc" style={{ marginBottom: 14 }}>{t}</p>) : <p className="mut">لا يوجد محتوى بعد.</p>}
+        {paras.length ? paras.map((t, i) => <p key={i} className="desc" style={{ marginBottom: 14 }}>{t}</p>) : <p className="mut">{T('لا يوجد محتوى بعد.')}</p>}
       </div>
     </section>
   );
