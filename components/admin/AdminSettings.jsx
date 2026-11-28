@@ -17,14 +17,18 @@ function LogoField({ label, hint, value, onChange, dark }) {
   const pick = async (e) => {
     const f = e.target.files?.[0]; e.target.value = '';
     if (!f) return;
-    if (!/^image\/(png|jpe?g|webp|svg\+xml|x-icon|vnd\.microsoft\.icon)$/.test(f.type)) return setErr('الصورة لازم تكون PNG أو JPG أو WEBP أو SVG');
+    if (!/^image\/(png|jpe?g|webp)$/.test(f.type)) return setErr('الصورة لازم تكون PNG أو JPG أو WEBP (الـ SVG بيترفض من تخزين المنصة، استخدم رابط)');
     if (f.size > 2 * 1024 * 1024) return setErr('الحجم الأقصى 2 ميجا');
     setBusy(true); setErr('');
     const ext = (f.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 5) || 'png';
-    const path = `platform/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('branding').upload(path, f, { contentType: f.type, upsert: true });
-    if (error) setErr('تعذّر الرفع (' + error.message + '). الصق رابط الصورة بدل الرفع.');
-    else onChange(supabase.storage.from('branding').getPublicUrl(path).data.publicUrl);
+    /* بنرفع على store-assets في مجلد الأدمن (السياسة الموجودة بالفعل بتسمح بكده) */
+    const { data: ud } = await supabase.auth.getUser();
+    const uid = ud?.user?.id;
+    if (!uid) { setBusy(false); return setErr('سجّل دخول تاني وجرّب'); }
+    const path = `${uid}/platform/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('store-assets').upload(path, f, { contentType: f.type, cacheControl: '31536000', upsert: false });
+    if (error) setErr('تعذّر الرفع: ' + error.message + ' — الصق رابط الصورة بدل الرفع.');
+    else onChange(supabase.storage.from('store-assets').getPublicUrl(path).data.publicUrl);
     setBusy(false);
   };
   return (
