@@ -4,15 +4,15 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AppContext = createContext();
 
-export function AppProvider({ children }) {
-  const [lang, setLang] = useState('ar');
+export function AppProvider({ children, initialLang = 'ar' }) {
+  const [lang, setLang] = useState(initialLang === 'en' ? 'en' : 'ar');
   const [theme, setTheme] = useState('light');
   const [isMobileView, setIsMobileView] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     try {
-      const savedLang = localStorage.getItem('spike_lang') || 'ar';
+      const savedLang = localStorage.getItem('spike_lang') || initialLang || 'ar';
       const savedTheme = localStorage.getItem('spike_theme') || 'light';
       const savedMobile = localStorage.getItem('spike_mobile_view') === 'true';
 
@@ -36,6 +36,7 @@ export function AppProvider({ children }) {
       root.classList.remove('dark');
     }
 
+    try { document.cookie = `spike_lang=${currentLang}; path=/; max-age=31536000; samesite=lax`; } catch { /* تجاهل */ }
     root.setAttribute('lang', currentLang);
     root.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
   };
